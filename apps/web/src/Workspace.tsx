@@ -12,6 +12,8 @@ import { isInDueRange, isOverdue } from './dates';
 import { useLocalDate } from './useLocalDate';
 import ReportExport from './ReportExport';
 import DueDateRange from './DueDateRange';
+import WeekPlanner from './WeekPlanner';
+import { weekDates } from './calendar';
 export default function Workspace({ user, logout }: { user: User; logout: () => void }) {
   const repo = useMemo(() => repositoryFor(user.id, client), [user.id]);
   const [state, setState] = useState<State>(emptyState);
@@ -22,8 +24,11 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
   const [search, setSearch] = useState('');
   const [dueFrom, setDueFrom] = useState('');
   const [dueThrough, setDueThrough] = useState('');
-  const invalidRange = Boolean(dueFrom && dueThrough && dueFrom > dueThrough);
   const today = useLocalDate();
+  const [planner, setPlanner] = useState(false);
+  const [plannerWeek, setPlannerWeek] = useState(today);
+  const [plannerDay, setPlannerDay] = useState('');
+  const invalidRange = !planner && Boolean(dueFrom && dueThrough && dueFrom > dueThrough);
   const [creating, setCreating] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
   const [busy, setBusy] = useState(false);
@@ -91,15 +96,26 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
         description:
           'Unfinished work appears here after its due date, based on this device’s local date.',
       };
-  const visible = state.orders.filter(
+  const matching = state.orders.filter(
     (order) =>
       (filter === 'ALL' ||
         (filter === 'OVERDUE' ? isOverdue(order, today) : order.status === filter)) &&
-      isInDueRange(order.dueDate, dueFrom, dueThrough) &&
       `${order.title} ${order.site.name} ${order.reference} ${order.assignee.name}`
         .toLowerCase()
         .includes(search.toLowerCase()),
   );
+  const week = weekDates(plannerWeek);
+  const visible = matching.filter((order) =>
+    isInDueRange(
+      order.dueDate,
+      planner ? plannerDay || week[0] : dueFrom,
+      planner ? plannerDay || week[6] : dueThrough,
+    ),
+  );
+  if (planner)
+    visible.sort(
+      (a, b) => a.dueDate.localeCompare(b.dueDate) || a.reference.localeCompare(b.reference),
+    );
   const reviewCount = state.orders.filter((order) => order.status === 'SUBMITTED').length;
   const assignedCount = state.orders.filter(
     (order) => order.status === 'ASSIGNED' || order.status === 'CHANGES_REQUESTED',
@@ -290,7 +306,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                       !catalog.users.some((user) => user.role === 'worker')
                     }
                   >
-                    + Assign work order
+                    {planner && plannerDay ? '+ Assign for selected day' : '+ Assign work order'}
                   </button>
                 )}
               </div>
@@ -325,6 +341,22 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   </strong>
                 </div>
               </div>
+              <div className="work-view-switch" role="group" aria-label="Work order view">
+                <button
+                  className={!planner ? 'tab active' : 'tab'}
+                  aria-pressed={!planner}
+                  onClick={() => setPlanner(false)}
+                >
+                  List
+                </button>
+                <button
+                  className={planner ? 'tab active' : 'tab'}
+                  aria-pressed={planner}
+                  onClick={() => setPlanner(true)}
+                >
+                  Week planner
+                </button>
+              </div>
               <div className="list-toolbar">
                 <div className="tabs" aria-label="Filter work orders">
                   {['ALL', 'OVERDUE', 'ASSIGNED', 'SUBMITTED', 'APPROVED', 'CHANGES_REQUESTED'].map(
@@ -354,16 +386,30 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   />
                 </label>
               </div>
-              <DueDateRange
-                from={dueFrom}
-                through={dueThrough}
-                onFrom={setDueFrom}
-                onThrough={setDueThrough}
-                onClear={() => {
-                  setDueFrom('');
-                  setDueThrough('');
-                }}
-              />
+              {planner ? (
+                <WeekPlanner
+                  anchor={plannerWeek}
+                  today={today}
+                  day={plannerDay}
+                  orders={matching}
+                  onWeek={(date) => {
+                    setPlannerWeek(date);
+                    setPlannerDay('');
+                  }}
+                  onDay={setPlannerDay}
+                />
+              ) : (
+                <DueDateRange
+                  from={dueFrom}
+                  through={dueThrough}
+                  onFrom={setDueFrom}
+                  onThrough={setDueThrough}
+                  onClear={() => {
+                    setDueFrom('');
+                    setDueThrough('');
+                  }}
+                />
+              )}
               {user.role === 'manager' && <ReportExport orders={visible} onNotice={setNotice} />}
               <div className="list-header" aria-hidden="true">
                 <span>WORK ORDER / SITE</span>
@@ -404,24 +450,30 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   title={
                     !loaded
                       ? 'Loading your workspace…'
-                      : dueFrom || dueThrough
-                        ? 'No work orders in this date range'
-                        : filter === 'OVERDUE'
-                          ? overdueEmpty.title
-                          : search || filter !== 'ALL'
-                            ? 'No matching work orders'
-                            : 'A clean page'
+                      : planner
+                        ? plannerDay
+                          ? 'No work orders for this day'
+                          : 'No work orders this week'
+                        : dueFrom || dueThrough
+                          ? 'No work orders in this date range'
+                          : filter === 'OVERDUE'
+                            ? overdueEmpty.title
+                            : search || filter !== 'ALL'
+                              ? 'No matching work orders'
+                              : 'A clean page'
                   }
                   description={
                     !loaded
                       ? 'Checking for saved assignments and recent changes.'
-                      : dueFrom || dueThrough
-                        ? 'Change or clear the dates, or adjust your search and status filter.'
-                        : filter === 'OVERDUE'
-                          ? overdueEmpty.description
-                          : user.role === 'manager'
-                            ? 'Assign a work order to start the first inspection.'
-                            : 'Your manager will assign work here. Sync to check for new jobs.'
+                      : planner
+                        ? 'Choose another day or week, or adjust your search and status filter.'
+                        : dueFrom || dueThrough
+                          ? 'Change or clear the dates, or adjust your search and status filter.'
+                          : filter === 'OVERDUE'
+                            ? overdueEmpty.description
+                            : user.role === 'manager'
+                              ? 'Assign a work order to start the first inspection.'
+                              : 'Your manager will assign work here. Sync to check for new jobs.'
                   }
                 />
               )}
@@ -436,6 +488,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           {creating && (
             <CreateOrder
               catalog={catalog}
+              initialDueDate={planner && plannerDay ? plannerDay : undefined}
               onClose={() => setCreating(false)}
               onCreated={async (order) => {
                 setCreating(false);

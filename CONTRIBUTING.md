@@ -22,6 +22,7 @@ Useful commands:
 ```sh
 npm test
 npm run typecheck
+npm run check:expo
 npm run format
 npm run build
 npm run test:e2e
@@ -29,6 +30,8 @@ npm exec -w @fieldwork/mobile -- expo export --platform ios --output-dir dist
 ```
 
 The browser tests use a separate in-memory database. API tests use isolated stores. Neither should modify your development data. See [architecture](docs/architecture.md) for module boundaries and [mobile development](docs/mobile.md) for device checks.
+
+React and React Native upgrades must match the installed Expo SDK. Run `npm run check:expo` before changing native dependencies; a successful bundle export alone does not verify SDK compatibility. Keep Node type definitions on the same major version as the supported Node runtime.
 
 ## How we work
 

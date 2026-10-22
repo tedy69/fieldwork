@@ -20,6 +20,7 @@
     "start": "tsx --env-file-if-exists=.env apps/api/src/main.ts",
     "mobile": "npm run start -w @fieldwork/mobile",
     "typecheck": "tsc --noEmit && npm run typecheck -w @fieldwork/mobile",
+    "check:expo": "npm exec -w @fieldwork/mobile -- expo install --check",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "format": "prettier --write .",

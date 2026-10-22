@@ -427,6 +427,18 @@ main#main {
   gap: 20px;
   align-items: center;
 }
+.report-export {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.report-export .export-note {
+  margin: 0;
+  font-size: 12px;
+}
 .list-header {
   font-size: 9px;
   letter-spacing: 1.1px;

@@ -15,6 +15,7 @@ An open-source field operations platform. Assign an inspection, complete it with
 - Durable checklists, notes, and photo attachments on the worker's device.
 - A retryable outbox with duplicate protection and visible version conflicts.
 - Manager approval or requests for changes, with an action history.
+- [CSV report exports](docs/report-export.md) for the manager's filtered work-order list, including offline exports from saved data.
 - Local SQLite persistence, a typed API client, and Docker self-hosting.
 
 Maps, scheduling, notifications, organizations, and integrations are planned in the [roadmap](ROADMAP.md). They are not shipped features.

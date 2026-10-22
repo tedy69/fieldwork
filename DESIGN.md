@@ -14,5 +14,6 @@ Reading this as an operations notebook for dispatch managers and field workers, 
 - A narrow rule beside the active navigation item carries the notebook's margin motif. Status shapes communicate state rather than decoration.
 - System fonts work offline. Monospace is limited to record references and code.
 - Motion is limited to short interaction feedback and respects reduced-motion settings.
+- Kokonut UI is adopted gradually. The work finder reuses the charcoal palette, amber keyboard selection rule, small corners, and existing modal elevation. Its search icon identifies the input; supplied demo actions are excluded, and transitions are disabled for the current motion setting.
 
 Use explicit labels, 44px targets where practical on mobile, visible focus, semantic headings, and useful loading/error/empty states. Never fabricate customer logos, usage numbers, testimonials, or reports. Documentation screenshots use seeded demo data and say so.

@@ -1,0 +1,120 @@
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+@source './components/kokonutui';
+@custom-variant dark (&:where(.dark, .dark *));
+
+.command-launcher {
+  white-space: nowrap;
+}
+.command-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 20px;
+  color: #edf1ee;
+  background: #1c2629;
+  border: 1px solid #516065;
+  border-radius: 4px;
+  overflow-y: auto;
+}
+.command-dialog::backdrop {
+  background: #080e10bb;
+}
+.command-dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.command-dialog h2 {
+  font-size: 20px;
+  margin: 0;
+}
+.command-dialog p {
+  font-size: 12px;
+}
+.kokonut-search {
+  --color-white: #edf1ee;
+  --color-zinc-950: #151d20;
+  --color-zinc-900: #1c2629;
+  --color-zinc-800: #344145;
+  --color-zinc-700: #465559;
+  --color-zinc-500: #adbbb6;
+  --color-zinc-400: #adbbb6;
+  --color-zinc-300: #edf1ee;
+  --color-zinc-200: #edf1ee;
+  --color-zinc-100: #edf1ee;
+  height: auto;
+  max-width: none;
+}
+.kokonut-search > div {
+  position: relative;
+  border-radius: 4px;
+  border-style: solid;
+  border-color: #7f918d;
+  box-shadow: none;
+}
+.kokonut-search:focus-within > div {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+}
+.kokonut-search input:focus-visible {
+  outline: none;
+}
+.kokonut-search input[role='combobox'] {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  font-size: 16px;
+  background: transparent;
+  color: #edf1ee;
+}
+.kokonut-search input::placeholder {
+  color: #adbbb6;
+}
+.kokonut-search [role='option'] {
+  min-height: 44px;
+  height: auto;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.kokonut-search [role='option'][aria-selected='true'] {
+  box-shadow: inset 2px 0 var(--amber);
+}
+.kokonut-search kbd {
+  border-style: solid;
+}
+.command-dialog .quiet {
+  min-height: 44px;
+}
+@media (max-width: 600px) {
+  .command-dialog {
+    padding: 16px;
+  }
+  .topbar:has(.command-launcher) {
+    height: auto;
+    min-height: 58px;
+    flex-wrap: wrap;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .topbar:has(.command-launcher) .connection {
+    width: auto;
+    flex: 1;
+    flex-wrap: wrap;
+  }
+  .command-launcher {
+    min-height: 44px;
+    padding: 8px;
+    font-size: 11px;
+  }
+}
+@media print {
+  .command-launcher,
+  .command-dialog {
+    display: none !important;
+  }
+}

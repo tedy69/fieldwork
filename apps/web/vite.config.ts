@@ -1,8 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import tailwindcss from '@tailwindcss/vite';
+import { fileURLToPath } from 'node:url';
 export default defineConfig({
+  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   plugins: [
+    tailwindcss(),
     react(),
     VitePWA({
       registerType: 'prompt',
@@ -16,7 +20,7 @@ export default defineConfig({
         start_url: '/',
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg}'],
+        globPatterns: ['**/*.{js,css,html,svg,txt}'],
         navigateFallbackDenylist: [/^\/api\//, /^\/health/],
       },
     }),

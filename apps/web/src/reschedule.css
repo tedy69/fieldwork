@@ -1,0 +1,32 @@
+.schedule {
+  margin-bottom: 28px;
+}
+.schedule form {
+  border-left: 2px solid var(--amber);
+  padding: 0 0 0 18px;
+  margin-top: 18px;
+}
+.schedule p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.schedule label {
+  display: block;
+  max-width: 260px;
+  font-size: 12px;
+}
+.schedule input,
+.schedule button {
+  min-height: 44px;
+}
+.schedule-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+@media print {
+  .schedule {
+    display: none;
+  }
+}

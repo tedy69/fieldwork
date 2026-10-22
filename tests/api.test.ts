@@ -267,3 +267,131 @@ describe('inspection lifecycle', () => {
     }
   });
 });
+
+describe('assignment rescheduling', () => {
+  const schedule = (payload: Record<string, unknown>, token = manager, id = 'demo-1') =>
+    app.inject({
+      method: 'PATCH',
+      url: `/api/v1/work-orders/${id}/schedule`,
+      headers: bearer(token),
+      payload,
+    });
+
+  it('permits PATCH preflight only for configured browser origins', async () => {
+    const preflight = (origin: string) =>
+      app.inject({
+        method: 'OPTIONS',
+        url: '/api/v1/work-orders/demo-1/schedule',
+        headers: { origin, 'access-control-request-method': 'PATCH' },
+      });
+    const allowed = await preflight('http://localhost:5173');
+    expect(allowed.statusCode).toBe(204);
+    expect(allowed.headers['access-control-allow-methods']).toContain('PATCH');
+    expect(allowed.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    expect(
+      (await preflight('https://outside.example')).headers['access-control-allow-origin'],
+    ).toBeUndefined();
+  });
+  it('requires an authenticated manager and an allowed cookie origin', async () => {
+    const payload = { baseVersion: 1, dueDate: '2026-10-25' };
+    expect(
+      (await app.inject({ method: 'PATCH', url: '/api/v1/work-orders/demo-1/schedule', payload }))
+        .statusCode,
+    ).toBe(401);
+    expect((await schedule(payload, worker)).statusCode).toBe(403);
+    expect((await schedule(payload, other)).statusCode).toBe(403);
+    expect((await schedule(payload, manager, 'missing')).statusCode).toBe(404);
+    expect(
+      (
+        await app.inject({
+          method: 'PATCH',
+          url: '/api/v1/work-orders/demo-1/schedule',
+          payload,
+          headers: { cookie: `session=${manager}`, origin: 'https://outside.example' },
+        })
+      ).statusCode,
+    ).toBe(403);
+    expect(store.getOrder('demo-1')!.version).toBe(1);
+  });
+
+  it.each([
+    { baseVersion: 1, dueDate: '2026-02-29' },
+    { baseVersion: 1, dueDate: '2026-10-25T00:00:00Z' },
+    { baseVersion: 0, dueDate: '2026-10-25' },
+    { dueDate: '2026-10-25' },
+    { baseVersion: 1, dueDate: '2026-10-25', assigneeId: 'jordan' },
+  ])('rejects invalid schedule input %j without writing', async (payload) => {
+    expect((await schedule(payload)).statusCode).toBe(422);
+    expect(store.getOrder('demo-1')!.version).toBe(1);
+    expect(store.db.prepare('SELECT COUNT(*) AS count FROM audit').get()!.count).toBe(0);
+  });
+
+  it('changes only the due date/version and records the old and new dates', async () => {
+    const before = store.getOrder('demo-1')!;
+    const response = await schedule({ baseVersion: before.version, dueDate: '2028-02-29' });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ...before, dueDate: '2028-02-29', version: 2 });
+    expect(store.getOrder('demo-1')).toEqual(response.json());
+    const events = await app.inject({
+      url: '/api/v1/work-orders/demo-1/events',
+      headers: bearer(worker),
+    });
+    expect(events.json().data).toEqual([
+      expect.objectContaining({
+        actor: 'Alex Morgan',
+        action: `Due date changed from ${before.dueDate} to 2028-02-29`,
+      }),
+    ]);
+  });
+
+  it('does not increment the version or audit an unchanged date', async () => {
+    const before = store.getOrder('demo-1')!;
+    expect(
+      (await schedule({ baseVersion: before.version, dueDate: before.dueDate })).json(),
+    ).toEqual(before);
+    expect(store.db.prepare('SELECT COUNT(*) AS count FROM audit').get()!.count).toBe(0);
+  });
+
+  it('preserves the submitted snapshot and feedback when correction work is rescheduled', async () => {
+    await submit();
+    await app.inject({
+      method: 'POST',
+      url: '/api/v1/work-orders/demo-1/reviews',
+      headers: bearer(manager),
+      payload: { baseVersion: 2, decision: 'CHANGES_REQUESTED', note: 'Recheck the latch.' },
+    });
+    const before = store.getOrder('demo-1')!;
+    const response = await schedule({ baseVersion: before.version, dueDate: '2026-10-27' });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ...before, dueDate: '2026-10-27', version: 4 });
+  });
+
+  it.each(['SUBMITTED', 'APPROVED'] as const)('does not reschedule %s work', async (status) => {
+    await submit();
+    if (status === 'APPROVED')
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/work-orders/demo-1/reviews',
+        headers: bearer(manager),
+        payload: { baseVersion: 2, decision: 'APPROVED', note: '' },
+      });
+    const before = store.getOrder('demo-1')!;
+    const result = await schedule({ baseVersion: before.version, dueDate: '2026-10-27' });
+    expect(result.statusCode).toBe(409);
+    expect(result.json().error.code).toBe('INVALID_STATE');
+    expect(store.getOrder('demo-1')).toEqual(before);
+  });
+
+  it('accepts only one concurrent change and rejects stale worker reports without losing the new date', async () => {
+    const results = await Promise.all(
+      ['2026-10-26', '2026-10-27'].map((dueDate) => schedule({ baseVersion: 1, dueDate })),
+    );
+    expect(results.map((result) => result.statusCode).sort()).toEqual([200, 409]);
+    const confirmed = results.find((result) => result.statusCode === 200)!.json();
+    expect(store.getOrder('demo-1')).toEqual(confirmed);
+    expect((await submit()).statusCode).toBe(409);
+    expect(store.getOrder('demo-1')!.report).toBeNull();
+    expect(store.db.prepare('SELECT COUNT(*) AS count FROM audit').get()!.count).toBe(1);
+    expect((await schedule({ baseVersion: 1, dueDate: confirmed.dueDate })).statusCode).toBe(409);
+  });
+});

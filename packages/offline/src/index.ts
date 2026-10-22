@@ -98,7 +98,27 @@ export function createOfflineRepository(
       return update((state) => ({ ...state, drafts: { ...state.drafts, [orderId]: draft } }));
     },
     cacheOrders(orders: WorkOrder[]) {
-      return update((state) => ({ ...state, orders, lastSynced: new Date().toISOString() }));
+      return update((state) => {
+        const cached = new Map(state.orders.map((order) => [order.id, order]));
+        return {
+          ...state,
+          orders: orders.map((order) => {
+            const existing = cached.get(order.id);
+            return existing && existing.version > order.version ? existing : order;
+          }),
+          lastSynced: new Date().toISOString(),
+        };
+      });
+    },
+    cacheOrder(order: WorkOrder) {
+      return update((state) => ({
+        ...state,
+        orders: state.orders.some((existing) => existing.id === order.id)
+          ? state.orders.map((existing) =>
+              existing.id === order.id && existing.version <= order.version ? order : existing,
+            )
+          : [...state.orders, order],
+      }));
     },
     enqueue(orderId: string, input: ReportInput) {
       return update((state) => {

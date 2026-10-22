@@ -8,6 +8,7 @@ import {
   TemplateSchema,
   type CreateOrder,
   type ReportInput,
+  type RescheduleOrder,
 } from '@fieldwork/contracts';
 
 export class ApiError extends Error {
@@ -80,6 +81,8 @@ export function createClient(
     orders: (offset = 0) => request(`/work-orders?limit=100&offset=${offset}`, OrderPageSchema),
     order: (id: string) => request(`/work-orders/${encodeURIComponent(id)}`, WorkOrderSchema),
     createOrder: (input: CreateOrder) => request('/work-orders', WorkOrderSchema, 'POST', input),
+    rescheduleOrder: (id: string, input: RescheduleOrder) =>
+      request(`/work-orders/${encodeURIComponent(id)}/schedule`, WorkOrderSchema, 'PATCH', input),
     submitReport: (id: string, input: ReportInput) =>
       request(`/work-orders/${encodeURIComponent(id)}/reports`, WorkOrderSchema, 'POST', input),
     review: (

@@ -16,5 +16,6 @@ Reading this as an operations notebook for dispatch managers and field workers, 
 - Motion is limited to short interaction feedback and respects reduced-motion settings.
 - Kokonut UI is adopted gradually. The work finder reuses the charcoal palette, amber keyboard selection rule, small corners, and existing modal elevation. Its search icon identifies the input; supplied demo actions are excluded, and transitions are disabled for the current motion setting.
 - Phosphor regular icons provide consistent action and state symbols on the web. Compact 16px icons inherit the text color, retain visible labels, and identify search, nested navigation, links, or progress rather than adding decoration.
+- Rescheduling expands beside the order metadata so managers can compare the current and proposed dates. The amber margin rule identifies the active edit; existing date inputs, buttons, and typography keep the operation part of the notebook rather than a separate calendar screen.
 
 Use explicit labels, 44px targets where practical on mobile, visible focus, semantic headings, and useful loading/error/empty states. Never fabricate customer logos, usage numbers, testimonials, or reports. Documentation screenshots use seeded demo data and say so.

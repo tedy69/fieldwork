@@ -11,11 +11,13 @@ import type { State, OfflineRepository } from '@fieldwork/offline';
 import { client, labels, dateLabel, message } from './lib';
 import { Empty } from './components';
 import ReportPrint from './ReportPrint';
+import RescheduleOrder from './RescheduleOrder';
 export default function OrderDetail({
   user,
   order,
   repo,
   state,
+  online,
   onBack,
   onRefresh,
   onNotice,
@@ -24,6 +26,7 @@ export default function OrderDetail({
   order: WorkOrder;
   repo: OfflineRepository;
   state: State;
+  online: boolean;
   onBack: () => void;
   onRefresh: () => Promise<void>;
   onNotice: (notice: string) => void;
@@ -152,6 +155,16 @@ export default function OrderDetail({
           </dd>
         </div>
       </dl>
+      {user.role === 'manager' && ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status) && (
+        <RescheduleOrder
+          order={order}
+          online={online}
+          onSaved={async (updated) => {
+            await repo.cacheOrder(updated);
+          }}
+          onNotice={onNotice}
+        />
+      )}
       {order.report && <ReportPrint order={order} report={order.report} />}
       <section className="brief">
         <h2>Field brief</h2>

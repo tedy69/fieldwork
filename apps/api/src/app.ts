@@ -10,6 +10,7 @@ import {
   CreateOrderSchema,
   ReportInputSchema,
   ReviewSchema,
+  RescheduleOrderSchema,
   StatusSchema,
   type User,
   type WorkOrder,
@@ -54,7 +55,11 @@ export async function buildApp(options: AppOptions) {
   });
   await app.register(cookie);
   const origins = (options.webOrigin ?? 'http://localhost:5173').split(',');
-  await app.register(cors, { origin: origins, credentials: true });
+  await app.register(cors, {
+    origin: origins,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  });
   if (options.rateLimits !== false)
     await app.register(rateLimit, { max: 200, timeWindow: '1 minute' });
   app.addHook('onClose', async () => {
@@ -289,6 +294,22 @@ export async function buildApp(options: AppOptions) {
       audit(order.id, request.actor!, 'Work order assigned');
     });
     return reply.status(201).send(order);
+  });
+  app.patch<{ Params: { id: string } }>('/api/v1/work-orders/:id/schedule', async (request) => {
+    manager(request);
+    const input = RescheduleOrderSchema.parse(request.body);
+    return store.transaction(() => {
+      const order = accessible(request.params.id, request);
+      if (order.version !== input.baseVersion)
+        fail(409, 'VERSION_CONFLICT', 'This work order changed. Reload it before rescheduling.');
+      if (!['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status))
+        fail(409, 'INVALID_STATE', 'Only unfinished assignments can be rescheduled.');
+      if (order.dueDate === input.dueDate) return order;
+      const updated: WorkOrder = { ...order, dueDate: input.dueDate, version: order.version + 1 };
+      store.writeOrder(updated);
+      audit(order.id, request.actor!, `Due date changed from ${order.dueDate} to ${input.dueDate}`);
+      return updated;
+    });
   });
   app.post<{ Params: { id: string } }>('/api/v1/work-orders/:id/reports', async (request) => {
     const input = ReportInputSchema.parse(request.body);

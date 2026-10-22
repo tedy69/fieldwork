@@ -11,7 +11,7 @@ async function login(page: Page, role: 'worker' | 'manager') {
       exact: true,
     }),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: /Open FW-001/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Open FW-001:/ })).toBeVisible();
 }
 test('worker completes an inspection offline, survives reload, syncs photos, and gets manager approval', async ({
   browser,
@@ -34,7 +34,7 @@ test('worker completes an inspection offline, survives reload, syncs photos, and
     await navigator.serviceWorker.ready;
   });
   await field.reload();
-  await field.getByRole('button', { name: /Open FW-001/ }).click();
+  await field.getByRole('button', { name: /^Open FW-001:/ }).click();
   for (const radio of await field.getByRole('radio', { name: 'Pass', exact: true }).all())
     await radio.check();
   await field
@@ -53,7 +53,7 @@ test('worker completes an inspection offline, survives reload, syncs photos, and
   await worker.setOffline(true);
   await field.reload();
   await expect(field.getByText('Working offline', { exact: true })).toBeVisible();
-  await field.getByRole('button', { name: /Open FW-001/ }).click();
+  await field.getByRole('button', { name: /^Open FW-001:/ }).click();
   await expect(field.getByLabel('Inspection summary', { exact: true })).toHaveValue(
     'Gate and equipment checked. No follow-up needed.',
   );
@@ -68,7 +68,7 @@ test('worker completes an inspection offline, survives reload, syncs photos, and
     field.getByRole('heading', { name: 'Everything is up to date', exact: true }),
   ).toBeVisible();
   await login(desk, 'manager');
-  await desk.getByRole('button', { name: /Open FW-001/ }).click();
+  await desk.getByRole('button', { name: /^Open FW-001:/ }).click();
   await expect(
     desk
       .getByRole('main')
@@ -82,7 +82,7 @@ test('worker completes an inspection offline, survives reload, syncs photos, and
   await desk.screenshot({ path: test.info().outputPath('dispatch-desk.png'), fullPage: true });
   await field.getByRole('button', { name: /^Work orders/ }).click();
   await field.getByRole('button', { name: /Sync now/ }).click();
-  await field.getByRole('button', { name: /Open FW-001/ }).click();
+  await field.getByRole('button', { name: /^Open FW-001:/ }).click();
   await expect(field.getByText('Approved by Alex Morgan', { exact: true })).toBeVisible();
   await field.screenshot({ path: test.info().outputPath('field-notebook.png'), fullPage: true });
   expect(
@@ -142,7 +142,7 @@ test('search, empty outbox, draft edits, and a request for changes work across b
   await field.getByRole('button', { name: /Sync outbox/ }).click();
   await expect(field.getByRole('heading', { name: 'Everything is up to date' })).toBeVisible();
   await field.getByRole('button', { name: /^Work orders/ }).click();
-  await field.getByRole('button', { name: /Open FW-002/ }).click();
+  await field.getByRole('button', { name: /^Open FW-002:/ }).click();
   for (const radio of await field.getByRole('radio', { name: 'N/A', exact: true }).all())
     await radio.check();
   await field.getByRole('radio', { name: 'Issue found', exact: true }).first().check();
@@ -150,7 +150,7 @@ test('search, empty outbox, draft edits, and a request for changes work across b
   await field.getByRole('button', { name: 'Submit inspection', exact: true }).click();
   await expect(field.getByText('To review', { exact: true }).first()).toBeVisible();
   await login(desk, 'manager');
-  await desk.getByRole('button', { name: /Open FW-002/ }).click();
+  await desk.getByRole('button', { name: /^Open FW-002:/ }).click();
   await desk.getByLabel('Review note', { exact: true }).fill('Please describe the blocked access.');
   await desk.getByRole('button', { name: 'Request changes', exact: true }).click();
   await field.getByRole('button', { name: /Sync now/ }).click();

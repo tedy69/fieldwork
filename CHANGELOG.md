@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Managers can change due dates on unfinished web assignments. Version checks prevent stale writes; older offline reports remain available for review and resubmission.
+
 - Kokonut UI command palette for finding saved work and workspace pages, with keyboard shortcuts and offline support. Tailwind utilities are available for gradual component adoption without a global reset.
 
 - Weekly web planner with daily workloads, search/status filters, offline browsing, and date-preset new assignments. Unselected assignment dates now default to the device's local calendar date.

@@ -30,7 +30,7 @@ flowchart LR
 
 Sites and checklist templates live in the workspace catalog. Every assigned order embeds a snapshot of its site, assignee, and checklist. Creating a new template does not change old inspections.
 
-The lifecycle is `ASSIGNED → SUBMITTED → APPROVED`, with `SUBMITTED → CHANGES_REQUESTED → SUBMITTED` for corrections. Every submission or review increments the order version. A request must supply the version it was based on. Writes are serialized inside a synchronous SQLite transaction, with no external work awaited inside it.
+The lifecycle is `ASSIGNED → SUBMITTED → APPROVED`, with `SUBMITTED → CHANGES_REQUESTED → SUBMITTED` for corrections. Every submission, review, or due-date change increments the order version. A request must supply the version it was based on. Managers may reschedule only `ASSIGNED` or `CHANGES_REQUESTED` work; a no-op date change does not increment the version. Writes are serialized inside a synchronous SQLite transaction, with no external work awaited inside it.
 
 The database stores users, hashed sessions, the catalog, work orders, idempotency records, attachment bytes, and an action history. `store.ts` initializes schema version 1. Future schema changes must add an explicit migration and an upgrade test; do not silently rewrite a released schema. The action history records who performed a transition and when. Full historical report snapshots are a roadmap item.
 

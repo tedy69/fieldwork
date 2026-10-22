@@ -55,3 +55,14 @@ Three additional browser tests cover managers and workers, yesterday/today/tomor
 - Purpose gate PASS: the filter reuses the existing status controls, palette, focus treatment, and typography from DESIGN.md. No new decorative elements or assets were added.
 - Liveliness PASS: ENERGY 2 / RHYTHM 2 / MOTION 1 remains appropriate for the chosen industrial notebook. The work list stays the focal point, with the filter beside search.
 - Craftsmanship PASS: the filter works offline and across midnight. Separate empty states explain an empty overdue list and a search with no matches. Text contrast is 10.76:1 on the selected control and 8.60:1 on the normal surface; the existing focus accent is 10.73:1.
+
+## CSV report exports
+
+The manager's current filtered list exports the latest saved report snapshots. The suite now passes 35 unit/API tests and eight browser workflows. CSV tests cover quoted and multiline Unicode text, CRLF records, formula-like text, omitted drafts and attachment data, and unchanged source records. Removing the formula-text prefix deliberately made all 12 formula cases fail; restoring it returned the checks to green.
+
+- Hard gate PASS: real downloads work online and after an offline reload. Enter and Space activate the control, zero reports disables it, and workers do not see it. Browser tests assert no horizontal overflow at 390px and no uncaught page errors. The [desktop](images/report-export-desktop.png) and [narrow](images/report-export-mobile.png) screenshots were inspected; all records shown are synthetic test fixtures.
+- Purpose gate PASS: the export uses the existing quiet button, focus treatment, typography, and charcoal palette. Its position beside the filtered list explains what will be downloaded without adding another navigation screen.
+- Liveliness PASS: ENERGY 2 / RHYTHM 2 / MOTION 1 is retained. The work list remains primary; the export is a secondary action with a report count and a short scope note.
+- Craftsmanship PASS: search and status filters constrain the downloaded rows. The UTF-8 byte-order mark, review details, and photo counts are checked in actual browser downloads. An induced download error shows a retry instruction. The export reuses the existing high-contrast text and amber focus styles.
+
+These checks used Chrome on macOS. Spreadsheet formula handling follows the documented mitigation in [Report CSV exports](report-export.md); no Excel or other spreadsheet application acceptance test was performed. The existing native release and accessibility gaps above remain separate.

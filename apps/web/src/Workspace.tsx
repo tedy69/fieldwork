@@ -10,6 +10,7 @@ import CreateOrder from './CreateOrderDialog';
 import OrderDetail from './OrderDetail';
 import { isOverdue } from './dates';
 import { useLocalDate } from './useLocalDate';
+import ReportExport from './ReportExport';
 export default function Workspace({ user, logout }: { user: User; logout: () => void }) {
   const repo = useMemo(() => repositoryFor(user.id, client), [user.id]);
   const [state, setState] = useState<State>(emptyState);
@@ -348,6 +349,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   />
                 </label>
               </div>
+              {user.role === 'manager' && <ReportExport orders={visible} onNotice={setNotice} />}
               <div className="list-header" aria-hidden="true">
                 <span>WORK ORDER / SITE</span>
                 <span>ASSIGNED TO</span>

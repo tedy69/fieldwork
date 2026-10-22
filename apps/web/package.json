@@ -11,8 +11,8 @@
     "@fieldwork/contracts": "0.1.0",
     "@fieldwork/sdk": "0.1.0",
     "@fieldwork/offline": "0.1.0",
-    "react": "19.3.1",
-    "react-dom": "19.3.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "idb-keyval": "^6.2.2"
   },
   "devDependencies": {

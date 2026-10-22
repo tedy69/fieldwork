@@ -1,6 +1,6 @@
 # Report CSV exports
 
-Managers can download the latest reports in the web work-order list using **Export reports**. Search and the status/Overdue filter determine which orders are included. Orders without a submitted report are skipped; the button shows the number of reports to export and is disabled when there are none.
+Managers can download the latest reports in the web work-order list using **Export reports**. Search, the status/Overdue filter, and the [due-date range](work-order-filters.md) determine which orders are included. Orders without a submitted report are skipped; the button shows the number of reports to export and is disabled when there are none.
 
 Exports use the records currently saved on the device and work offline. Sync first when you need the latest server changes. This exports the current report snapshot, not a revision history.
 

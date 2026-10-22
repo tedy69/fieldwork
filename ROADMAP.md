@@ -13,11 +13,12 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] API and sync tests, browser workflow checks, Docker setup, contributor documentation.
 - [x] Overdue filter with search and offline support in the web notebook and dispatch desk.
 - [x] CSV exports for filtered manager report lists, including saved offline reports.
+- [x] Inclusive due-date ranges in the web list, combined with search, status filters, and offline records.
 
 ## Next · Make daily work easier
 
 - Search, server-side filtering, and incremental list loading.
-- Due-date ranges and calendar scheduling.
+- Calendar scheduling.
 - Maps with opt-in site coordinates and a documented tile provider.
 - Accessible checklist field types: readings, numbers, text, and required evidence.
 - Report revision history and print exports.

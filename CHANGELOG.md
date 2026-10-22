@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Inclusive due-date ranges for manager and worker web lists, with open-ended bounds and offline support.
+
 - CSV exports for the manager's filtered reports, including offline downloads and spreadsheet text handling.
 
 - Overdue work-order filter using the device's local calendar date, with search and offline support.

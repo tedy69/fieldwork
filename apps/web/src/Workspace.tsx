@@ -8,6 +8,8 @@ import { PageHeading, Empty } from './components';
 import Resources from './Resources';
 import CreateOrder from './CreateOrderDialog';
 import OrderDetail from './OrderDetail';
+import { isOverdue } from './dates';
+import { useLocalDate } from './useLocalDate';
 export default function Workspace({ user, logout }: { user: User; logout: () => void }) {
   const repo = useMemo(() => repositoryFor(user.id, client), [user.id]);
   const [state, setState] = useState<State>(emptyState);
@@ -16,6 +18,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
   const [view, setView] = useState<'orders' | 'outbox' | 'resources'>('orders');
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const today = useLocalDate();
   const [creating, setCreating] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
   const [busy, setBusy] = useState(false);
@@ -73,9 +76,20 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
     };
   }, [repo]);
   const order = state.orders.find((order) => order.id === selected);
+  const overdueEmpty = search
+    ? {
+        title: 'No matching overdue work orders',
+        description: 'Try another order, site, or person.',
+      }
+    : {
+        title: 'No overdue work orders',
+        description:
+          'Unfinished work appears here after its due date, based on this device’s local date.',
+      };
   const visible = state.orders.filter(
     (order) =>
-      (filter === 'ALL' || order.status === filter) &&
+      (filter === 'ALL' ||
+        (filter === 'OVERDUE' ? isOverdue(order, today) : order.status === filter)) &&
       `${order.title} ${order.site.name} ${order.reference} ${order.assignee.name}`
         .toLowerCase()
         .includes(search.toLowerCase()),
@@ -307,7 +321,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
               </div>
               <div className="list-toolbar">
                 <div className="tabs" aria-label="Filter work orders">
-                  {['ALL', 'ASSIGNED', 'SUBMITTED', 'APPROVED', 'CHANGES_REQUESTED'].map(
+                  {['ALL', 'OVERDUE', 'ASSIGNED', 'SUBMITTED', 'APPROVED', 'CHANGES_REQUESTED'].map(
                     (status) => (
                       <button
                         key={status}
@@ -315,7 +329,11 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                         className={filter === status ? 'tab active' : 'tab'}
                         onClick={() => setFilter(status)}
                       >
-                        {status === 'ALL' ? 'All orders' : labels[status]}
+                        {status === 'ALL'
+                          ? 'All orders'
+                          : status === 'OVERDUE'
+                            ? 'Overdue'
+                            : labels[status]}
                       </button>
                     ),
                   )}
@@ -369,16 +387,20 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   title={
                     !loaded
                       ? 'Loading your workspace…'
-                      : search || filter !== 'ALL'
-                        ? 'No matching work orders'
-                        : 'A clean page'
+                      : filter === 'OVERDUE'
+                        ? overdueEmpty.title
+                        : search || filter !== 'ALL'
+                          ? 'No matching work orders'
+                          : 'A clean page'
                   }
                   description={
                     !loaded
                       ? 'Checking for saved assignments and recent changes.'
-                      : user.role === 'manager'
-                        ? 'Assign a work order to start the first inspection.'
-                        : 'Your manager will assign work here. Sync to check for new jobs.'
+                      : filter === 'OVERDUE'
+                        ? overdueEmpty.description
+                        : user.role === 'manager'
+                          ? 'Assign a work order to start the first inspection.'
+                          : 'Your manager will assign work here. Sync to check for new jobs.'
                   }
                 />
               )}

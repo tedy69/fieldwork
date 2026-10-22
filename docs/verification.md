@@ -44,3 +44,14 @@ Scope: the web inspection workflow and its responsive layout. The native compani
 - Craftsmanship PASS: desktop and narrow layouts use the same records with different density; explicit checklist choices prevent accidental all-pass reports. Controls name the action, and report data remains visible through offline, queued, submitted, and reviewed states.
 
 This gate documents the evidence above; it is not a complete accessibility certification or a claim that every device configuration has been tested.
+
+## Overdue filter
+
+The web filter uses the device's local calendar date. Orders due today or later and approved orders are excluded. A midnight timer updates open notebooks; focus and visibility changes recalculate the date after a device resumes.
+
+Three additional browser tests cover managers and workers, yesterday/today/tomorrow, all four workflow states, Jakarta and Los Angeles time zones, midnight rollover, search, offline reload, and empty results. The original three browser workflows also pass. A deliberate off-by-one change that included today's work made the new test fail; restoring the strict date comparison returned the suite to green.
+
+- Hard gate PASS: the Overdue button filters actual cached records and exposes its selected state with `aria-pressed`. Enter and Space operate it. Tests assert no horizontal overflow at 390px and no uncaught page errors; desktop and narrow screenshots were inspected.
+- Purpose gate PASS: the filter reuses the existing status controls, palette, focus treatment, and typography from DESIGN.md. No new decorative elements or assets were added.
+- Liveliness PASS: ENERGY 2 / RHYTHM 2 / MOTION 1 remains appropriate for the chosen industrial notebook. The work list stays the focal point, with the filter beside search.
+- Craftsmanship PASS: the filter works offline and across midnight. Separate empty states explain an empty overdue list and a search with no matches. Text contrast is 10.76:1 on the selected control and 8.60:1 on the normal surface; the existing focus accent is 10.73:1.

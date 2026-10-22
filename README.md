@@ -10,6 +10,7 @@ An open-source field operations platform. Assign an inspection, complete it with
 
 - Manager and worker accounts with server-enforced permissions.
 - Sites, reusable inspection checklists, and assigned work orders.
+- Search and overdue filtering for cached web assignments. Approved work is excluded; unfinished work becomes overdue the day after its due date in the device's local time zone.
 - An offline web notebook and a native Expo worker app.
 - Durable checklists, notes, and photo attachments on the worker's device.
 - A retryable outbox with duplicate protection and visible version conflicts.

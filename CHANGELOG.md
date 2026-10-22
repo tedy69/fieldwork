@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Overdue work-order filter using the device's local calendar date, with search and offline support.
+
 - Dispatch desk, sites, checklists, and assigned inspections.
 - Offline web and Expo worker notebooks with notes and photo attachments.
 - Durable outbox, idempotent submissions, version conflicts, and manager review.

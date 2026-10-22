@@ -2,6 +2,8 @@
 
 Recorded on 22 October 2026 for the initial 0.1 foundation. Release acceptance is kept separate from implemented features.
 
+[The first GitHub CI run passed](https://github.com/tedy69/fieldwork/actions/runs/39742878468): clean Linux installation, all checks, three Chromium workflows, and both native JavaScript exports.
+
 | Check                 | Evidence                                                                                                                                                                                               |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Clean install         | `npm ci` passed on macOS; Docker installed the same lockfile on Linux.                                                                                                                                 |

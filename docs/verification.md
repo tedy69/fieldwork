@@ -77,3 +77,16 @@ The web list now accepts inclusive and open-ended due-date ranges. Date-only com
 - Craftsmanship PASS: browser tests cover inclusive start/end dates, equal dates, either open bound, status and Overdue intersections, search, manager CSV rows, and offline reload. Opening an order and returning preserves the range; Clear dates preserves search and status. Existing high-contrast labels, input text, help text, and focus styles are reused.
 
 Screenshots: [desktop](images/due-range-desktop.png), [390px](images/due-range-mobile.png), and [320px](images/due-range-small.png). These checks used Chrome on macOS. Calendar scheduling and native date-range controls remain roadmap work; the native release and accessibility gaps above are unchanged.
+
+## Printable reports
+
+Three additional browser workflows bring the suite to 13, alongside the 46 unit/API tests. They cover manager and worker reports, approved/pending/changes-requested review states, offline reload, keyboard activation, retry after a print error, and cleanup after leaving the report or signing out. Tests distinguish the printable submitted snapshot from an unsent correction. Deliberately substituting the draft summary made that regression test fail; restoring the saved report returned the checks to green.
+
+Chrome generated a one-page A4 PDF from the short fixture and a 19-page PDF from 50 items with long notes. Local PDF text extraction found the Unicode summary, review, and final checklist item. The first short-report page and a continuation page were rendered and inspected. Screenshots show synthetic test data: [paper layout](images/print-report-paper.png) and [desktop action](images/print-report-desktop.png).
+
+- Hard gate PASS: Print report calls the browser's print action by mouse, Enter, and Space. It appears only when a saved submitted report exists. Tests confirm no horizontal overflow at 390px, no uncaught page errors, a useful print-error message, and an ordinary visible workspace after leaving the report. Printed content contains no form controls, unsent corrections, photo files, or unrelated records.
+- Purpose gate PASS: the screen action reuses the notebook's quiet button, typography, charcoal surface, and amber focus ring. Paper uses black text on white to remain readable without color printing; metadata, results, and review have separate sections for operational use.
+- Liveliness PASS: ENERGY 2 / RHYTHM 2 / MOTION 1 is retained on screen. The report stays primary; print is a secondary action. The paper hierarchy uses the report title, grouped metadata, and a checklist table rather than application navigation.
+- Craftsmanship PASS: the print stylesheet hides application chrome only while a selected report exists. A4 margins, wrapping, preserved line breaks, repeated table headings, and pagination are checked in generated PDFs. Canceling printing does not report success or change workflow state. The screen control retains existing contrast; print text is black on white.
+
+Automated checks used Chrome/Chromium print media and PDF generation. The print-button call is observed with a test spy; operating-system print dialogs, physical printers, and mobile print sheets were not automated. Native release and full accessibility acceptance remain separate.

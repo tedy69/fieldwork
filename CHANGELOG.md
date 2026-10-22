@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Printable saved inspection reports for managers and workers, with offline access and a paper layout for browser PDF output.
+
 - Inclusive due-date ranges for manager and worker web lists, with open-ended bounds and offline support.
 
 - CSV exports for the manager's filtered reports, including offline downloads and spreadsheet text handling.

@@ -70,7 +70,9 @@ test('worker completes an inspection offline, survives reload, syncs photos, and
   await login(desk, 'manager');
   await desk.getByRole('button', { name: /Open FW-001/ }).click();
   await expect(
-    desk.getByText('Gate and equipment checked. No follow-up needed.', { exact: true }),
+    desk
+      .getByRole('main')
+      .getByText('Gate and equipment checked. No follow-up needed.', { exact: true }),
   ).toBeVisible();
   await expect(desk.getByAltText('Submitted site photo 1')).toBeVisible();
   await desk.getByLabel('Review note', { exact: true }).fill('Reviewed at the dispatch desk.');
@@ -153,7 +155,7 @@ test('search, empty outbox, draft edits, and a request for changes work across b
   await desk.getByRole('button', { name: 'Request changes', exact: true }).click();
   await field.getByRole('button', { name: /Sync now/ }).click();
   await expect(
-    field.getByText('Please describe the blocked access.', { exact: true }),
+    field.getByRole('main').getByText('Please describe the blocked access.', { exact: true }),
   ).toBeVisible();
   await field
     .getByLabel('Inspection summary', { exact: true })

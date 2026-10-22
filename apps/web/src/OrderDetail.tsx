@@ -10,6 +10,7 @@ import {
 import type { State, OfflineRepository } from '@fieldwork/offline';
 import { client, labels, dateLabel, message } from './lib';
 import { Empty } from './components';
+import ReportPrint from './ReportPrint';
 export default function OrderDetail({
   user,
   order,
@@ -151,6 +152,7 @@ export default function OrderDetail({
           </dd>
         </div>
       </dl>
+      {order.report && <ReportPrint order={order} report={order.report} />}
       <section className="brief">
         <h2>Field brief</h2>
         <p>{order.instructions || 'Complete the checklist and describe your findings.'}</p>

@@ -14,6 +14,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Overdue filter with search and offline support in the web notebook and dispatch desk.
 - [x] CSV exports for filtered manager report lists, including saved offline reports.
 - [x] Inclusive due-date ranges in the web list, combined with search, status filters, and offline records.
+- [x] Printable saved inspection reports in the web app, including offline access and browser PDF output.
 
 ## Next · Make daily work easier
 
@@ -21,7 +22,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - Calendar scheduling.
 - Maps with opt-in site coordinates and a documented tile provider.
 - Accessible checklist field types: readings, numbers, text, and required evidence.
-- Report revision history and print exports.
+- Report revision history.
 - User invitation and account lifecycle UI.
 - Automated native flows on Android and iOS.
 - Translations, beginning with English and Indonesian.

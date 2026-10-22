@@ -1,0 +1,103 @@
+.report-print-action {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 24px;
+}
+.report-print-action p {
+  margin: 0;
+  font-size: 12px;
+}
+.print-report {
+  display: none;
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+  :root:has(.print-report),
+  body:has(> .print-report) {
+    background: white;
+    color: black;
+    color-scheme: light;
+  }
+  body:has(> .print-report) > :not(.print-report) {
+    display: none !important;
+  }
+  .print-report {
+    display: block;
+    color: black;
+    background: white;
+    font:
+      10.5pt/1.4 system-ui,
+      sans-serif;
+    overflow-wrap: anywhere;
+  }
+  .print-report p {
+    line-height: 1.4;
+    margin-bottom: 8pt;
+  }
+  .print-report header {
+    border-bottom: 1pt solid black;
+    margin-bottom: 16pt;
+  }
+  .print-report h1 {
+    font-size: 18pt;
+    margin: 8pt 0;
+  }
+  .print-report h2 {
+    font-size: 13pt;
+    margin: 14pt 0 6pt;
+    break-after: avoid;
+  }
+  .print-report dl {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8pt 18pt;
+  }
+  .print-report dl > div,
+  .print-report tr,
+  .print-report .print-review {
+    break-inside: avoid;
+  }
+  .print-report dt {
+    font-size: 9pt;
+    font-weight: 650;
+  }
+  .print-report dd {
+    margin: 2pt 0 0;
+  }
+  .print-report table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    font-size: 10pt;
+  }
+  .print-report th,
+  .print-report td {
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 0.5pt solid #777;
+    padding: 6pt;
+  }
+  .print-report th:first-child {
+    width: 35%;
+  }
+  .print-report th:nth-child(2) {
+    width: 18%;
+  }
+  .print-report thead {
+    display: table-header-group;
+  }
+  .print-report .print-lines {
+    white-space: pre-wrap;
+  }
+  .print-report footer {
+    border-top: 0.5pt solid #777;
+    margin-top: 18pt;
+    padding-top: 8pt;
+    font-size: 9pt;
+  }
+}

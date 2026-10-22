@@ -18,7 +18,15 @@ Searching does not submit reports, clear drafts, or flush the outbox. Search his
 - Local source: `apps/web/src/components/kokonutui/action-search-bar.tsx`.
 - Copyright (c) 2025 kokonutUI, MIT. The [full notice](../apps/web/public/licenses/kokonut-ui-MIT.txt) ships with the built web app at `/licenses/kokonut-ui-MIT.txt`.
 
-Local adaptations remove demo commands/default recents, require real items and handlers, disable transitions by default, remove the artificial completion delay, encode group IDs containing spaces, and allow the host modal to retain focus when Tab leaves the search input. The original fuzzy matching, grouping, result highlighting, keyboard navigation, and optional nested-page behavior are retained.
+Local adaptations remove demo commands/default recents, require real items and handlers, use Phosphor icons, disable transitions by default, remove the artificial completion delay, encode group IDs containing spaces, and allow the host modal to retain focus when Tab leaves the search input. The original fuzzy matching, grouping, result highlighting, keyboard navigation, and optional nested-page behavior are retained.
+
+## Icons
+
+Use [Phosphor React](https://github.com/phosphor-icons/react) (`@phosphor-icons/react`) for web icons. Import individual icons from `@phosphor-icons/react/dist/csr/<Name>` so development builds load only the modules needed. Use the regular weight at 16px for compact controls, inheriting the surrounding text color. The finder uses a magnifying glass for search, a caret for nested pages, an outward arrow for links, and progress/check icons for action state.
+
+The package's [MIT notice](../apps/web/public/licenses/phosphor-icons-MIT.txt) ships at `/licenses/phosphor-icons-MIT.txt` and is cached offline with the application.
+
+Keep visible action labels. Icons that repeat a label should have `aria-hidden="true"`; an icon-only control still needs an accessible name. Add icons only when they help identify an action or state. When copying another registry component, replace its icon imports with Phosphor equivalents rather than adding a second icon library. Native components need a React Native-compatible package and separate validation.
 
 ## Adding another component
 

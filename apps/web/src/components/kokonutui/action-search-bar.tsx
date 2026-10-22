@@ -12,7 +12,11 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { ArrowUpRight, Check, ChevronRight, LoaderCircle, Search } from 'lucide-react';
+import { ArrowUpRightIcon } from '@phosphor-icons/react/dist/csr/ArrowUpRight';
+import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check';
+import { CaretRightIcon } from '@phosphor-icons/react/dist/csr/CaretRight';
+import { CircleNotchIcon } from '@phosphor-icons/react/dist/csr/CircleNotch';
+import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass';
 import { animate, useReducedMotion } from 'motion/react';
 import {
   type ChangeEvent,
@@ -301,20 +305,20 @@ function Kbd({ children }: { children: ReactNode }) {
 function RowEnd({ item, status }: { item: CommandItem; status: 'pending' | 'done' | undefined }) {
   if (status === 'pending') {
     return (
-      <LoaderCircle
+      <CircleNotchIcon
         aria-hidden="true"
         className="size-4 animate-spin text-zinc-500 dark:text-zinc-400"
       />
     );
   }
   if (status === 'done') {
-    return <Check aria-hidden="true" className="size-4 text-zinc-900 dark:text-zinc-100" />;
+    return <CheckIcon aria-hidden="true" className="size-4 text-zinc-900 dark:text-zinc-100" />;
   }
   if (item.children) {
-    return <ChevronRight aria-hidden="true" className="size-4 text-zinc-400" />;
+    return <CaretRightIcon aria-hidden="true" className="size-4 text-zinc-400" />;
   }
   if (item.href) {
-    return <ArrowUpRight aria-hidden="true" className="size-4 text-zinc-400" />;
+    return <ArrowUpRightIcon aria-hidden="true" className="size-4 text-zinc-400" />;
   }
   if (item.shortcut) {
     return (
@@ -781,7 +785,10 @@ function ActionSearchBar({
         )}
       >
         <div className="flex h-11 items-center gap-2 px-3">
-          <Search aria-hidden="true" className="size-4 shrink-0 text-zinc-400 dark:text-zinc-500" />
+          <MagnifyingGlassIcon
+            aria-hidden="true"
+            className="size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
+          />
           {stack.map((p, i) => (
             <button
               aria-label={`Back from ${p.label}`}

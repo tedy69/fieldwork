@@ -133,6 +133,9 @@ test('worker finder works offline, excludes other assignments, and preserves a d
   expect(
     await page.evaluate(async () => (await fetch('/licenses/kokonut-ui-MIT.txt')).text()),
   ).toContain('Copyright (c) 2025 kokonutUI');
+  expect(
+    await page.evaluate(async () => (await fetch('/licenses/phosphor-icons-MIT.txt')).text()),
+  ).toContain('Copyright (c) 2020 Phosphor Icons');
   await page.getByRole('button', { name: 'Find work', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Find saved work', exact: true });
   const input = page.getByRole('combobox', { name: 'Search saved work and pages', exact: true });

@@ -173,7 +173,7 @@ test('worker printing excludes unsent corrections and is unavailable before subm
 }) => {
   const order = await inspection('Print QA correction', 'CHANGES_REQUESTED');
   await signIn(page, 'worker');
-  await page.getByRole('button', { name: /Open FW-003/ }).click();
+  await page.getByRole('button', { name: /^Open FW-003:/ }).click();
   await expect(page.getByRole('button', { name: 'Print report', exact: true })).toHaveCount(0);
   await expect(page.locator('.print-report')).toHaveCount(0);
   await page.getByRole('button', { name: '← Work orders', exact: true }).click();

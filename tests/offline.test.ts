@@ -41,6 +41,43 @@ function memory() {
   return storage;
 }
 describe('durable outbox', () => {
+  it('merges a confirmed order without losing another order, draft photos, or queued reports', async () => {
+    const storage = memory();
+    const repo = createOfflineRepository(storage, async () => order('one'));
+    await repo.cacheOrders([order('one'), order('two')]);
+    const payload = input();
+    await repo.enqueue('one', payload);
+    const draft = {
+      answers: [],
+      summary: 'Unsent schedule draft',
+      photos: [{ id: randomUUID(), data: 'photo', mimeType: 'image/png' as const }],
+    };
+    await Promise.all([
+      repo.cacheOrder({ ...order('one'), dueDate: '2026-10-25', version: 3 }),
+      repo.saveDraft('one', draft),
+    ]);
+    const restored = await createOfflineRepository(storage, async () => order('one')).read();
+    expect(restored.orders).toEqual([
+      { ...order('one'), dueDate: '2026-10-25', version: 3 },
+      order('two'),
+    ]);
+    expect(restored.drafts.one).toEqual(draft);
+    expect(restored.outbox[0].input).toEqual(payload);
+  });
+  it('does not replace a newer cached version with a late response', async () => {
+    const repo = createOfflineRepository(memory(), async () => order('one'));
+    await repo.cacheOrder({ ...order('one'), version: 4 });
+    await repo.cacheOrder({ ...order('one'), version: 3, dueDate: '2026-10-25' });
+    expect((await repo.read()).orders).toEqual([{ ...order('one'), version: 4 }]);
+  });
+  it('keeps a confirmed schedule when an older list request finishes later, while removing absent records', async () => {
+    const repo = createOfflineRepository(memory(), async () => order('one'));
+    await repo.cacheOrders([order('one'), order('removed')]);
+    const updated = { ...order('one'), version: 3, dueDate: '2026-10-25' };
+    await repo.cacheOrder(updated);
+    await repo.cacheOrders([order('one'), order('two')]);
+    expect((await repo.read()).orders).toEqual([updated, order('two')]);
+  });
   it('survives a repository restart with drafts and attachments intact', async () => {
     const storage = memory();
     const send = vi.fn(async () => order('one'));

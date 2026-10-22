@@ -16,11 +16,12 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Inclusive due-date ranges in the web list, combined with search, status filters, and offline records.
 - [x] Printable saved inspection reports in the web app, including offline access and browser PDF output.
 - [x] Web weekly planner with daily workloads, offline browsing, and date-preset new assignments.
+- [x] Online manager rescheduling of unfinished assignments, with version checks, action history, and preserved worker drafts.
 
 ## Next · Make daily work easier
 
 - Search, server-side filtering, and incremental list loading.
-- Rescheduling existing assignments and richer calendar views.
+- Richer calendar views, recurring assignments, and reassignment workflows.
 - Maps with opt-in site coordinates and a documented tile provider.
 - Accessible checklist field types: readings, numbers, text, and required evidence.
 - Report revision history.

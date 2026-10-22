@@ -292,6 +292,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
               order={order}
               repo={repo}
               state={state}
+              online={online}
               onBack={() => setSelected(null)}
               onRefresh={refresh}
               onNotice={setNotice}

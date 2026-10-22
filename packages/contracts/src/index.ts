@@ -80,6 +80,10 @@ export const CreateOrderSchema = z
   })
   .strict();
 export type CreateOrder = z.infer<typeof CreateOrderSchema>;
+export const RescheduleOrderSchema = z
+  .object({ baseVersion: z.number().int().positive(), dueDate: z.iso.date() })
+  .strict();
+export type RescheduleOrder = z.infer<typeof RescheduleOrderSchema>;
 export const ReviewSchema = z
   .object({
     baseVersion: z.number().int().positive(),

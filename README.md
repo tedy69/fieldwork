@@ -13,6 +13,7 @@ An open-source field operations platform. Assign an inspection, complete it with
 - Search and overdue filtering for cached web assignments. Approved work is excluded; unfinished work becomes overdue the day after its due date in the device's local time zone.
 - [Due-date ranges](docs/work-order-filters.md) for planning from the cached web list, with open-ended or inclusive start/end dates.
 - A [weekly planner](docs/week-planner.md) with daily workloads, offline browsing, and date-preset assignments for managers.
+- [Due-date rescheduling](docs/rescheduling.md) for unfinished assignments, with manager permissions, conflict checks, and preserved worker drafts.
 - A [Kokonut UI work finder](docs/ui-components.md) for searching saved orders and opening workspace pages with Cmd+K or Ctrl+K, including offline.
 - An offline web notebook and a native Expo worker app.
 - Durable checklists, notes, and photo attachments on the worker's device.
@@ -22,7 +23,7 @@ An open-source field operations platform. Assign an inspection, complete it with
 - [Printable inspection reports](docs/print-reports.md) with checklist results and review details, available from saved web records offline.
 - Local SQLite persistence, a typed API client, and Docker self-hosting.
 
-Maps, assignment rescheduling, notifications, organizations, and integrations are planned in the [roadmap](ROADMAP.md). They are not shipped features.
+Maps, recurring assignments, notifications, organizations, and integrations are planned in the [roadmap](ROADMAP.md). They are not shipped features.
 
 ## Run the demo
 

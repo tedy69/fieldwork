@@ -8,9 +8,10 @@ import { PageHeading, Empty } from './components';
 import Resources from './Resources';
 import CreateOrder from './CreateOrderDialog';
 import OrderDetail from './OrderDetail';
-import { isOverdue } from './dates';
+import { isInDueRange, isOverdue } from './dates';
 import { useLocalDate } from './useLocalDate';
 import ReportExport from './ReportExport';
+import DueDateRange from './DueDateRange';
 export default function Workspace({ user, logout }: { user: User; logout: () => void }) {
   const repo = useMemo(() => repositoryFor(user.id, client), [user.id]);
   const [state, setState] = useState<State>(emptyState);
@@ -19,6 +20,9 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
   const [view, setView] = useState<'orders' | 'outbox' | 'resources'>('orders');
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const [dueFrom, setDueFrom] = useState('');
+  const [dueThrough, setDueThrough] = useState('');
+  const invalidRange = Boolean(dueFrom && dueThrough && dueFrom > dueThrough);
   const today = useLocalDate();
   const [creating, setCreating] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
@@ -91,6 +95,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
     (order) =>
       (filter === 'ALL' ||
         (filter === 'OVERDUE' ? isOverdue(order, today) : order.status === filter)) &&
+      isInDueRange(order.dueDate, dueFrom, dueThrough) &&
       `${order.title} ${order.site.name} ${order.reference} ${order.assignee.name}`
         .toLowerCase()
         .includes(search.toLowerCase()),
@@ -349,6 +354,16 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   />
                 </label>
               </div>
+              <DueDateRange
+                from={dueFrom}
+                through={dueThrough}
+                onFrom={setDueFrom}
+                onThrough={setDueThrough}
+                onClear={() => {
+                  setDueFrom('');
+                  setDueThrough('');
+                }}
+              />
               {user.role === 'manager' && <ReportExport orders={visible} onNotice={setNotice} />}
               <div className="list-header" aria-hidden="true">
                 <span>WORK ORDER / SITE</span>
@@ -384,25 +399,29 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   </li>
                 ))}
               </ul>
-              {visible.length === 0 && (
+              {visible.length === 0 && !invalidRange && (
                 <Empty
                   title={
                     !loaded
                       ? 'Loading your workspace…'
-                      : filter === 'OVERDUE'
-                        ? overdueEmpty.title
-                        : search || filter !== 'ALL'
-                          ? 'No matching work orders'
-                          : 'A clean page'
+                      : dueFrom || dueThrough
+                        ? 'No work orders in this date range'
+                        : filter === 'OVERDUE'
+                          ? overdueEmpty.title
+                          : search || filter !== 'ALL'
+                            ? 'No matching work orders'
+                            : 'A clean page'
                   }
                   description={
                     !loaded
                       ? 'Checking for saved assignments and recent changes.'
-                      : filter === 'OVERDUE'
-                        ? overdueEmpty.description
-                        : user.role === 'manager'
-                          ? 'Assign a work order to start the first inspection.'
-                          : 'Your manager will assign work here. Sync to check for new jobs.'
+                      : dueFrom || dueThrough
+                        ? 'Change or clear the dates, or adjust your search and status filter.'
+                        : filter === 'OVERDUE'
+                          ? overdueEmpty.description
+                          : user.role === 'manager'
+                            ? 'Assign a work order to start the first inspection.'
+                            : 'Your manager will assign work here. Sync to check for new jobs.'
                   }
                 />
               )}

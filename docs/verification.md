@@ -66,3 +66,14 @@ The manager's current filtered list exports the latest saved report snapshots. T
 - Craftsmanship PASS: search and status filters constrain the downloaded rows. The UTF-8 byte-order mark, review details, and photo counts are checked in actual browser downloads. An induced download error shows a retry instruction. The export reuses the existing high-contrast text and amber focus styles.
 
 These checks used Chrome on macOS. Spreadsheet formula handling follows the documented mitigation in [Report CSV exports](report-export.md); no Excel or other spreadsheet application acceptance test was performed. The existing native release and accessibility gaps above remain separate.
+
+## Due-date ranges
+
+The web list now accepts inclusive and open-ended due-date ranges. Date-only comparisons avoid shifting a due date across time zones. Eleven unit cases cover the bounds, reversed ranges, a year boundary, and leap day. Two additional browser workflows exercise managers in Los Angeles and workers in Jakarta, bringing the suite to 46 unit/API tests and ten browser workflows. Deliberately excluding the start date made three boundary tests fail; restoring the inclusive comparison returned the checks to green.
+
+- Hard gate PASS: labeled native date inputs filter saved records, and Clear dates works by keyboard. Reversed ranges mark both inputs invalid and explain the correction. Valid empty ranges have a separate empty state. Tests assert no uncaught page errors or horizontal overflow at 390px and 320px; desktop and narrow screenshots were inspected using synthetic test records.
+- Purpose gate PASS: the controls reuse the notebook's date inputs, quiet button, charcoal surfaces, and amber focus treatment. Grouping them directly below search and status makes their combined scope visible. No decorative assets, effects, or animation were introduced.
+- Liveliness PASS: ENERGY 2 / RHYTHM 2 / MOTION 1 is retained. The work list remains primary, and the date controls form a compact planning group within its existing toolbar area.
+- Craftsmanship PASS: browser tests cover inclusive start/end dates, equal dates, either open bound, status and Overdue intersections, search, manager CSV rows, and offline reload. Opening an order and returning preserves the range; Clear dates preserves search and status. Existing high-contrast labels, input text, help text, and focus styles are reused.
+
+Screenshots: [desktop](images/due-range-desktop.png), [390px](images/due-range-mobile.png), and [320px](images/due-range-small.png). These checks used Chrome on macOS. Calendar scheduling and native date-range controls remain roadmap work; the native release and accessibility gaps above are unchanged.

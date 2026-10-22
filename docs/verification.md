@@ -90,3 +90,16 @@ Chrome generated a one-page A4 PDF from the short fixture and a 19-page PDF from
 - Craftsmanship PASS: the print stylesheet hides application chrome only while a selected report exists. A4 margins, wrapping, preserved line breaks, repeated table headings, and pagination are checked in generated PDFs. Canceling printing does not report success or change workflow state. The screen control retains existing contrast; print text is black on white.
 
 Automated checks used Chrome/Chromium print media and PDF generation. The print-button call is observed with a test spy; operating-system print dialogs, physical printers, and mobile print sheets were not automated. Native release and full accessibility acceptance remain separate.
+
+## Weekly planner
+
+The suite now has 57 unit/API tests and 16 browser workflows. Eleven new calendar cases cover Monday/Sunday boundaries, a year boundary, leap day, and daylight-saving dates. Deliberately switching the week start to Sunday made seven boundary cases fail; restoring Monday returned the checks to green.
+
+Browser coverage uses managers in Los Angeles and workers in Jakarta. It checks search/status counts, Overdue intersections, week/day CSV rows, day selection, previous/next/current week, empty days/weeks, preserved list ranges, and offline reload. A manager creates a real assignment with the selected due date; a simulated failed request retains the date and title for retry. The ordinary form defaults to the local date when UTC is already the following day.
+
+- Hard gate PASS: native buttons expose selected/current states and work with Enter and Space. Creation is unavailable to workers and disabled offline. Empty-day/week messages explain the next action, and failed creation shows an error. Browser tests assert no horizontal overflow at 390px or 320px and no uncaught page errors. The [desktop](images/week-planner-desktop.png) and [narrow](images/week-planner-mobile.png) screenshots were inspected; records and counts are synthetic test data.
+- Purpose gate PASS: DESIGN.md records the seven-column desktop comparison, daily ledger rows on phones, and amber selection rule. Existing typography, charcoal surfaces, quiet controls, and focus treatment are reused; all workload counts come from the filtered saved records.
+- Liveliness PASS: ENERGY 2 / RHYTHM 2 / MOTION 1 remains appropriate. The selected day's work list stays primary; the week strip provides its planning context without animation or decorative assets.
+- Craftsmanship PASS: navigating weeks clears the selected day, Whole week restores seven days, and returning from an order preserves the selection. The viewed week stays anchored over a local week boundary until This week is chosen. Text contrast is 5.41:1 for secondary text on a selected day, 9.44:1 for its primary text, and 6.76:1 for the Today accent. New planner controls have at least 44px targets; daily phone rows are at least 48px high.
+
+Local checks used Chrome on macOS; CI runs the same workflows in Chromium. Rescheduling existing orders, recurring work, native calendar controls, physical-device acceptance, and full accessibility acceptance remain separate.

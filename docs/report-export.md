@@ -2,6 +2,8 @@
 
 Managers can download the latest reports in the web work-order list using **Export reports**. Search, the status/Overdue filter, and the [due-date range](work-order-filters.md) determine which orders are included. Orders without a submitted report are skipped; the button shows the number of reports to export and is disabled when there are none.
 
+In the [weekly planner](week-planner.md), the displayed week or selected day determines the date window instead of the list's date-range inputs. Search and status still apply.
+
 Exports use the records currently saved on the device and work offline. Sync first when you need the latest server changes. This exports the current report snapshot, not a revision history.
 
 The file is a UTF-8, comma-separated CSV with a byte-order mark and CRLF record endings. There is one row per checklist answer, repeating the report's context so rows can be sorted or filtered in a spreadsheet.

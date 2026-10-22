@@ -1,12 +1,15 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { Catalog, WorkOrder } from '@fieldwork/contracts';
 import { client, message } from './lib';
+import { localDate } from './dates';
 export default function CreateOrder({
   catalog,
+  initialDueDate,
   onClose,
   onCreated,
 }: {
   catalog: Catalog;
+  initialDueDate?: string;
   onClose: () => void;
   onCreated: (order: WorkOrder) => Promise<void>;
 }) {
@@ -101,7 +104,7 @@ export default function CreateOrder({
               name="dueDate"
               type="date"
               required
-              defaultValue={new Date().toISOString().slice(0, 10)}
+              defaultValue={initialDueDate ?? localDate()}
             />
           </label>
         </div>

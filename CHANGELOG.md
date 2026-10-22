@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Weekly web planner with daily workloads, search/status filters, offline browsing, and date-preset new assignments. Unselected assignment dates now default to the device's local calendar date.
+
 - Printable saved inspection reports for managers and workers, with offline access and a paper layout for browser PDF output.
 
 - Inclusive due-date ranges for manager and worker web lists, with open-ended bounds and offline support.

@@ -1,0 +1,29 @@
+name: Bug report
+description: Something in Fieldwork is not working as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How can we reproduce it?
+      description: Use demo data. Do not include passwords, tokens, or operational reports.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version, platform, and browser/device
+    validations:
+      required: true
+  - type: textarea
+    id: offline
+    attributes:
+      label: Connection and sync state
+      description: Was the app offline? Is there a pending or blocked report?

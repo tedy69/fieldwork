@@ -1,0 +1,23 @@
+{
+  "name": "@fieldwork/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@fieldwork/contracts": "0.1.0",
+    "@fieldwork/sdk": "0.1.0",
+    "@fieldwork/offline": "0.1.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "idb-keyval": "^6.2.2"
+  },
+  "devDependencies": {
+    "vite": "8.3.5",
+    "@vitejs/plugin-react": "6.1.2",
+    "vite-plugin-pwa": "2.0.0"
+  }
+}

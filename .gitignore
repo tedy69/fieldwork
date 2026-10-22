@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.expo/
+web-build/
+data/
+*.sqlite*
+.env
+.env.*
+!.env.example
+coverage/
+playwright-report/
+test-results/
+*.log
+.DS_Store
+apps/mobile/ios/
+apps/mobile/android/

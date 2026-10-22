@@ -1,0 +1,21 @@
+name: Feature proposal
+description: Discuss a workflow, module, or integration
+labels: [enhancement]
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: What problem should this solve, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Proposed behavior
+      description: Include offline behavior and permissions if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and contribution interest

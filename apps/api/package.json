@@ -1,0 +1,18 @@
+{
+  "name": "@fieldwork/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env src/main.ts"
+  },
+  "dependencies": {
+    "zod": "4.6.7",
+    "@fieldwork/contracts": "0.1.0",
+    "fastify": "5.12.7",
+    "@fastify/cookie": "11.1.3",
+    "@fastify/cors": "11.3.1",
+    "@fastify/static": "10.1.7",
+    "@fastify/rate-limit": "11.2.1"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "platforms": ["ios", "android"],
+    "name": "Fieldwork",
+    "slug": "fieldwork",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": { "supportsTablet": true },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Attach site photos to an inspection report.",
+          "cameraPermission": "Take site photos for inspection reports.",
+          "microphonePermission": false
+        }
+      ]
+    ]
+  }
+}

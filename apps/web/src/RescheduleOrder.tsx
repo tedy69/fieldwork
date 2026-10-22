@@ -1,3 +1,5 @@
+import { Button } from './components/ui/button';
+import { Input } from './components/ui/input';
 import { useRef, useState, type FormEvent } from 'react';
 import type { WorkOrder } from '@fieldwork/contracts';
 import { client, dateLabel, message } from './lib';
@@ -66,7 +68,7 @@ export default function RescheduleOrder({
   }
   return (
     <section className="schedule" aria-label="Assignment schedule">
-      <button
+      <Button
         ref={trigger}
         className="quiet"
         aria-expanded={editing}
@@ -75,7 +77,7 @@ export default function RescheduleOrder({
         onClick={() => (editing ? cancel() : setEditing(true))}
       >
         Change due date
-      </button>
+      </Button>
       {!online && <p className="muted">Connect to change the due date.</p>}
       {editing && (
         <form
@@ -94,7 +96,7 @@ export default function RescheduleOrder({
           </p>
           <label>
             New due date
-            <input
+            <Input
               type="date"
               autoFocus
               required
@@ -109,26 +111,26 @@ export default function RescheduleOrder({
             </p>
           )}
           <div className="schedule-actions">
-            <button
+            <Button
               className="primary"
               disabled={
                 !online || Boolean(busy) || needsReload || !dueDate || dueDate === order.dueDate
               }
             >
               {busy === 'saving' ? 'Saving…' : 'Save due date'}
-            </button>
-            <button type="button" className="quiet" disabled={Boolean(busy)} onClick={cancel}>
+            </Button>
+            <Button type="button" className="quiet" disabled={Boolean(busy)} onClick={cancel}>
               Cancel
-            </button>
+            </Button>
             {needsReload && (
-              <button
+              <Button
                 type="button"
                 className="quiet"
                 disabled={!online || Boolean(busy)}
                 onClick={() => void reload()}
               >
                 {busy === 'reloading' ? 'Reloading…' : 'Reload order'}
-              </button>
+              </Button>
             )}
           </div>
         </form>

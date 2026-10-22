@@ -1,3 +1,4 @@
+import { Button } from './components/ui/button';
 import type { WorkOrder } from '@fieldwork/contracts';
 import { addDays, calendarLabel, weekDates } from './calendar';
 
@@ -24,15 +25,15 @@ export default function WeekPlanner({
           Week of {calendarLabel(dates[0], true)}
         </h2>
         <div className="week-navigation" role="group" aria-label="Choose week">
-          <button className="quiet" onClick={() => onWeek(addDays(dates[0], -7))}>
+          <Button className="quiet" onClick={() => onWeek(addDays(dates[0], -7))}>
             Previous week
-          </button>
-          <button className="quiet" onClick={() => onWeek(today)}>
+          </Button>
+          <Button className="quiet" onClick={() => onWeek(today)}>
             This week
-          </button>
-          <button className="quiet" onClick={() => onWeek(addDays(dates[0], 7))}>
+          </Button>
+          <Button className="quiet" onClick={() => onWeek(addDays(dates[0], 7))}>
             Next week
-          </button>
+          </Button>
         </div>
       </div>
       <p className="muted">
@@ -42,8 +43,9 @@ export default function WeekPlanner({
         {dates.map((date) => {
           const count = orders.filter((order) => order.dueDate === date).length;
           return (
-            <button
+            <Button
               key={date}
+              variant="unstyled"
               className={day === date ? 'week-day active' : 'week-day'}
               aria-pressed={day === date}
               aria-current={date === today ? 'date' : undefined}
@@ -55,7 +57,7 @@ export default function WeekPlanner({
                 {count === 1 ? 'work order' : 'work orders'}
                 {date === today ? ' · Today' : ''}
               </small>
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -63,9 +65,9 @@ export default function WeekPlanner({
         <p role="status">
           {day ? `Showing ${calendarLabel(day, true)}.` : 'Showing the whole week.'}
         </p>
-        <button className="quiet" onClick={() => onDay('')} disabled={!day}>
+        <Button className="quiet" onClick={() => onDay('')} disabled={!day}>
           Whole week
-        </button>
+        </Button>
       </div>
     </section>
   );

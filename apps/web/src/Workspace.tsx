@@ -1,3 +1,12 @@
+import { Button } from './components/ui/button';
+import { Card } from './components/ui/card';
+import { Alert } from './components/ui/alert';
+import { Badge } from './components/ui/badge';
+import SmoothTab from './components/kokonutui/smooth-tab';
+import { ClipboardTextIcon } from '@phosphor-icons/react/dist/csr/ClipboardText';
+import { TrayIcon } from '@phosphor-icons/react/dist/csr/Tray';
+import { BuildingsIcon } from '@phosphor-icons/react/dist/csr/Buildings';
+import { Input } from './components/ui/input';
 import { useEffect, useMemo, useState } from 'react';
 import { type User, type Catalog } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
@@ -132,34 +141,37 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
         </div>
         <p className="workspace-label">OPERATIONS NOTEBOOK</p>
         <nav aria-label="Workspace">
-          <button
+          <Button
+            variant="ghost"
             className={view === 'orders' ? 'nav-active' : ''}
             onClick={() => {
               setView('orders');
               setSelected(null);
             }}
           >
-            Work orders <span>{state.orders.length}</span>
-          </button>
-          <button
+            <ClipboardTextIcon aria-hidden="true" /> Work orders <span>{state.orders.length}</span>
+          </Button>
+          <Button
+            variant="ghost"
             className={view === 'outbox' ? 'nav-active' : ''}
             onClick={() => {
               setView('outbox');
               setSelected(null);
             }}
           >
-            Sync outbox <span>{state.outbox.length}</span>
-          </button>
+            <TrayIcon aria-hidden="true" /> Sync outbox <span>{state.outbox.length}</span>
+          </Button>
           {user.role === 'manager' && (
-            <button
+            <Button
+              variant="ghost"
               className={view === 'resources' ? 'nav-active' : ''}
               onClick={() => {
                 setView('resources');
                 setSelected(null);
               }}
             >
-              Sites &amp; checklists
-            </button>
+              <BuildingsIcon aria-hidden="true" /> Sites &amp; checklists
+            </Button>
           )}
         </nav>
         <div className="sidebar-note">
@@ -172,7 +184,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
             Contribute to Fieldwork ↗
           </a>
         </div>
-        <div className="identity">
+        <Card className="identity">
           <span className="avatar" aria-hidden="true">
             {user.name
               .split(' ')
@@ -184,14 +196,14 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
             <strong>{user.name}</strong>
             <small>{user.role === 'manager' ? 'Dispatch manager' : 'Field worker'}</small>
           </div>
-          <button
+          <Button
             className="text-button"
             onClick={logout}
             title="Drafts stay on this device for your next sign-in"
           >
             Sign out
-          </button>
-        </div>
+          </Button>
+        </Card>
       </aside>
       <div className="main-column">
         <header className="topbar">
@@ -202,9 +214,9 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           <div className="connection">
             <span className={online ? 'signal' : 'signal offline'} />
             <span role="status">{online ? 'Connected' : 'Working offline'}</span>
-            <button className="quiet" onClick={() => void refresh()} disabled={busy || !online}>
+            <Button className="quiet" onClick={() => void refresh()} disabled={busy || !online}>
               {busy ? 'Syncing…' : 'Sync now'}
-            </button>
+            </Button>
           </div>
           <WorkFinder
             user={user}
@@ -220,18 +232,14 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           />
         </header>
         <main id="main" tabIndex={-1}>
-          {error && (
-            <div role="alert" className="banner error">
-              {error}
-            </div>
-          )}
+          {error && <Alert className="banner error">{error}</Alert>}
           {notice && (
-            <div role="status" className="banner notice">
+            <Alert role="status" className="banner notice">
               {notice}
-              <button className="text-button" onClick={() => setNotice('')}>
+              <Button className="text-button" onClick={() => setNotice('')}>
                 Dismiss
-              </button>
-            </div>
+              </Button>
+            </Alert>
           )}
           {view === 'resources' ? (
             <Resources catalog={catalog} refresh={refresh} />
@@ -250,7 +258,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   />
                 ) : (
                   state.outbox.map((item) => (
-                    <section className="outbox-item" key={item.input.mutationId}>
+                    <Card className="outbox-item" key={item.input.mutationId}>
                       <span className="eyebrow">
                         {item.state === 'blocked' ? 'NEEDS YOUR ATTENTION' : 'WAITING TO SYNC'}
                       </span>
@@ -265,7 +273,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                         {new Date(item.createdAt).toLocaleString()}
                       </p>
                       {item.state === 'blocked' && (
-                        <button
+                        <Button
                           className="quiet"
                           onClick={async () => {
                             await repo.discard(item.orderId);
@@ -278,9 +286,9 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                           }}
                         >
                           Keep draft and open latest order
-                        </button>
+                        </Button>
                       )}
-                    </section>
+                    </Card>
                   ))
                 )}
               </div>
@@ -310,7 +318,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   }
                 />
                 {user.role === 'manager' && (
-                  <button
+                  <Button
                     className="primary"
                     onClick={() => setCreating(true)}
                     disabled={
@@ -321,11 +329,11 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                     }
                   >
                     {planner && plannerDay ? '+ Assign for selected day' : '+ Assign work order'}
-                  </button>
+                  </Button>
                 )}
               </div>
               <div className="ledger-summary">
-                <div>
+                <Card>
                   <span className="summary-number">
                     {assignedCount.toString().padStart(2, '0')}
                   </span>
@@ -333,8 +341,8 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                     <strong>In the field</strong>
                     <small>Assigned &amp; changes requested</small>
                   </div>
-                </div>
-                <div>
+                </Card>
+                <Card>
                   <span className="summary-number amber">
                     {reviewCount.toString().padStart(2, '0')}
                   </span>
@@ -342,7 +350,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                     <strong>Ready for review</strong>
                     <small>Submitted inspection reports</small>
                   </div>
-                </div>
+                </Card>
                 <div className="last-sync">
                   <span className="eyebrow">LAST SYNC</span>
                   <strong>
@@ -355,44 +363,41 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   </strong>
                 </div>
               </div>
-              <div className="work-view-switch" role="group" aria-label="Work order view">
-                <button
-                  className={!planner ? 'tab active' : 'tab'}
-                  aria-pressed={!planner}
-                  onClick={() => setPlanner(false)}
-                >
-                  List
-                </button>
-                <button
-                  className={planner ? 'tab active' : 'tab'}
-                  aria-pressed={planner}
-                  onClick={() => setPlanner(true)}
-                >
-                  Week planner
-                </button>
-              </div>
+              <SmoothTab
+                className="work-view-toggle"
+                label="Work order view"
+                value={planner ? 'week' : 'list'}
+                onChange={(value) => setPlanner(value === 'week')}
+                items={[
+                  { id: 'list', title: 'List' },
+                  { id: 'week', title: 'Week planner' },
+                ]}
+              />
               <div className="list-toolbar">
-                <div className="tabs" aria-label="Filter work orders">
-                  {['ALL', 'OVERDUE', 'ASSIGNED', 'SUBMITTED', 'APPROVED', 'CHANGES_REQUESTED'].map(
-                    (status) => (
-                      <button
-                        key={status}
-                        aria-pressed={filter === status}
-                        className={filter === status ? 'tab active' : 'tab'}
-                        onClick={() => setFilter(status)}
-                      >
-                        {status === 'ALL'
-                          ? 'All orders'
-                          : status === 'OVERDUE'
-                            ? 'Overdue'
-                            : labels[status]}
-                      </button>
-                    ),
-                  )}
-                </div>
+                <SmoothTab
+                  label="Filter work orders"
+                  value={filter}
+                  onChange={setFilter}
+                  items={[
+                    'ALL',
+                    'OVERDUE',
+                    'ASSIGNED',
+                    'SUBMITTED',
+                    'APPROVED',
+                    'CHANGES_REQUESTED',
+                  ].map((status) => ({
+                    id: status,
+                    title:
+                      status === 'ALL'
+                        ? 'All orders'
+                        : status === 'OVERDUE'
+                          ? 'Overdue'
+                          : labels[status],
+                  }))}
+                />
                 <label className="search">
                   <span className="sr-only">Search work orders</span>
-                  <input
+                  <Input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search orders, sites, people…"
@@ -434,7 +439,8 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
               <ul className="order-list">
                 {visible.map((order) => (
                   <li key={order.id}>
-                    <button
+                    <Button
+                      variant="unstyled"
                       className="order-row"
                       onClick={() => setSelected(order.id)}
                       aria-label={`Open ${order.reference}: ${order.title}`}
@@ -452,10 +458,10 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                       </div>
                       <span className="assignee">{order.assignee.name}</span>
                       <span className="due">{dateLabel(order.dueDate)}</span>
-                      <span className={`status status-${order.status.toLowerCase()}`}>
+                      <Badge className={`status status-${order.status.toLowerCase()}`}>
                         {labels[order.status]}
-                      </span>
-                    </button>
+                      </Badge>
+                    </Button>
                   </li>
                 ))}
               </ul>

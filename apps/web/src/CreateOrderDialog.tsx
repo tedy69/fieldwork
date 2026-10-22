@@ -1,3 +1,5 @@
+import { Button } from './components/ui/button';
+import { Input, Textarea, Select } from './components/ui/input';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { Catalog, WorkOrder } from '@fieldwork/contracts';
 import { client, message } from './lib';
@@ -58,15 +60,15 @@ export default function CreateOrder({
       <form onSubmit={submit}>
         <div className="dialog-heading">
           <span className="eyebrow">DISPATCH</span>
-          <button type="button" className="quiet" onClick={onClose} disabled={busy}>
+          <Button type="button" className="quiet" onClick={onClose} disabled={busy}>
             Cancel
-          </button>
+          </Button>
         </div>
         <h2 id="create-title">Assign a work order</h2>
         <p className="muted">Give the field team a clear brief and a checklist.</p>
         <label>
           Work order title
-          <input
+          <Input
             name="title"
             autoFocus
             required
@@ -77,18 +79,18 @@ export default function CreateOrder({
         </label>
         <label>
           Site
-          <select name="siteId" aria-label="Site" required>
+          <Select name="siteId" aria-label="Site" required>
             {catalog.sites.map((site) => (
               <option key={site.id} value={site.id}>
                 {site.name}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         <div className="form-grid">
           <label>
             Assign to
-            <select name="assigneeId" aria-label="Assign to" required>
+            <Select name="assigneeId" aria-label="Assign to" required>
               {catalog.users
                 .filter((user) => user.role === 'worker')
                 .map((user) => (
@@ -96,11 +98,11 @@ export default function CreateOrder({
                     {user.name}
                   </option>
                 ))}
-            </select>
+            </Select>
           </label>
           <label>
             Due date
-            <input
+            <Input
               name="dueDate"
               type="date"
               required
@@ -111,25 +113,25 @@ export default function CreateOrder({
         <div className="form-grid">
           <label>
             Checklist
-            <select name="templateId" aria-label="Checklist" required>
+            <Select name="templateId" aria-label="Checklist" required>
               {catalog.templates.map((template) => (
                 <option key={template.id} value={template.id}>
                   {template.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label>
             Priority
-            <select name="priority" aria-label="Priority">
+            <Select name="priority" aria-label="Priority">
               <option value="routine">Routine</option>
               <option value="urgent">Urgent</option>
-            </select>
+            </Select>
           </label>
         </div>
         <label>
           Instructions
-          <textarea
+          <Textarea
             name="instructions"
             rows={3}
             maxLength={4000}
@@ -141,9 +143,9 @@ export default function CreateOrder({
             {error}
           </p>
         )}
-        <button className="primary full" disabled={busy}>
+        <Button className="primary full" disabled={busy}>
           {busy ? 'Assigning…' : 'Assign work order'}
-        </button>
+        </Button>
       </form>
     </dialog>
   );

@@ -1,3 +1,5 @@
+import { Button } from './components/ui/button';
+import CommandButton from './components/kokonutui/command-button';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { User, WorkOrder } from '@fieldwork/contracts';
 import ActionSearchBar, { type CommandItem } from './components/kokonutui/action-search-bar';
@@ -92,14 +94,15 @@ export default function WorkFinder({
 
   return (
     <>
-      <button
+      <CommandButton
         className="quiet command-launcher"
+        shortcut="mod+k"
         onClick={show}
         aria-keyshortcuts="Meta+K Control+K"
         title="Find work (Cmd+K or Ctrl+K)"
       >
         Find work
-      </button>
+      </CommandButton>
       <dialog
         ref={dialog}
         className="command-dialog"
@@ -134,9 +137,9 @@ export default function WorkFinder({
           <>
             <div className="command-dialog-heading">
               <h2 id="finder-heading">Find saved work</h2>
-              <button className="quiet" onClick={close}>
+              <Button className="quiet" onClick={close}>
                 Close finder
-              </button>
+              </Button>
             </div>
             <p id="finder-description" className="muted">
               Search saved references, titles, sites, or people. Open with Cmd+K or Ctrl+K.

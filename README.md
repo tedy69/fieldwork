@@ -67,7 +67,7 @@ On a physical phone, start the API with `HOST=0.0.0.0 npm run dev` and use your 
 
 ## Contribute
 
-Start with [CONTRIBUTING.md](CONTRIBUTING.md), then pick an [open issue](https://github.com/tedy69/fieldwork/issues). Documentation, accessibility, translations, tests, mobile work, and integrations all matter here.
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), then pick an [open issue](https://github.com/tedy69/fieldwork/issues) or a [good first issue](https://github.com/tedy69/fieldwork/labels/good%20first%20issue). Documentation, accessibility, translations, tests, mobile work, and integrations all matter here.
 
 ```sh
 npm run check       # formatting, types, unit/API tests, web production build

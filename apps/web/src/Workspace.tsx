@@ -14,6 +14,7 @@ import ReportExport from './ReportExport';
 import DueDateRange from './DueDateRange';
 import WeekPlanner from './WeekPlanner';
 import { weekDates } from './calendar';
+import WorkFinder from './WorkFinder';
 export default function Workspace({ user, logout }: { user: User; logout: () => void }) {
   const repo = useMemo(() => repositoryFor(user.id, client), [user.id]);
   const [state, setState] = useState<State>(emptyState);
@@ -205,6 +206,18 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
               {busy ? 'Syncing…' : 'Sync now'}
             </button>
           </div>
+          <WorkFinder
+            user={user}
+            orders={state.orders}
+            onNavigate={(view) => {
+              setView(view);
+              setSelected(null);
+            }}
+            onOrder={(id) => {
+              setView('orders');
+              setSelected(id);
+            }}
+          />
         </header>
         <main id="main" tabIndex={-1}>
           {error && (

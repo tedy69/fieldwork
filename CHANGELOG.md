@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Kokonut UI command palette for finding saved work and workspace pages, with keyboard shortcuts and offline support. Tailwind utilities are available for gradual component adoption without a global reset.
+
 - Weekly web planner with daily workloads, search/status filters, offline browsing, and date-preset new assignments. Unselected assignment dates now default to the device's local calendar date.
 
 - Printable saved inspection reports for managers and workers, with offline access and a paper layout for browser PDF output.

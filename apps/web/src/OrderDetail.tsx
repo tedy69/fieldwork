@@ -1,3 +1,9 @@
+import { Button } from './components/ui/button';
+import { Card } from './components/ui/card';
+import { Badge } from './components/ui/badge';
+import { Alert } from './components/ui/alert';
+import FileUpload from './components/kokonutui/file-upload';
+import { Input, Textarea } from './components/ui/input';
 import { useRef, useState, type FormEvent } from 'react';
 import {
   ReportInputSchema,
@@ -58,8 +64,8 @@ export default function OrderDetail({
       setSaving(pendingWrites.current > 0);
     }
   }
-  async function photos(files: FileList | null) {
-    if (!files) return;
+  async function photos(files: File[]) {
+    if (!files.length) return;
     setBusy(true);
     setError('');
     try {
@@ -122,9 +128,9 @@ export default function OrderDetail({
   }
   return (
     <article className="detail">
-      <button className="text-button back" onClick={onBack}>
+      <Button className="text-button back" onClick={onBack}>
         ← Work orders
-      </button>
+      </Button>
       <div className="detail-heading">
         <div>
           <span className="reference">
@@ -132,9 +138,9 @@ export default function OrderDetail({
           </span>
           <h1>{order.title}</h1>
         </div>
-        <span className={`status status-${order.status.toLowerCase()}`}>
+        <Badge className={`status status-${order.status.toLowerCase()}`}>
           {labels[order.status]}
-        </span>
+        </Badge>
       </div>
       <dl className="order-meta">
         <div>
@@ -166,20 +172,20 @@ export default function OrderDetail({
         />
       )}
       {order.report && <ReportPrint order={order} report={order.report} />}
-      <section className="brief">
+      <Card className="brief">
         <h2>Field brief</h2>
         <p>{order.instructions || 'Complete the checklist and describe your findings.'}</p>
-      </section>
+      </Card>
       {order.review && (
-        <section className="banner notice">
+        <Alert role="status" className="banner notice">
           <strong>
             {labels[order.review.decision]} by {order.review.reviewedBy}
           </strong>
           <p>{order.review.note || 'The inspection report has been accepted.'}</p>
-        </section>
+        </Alert>
       )}
       {queued && (
-        <section className="banner notice">
+        <Alert role="status" className="banner notice">
           <strong>
             {queued.state === 'blocked'
               ? 'Sync needs your attention'
@@ -189,7 +195,7 @@ export default function OrderDetail({
             {queued.error ??
               'Your checklist, notes, and photos are saved. Open the outbox for sync details.'}
           </p>
-        </section>
+        </Alert>
       )}
       {editable && (
         <form className="inspection-form" onSubmit={submit}>
@@ -213,7 +219,7 @@ export default function OrderDetail({
                       key={value}
                       className={answer.value === value ? 'answer selected' : 'answer'}
                     >
-                      <input
+                      <Input
                         required
                         type="radio"
                         name={item.id}
@@ -234,7 +240,7 @@ export default function OrderDetail({
                 </div>
                 <label className="item-note">
                   <span className="sr-only">Notes: {item.label}</span>
-                  <input
+                  <Input
                     placeholder="Add a note (optional)"
                     value={answer.note}
                     maxLength={1000}
@@ -253,7 +259,7 @@ export default function OrderDetail({
           })}
           <label className="report-summary">
             Inspection summary
-            <textarea
+            <Textarea
               aria-label="Inspection summary"
               required
               maxLength={4000}
@@ -267,7 +273,6 @@ export default function OrderDetail({
             <h2>
               Site photos <span className="muted">{draft.photos.length}/3</span>
             </h2>
-            <p className="muted">JPEG, PNG, or WebP · up to 2 MB each</p>
             <div className="photos">
               {draft.photos.map((photo, index) => (
                 <div key={photo.id}>
@@ -275,7 +280,7 @@ export default function OrderDetail({
                     alt={`Site attachment ${index + 1}`}
                     src={`data:${photo.mimeType};base64,${photo.data}`}
                   />
-                  <button
+                  <Button
                     type="button"
                     className="text-button"
                     onClick={() =>
@@ -286,24 +291,11 @@ export default function OrderDetail({
                     }
                   >
                     Remove photo {index + 1}
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
-            <label className="file-input">
-              Attach site photos
-              <input
-                aria-label="Attach site photos"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                disabled={busy || draft.photos.length >= 3}
-                onChange={(event) => {
-                  void photos(event.target.files);
-                  event.target.value = '';
-                }}
-              />
-            </label>
+            <FileUpload onFiles={photos} disabled={busy || draft.photos.length >= 3} busy={busy} />
           </section>
           {error && (
             <p role="alert" className="error">
@@ -312,18 +304,18 @@ export default function OrderDetail({
           )}
           <div className="submit-bar">
             <p>Your report stays on this device until the server confirms it.</p>
-            <button className="primary" disabled={busy || saving}>
+            <Button className="primary" disabled={busy || saving}>
               {busy
                 ? 'Saving report…'
                 : navigator.onLine
                   ? 'Submit inspection'
                   : 'Save report for sync'}
-            </button>
+            </Button>
           </div>
         </form>
       )}
       {order.report && !editable && (
-        <section className="report">
+        <Card className="report">
           <div className="section-heading">
             <h2>Inspection report</h2>
             <span className="muted">
@@ -368,7 +360,7 @@ export default function OrderDetail({
               <h2>Manager review</h2>
               <label>
                 Review note
-                <textarea
+                <Textarea
                   aria-label="Review note"
                   maxLength={2000}
                   rows={3}
@@ -383,20 +375,20 @@ export default function OrderDetail({
                 </p>
               )}
               <div className="review-actions">
-                <button
+                <Button
                   className="quiet"
                   disabled={busy || !review.trim()}
                   onClick={() => void decide('CHANGES_REQUESTED')}
                 >
                   Request changes
-                </button>
-                <button className="primary" disabled={busy} onClick={() => void decide('APPROVED')}>
+                </Button>
+                <Button className="primary" disabled={busy} onClick={() => void decide('APPROVED')}>
                   {busy ? 'Saving review…' : 'Approve inspection'}
-                </button>
+                </Button>
               </div>
             </section>
           )}
-        </section>
+        </Card>
       )}
       {user.role === 'manager' && !order.report && (
         <Empty

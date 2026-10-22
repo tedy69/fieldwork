@@ -1,3 +1,4 @@
+import { Button } from './components/ui/button';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { WorkOrder } from '@fieldwork/contracts';
@@ -23,9 +24,9 @@ export default function ReportPrint({
   return (
     <>
       <section className="report-print-action" aria-label="Print saved report">
-        <button className="quiet" onClick={print}>
+        <Button className="quiet" onClick={print}>
           Print report
-        </button>
+        </Button>
         <p className="muted">Print or save as PDF. Unsent edits and photo files are excluded.</p>
         {error && (
           <p role="alert" className="error">

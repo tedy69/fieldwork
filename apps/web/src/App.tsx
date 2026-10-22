@@ -1,3 +1,7 @@
+import { Button } from './components/ui/button';
+import { Card } from './components/ui/card';
+import { Alert } from './components/ui/alert';
+import { Input } from './components/ui/input';
 import { useEffect, useState, type FormEvent } from 'react';
 import { UserSchema, type User } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
@@ -81,32 +85,30 @@ export default function App() {
           <div className="brand">
             Fieldwork<span className="version">v0.1</span>
           </div>
-          <h2>Open your notebook</h2>
-          <p className="muted">Sign in to your team's workspace.</p>
-          <form onSubmit={login}>
-            <label>
-              Email
-              <input
-                name="email"
-                type="email"
-                autoComplete="username"
-                required
-                placeholder="you@your-team.com"
-              />
-            </label>
-            <label>
-              Password
-              <input name="password" type="password" autoComplete="current-password" required />
-            </label>
-            {error && (
-              <p role="alert" className="error">
-                {error}
-              </p>
-            )}
-            <button className="primary full" disabled={checking}>
-              {checking ? 'Connecting…' : 'Sign in'}
-            </button>
-          </form>
+          <Card>
+            <h2>Open your notebook</h2>
+            <p className="muted">Sign in to your team's workspace.</p>
+            <form onSubmit={login}>
+              <label>
+                Email
+                <Input
+                  name="email"
+                  type="email"
+                  autoComplete="username"
+                  required
+                  placeholder="you@your-team.com"
+                />
+              </label>
+              <label>
+                Password
+                <Input name="password" type="password" autoComplete="current-password" required />
+              </label>
+              {error && <Alert className="error">{error}</Alert>}
+              <Button className="primary full" disabled={checking}>
+                {checking ? 'Connecting…' : 'Sign in'}
+              </Button>
+            </form>
+          </Card>
           <aside className="demo-note">
             <strong>Running the local demo?</strong>
             <p>

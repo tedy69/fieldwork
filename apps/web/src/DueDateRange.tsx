@@ -1,3 +1,5 @@
+import { Button } from './components/ui/button';
+import { Input } from './components/ui/input';
 export default function DueDateRange({
   from,
   through,
@@ -18,7 +20,7 @@ export default function DueDateRange({
       <div className="due-range-fields">
         <label>
           Due from
-          <input
+          <Input
             type="date"
             value={from}
             onChange={(event) => onFrom(event.target.value)}
@@ -28,7 +30,7 @@ export default function DueDateRange({
         </label>
         <label>
           Due through
-          <input
+          <Input
             type="date"
             value={through}
             onChange={(event) => onThrough(event.target.value)}
@@ -36,9 +38,9 @@ export default function DueDateRange({
             aria-describedby={invalid ? 'due-range-error' : 'due-range-help'}
           />
         </label>
-        <button className="quiet" onClick={onClear} disabled={!from && !through}>
+        <Button className="quiet" onClick={onClear} disabled={!from && !through}>
           Clear dates
-        </button>
+        </Button>
       </div>
       {invalid ? (
         <p id="due-range-error" role="alert" className="error">

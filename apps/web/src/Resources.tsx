@@ -1,3 +1,7 @@
+import { Button } from './components/ui/button';
+import { Card } from './components/ui/card';
+import { Alert } from './components/ui/alert';
+import { Input, Textarea } from './components/ui/input';
 import { useState, type FormEvent } from 'react';
 import type { Catalog } from '@fieldwork/contracts';
 import { createClient } from '@fieldwork/sdk';
@@ -46,18 +50,14 @@ export default function Resources({
         <h1>Sites &amp; checklists</h1>
         <p>Define the places and inspection standards your team works with.</p>
       </div>
-      {error && (
-        <p className="banner error" role="alert">
-          {error}
-        </p>
-      )}
+      {error && <Alert className="banner error">{error}</Alert>}
       {notice && (
-        <p className="banner notice" role="status">
+        <Alert className="banner notice" role="status">
           {notice}
-        </p>
+        </Alert>
       )}
       <div className="resource-grid">
-        <section>
+        <Card>
           <h2>
             Sites <span className="muted">/ {catalog.sites.length}</span>
           </h2>
@@ -73,18 +73,18 @@ export default function Resources({
             <h3>Add a site</h3>
             <label>
               Site name
-              <input name="name" required minLength={2} maxLength={120} />
+              <Input name="name" required minLength={2} maxLength={120} />
             </label>
             <label>
               Address
-              <input name="address" required minLength={3} maxLength={250} />
+              <Input name="address" required minLength={3} maxLength={250} />
             </label>
-            <button className="primary" disabled={busy}>
+            <Button className="primary" disabled={busy}>
               Add site
-            </button>
+            </Button>
           </form>
-        </section>
-        <section>
+        </Card>
+        <Card>
           <h2>
             Checklists <span className="muted">/ {catalog.templates.length}</span>
           </h2>
@@ -105,11 +105,11 @@ export default function Resources({
             <h3>Add a checklist</h3>
             <label>
               Checklist name
-              <input name="name" required minLength={2} maxLength={120} />
+              <Input name="name" required minLength={2} maxLength={120} />
             </label>
             <label>
               Inspection items, one per line
-              <textarea
+              <Textarea
                 name="items"
                 required
                 rows={5}
@@ -117,11 +117,11 @@ export default function Resources({
               />
             </label>
             <p className="muted">Up to 50 items. Assigned orders keep their original checklist.</p>
-            <button className="primary" disabled={busy}>
+            <Button className="primary" disabled={busy}>
               Add checklist
-            </button>
+            </Button>
           </form>
-        </section>
+        </Card>
       </div>
       <section className="brief">
         <h2>Field workers</h2>

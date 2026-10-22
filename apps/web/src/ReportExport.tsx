@@ -1,3 +1,4 @@
+import { Button } from './components/ui/button';
 import { useState } from 'react';
 import type { WorkOrder } from '@fieldwork/contracts';
 import { localDate } from './dates';
@@ -45,9 +46,9 @@ export default function ReportExport({
           ? 'Latest reports in this view. Photos are not included.'
           : 'No reports in this view to export.'}
       </p>
-      <button className="quiet" onClick={download} disabled={count === 0}>
+      <Button className="quiet" onClick={download} disabled={count === 0}>
         Export reports ({count})
-      </button>
+      </Button>
       {error && (
         <p className="error" role="alert">
           {error}

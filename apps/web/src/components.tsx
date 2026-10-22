@@ -1,3 +1,4 @@
+import { Card } from './components/ui/card';
 export function PageHeading({
   eyebrow,
   title,
@@ -17,12 +18,12 @@ export function PageHeading({
 }
 export function Empty({ title, description }: { title: string; description: string }) {
   return (
-    <section className="empty">
+    <Card className="empty">
       <span className="empty-mark" aria-hidden="true">
         /
       </span>
       <h2>{title}</h2>
       <p>{description}</p>
-    </section>
+    </Card>
   );
 }

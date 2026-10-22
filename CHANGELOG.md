@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Shared Kokonut UI controls across the web workspace, with the existing charcoal-and-amber palette, keyboard filter navigation, and photo drop/picker support that preserves offline drafts.
+
 - Managers can change due dates on unfinished web assignments. Version checks prevent stale writes; older offline reports remain available for review and resubmission.
 
 - Kokonut UI command palette for finding saved work and workspace pages, with keyboard shortcuts and offline support. Tailwind utilities are available for gradual component adoption without a global reset.

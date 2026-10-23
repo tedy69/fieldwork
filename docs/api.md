@@ -40,6 +40,8 @@ Managers browse saved batches with `GET /work-order-series?limit=20&cursor=<batc
 
 Checklist creation accepts optional boolean `requiresPhoto` through `POST /templates` or `client.createTemplate(name, items, requiresPhoto?)`. Required-photo assignment snapshots reject report inputs without attachments with 422 `PHOTO_REQUIRED`; drafts and rejected writes remain intact. See [photo evidence](photo-evidence.md) for policy scope, corrections, compatibility, and persistence.
 
+Managers can [invite workers](worker-invitations.md) with `POST /invitations`, browse them through `GET /invitations?limit=20&cursor=<id>`, and revoke unused invitations with `DELETE /invitations/:id`. Only creation returns a raw token. Public `POST /invitations/preview` and `/invitations/accept` take the token in a body; acceptance returns a worker without a session. See the guide before implementing retry or link handling.
+
 Create an order:
 
 ```json

@@ -63,7 +63,10 @@ test('manager hands over work with keyboard, reload guards, uncertain saves, nar
   await page.keyboard.press('Enter');
   await expect(select).toBeFocused();
   await expect(save).toBeDisabled();
-  await expect(select.getByRole('option')).toHaveCount(2);
+  const workers = (await manager.catalog()).users.filter((user) => user.role === 'worker');
+  await expect(select.getByRole('option')).toHaveCount(workers.length);
+  await expect(select.locator('option[value="worker"]')).toHaveText('Sam Rivera (current)');
+  await expect(select.locator('option[value="worker-2"]')).toHaveText('Jordan Lee');
   await page.keyboard.press('Escape');
   await expect(form).toHaveCount(0);
   await expect(trigger).toBeFocused();
@@ -255,7 +258,9 @@ test('correction handover preserves the saved report and feedback, with a useful
       response,
       json: {
         ...catalog,
-        users: catalog.users.filter((user: { id: string }) => user.id !== 'worker-2'),
+        users: catalog.users.filter(
+          (user: { id: string; role: string }) => user.role !== 'worker' || user.id === 'worker',
+        ),
       },
     });
   });

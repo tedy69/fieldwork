@@ -30,6 +30,8 @@ Reading this as an operations notebook for dispatch managers and field workers, 
 
 Use explicit labels, 44px targets where practical on mobile, visible focus, semantic headings, and useful loading/error/empty states. Never fabricate customer logos, usage numbers, testimonials, or reports. Documentation screenshots use seeded demo data and say so.
 
+Worker invitations use a compact shadcn dialog beside the existing worker directory. A flat ledger shows real recipients, expiry, and status; a newly created link becomes the focal task until copied or dismissed. The acceptance page reuses the notebook sign-in layout, with invited identity above password fields and explicit confirmation before normal sign-in. Shared controls, charcoal surfaces, amber confirmation, wrapped phone actions, and ENERGY 2 / RHYTHM 2 / MOTION 1 remain unchanged.
+
 Weekday recurrence extends the existing dispatch selector and date ledger. The Mon–Fri label appears consistently in creation, saved-request recovery, and batch browsing. Plain guidance explains weekend starts and included holidays beside the preview. No new navigation, surface, color, or motion is needed; ENERGY 2 / RHYTHM 2 / MOTION 1 remains unchanged.
 
 Photo evidence is a real checklist policy, chosen with the existing shared Native Select in setup and identified in the catalog/assignment options. Worker guidance stays beside the existing photo count and upload actions, with the same rule in Expo. Missing evidence uses the existing field-error treatment while the draft remains editable. No new surface, navigation, icon, palette, or motion is introduced; ENERGY 2 / RHYTHM 2 / MOTION 1 remains unchanged.

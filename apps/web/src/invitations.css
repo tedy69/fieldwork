@@ -1,0 +1,104 @@
+.invitation-identity {
+  display: grid;
+  gap: 5px;
+  margin: 20px 0;
+  overflow-wrap: anywhere;
+}
+.invitation-identity dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+.invitation-identity dd {
+  margin: 0 0 10px;
+}
+.invitation-card {
+  overflow-wrap: anywhere;
+}
+.invitation-card .ui-field-set {
+  border: 0;
+  padding: 0;
+  margin: 0 0 18px;
+}
+.invitation-card > .ui-button {
+  margin-top: 14px;
+}
+.login-intro h1[tabindex]:focus,
+.invitation-card h2[tabindex]:focus,
+.invitation-dialog h2[tabindex]:focus {
+  outline: 2px solid var(--amber);
+  outline-offset: 4px;
+}
+.invitation-dialog {
+  width: 720px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+.invitation-dialog h2 {
+  margin: 16px 0 12px;
+}
+.invitation-dialog h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.invitation-dialog > p {
+  margin-bottom: 20px;
+}
+.invitation-dialog .ui-field-set {
+  border: 0;
+  padding: 0;
+  margin: 20px 0;
+}
+.invitation-toolbar,
+.invitation-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.invitation-actions {
+  justify-content: flex-start;
+  margin-top: 16px;
+}
+.invitation-new-link {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--amber);
+  border-radius: 6px;
+  background: var(--ink);
+}
+.invitation-new-link p {
+  margin: 12px 0;
+}
+.invitation-ledger {
+  margin-top: 28px;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+.invitation-list {
+  list-style: none;
+  margin: 16px 0;
+  padding: 0;
+}
+.invitation-list > li {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+.invitation-list p {
+  margin: 8px 0;
+}
+@media (max-width: 600px) {
+  .invitation-dialog {
+    padding: 20px;
+  }
+  .invitation-new-link {
+    padding: 16px;
+  }
+}

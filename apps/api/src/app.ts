@@ -32,24 +32,14 @@ import { openStore, verifyPassword } from './store';
 import { createOrderSearch } from './order-search';
 import { createSeriesQueries } from './order-series';
 import { defaultMapProvider } from './map-settings';
+import { Problem, fail } from './problems';
+import { registerInvitationRoutes } from './invitations';
 
 declare module 'fastify' {
   interface FastifyRequest {
     actor?: User;
     sessionHash?: string;
   }
-}
-class Problem extends Error {
-  constructor(
-    public status: number,
-    public code: string,
-    message: string,
-  ) {
-    super(message);
-  }
-}
-function fail(status: number, code: string, message: string): never {
-  throw new Problem(status, code, message);
 }
 const digest = (value: string) => createHash('sha256').update(value).digest('hex');
 export type AppOptions = {
@@ -123,6 +113,13 @@ export async function buildApp(options: AppOptions) {
   app.addHook('preHandler', async (request) => {
     if (!request.url.startsWith('/api/v1/')) return;
     if (request.method === 'POST' && request.url === '/api/v1/sessions') return;
+    if (
+      request.method === 'POST' &&
+      ['/api/v1/invitations/preview', '/api/v1/invitations/accept'].includes(
+        request.routeOptions.url ?? '',
+      )
+    )
+      return;
     const token = request.headers.authorization?.startsWith('Bearer ')
       ? request.headers.authorization.slice(7)
       : request.cookies.session;
@@ -149,6 +146,7 @@ export async function buildApp(options: AppOptions) {
   function manager(request: FastifyRequest) {
     if (request.actor?.role !== 'manager') fail(403, 'FORBIDDEN', 'A manager account is required.');
   }
+  registerInvitationRoutes(app, store, manager);
   function accessible(id: string, request: FastifyRequest) {
     const order = store.getOrder(id);
     if (!order || (request.actor!.role === 'worker' && order.assignee.id !== request.actor!.id))

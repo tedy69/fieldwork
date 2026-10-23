@@ -1,5 +1,12 @@
 import {
   CatalogSchema,
+  InvitationReceiptSchema,
+  InvitationPageSchema,
+  InvitationSchema,
+  InvitationPreviewSchema,
+  InvitationAcceptanceSchema,
+  type CreateInvitation,
+  type InvitationQuery,
   MapSettingsSchema,
   type Coordinates,
   type UpdateSiteLocation,
@@ -86,6 +93,20 @@ export function createClient(
     logout: () => request('/sessions/current', { parse: () => undefined }, 'DELETE'),
     me: () => request('/me', MeSchema),
     catalog: () => request('/catalog', CatalogSchema),
+    createInvitation: (input: CreateInvitation) =>
+      request('/invitations', InvitationReceiptSchema, 'POST', input),
+    invitations: (query: InvitationQuery = {}) => {
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(query))
+        if (value !== undefined) params.set(key, String(value));
+      return request(`/invitations?${params}`, InvitationPageSchema);
+    },
+    revokeInvitation: (id: string) =>
+      request(`/invitations/${encodeURIComponent(id)}`, InvitationSchema, 'DELETE'),
+    previewInvitation: (token: string) =>
+      request('/invitations/preview', InvitationPreviewSchema, 'POST', { token }),
+    acceptInvitation: (token: string, password: string) =>
+      request('/invitations/accept', InvitationAcceptanceSchema, 'POST', { token, password }),
     mapSettings: () => request('/map-settings', MapSettingsSchema),
     createSite: (name: string, address: string, coordinates?: Coordinates) =>
       request('/sites', SiteSchema, 'POST', { name, address, coordinates }),

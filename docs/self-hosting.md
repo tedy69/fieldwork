@@ -20,7 +20,7 @@ npm run user:create -- --email manager@example.com --name "Workspace Manager" --
 unset FIELDWORK_NEW_PASSWORD
 ```
 
-Enter a password of at least 12 characters when the shell waits for input. Repeat for a worker with `--role worker` and a different password. Passwords are not passed as command-line arguments. Sign in as manager, add a site and checklist in **Sites & checklists**, then assign an order. Account invitations and password-reset UI are not implemented yet.
+Enter a password of at least 12 characters when the shell waits for input. Passwords are not passed as command-line arguments. Sign in as manager and use [Worker invitations](worker-invitations.md) in **Sites & checklists** to create an expiring link for a worker to choose their own password. Copy and share it directly; no email is sent automatically. You can also create workers with the CLI using `--role worker`. Add a site and checklist, then assign an order. Password-reset UI remains roadmap work.
 
 ## Docker
 
@@ -50,4 +50,4 @@ Put an HTTPS reverse proxy in front of the API for remote use. Set `WEB_ORIGIN` 
 
 Stop the API before taking a filesystem backup of the database directory, including any SQLite WAL files. Store backups with access controls appropriate to their data, and test restoration into a separate installation. Never commit them to Git.
 
-For an upgrade, back up first, review CHANGELOG.md and migration notes, install the new lockfile, and rebuild. The current server migrates schema 1 to schema 2 on startup, recovering original report snapshots from saved submission acknowledgments. Older overwritten review details cannot be recovered. Read [the migration notes](report-history.md#upgrading-schema-1-to-schema-2) before upgrading or rolling back; an older server would stop recording new history. Do not point multiple API processes at a shared network filesystem. Multi-process and PostgreSQL support are roadmap work.
+For an upgrade, back up first, review CHANGELOG.md and migration notes, install the new lockfile, and rebuild. The server applies schema 2 for [report history](report-history.md#upgrading-schema-1-to-schema-2), schema 3 for [recurring batches](recurring-assignments.md#persistence-and-upgrade), and schema 4 for [worker invitations](worker-invitations.md#persistence-and-contributors) on startup. Existing users and inspection data are preserved. Older overwritten review details cannot be recovered. Review those guides before upgrading or restoring a backup with an older server; do not delete live migration markers. Do not point multiple API processes at a shared network filesystem. Multi-process and PostgreSQL support are roadmap work.

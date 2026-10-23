@@ -1,5 +1,67 @@
 import { expect, it, vi } from 'vitest';
 import { createClient } from '@fieldwork/sdk';
+import { randomBytes, randomUUID } from 'node:crypto';
+
+it('validates invitation receipts, encodes manager pagination and keeps public tokens in POST bodies', async () => {
+  const invitation = {
+    id: randomUUID(),
+    name: 'Synthetic worker',
+    email: 'invited@example.com',
+    createdAt: '2026-10-23T00:00:00Z',
+    expiresAt: '2026-10-26T00:00:00Z',
+    createdBy: { id: 'manager', name: 'Synthetic manager' },
+    status: 'pending',
+    acceptedAt: null,
+    acceptedUserId: null,
+    revokedAt: null,
+  };
+  const secret = randomBytes(32).toString('base64url');
+  const preview = {
+    name: invitation.name,
+    email: invitation.email,
+    expiresAt: invitation.expiresAt,
+  };
+  const user = { id: randomUUID(), name: invitation.name, email: invitation.email, role: 'worker' };
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(new Response(JSON.stringify({ invitation, token: secret })))
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ data: [invitation], total: 1, nextCursor: null })),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ ...invitation, status: 'revoked', revokedAt: '2026-10-23T01:00:00Z' }),
+      ),
+    )
+    .mockResolvedValueOnce(new Response(JSON.stringify(preview)))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ user })))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ ...preview, expiresAt: 'invalid' })));
+  const client = createClient('https://fieldwork.example', undefined, fetcher);
+  expect(
+    (await client.createInvitation({ name: invitation.name, email: invitation.email })).token,
+  ).toBe(secret);
+  expect((await client.invitations({ limit: 3, cursor: 'cursor/a b' })).data[0]).toEqual(
+    invitation,
+  );
+  expect(fetcher.mock.calls[1][0]).toBe(
+    'https://fieldwork.example/api/v1/invitations?limit=3&cursor=cursor%2Fa+b',
+  );
+  expect((await client.revokeInvitation('id/a')).status).toBe('revoked');
+  expect(fetcher.mock.calls[2][0]).toBe('https://fieldwork.example/api/v1/invitations/id%2Fa');
+  expect(fetcher.mock.calls[2][1]?.method).toBe('DELETE');
+  expect(await client.previewInvitation(secret)).toEqual(preview);
+  expect(await client.acceptInvitation(secret, 'synthetic-password')).toEqual({ user });
+  for (const index of [3, 4]) {
+    expect(String(fetcher.mock.calls[index][0])).not.toContain(secret);
+    expect(fetcher.mock.calls[index][1]?.method).toBe('POST');
+    expect(JSON.parse(fetcher.mock.calls[index][1]?.body as string).token).toBe(secret);
+  }
+  expect(JSON.parse(fetcher.mock.calls[4][1]?.body as string)).toEqual({
+    token: secret,
+    password: 'synthetic-password',
+  });
+  await expect(client.previewInvitation(secret)).rejects.toThrow();
+});
 
 it('preserves optional template creation calls and validates the photo requirement in responses', async () => {
   const template = {

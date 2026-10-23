@@ -1,5 +1,7 @@
 # Kokonut UI and shadcn in Fieldwork
 
+Worker invitations use the shared Dialog, Button, Input, Label, FieldSet, FieldError, Badge, Alert, and Empty controls. A flat ledger sits below creation or the one-time link. The acceptance page reuses the notebook sign-in layout with labeled password fields and explicit account confirmation. Amber focus styling covers programmatically focused headings as well as controls; links are masked in documentation screenshots.
+
 Weekday recurrence adds an option to the existing shadcn Native Select. The same Mon–Fri label appears in dispatch recovery and the batch ledger. Existing Button, FieldSet, Input, and Dialog behavior, the date preview, and the charcoal/amber styling remain the foundation.
 
 Photo evidence uses the shared Native Select and Label in checklist setup. Required policies appear in catalog text and assignment options, while the worker notebook keeps guidance beside the existing Kokonut upload area and reports missing evidence through shadcn FieldError. A policy-only form change is protected by the existing map reload guard.

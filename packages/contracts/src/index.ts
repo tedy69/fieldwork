@@ -77,7 +77,17 @@ export const TemplateSchema = z.object({
   id: z.string(),
   name: z.string(),
   items: z.array(ItemSchema),
+  requiresPhoto: z.boolean().optional(),
 });
+export const CreateTemplateSchema = z
+  .object({
+    name: z.string().trim().min(2).max(120),
+    items: z.array(z.string().trim().min(2).max(250)).min(1).max(50),
+    requiresPhoto: z.boolean().optional(),
+  })
+  .strict();
+export const PHOTO_REQUIRED_MESSAGE =
+  'Attach at least one site photo before submitting this checklist.';
 export const PhotoSchema = z.object({
   id: z.uuid(),
   mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp']),

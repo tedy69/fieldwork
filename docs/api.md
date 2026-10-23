@@ -38,6 +38,8 @@ List limit is 1–100. Offset is a non-negative integer. Status uses the upperca
 
 Managers browse saved batches with `GET /work-order-series?limit=20&cursor=<batch-id>` through `client.orderSeries(query)`. The response is `{ data: OrderSeriesSummary[], total, nextCursor }`, ordered by creation time and ID descending. Limits are 1–50. `GET /work-order-series/:id`, through `client.orderSeriesDetail(id)`, adds ordered `{ occurrence, plannedDueDate, order }` members with current order state. These read-only results must not replace a complete offline cache. See [batch browsing](recurring-assignments.md#browse-saved-batches) for fields, errors, and cursor behavior.
 
+Checklist creation accepts optional boolean `requiresPhoto` through `POST /templates` or `client.createTemplate(name, items, requiresPhoto?)`. Required-photo assignment snapshots reject report inputs without attachments with 422 `PHOTO_REQUIRED`; drafts and rejected writes remain intact. See [photo evidence](photo-evidence.md) for policy scope, corrections, compatibility, and persistence.
+
 Create an order:
 
 ```json

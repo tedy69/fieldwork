@@ -521,6 +521,11 @@ function Inspection({
             onChangeText={(summary) => void save({ ...draft, summary })}
           />
           <Text style={styles.label}>Site photos / {draft.photos.length} of 3</Text>
+          {order.template.requiresPhoto && (
+            <Text style={styles.hint}>
+              At least one site photo is required for each submission, including corrections.
+            </Text>
+          )}
           {draft.photos.map((photo, index) => (
             <View key={photo.id}>
               <Image

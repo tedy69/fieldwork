@@ -1,6 +1,26 @@
 import { expect, it, vi } from 'vitest';
 import { createClient } from '@fieldwork/sdk';
 
+it('encodes history IDs and cursors and rejects malformed history responses', async () => {
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(new Response(JSON.stringify({ data: [], total: 0, nextCursor: null })))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ data: [], total: -1, nextCursor: null })));
+  const client = createClient('https://fieldwork.example', () => 'synthetic-token', fetcher);
+  expect(await client.reportHistory('order/a', 'report&b')).toEqual({
+    data: [],
+    total: 0,
+    nextCursor: null,
+  });
+  expect(fetcher.mock.calls[0][0]).toBe(
+    'https://fieldwork.example/api/v1/work-orders/order%2Fa/history?limit=10&cursor=report%26b',
+  );
+  expect(fetcher.mock.calls[0][1]?.headers).toMatchObject({
+    Authorization: 'Bearer synthetic-token',
+  });
+  await expect(client.reportHistory('order/a')).rejects.toThrow();
+});
+
 it('aborts a stalled connection and leaves its outcome retryable', async () => {
   vi.useFakeTimers();
   try {

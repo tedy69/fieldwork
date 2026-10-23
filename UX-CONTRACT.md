@@ -79,3 +79,5 @@ Manager writes wait for server confirmation. Inspections may queue only through 
 ## Verification and migration
 
 Shared tokens and primitives migrate first, followed by sign-in/account setup, permission dialogs, assignment/planning, inspection/review, resources and outbox. The browser suite verifies these complete workflows after the migration; tests/e2e/redesign.spec.ts covers the shared control changes and responsive screens. Existing feature CSS keeps only geometry and domain-specific layouts, rather than a second theme. Rollback is a source revert; no schema or storage migration is required.
+
+The Expo worker notebook implements the same visual roles with native controls in apps/mobile/notebook-ui.tsx and platform tokens in theme.ts. Native fields own focus, password reveal and Done editing; safe-area handling, keyboard avoidance and scrollable content retain access to actions at large text sizes. The storage and submission contracts above remain unchanged. See [mobile development](docs/mobile.md) for the native component map and an isolated Maestro draft-retention flow; native device acceptance remains separate from web browser tests.

@@ -2,6 +2,36 @@
 
 `apps/mobile` is the Expo field-worker notebook. It signs in to the same API, caches assignments in SQLite, saves checklist drafts and base64 photos locally, and reuses the shared outbox. Native credentials are held in Expo SecureStore.
 
+## Notebook UI
+
+The app matches the web notebook's charcoal/amber palette, heading hierarchy, status wording and panel/control shapes. `apps/mobile/theme.ts` is the native token owner. `notebook-ui.tsx` provides shared Copy, Brand, Button, Field, Panel, SectionHeading, Notice, StatusBadge and AnswerChoice components. Screens arrange these components rather than defining another button or field theme. Use React Native controls here; Kokonut/shadcn DOM components belong in the web app.
+
+Fields have visible labels, amber focus, password reveal where appropriate and a Done editing action while focused. Email advances to Password; the password key signs in. Actions have 48-point minimum targets. SafeAreaProvider/SafeAreaView from the SDK-compatible safe-area package own screen insets. KeyboardAvoidingView and scrollable forms keep editing and actions reachable. The notebook header scrolls with content, stacks at larger font scales, and answer choices become full-width rows. Dynamic Type remains enabled.
+
+These iOS simulator screenshots use seeded synthetic records:
+
+<img src="images/native-assignments.png" alt="Expo worker assignments using synthetic demo data" width="280" />
+<img src="images/native-inspection.png" alt="Shared native checklist answers and notes" width="280" />
+
+## Repeatable native smoke test
+
+Start an isolated, in-memory API and Metro in separate terminals:
+
+```sh
+npm exec -- tsx tests/native/design-server.ts
+EXPO_PUBLIC_API_URL=http://127.0.0.1:4180 npm exec -w @fieldwork/mobile -- expo start --localhost --port 8082
+```
+
+Open `exp://localhost:8082` in SDK-compatible Expo Go on a dedicated iOS simulator. Sign in with the seeded worker account and dismiss any OS password-save prompt without saving credentials. Run the flow once against the fresh fixture:
+
+```sh
+maestro --device <simulator-id> test tests/native/worker-notebook.yaml
+```
+
+The 28-command flow fills the seeded FW-003 checklist, edits its summary, restarts Expo Go and verifies the SQLite draft. It never clears app state or the keychain. The server script binds only to loopback, never opens a development database, and is never imported by production code. Its `/__design-test__/network` POST accepts `{ "available": false }` or `{ "available": true }` to simulate an API outage; `/__design-test__/state` reports synthetic FW-001 and its revision count for manual queue/retry checks. These endpoints do not exist in the production API. The test changes demo data, so use a dedicated simulator and fixture.
+
+Android emulators use the host alias `10.0.2.2` instead of loopback; native acceptance below still applies to each target platform. Simulator smoke testing does not certify physical-camera behavior or store readiness.
+
 ## Start
 
 Run the API, then `npm run mobile`. Use a compatible Expo Go client for SDK 58 or create a development build. Enter a worker account and server URL on the sign-in screen.

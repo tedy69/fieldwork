@@ -43,6 +43,7 @@ React and React Native upgrades must match the installed Expo SDK. Run `npm run 
 - Use synthetic fixtures. Screenshots must not contain real people, addresses, tokens, or customer data.
 - Add keyboard support, visible focus, labels, and useful empty/error states to UI changes.
 - Use the shared Kokonut UI/shadcn components for web controls, dialogs, fields, feedback, and tables. Follow [the integration notes](docs/ui-components.md), and preserve attribution, Fieldwork's theme, scoped utilities, and local accessibility adaptations when updating upstream source.
+- For Expo UI, use the native theme and notebook components described in [mobile development](docs/mobile.md). Keep platform controls native, retain font scaling, and exercise the primary task on a simulator or device.
 - Use a plain commit title such as `fix: retain queued photos after a failed sync`.
 
 ## Reviews and community

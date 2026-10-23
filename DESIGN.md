@@ -120,3 +120,14 @@ Shared Form owns validation, Input owns password reveal, SearchField owns clear/
 ## Do's and Don'ts
 
 Use real seeded records in documentation and name them as synthetic. Keep every existing workflow available, preserve non-sensitive input after errors, and retain device drafts. Do not reduce information to unlabeled icons, add fabricated activity, rely on color alone, or add alternate screen-local themes.
+
+## Expo worker notebook
+
+The native worker app follows the same charcoal/amber roles through `apps/mobile/theme.ts`. Native components in `notebook-ui.tsx` own Button, Field, Copy, Panel, Notice, SectionHeading, StatusBadge and AnswerChoice. Web DOM components and CSS remain in the web app; the shared visual roles are implemented with React Native controls on iOS and Android.
+
+- Color: the web ink, surface, raised surface, foreground, muted text, amber and field-boundary values repeat exactly so a worker recognizes the same notebook across devices. Approval/error colors remain semantic exceptions.
+- Type: platform system text works offline and scales with accessibility settings. A 30px task title, 20px section heading, 16px body, 15px action/label and 13px caption keep the task readable; only record identifiers use platform monospace.
+- Layout: assignments share one ruled ledger. An inspection leads with identity and site metadata, then brief, questions, summary, evidence and submission guidance. Reports use the same section hierarchy. The full notebook scrolls so a large header cannot trap content below the screen.
+- Spacing: 20px screen/panel insets and 24px section gaps group related work. Actions are at least 48 points high. Panels use 10px corners, controls 6px and status labels 4px, matching the web hierarchy.
+- Interaction: amber focus and selected-answer radio marks identify the current task. A focused Field offers Done editing beside its label; email advances to Password and the password key signs in. Large text stacks the header and answer choices without disabling font scaling. Android back returns from an inspection to assignments.
+- Restraint: no new illustration, decorative icon, shadow, gradient, animation or navigation destination is added. ENERGY 2 / RHYTHM 2 / MOTION 1 remains unchanged. SecureStore, SQLite, drafts and outbox contracts retain their existing owners.

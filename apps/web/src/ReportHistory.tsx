@@ -9,6 +9,7 @@ import {
   Dialog,
   DialogTrigger,
   DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from './components/ui/dialog';
@@ -92,6 +93,7 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
           </Button>
         </DialogTrigger>
         <DialogContent
+          size="compare"
           className="history-dialog"
           aria-modal="true"
           onOpenAutoFocus={(event) => {
@@ -105,14 +107,16 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
             } else trigger.current.focus();
           }}
         >
-          <header className="history-heading">
-            <DialogTitle ref={title} tabIndex={-1}>
-              Report history
-            </DialogTitle>
-            <DialogDescription>
-              Saved submissions and manager feedback. Viewing a report does not change your draft.
-            </DialogDescription>
-          </header>
+          <DialogHeader className="history-heading">
+            <div>
+              <DialogTitle ref={title} tabIndex={-1}>
+                Report history
+              </DialogTitle>
+              <DialogDescription>
+                Saved submissions and manager feedback. Viewing a report does not change your draft.
+              </DialogDescription>
+            </div>
+          </DialogHeader>
           {!online && (
             <Alert role="status" className="banner notice">
               You’re offline. Loaded text stays available until you close this history. Connect to

@@ -4,6 +4,10 @@
 
 The web workspace now uses `tokens.css` as its runtime theme source, documented in [DESIGN.md](../DESIGN.md). Page headings, compact workload summaries, record rows, question fieldsets, workspace setup and dialogs share the charcoal/amber direction. Exports follow the work list instead of interrupting its filters. The [UX contract](../UX-CONTRACT.md) names shared behavior and its domain sources.
 
+The work board groups views, search, status filters, dates and records in one panel. Inspection content sits beside order tools on wide screens. Setup pairs each saved catalog with its form. These layouts use 10px panels, 6px controls, shared section spacing and the same sentence-case hierarchy. Expo retains its platform-native interface.
+
+Use `PanelHeader` and `ActionGroup` from `components.tsx` for section titles and wrapping actions. Use `DialogHeader` within `DialogContent` for every modal; select `size="form"`, `"directory"`, `"compare"` or `"finder"` to fit the task. `workspace-ui.css` owns modal widths, insets, borders and title alignment. Feature CSS should only arrange the modal's contents. Eight dialog families have recorded phone/desktop checks for title/close separation, focus containment, return focus and viewport bounds.
+
 `Form` composes the shadcn fields and Alert, owns constraint validation without browser bubbles, associates recovery text and focuses the first invalid control. Shared Input provides password reveal; SearchField provides immediate clearing and input focus. Label separates these controls from their action buttons, preserving a real label association. Textarea grows in supporting browsers up to a bounded height and remains scrollable everywhere. The global scrollbar baseline applies to all owned overflow regions, with forced-colors support.
 
 The README gallery is captured from the production web build and a fresh in-memory synthetic workspace:
@@ -13,7 +17,7 @@ npm run build -w @fieldwork/web
 UPDATE_README_IMAGES=1 npm exec -- playwright test tests/e2e/redesign.spec.ts
 ```
 
-The screenshot workflow creates demo assignments through the SDK, renders desktop and phone views, and saves images only when `UPDATE_README_IMAGES=1` is set. Without that flag, screenshots stay in ignored test output. Use a free port 4173; the fixture server never reads or overwrites a development database. Account links and credentials are absent from the captures.
+The screenshot workflow creates demo assignments through the SDK, renders desktop and phone views, and saves images only when `UPDATE_README_IMAGES=1` is set. The twelve captures cover sign-in, dispatch, assignment, planning, resources, worker accounts, inspection, report review, outbox and phone layouts. Without that flag, screenshots stay in ignored test output. Use a free port 4173; the fixture server never reads or overwrites a development database. One-time links and entered credentials are absent from the captures; the sign-in page labels the public local-demo credentials.
 
 ## Feature integrations
 

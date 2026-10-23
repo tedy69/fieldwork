@@ -12,13 +12,18 @@ export function DialogContent({
   className,
   children,
   showCloseButton = true,
+  size = 'form',
   ...props
-}: ComponentProps<typeof DialogPrimitive.Content> & { showCloseButton?: boolean }) {
+}: ComponentProps<typeof DialogPrimitive.Content> & {
+  showCloseButton?: boolean;
+  size?: 'form' | 'directory' | 'compare' | 'finder';
+}) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay data-slot="dialog-overlay" className="ui-dialog-overlay" />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        data-size={size}
         className={cn('ui-dialog', className)}
         {...props}
       >
@@ -34,6 +39,11 @@ export function DialogContent({
         )}
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
+  );
+}
+export function DialogHeader({ className, ...props }: ComponentProps<'header'>) {
+  return (
+    <header data-slot="dialog-header" className={cn('ui-dialog-header', className)} {...props} />
   );
 }
 export function DialogTitle({ className, ...props }: ComponentProps<typeof DialogPrimitive.Title>) {

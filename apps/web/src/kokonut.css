@@ -8,22 +8,6 @@
 .command-launcher {
   white-space: nowrap;
 }
-.command-dialog {
-  width: min(560px, calc(100vw - 32px));
-  max-height: calc(100dvh - 32px);
-  padding: 20px;
-  color: #edf1ee;
-  background: #1c2629;
-  border: 1px solid #516065;
-  border-radius: 4px;
-  overflow-y: auto;
-}
-.command-dialog-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
 .command-dialog h2 {
   font-size: 20px;
   margin: 0;

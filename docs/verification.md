@@ -1,5 +1,35 @@
 # Verification
 
+## Unified web workspace (2026-10-23)
+
+The second design pass connects the screens through shared composition: one work board, inspection content beside order tools, catalogs beside their forms, and a single modal frame. The charcoal/amber palette, Kokonut/shadcn controls, Phosphor icons and domain behavior remain. [DESIGN.md](../DESIGN.md) and [UX-CONTRACT.md](../UX-CONTRACT.md) describe the current geometry and ownership; older entries below record their original feature checks.
+
+Validation: `npm run check` passes formatting, root/mobile types, 414 unit/API tests and the production web build. `npm run test:e2e` passes 86 Chromium workflows. The five redesign workflows also pass separately while producing twelve README captures. Expo compatibility and Android/iOS JavaScript exports pass. The strict project audit and `designmd lint DESIGN.md` report zero errors and warnings. No dependency, API, schema or persisted notebook format changed.
+
+Recorded dialog click-through in `tests/e2e/redesign.spec.ts`, repeated at 390px and 1440px with a 700px viewport height:
+
+| Open action           | Close action      | Result           |
+| --------------------- | ----------------- | ---------------- |
+| Assign work order     | Cancel            | Form modal       |
+| Assign recurring work | Close             | Form modal       |
+| Recurring batches     | Close dialog      | Comparison modal |
+| Search server         | Close dialog      | Comparison modal |
+| Find work             | Close finder      | Finder modal     |
+| Worker accounts       | Close accounts    | Directory modal  |
+| Worker invitations    | Close invitations | Directory modal  |
+| Report history        | Close dialog      | Comparison modal |
+
+Every row checks that title and close action do not overlap, the dialog fits the viewport, the close target is at least 44px high, Tab stays inside, and closing restores the opener. Existing domain tests exercise the controls within these dialogs, including held writes and dismissal guards. The local in-app browser also opened assignment, its native site selector and date popup, then canceled back to the original opener without changing a record.
+
+- Hard gate PASS: source scans find no em dashes, browser alert/confirm/prompt calls or empty hash links in changed UI/README copy. Existing workflows exercise loading, empty/no-results, network errors, offline drafts/photos, retries, permission failures and real server actions. Responsive checks cover 320, 390, 768, 1024 and 1440px without document overflow. Captures use explicitly synthetic fixtures, empty credential fields and no one-time links. WCAG relative-luminance calculations from current tokens give body/root 14.99:1, muted/card 7.77:1, primary button 10.73:1 and field boundary 5.11:1. No fabricated customer, security or performance claims are added.
+- Purpose gate PASS: DESIGN.md records the reasons for compact task headings, grouped board controls, side-by-side catalog/form reading, separated inspection tools and a shared modal hierarchy. System type works offline; references use monospace. The active notebook margin identifies navigation or selection. Panel/control/status radii differ deliberately. Existing Phosphor symbols identify actual actions; shadows remain limited to modal elevation, with no new illustration, logo, gradient, glow or decorative motion.
+- Liveliness PASS: the existing design read remains an operations notebook for managers and field workers, with ENERGY 2 / RHYTHM 2 / MOTION 1. Records and the current inspection remain the focal content; shared section spacing groups related tasks. Amber marks a primary action or selection. The sign-in steps explain the actual assign/inspect/review lifecycle. Reduced-motion captures retain the same hierarchy.
+- Craftsmanship PASS: PanelHeader, ActionGroup and DialogHeader prevent screen-specific heading/action drift. DialogContent owns all modal size variants and geometry, replacing feature-local boxes. Shared Form, Input, SearchField, Label and radio behavior remain intact. Browser checks retain print pagination, review feedback, outbox recovery, local photos and worker access semantics. Native date/select ownership is explicit. No alternate theme, dead destination or storage migration is introduced.
+
+All twelve captures were visually inspected: [dispatch](images/dispatch-desk.png), [field notebook](images/field-notebook.png), [sign-in](images/notebook-sign-in.png), [assignment](images/notebook-dispatch-dialog.png), [phone work list](images/notebook-work-orders-phone.png), [planner](images/notebook-planner.png), [setup](images/notebook-resources.png), [phone setup](images/notebook-resources-phone.png), [worker accounts](images/notebook-worker-access.png), [phone checklist](images/notebook-inspection-phone.png), [report](images/notebook-report.png) and [outbox](images/notebook-outbox.png).
+
+Scope: the DOM-based web workspace, including phone layouts. Expo retains its native interface; JavaScript export is not device acceptance. Chromium workflow coverage and the local browser review do not constitute a full screen-reader audit or a user study. The existing Vite chunk-size advisory remains.
+
 ## Web notebook redesign (2026-10-23)
 
 `npm run check` passed 414 unit/API tests, root/mobile type checking, formatting and the production web build. `npm run test:e2e` passed 85 browser workflows. The four redesign workflows also passed separately while regenerating README images. Expo compatibility and Android/iOS JavaScript exports passed; this change does not claim native device acceptance.

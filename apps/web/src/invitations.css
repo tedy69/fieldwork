@@ -36,15 +36,6 @@
   margin-top: 20px;
 }
 .invitation-dialog {
-  width: 720px;
-  max-width: calc(100vw - 32px);
-  max-height: calc(100dvh - 40px);
-  overflow: auto;
-  padding: 28px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--surface);
-  color: inherit;
   overflow-wrap: anywhere;
 }
 .invitation-dialog h2 {
@@ -105,9 +96,6 @@
   margin: 6px 8px 0 0;
 }
 @media (max-width: 600px) {
-  .invitation-dialog {
-    padding: 20px;
-  }
   .invitation-new-link {
     padding: 16px;
   }

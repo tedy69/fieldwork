@@ -30,6 +30,7 @@ Native selects and native date popups deliberately retain the operating system's
 ## Controls and validation
 
 - Shared Kokonut UI/shadcn buttons, cards, fields, dialogs, selection strips and tables remain canonical. Actions keep their visible label, keyboard behavior and 44px target. Phosphor icons identify actual actions.
+- PanelHeader and ActionGroup in components.tsx own section headings and wrapping action groups. DialogHeader and DialogContent in components/ui/dialog.tsx own modal frames; form, directory, compare and finder are the only size variants. Feature CSS must not duplicate dialog geometry or colors.
 - Form disables browser validation bubbles, checks native constraint metadata, associates text recovery guidance with invalid fields, and focuses the first invalid field. Domain validation remains in shared contracts and the API. A failed save retains entered values.
 - Password fields are masked initially, allow paste/autofill, and have a keyboard-accessible reveal toggle. Account setup remains separate from normal sign-in and cached notebooks.
 - SearchField owns immediate clearing and returns focus to its input. Cached search is immediate and local; server search uses explicit Search submission, not requests on each keystroke. The finder retains its local matching and composition-safe shortcuts.
@@ -63,9 +64,11 @@ Document titles use `Page · Fieldwork`; inspection titles use their reference, 
 
 Work rows stack on phones while keeping reference, site, worker, due date and status. Week/month planners retain their established keyboard date selection and narrow ledger layouts. The document owns page/form scrolling; only dialogs, maps, and bounded ledgers own internal overflow. Focus must remain visible at narrow/short heights.
 
+The work board keeps view selection, search, filters, dates and exports with their records. Inspection metadata precedes the content and tools columns; narrow layouts stack the tools after the inspection. Setup sections show saved records before their creation form in document order, with columns on wide screens. These compositions reuse the same headings, panel radius, action spacing and field controls.
+
 ## Overlays and feedback
 
-Radix Dialog owns modality, focus containment, Escape and restoration. Existing per-workflow guards block dismissal during writes or uncertain operations. Long dialogs scroll within the viewport. Alerts stay next to the affected task; normal status is polite, errors remain until corrected, and no credential is included in notification text.
+Radix Dialog owns modality, focus containment, Escape and restoration. Existing per-workflow guards block dismissal during writes or uncertain operations. Long dialogs scroll within the viewport, with a 16px minimum outer inset and a shared title/description/close alignment. The eight dialog families are checked at 390px and 1440px for non-overlapping titles/actions, bounded geometry, tab containment and return focus. Alerts stay next to the affected task; normal status is polite, errors remain until corrected, and no credential is included in notification text.
 
 The existing confirmation and retained-draft policies remain in their domain controllers. No browser alert/confirm/prompt, automatic dismissal timer, new hard-delete action, or automatic sign-in is added.
 

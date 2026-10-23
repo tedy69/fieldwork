@@ -14,7 +14,7 @@ typography:
     lineHeight: 1.5
   heading:
     fontFamily: "'Avenir Next', 'Segoe UI', sans-serif"
-    fontSize: 42px
+    fontSize: 34px
     lineHeight: 1.25
   reference:
     fontFamily: 'ui-monospace, SFMono-Regular, Consolas, monospace'
@@ -22,10 +22,11 @@ typography:
     lineHeight: 1.5
 rounded:
   control: 6px
+  panel: 10px
 spacing:
   field: 12px
   section: 24px
-  page: 48px
+  page: 36px
 omitted:
   - section: components
     reason: 'Existing runtime component recipes own state styling; mapping is documented below.'
@@ -50,12 +51,12 @@ Reading this as an operations notebook for dispatch managers and field workers, 
 - A narrow rule beside the active navigation item carries the notebook's margin motif. Status shapes communicate state rather than decoration.
 - System fonts work offline. Monospace is limited to record references and code.
 - Motion is limited to short interaction feedback and respects reduced-motion settings.
-- Kokonut UI and its shared shadcn foundation are used across the web workspace. Buttons, fields, cards, notices, status badges, selection strips, the finder, and photo attachment share the existing charcoal/amber palette. Outlined cards group actual workload counts, catalog editing, and reports; the work list remains the main content. Small corners distinguish controls without adding pill shapes or broad shadows.
+- Kokonut UI and its shared shadcn foundation are used across the web workspace. Buttons, fields, cards, notices, status badges, selection strips, the finder, and photo attachment share the existing charcoal/amber palette. Workload counts form a compact summary. Cards group the work board, catalog sections, and reports; small corners distinguish controls without adding pill shapes or broad shadows.
 - The finder keeps visible shortcut keycaps. Selection strips show the active filter with the existing amber rule, and photo attachment names its local-draft destination. Demo charts, sample navigation/accounts, artificial progress, and motion effects are excluded from the product.
 - Phosphor regular icons provide consistent action and state symbols on the web. Compact 16px icons inherit the text color, retain visible labels, and identify search, nested navigation, links, or progress rather than adding decoration.
 - Clipboard, tray, and buildings identify work orders, the report outbox, and workspace resources. The upload glyph identifies photo attachment to a local draft. Labels remain visible; navigation glyphs are omitted at the narrowest phone width to keep the destinations readable.
-- Rescheduling expands beside the order metadata so managers can compare the current and proposed dates. The amber margin rule identifies the active edit; existing date inputs, buttons, and typography keep the operation part of the notebook rather than a separate calendar screen.
-- Worker reassignment uses the same inline edit beside the current assignee, with a native worker selector and a handover note explaining where reports and device drafts stay. Shared Kokonut controls keep the charcoal/amber palette, 44px targets, system type, and compact spacing; the amber rule marks the active edit without extra decoration or animation.
+- Rescheduling expands in the order tools alongside the inspection, with current metadata above both columns. The amber margin rule identifies the active edit; existing date inputs, buttons, and typography keep the operation part of the notebook rather than a separate calendar screen.
+- Worker reassignment uses the same order tools group, with a native worker selector and a handover note explaining where reports and device drafts stay. Shared Kokonut controls keep the charcoal/amber palette, 44px targets, system type, and compact spacing; the amber rule marks the active edit without extra decoration or animation.
 - Report history uses a shadcn dialog to compare saved submissions without leaving a correction draft. A compact version ledger sits beside the selected read-only report, then stacks above it on phones. Amber identifies the selected version; flat charcoal surfaces, checklist rows, and grouped metadata keep the report primary. Phosphor's counterclockwise clock identifies the real history action. No animation or new palette is introduced.
 - Server search uses a separate shadcn dialog for current online records, alongside the cached-work finder. Shared fields group real search constraints above a compact result ledger. Narrow forms and result metadata stack; the header wraps so both search actions retain readable labels and 44px targets. Amber identifies the search action, while flat charcoal rows and existing status colors keep work records primary. ENERGY 2 / RHYTHM 2 / MOTION 1 remains unchanged.
 - Recurring dispatch uses a secondary action beside ordinary assignment, with the same brief fields inside a shadcn dialog. A compact chronological ledger previews actual dates before creation. A saved uncertain batch replaces editable fields with a recovery notice and the original dates, making its retry scope clear. Shared controls, flat charcoal surfaces, system type, amber confirmation, and stacked phone fields retain ENERGY 2 / RHYTHM 2 / MOTION 1 without additional icons or animation.
@@ -83,13 +84,15 @@ The 2026-10-23 redesign retains the user's charcoal and amber palette. `apps/web
 
 ## Typography
 
-System body fonts stay readable without a download. Avenir Next gives headings the open, readable shapes of printed inspection sheets; it falls back to Segoe UI or sans-serif. Monospace remains confined to record references. The 15px body, 16px fields, 14px actions, 12px metadata and 32–42px page titles give records a clear hierarchy. Dense information does not require tiny labels.
+System body fonts stay readable without a download. Avenir Next gives headings the open, readable shapes of printed inspection sheets; it falls back to Segoe UI or sans-serif. Monospace remains confined to record references. The 15px body, 16px fields, 14px actions, 12px metadata and 28–34px page titles give records a clear hierarchy. The inspection title can reach 36px, and the public sign-in introduction 52px. Sentence-case headings identify the task without repeated category labels. Dense information does not require tiny labels.
 
 ## Layout
 
-Keep the inspection ledger as the focal point. The signature is a notebook margin identifying the active destination or selected date, paired with plain, readable records. Workload counts form one quiet ruled summary rather than competing dashboard cards. A 224px desktop sidebar leaves room for work; page gutters scale from 20px to 48px. Phones preserve labeled navigation, stack record metadata, and allow the page to grow naturally.
+Keep the inspection ledger as the focal point. The signature is a notebook margin identifying the active destination or selected date, paired with plain, readable records. Workload counts form one quiet summary above a single work board. The board groups views, search, status, dates, records, and exports so controls stay connected to their results. A 216px desktop sidebar leaves room for work; page gutters scale from 18px to 36px. Phones preserve labeled navigation, stack record metadata, and allow the page to grow naturally.
 
-Inspection questions use separate fieldsets because each requires an independent answer and optional note. Metadata, instructions, evidence and review have distinct reading groups. Resources pair saved catalog records with their creation forms. Empty and failed states explain the next available action.
+Inspection questions use separate fieldsets because each requires an independent answer and optional note. Metadata leads the inspection; its content sits beside a narrower tools/location column on wide screens. Narrow screens stack these groups without hiding information. Resources place saved sites and checklists beside their respective forms; phones follow the same records-then-form reading order. Field workers use the same section header and action group. Empty and failed states explain the next available action.
+
+PanelHeader and ActionGroup own section hierarchy and wrapping actions. DialogHeader and DialogContent own all eight modal families, with form, directory, comparison and finder widths. Each uses one title/description/action alignment, border, inset and scroll boundary. Feature stylesheets own only their internal content. The sign-in introduction explains the three real steps of work instead of using decorative notebook lines.
 
 ## Elevation & Depth
 
@@ -97,7 +100,7 @@ Flat surfaces distinguish records from editable fields. Shadows belong only to m
 
 ## Shapes
 
-Shared surfaces and controls use a 6px radius, statuses 4px, and rule-separated list rows remain rectangular. This distinction keeps static metadata from looking like a button. Minimum 44px actions and explicit focus rings support touch and keyboard use.
+Shared panels use a 10px radius, controls 6px, statuses 4px, and rule-separated list rows remain rectangular. This distinction keeps static metadata from looking like a button. Minimum 44px actions and explicit focus rings support touch and keyboard use.
 
 ## Components
 
@@ -109,6 +112,8 @@ Shared surfaces and controls use a 6px radius, statuses 4px, and rule-separated 
 | --space-page                                    | main and topbar                                     | A common alignment from desktop to phone                                   |
 | --scroll-*                                      | Global standard scrollbar and engine fallback       | Visible navigation in every owned overflow region                          |
 | --z-backdrop / --z-dialog                       | Radix overlays                                      | Predictable modal stacking above workspace content                         |
+| PanelHeader / ActionGroup                       | Catalog sections and task actions                   | Shared heading rhythm and wrapping actions                                 |
+| DialogHeader / DialogContent size               | All workspace dialogs                               | One modal frame with widths matched to the actual task                     |
 
 Shared Form owns validation, Input owns password reveal, SearchField owns clear/focus, and Textarea owns bounded growth. Behavior is documented in [UX-CONTRACT.md](UX-CONTRACT.md). Existing Phosphor eyes and close glyphs identify reveal/clear actions; no new logo, avatar or illustration is needed. MOTION 1 means brief color feedback only, disabled under reduced motion.
 

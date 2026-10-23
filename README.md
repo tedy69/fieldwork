@@ -15,15 +15,23 @@ These are current web screens using synthetic demo people, sites, and inspection
 | ![Monthly planner showing synthetic demo assignments](docs/images/notebook-planner.png) | ![Sites and inspection checklists in the demo workspace](docs/images/notebook-resources.png) |
 
 <details>
-<summary>Sign-in, field inspection, report review, and worker accounts</summary>
+<summary>Sign-in, assignment, field inspection, report review, setup, and offline work</summary>
 
 ![Fieldwork sign-in screen](docs/images/notebook-sign-in.png)
+
+![Assigning a work order with shared notebook controls](docs/images/notebook-dispatch-dialog.png)
+
+<img src="docs/images/notebook-work-orders-phone.png" alt="Demo work orders and filters on a phone" width="300" />
 
 <img src="docs/images/notebook-inspection-phone.png" alt="A demo inspection checklist on a 390-pixel phone viewport" width="300" />
 
 ![Reviewing a synthetic inspection report](docs/images/notebook-report.png)
 
 ![Managing synthetic worker accounts](docs/images/notebook-worker-access.png)
+
+<img src="docs/images/notebook-resources-phone.png" alt="Sites, checklist forms and worker controls on a phone" width="300" />
+
+![The report outbox with its offline guidance](docs/images/notebook-outbox.png)
 
 </details>
 

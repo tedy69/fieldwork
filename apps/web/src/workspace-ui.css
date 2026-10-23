@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 44px;
+  min-height: var(--control-height);
   padding: 10px 15px;
   border: 1px solid var(--line);
   border-radius: var(--ui-radius);
@@ -99,7 +99,7 @@
 }
 .ui-card {
   border: 1px solid var(--line);
-  border-radius: var(--ui-radius);
+  border-radius: var(--panel-radius);
   background: var(--surface);
   color: var(--ui-foreground);
   box-shadow: none;
@@ -205,7 +205,7 @@ form > .ui-field-label {
   box-shadow: inset 0 -2px var(--amber);
 }
 .work-view-toggle.kokonut-tabs {
-  margin: 24px 0 20px;
+  margin: 0;
 }
 .sidebar nav .ui-button {
   justify-content: flex-start;
@@ -226,12 +226,12 @@ form > .ui-field-label {
   height: 18px;
 }
 .ledger-summary {
-  gap: 28px;
+  gap: 24px;
   align-items: stretch;
-  border-top: 1px solid var(--line);
+  border-top: 0;
   border-bottom: 1px solid var(--line);
-  padding: 20px 0;
-  margin-bottom: 24px;
+  padding: 0 0 20px;
+  margin: 24px 0;
 }
 .ledger-summary > .ui-card {
   padding: 0;
@@ -253,7 +253,7 @@ form > .ui-field-label {
   padding-right: 0;
 }
 .ledger-summary .summary-number {
-  font-size: 36px;
+  font-size: 28px;
   font-family: var(--font-heading);
   font-variant-numeric: tabular-nums;
 }
@@ -271,14 +271,18 @@ form > .ui-field-label {
   padding: 22px;
   margin-top: 24px;
 }
+.inspection-content > .brief.ui-card,
+.inspection-content > .report.ui-card {
+  padding: 24px;
+  margin: 0 0 24px;
+}
 .detail > .report.ui-card {
   padding: 22px;
 }
 .empty.ui-empty {
-  background: transparent;
-  border: 1px solid var(--line);
-  border-style: dashed;
-  border-radius: var(--ui-radius);
+  background: var(--surface);
+  border: 0;
+  border-radius: var(--panel-radius);
 }
 .identity.ui-card {
   padding: 16px 8px 0;
@@ -440,6 +444,55 @@ form > .ui-field-label {
   transform: translate(-50%, -50%);
   margin: 0;
   overscroll-behavior: contain;
+  width: 640px;
+  max-width: calc(100vw - var(--dialog-inset) * 2);
+  max-height: calc(100dvh - var(--dialog-inset) * 2);
+  overflow: auto;
+  padding: 28px;
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--panel-radius);
+  background: var(--surface);
+  color: var(--ui-foreground);
+  box-shadow: 0 20px 80px #0008;
+  overflow-wrap: anywhere;
+}
+.ui-dialog[data-size='directory'] {
+  width: 760px;
+}
+.ui-dialog[data-size='compare'] {
+  width: 1000px;
+}
+.ui-dialog[data-size='finder'] {
+  width: 600px;
+}
+.ui-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+.ui-dialog-header > div {
+  min-width: 0;
+  flex: 1;
+}
+.ui-dialog-header .ui-button {
+  flex-shrink: 0;
+}
+.ui-dialog .ui-dialog-title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.25;
+}
+.ui-dialog-header [data-slot='dialog-description'] {
+  margin: 10px 0 0;
+  max-width: 68ch;
+  font-size: 14px;
+}
+.ui-dialog:has(> .ui-dialog-close) .ui-dialog-header {
+  padding-right: 48px;
 }
 .ui-dialog-close {
   position: absolute;
@@ -516,6 +569,279 @@ form > .ui-field-label {
 .ui-table-container {
   width: 100%;
   overflow-x: auto;
+}
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-section);
+  margin-bottom: var(--space-section);
+}
+.panel-header > div {
+  min-width: 0;
+}
+.panel-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.panel-header p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  max-width: 65ch;
+}
+.panel-count {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--ink);
+  color: var(--muted);
+  font: 13px/1.5 var(--font-body);
+  vertical-align: middle;
+}
+.action-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-control);
+}
+.topbar-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-control);
+  margin-left: auto;
+}
+.work-board.ui-card {
+  padding: 20px;
+}
+.board-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.board-heading .search {
+  margin: 0;
+}
+.status-filters.kokonut-tabs {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.status-filters .kokonut-tab.is-selected {
+  box-shadow: none;
+  color: var(--ui-foreground);
+  border-color: transparent;
+}
+.work-board .list-footer {
+  padding-bottom: 16px;
+}
+.work-board .report-export {
+  margin: 0;
+}
+.catalog-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 28px;
+}
+.catalog-columns > * {
+  min-width: 0;
+}
+.catalog-columns .resource-list {
+  margin: 0;
+}
+.catalog-columns .resource-list > li:first-child {
+  padding-top: 0;
+}
+.catalog-columns form > h3 {
+  margin-top: 0;
+  font-size: 17px;
+}
+.worker-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+  gap: 20px;
+}
+.worker-summary li {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+.worker-summary .muted {
+  font-size: 12px;
+}
+.worker-directory > p {
+  margin-bottom: 0;
+  font-size: 13px;
+}
+.inspection-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 24px;
+  align-items: start;
+}
+.inspection-content,
+.inspection-context {
+  min-width: 0;
+}
+.detail-identity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  font-size: 13px;
+}
+.order-tools {
+  padding: 20px;
+}
+.order-tools .panel-header {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+.order-tools .panel-header h2 {
+  font-size: 18px;
+}
+.order-tools .schedule,
+.order-tools .report-print-action {
+  margin: 0 0 16px;
+}
+.order-tools .history-launcher {
+  margin: 0;
+}
+.order-tools .ui-button {
+  max-width: 100%;
+  white-space: normal;
+}
+.order-tools .schedule > .ui-button,
+.order-tools > .history-launcher {
+  width: 100%;
+  justify-content: flex-start;
+}
+.order-tools .report-print-action {
+  gap: 8px;
+}
+.inspection-context > .site-location {
+  margin-top: 20px;
+  padding: 20px;
+}
+.notebook-steps {
+  list-style: none;
+  margin: 28px 0 36px;
+  padding: 0;
+  counter-reset: stage;
+}
+.notebook-steps li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 4px 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+  counter-increment: stage;
+}
+.notebook-steps li::before {
+  content: counter(stage);
+  grid-row: 1/3;
+  color: var(--muted);
+  font-size: 13px;
+  padding-top: 2px;
+}
+.notebook-steps strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.notebook-steps span {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+@media (max-width: 1100px) {
+  .inspection-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .inspection-context {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 20px;
+  }
+  .inspection-context > .site-location {
+    margin-top: 0;
+  }
+}
+@media (max-width: 850px) {
+  .topbar {
+    flex-wrap: wrap;
+  }
+  .catalog-columns {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 20px;
+  }
+}
+@media (max-width: 600px) {
+  .topbar-tools {
+    margin-left: 0;
+    flex: 1 1 100%;
+  }
+  .topbar-tools > * {
+    flex: 1;
+  }
+  .panel-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .work-board.ui-card {
+    padding: 14px;
+  }
+  .board-heading {
+    gap: 14px;
+  }
+  .board-heading > * {
+    width: 100%;
+  }
+  .work-board .order-row {
+    padding: 18px 0;
+  }
+  .work-board .order-list {
+    border: 0;
+  }
+  .catalog-columns,
+  .inspection-context {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .catalog-panel.ui-card {
+    padding: 18px;
+  }
+  .inspection-content > .brief.ui-card,
+  .inspection-content > .report.ui-card {
+    padding: 18px;
+  }
+  .ui-dialog {
+    padding: 20px;
+  }
+  .ui-dialog-header {
+    gap: 12px;
+  }
+  .ui-dialog-header .ui-button {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  .ui-dialog .ui-dialog-title {
+    font-size: 22px;
+  }
+  .notebook-steps {
+    display: none;
+  }
+  .login-intro h1 {
+    max-width: 17ch;
+  }
 }
 @media print {
   .ui-dialog,

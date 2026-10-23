@@ -339,7 +339,7 @@ describe('recurring assignments', () => {
     const tables = ['users', 'catalog', 'work_orders', 'mutations', 'report_revisions', 'audit'];
     const before = tables.map((table) => fixture.store.db.prepare(`SELECT * FROM ${table}`).all());
     fixture.store.db.exec(
-      'DROP TABLE invitations; DROP TABLE order_series_members; DROP TABLE order_series; DELETE FROM migrations WHERE version>=3;',
+      'DROP TABLE worker_access_events; DROP TABLE worker_access; DROP TABLE invitations; DROP TABLE order_series_members; DROP TABLE order_series; DELETE FROM migrations WHERE version>=3;',
     );
     await fixture.app.close();
     fixture = await buildApp({ databasePath: path, rateLimits: false });
@@ -351,7 +351,7 @@ describe('recurring assignments', () => {
         .prepare('SELECT version FROM migrations ORDER BY version')
         .all()
         .map((row) => row.version),
-    ).toEqual([1, 2, 3, 4]);
+    ).toEqual([1, 2, 3, 4, 5]);
     manager = await login('manager');
     const payload = input();
     const receipt = (await create(payload)).json();
@@ -373,7 +373,7 @@ describe('recurring assignments', () => {
     const path = join(directory, 'upgrade.sqlite');
     const store = openStore(path);
     store.db.exec(
-      'DROP TABLE invitations; DROP TABLE order_series_members; DROP TABLE order_series; DELETE FROM migrations WHERE version>=3; CREATE TABLE order_series_members(blocker TEXT);',
+      'DROP TABLE worker_access_events; DROP TABLE worker_access; DROP TABLE invitations; DROP TABLE order_series_members; DROP TABLE order_series; DELETE FROM migrations WHERE version>=3; CREATE TABLE order_series_members(blocker TEXT);',
     );
     store.db.close();
     try {

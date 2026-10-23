@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Manager worker-account deactivation/reactivation with session revocation, active assignment choices, version checks, access events, and preserved offline reports. Includes an additive schema-5 upgrade.
+
 - Web server search with combined filters, paged results, retry/restart actions, and a fresh permission check when opening an order. Browsing preserves saved work and drafts.
 
 - Read-only server work-order search with combined filters, literal Unicode text matching, and cursor pagination. The original offset-based sync endpoint remains compatible.

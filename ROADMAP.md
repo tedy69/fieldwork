@@ -30,12 +30,13 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Weekday-only recurring batches with Monday–Friday previews, saved-request recovery, and batch browsing.
 - [x] Checklist-wide photo requirements, web/Expo guidance, offline draft protection, and server enforcement.
 - [x] Worker invitations with one-time expiring links, a paginated manager ledger, revocation, browser password setup, and preserved device notebooks.
+- [x] Worker deactivation and reactivation with manager confirmations, session revocation, active assignment choices, version conflicts, and preserved offline reports.
 
 ## Next · Make daily work easier
 
 - Broader scheduling rules, holiday calendars, and editing or retiring future series work.
 - Accessible checklist field types: readings, numbers, text, and per-item evidence.
-- Account lifecycle UI, including deactivation and recovery.
+- Password recovery and access-history browsing, building on worker invitations and deactivation/reactivation.
 - Automated native flows on Android and iOS.
 - Translations, beginning with English and Indonesian.
 

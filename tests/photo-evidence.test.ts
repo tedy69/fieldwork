@@ -285,7 +285,7 @@ it('persists the requirement across restart without rewriting older orders or ad
         .prepare('SELECT version FROM migrations ORDER BY version')
         .all()
         .map((row) => row.version),
-    ).toEqual([1, 2, 3, 4]);
+    ).toEqual([1, 2, 3, 4, 5]);
   } finally {
     await fixture.app.close();
     rmSync(directory, { recursive: true, force: true });

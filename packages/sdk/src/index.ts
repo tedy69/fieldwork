@@ -1,5 +1,9 @@
 import {
   CatalogSchema,
+  WorkerPageSchema,
+  WorkerAccountSchema,
+  type WorkerQuery,
+  type UpdateWorkerAccess,
   InvitationReceiptSchema,
   InvitationPageSchema,
   InvitationSchema,
@@ -93,6 +97,15 @@ export function createClient(
     logout: () => request('/sessions/current', { parse: () => undefined }, 'DELETE'),
     me: () => request('/me', MeSchema),
     catalog: () => request('/catalog', CatalogSchema),
+    workers: (query: WorkerQuery = {}) => {
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(query))
+        if (value !== undefined) params.set(key, String(value));
+      return request(`/workers?${params}`, WorkerPageSchema);
+    },
+    worker: (id: string) => request(`/workers/${encodeURIComponent(id)}`, WorkerAccountSchema),
+    updateWorkerAccess: (id: string, input: UpdateWorkerAccess) =>
+      request(`/workers/${encodeURIComponent(id)}/access`, WorkerAccountSchema, 'PATCH', input),
     createInvitation: (input: CreateInvitation) =>
       request('/invitations', InvitationReceiptSchema, 'POST', input),
     invitations: (query: InvitationQuery = {}) => {

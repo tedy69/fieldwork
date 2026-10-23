@@ -243,7 +243,7 @@ it('persists location edits and clears across restart without a new migration', 
         .prepare('SELECT version FROM migrations ORDER BY version')
         .all()
         .map((row) => row.version),
-    ).toEqual([1, 2, 3, 4]);
+    ).toEqual([1, 2, 3, 4, 5]);
   } finally {
     await fixture.app.close();
     rmSync(directory, { recursive: true, force: true });

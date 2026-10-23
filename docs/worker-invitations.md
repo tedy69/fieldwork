@@ -55,4 +55,4 @@ Back up the database and committed WAL before upgrading, then let the new server
 - Acceptance and routing: `AcceptInvitation.tsx`, `invitation-link.ts`, `App.tsx`, `invitations.css`.
 - Regression coverage: `tests/invitations.test.ts`, `tests/invitation-link.test.ts`, `tests/sdk.test.ts`, `tests/e2e/invitations.spec.ts`, `tests/e2e/worker-invitation-recovery.spec.ts`.
 
-SMTP delivery, mailbox ownership checks, native invitation deep links, account deactivation/recovery, invitation retention cleanup, organization boundaries, physical-device acceptance, and a full screen-reader audit remain separate work. Manager bootstrap accounts can still be created with the existing CLI.
+Accepted workers can be disabled or reactivated through [worker access controls](worker-access.md). SMTP delivery, mailbox ownership checks, native invitation deep links, password recovery, invitation retention cleanup, organization boundaries, physical-device acceptance, and a full screen-reader audit remain separate work. Manager bootstrap accounts can still be created with the existing CLI.

@@ -34,6 +34,7 @@ import { createSeriesQueries } from './order-series';
 import { defaultMapProvider } from './map-settings';
 import { Problem, fail } from './problems';
 import { registerInvitationRoutes } from './invitations';
+import { registerWorkerRoutes } from './workers';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -135,6 +136,15 @@ export async function buildApp(options: AppOptions) {
         'Your session expired. Sign in again; your offline work is still saved.',
       );
     request.actor = store.getUser(session.user_id as string)!;
+    if (
+      !request.actor ||
+      (request.actor.role === 'worker' && !store.workerEnabled(request.actor.id))
+    )
+      fail(
+        401,
+        'UNAUTHENTICATED',
+        'Your account is unavailable. Contact a manager; your offline work is still saved.',
+      );
     request.sessionHash = sessionHash;
     if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method) && !request.headers.authorization) {
       const origin = request.headers.origin;
@@ -147,6 +157,7 @@ export async function buildApp(options: AppOptions) {
     if (request.actor?.role !== 'manager') fail(403, 'FORBIDDEN', 'A manager account is required.');
   }
   registerInvitationRoutes(app, store, manager);
+  registerWorkerRoutes(app, store, manager);
   function accessible(id: string, request: FastifyRequest) {
     const order = store.getOrder(id);
     if (!order || (request.actor!.role === 'worker' && order.assignee.id !== request.actor!.id))
@@ -176,6 +187,13 @@ export async function buildApp(options: AppOptions) {
       const fallback = '00000000000000000000000000000000:' + '00'.repeat(64);
       const valid = verifyPassword(body.password, (row?.password as string) ?? fallback);
       if (!row || !valid) fail(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.');
+      const user = store.getUser(row.id as string)!;
+      if (user.role === 'worker' && !store.workerEnabled(user.id))
+        fail(
+          403,
+          'ACCOUNT_DISABLED',
+          'Your worker account is disabled. Contact a manager; your offline work is still saved.',
+        );
       const token = randomBytes(32).toString('hex');
       const expires = Date.now() + 14 * 24 * 60 * 60 * 1000;
       store.db.prepare('DELETE FROM sessions WHERE expires<?').run(Date.now());
@@ -462,8 +480,8 @@ export async function buildApp(options: AppOptions) {
       if (!['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status))
         fail(409, 'INVALID_STATE', 'Only unfinished assignments can be reassigned.');
       const assignee = store.getUser(input.assigneeId);
-      if (!assignee || assignee.role !== 'worker')
-        fail(422, 'INVALID_ASSIGNMENT', 'Choose an existing field worker.');
+      if (!assignee || assignee.role !== 'worker' || !store.workerEnabled(assignee.id))
+        fail(422, 'INVALID_ASSIGNMENT', 'Choose an active field worker.');
       if (order.assignee.id === assignee.id) return order;
       const updated: WorkOrder = { ...order, assignee, version: order.version + 1 };
       store.writeOrder(updated);

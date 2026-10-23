@@ -50,6 +50,8 @@ export function openStore(path: string) {
     return db.prepare('SELECT id,name,email,role FROM users WHERE id=?').get(id) as
       User | undefined;
   };
+  const workerEnabled = (id: string) =>
+    db.prepare('SELECT enabled FROM worker_access WHERE user_id=?').get(id)?.enabled !== 0;
   function insertRevision(
     order: WorkOrder,
     submissionVersion: number | null,
@@ -134,7 +136,11 @@ export function openStore(path: string) {
     const data = row ? JSON.parse(row.data as string) : { sites: [], templates: [] };
     return {
       ...data,
-      users: db.prepare('SELECT id,name,email,role FROM users ORDER BY name').all(),
+      users: db
+        .prepare(
+          "SELECT u.id,u.name,u.email,u.role FROM users u LEFT JOIN worker_access a ON a.user_id=u.id WHERE u.role='manager' OR COALESCE(a.enabled,1)=1 ORDER BY u.name,u.id",
+        )
+        .all(),
     };
   }
   try {
@@ -221,6 +227,27 @@ export function openStore(path: string) {
           INSERT INTO migrations VALUES(4);
         `);
       });
+    if (!db.prepare('SELECT version FROM migrations WHERE version=5').get())
+      transaction(() => {
+        db.exec(`
+          CREATE TABLE worker_access(
+            user_id TEXT PRIMARY KEY REFERENCES users(id),
+            enabled INTEGER NOT NULL CHECK(enabled IN (0,1)),
+            version INTEGER NOT NULL CHECK(version>0),
+            updated_at TEXT NOT NULL,
+            updated_by TEXT NOT NULL REFERENCES users(id)
+          );
+          CREATE TABLE worker_access_events(
+            sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+            worker_id TEXT NOT NULL REFERENCES users(id),
+            actor_id TEXT NOT NULL REFERENCES users(id),
+            enabled INTEGER NOT NULL CHECK(enabled IN (0,1)),
+            at TEXT NOT NULL
+          );
+          CREATE INDEX worker_access_events_worker ON worker_access_events(worker_id,sequence DESC);
+          INSERT INTO migrations VALUES(5);
+        `);
+      });
   } catch (error) {
     db.close();
     throw error;
@@ -229,6 +256,7 @@ export function openStore(path: string) {
     db,
     getOrder,
     getUser,
+    workerEnabled,
     writeOrder,
     transaction,
     catalog,

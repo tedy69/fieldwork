@@ -2,6 +2,53 @@ import { expect, it, vi } from 'vitest';
 import { createClient } from '@fieldwork/sdk';
 import { randomBytes, randomUUID } from 'node:crypto';
 
+it('encodes worker account reads and optimistic access updates and validates responses', async () => {
+  const account = {
+    user: { id: 'worker/a', name: 'Synthetic worker', email: 'worker@example.com', role: 'worker' },
+    enabled: true,
+    version: 0,
+    updatedAt: null,
+    updatedBy: null,
+  };
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ data: [account], total: 1, nextCursor: null })),
+    )
+    .mockResolvedValueOnce(new Response(JSON.stringify(account)))
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          ...account,
+          enabled: false,
+          version: 1,
+          updatedAt: '2026-10-23T00:00:00Z',
+          updatedBy: { id: 'manager', name: 'Synthetic manager' },
+        }),
+      ),
+    )
+    .mockResolvedValueOnce(new Response(JSON.stringify({ ...account, enabled: 'false' })));
+  const client = createClient('https://fieldwork.example', undefined, fetcher);
+  expect((await client.workers({ limit: 2, cursor: 'worker/a b' })).data).toEqual([account]);
+  expect(fetcher.mock.calls[0][0]).toBe(
+    'https://fieldwork.example/api/v1/workers?limit=2&cursor=worker%2Fa+b',
+  );
+  expect(await client.worker('worker/a')).toEqual(account);
+  expect(fetcher.mock.calls[1][0]).toBe('https://fieldwork.example/api/v1/workers/worker%2Fa');
+  expect(
+    (await client.updateWorkerAccess('worker/a', { enabled: false, expectedVersion: 0 })).enabled,
+  ).toBe(false);
+  expect(fetcher.mock.calls[2][0]).toBe(
+    'https://fieldwork.example/api/v1/workers/worker%2Fa/access',
+  );
+  expect(fetcher.mock.calls[2][1]?.method).toBe('PATCH');
+  expect(JSON.parse(fetcher.mock.calls[2][1]?.body as string)).toEqual({
+    enabled: false,
+    expectedVersion: 0,
+  });
+  await expect(client.worker('worker/a')).rejects.toThrow();
+});
+
 it('validates invitation receipts, encodes manager pagination and keeps public tokens in POST bodies', async () => {
   const invitation = {
     id: randomUUID(),

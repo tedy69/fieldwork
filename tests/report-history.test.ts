@@ -251,7 +251,7 @@ describe('schema 2 upgrades', () => {
     const tables = ['users', 'sessions', 'catalog', 'work_orders', 'mutations', 'photos', 'audit'];
     const before = tables.map((table) => fixture.store.db.prepare(`SELECT * FROM ${table}`).all());
     fixture.store.db.exec(
-      'DROP TABLE invitations; DROP TABLE order_series_members; DROP TABLE order_series; DROP TABLE report_revisions; DELETE FROM migrations WHERE version>1;',
+      'DROP TABLE worker_access_events; DROP TABLE worker_access; DROP TABLE invitations; DROP TABLE order_series_members; DROP TABLE order_series; DROP TABLE report_revisions; DELETE FROM migrations WHERE version>1;',
     );
     await fixture.app.close();
     const upgraded = openStore(path);
@@ -279,7 +279,7 @@ describe('schema 2 upgrades', () => {
           .prepare('SELECT version FROM migrations ORDER BY version')
           .all()
           .map((row) => row.version),
-      ).toEqual([1, 2, 3, 4]);
+      ).toEqual([1, 2, 3, 4, 5]);
     } finally {
       upgraded.db.close();
     }
@@ -312,7 +312,7 @@ describe('schema 2 upgrades', () => {
     const legacy = openStore(path);
     seed(legacy);
     legacy.db.exec(
-      'DROP TABLE invitations; DROP TABLE order_series_members; DROP TABLE order_series; DROP TABLE report_revisions; DELETE FROM migrations WHERE version>1;',
+      'DROP TABLE worker_access_events; DROP TABLE worker_access; DROP TABLE invitations; DROP TABLE order_series_members; DROP TABLE order_series; DROP TABLE report_revisions; DELETE FROM migrations WHERE version>1;',
     );
     legacy.db
       .prepare('INSERT INTO mutations VALUES(?,?,?,?)')

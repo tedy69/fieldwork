@@ -28,6 +28,13 @@
   outline: 2px solid var(--amber);
   outline-offset: 4px;
 }
+.worker-access-confirmation h3[tabindex]:focus {
+  outline: 2px solid var(--amber);
+  outline-offset: 4px;
+}
+.worker-access-confirmation {
+  margin-top: 20px;
+}
 .invitation-dialog {
   width: 720px;
   max-width: calc(100vw - 32px);

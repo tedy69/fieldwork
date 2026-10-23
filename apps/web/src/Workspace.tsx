@@ -269,6 +269,16 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
               catalog={catalog}
               refresh={refresh}
               online={online}
+              onCatalog={setCatalog}
+              onWorkerUpdated={(account) =>
+                setCatalog((current) => ({
+                  ...current,
+                  users: [
+                    ...current.users.filter((user) => user.id !== account.user.id),
+                    ...(account.enabled ? [account.user] : []),
+                  ].sort((a, b) => a.name.localeCompare(b.name)),
+                }))
+              }
               onSiteUpdated={(updated) =>
                 setCatalog((current) => ({
                   ...current,

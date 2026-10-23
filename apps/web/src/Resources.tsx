@@ -6,23 +6,28 @@ import { Textarea } from './components/ui/textarea';
 import { Label } from './components/ui/label';
 import { NativeSelect, NativeSelectOption } from './components/ui/native-select';
 import { useRef, useState, type FormEvent } from 'react';
-import type { Catalog, Site } from '@fieldwork/contracts';
+import type { Catalog, Site, WorkerAccount } from '@fieldwork/contracts';
 import { createClient } from '@fieldwork/sdk';
 import { parseCoordinateInputs } from './coordinate-input';
 import SiteLocation from './SiteLocation';
 import SiteCoordinatesEditor from './SiteCoordinatesEditor';
 import WorkerInvitations from './WorkerInvitations';
+import WorkerAccounts from './WorkerAccounts';
 const client = createClient();
 export default function Resources({
   catalog,
   refresh,
   online,
   onSiteUpdated,
+  onCatalog,
+  onWorkerUpdated,
 }: {
   catalog: Catalog;
   refresh: () => Promise<void>;
   online: boolean;
   onSiteUpdated: (site: Site) => void;
+  onCatalog: (catalog: Catalog) => void;
+  onWorkerUpdated: (account: WorkerAccount) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
@@ -189,7 +194,10 @@ export default function Resources({
       </div>
       <Card className="brief">
         <h2>Field workers</h2>
-        <WorkerInvitations online={online} />
+        <div className="invitation-actions">
+          <WorkerInvitations online={online} />
+          <WorkerAccounts online={online} onCatalog={onCatalog} onUpdated={onWorkerUpdated} />
+        </div>
         <p>
           {catalog.users
             .filter((user) => user.role === 'worker')

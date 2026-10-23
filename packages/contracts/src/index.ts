@@ -7,6 +7,33 @@ export const UserSchema = z.object({
   role: z.enum(['manager', 'worker']),
 });
 export type User = z.infer<typeof UserSchema>;
+export const WorkerAccountSchema = z.object({
+  user: UserSchema.extend({ role: z.literal('worker') }),
+  enabled: z.boolean(),
+  version: z.number().int().nonnegative(),
+  updatedAt: z.iso.datetime().nullable(),
+  updatedBy: UserSchema.pick({ id: true, name: true }).nullable(),
+});
+export type WorkerAccount = z.infer<typeof WorkerAccountSchema>;
+export const UpdateWorkerAccessSchema = z
+  .object({
+    expectedVersion: z.number().int().nonnegative(),
+    enabled: z.boolean(),
+  })
+  .strict();
+export type UpdateWorkerAccess = z.infer<typeof UpdateWorkerAccessSchema>;
+export const WorkerQuerySchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+    cursor: z.string().min(1).max(100).optional(),
+  })
+  .strict();
+export type WorkerQuery = Partial<z.infer<typeof WorkerQuerySchema>>;
+export const WorkerPageSchema = z.object({
+  data: z.array(WorkerAccountSchema),
+  total: z.number().int().nonnegative(),
+  nextCursor: z.string().nullable(),
+});
 export const InvitationTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 export const CreateInvitationSchema = z
   .object({

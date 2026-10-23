@@ -1,5 +1,7 @@
 # Kokonut UI and shadcn in Fieldwork
 
+The [monthly planner](month-planner.md) uses the shared Kokonut selection strip and Button foundation. Its calendar and phone date ledger are screen composition around those controls, with existing theme tokens and no new library dependency.
+
 The [report history viewer](report-history.md) also uses the shared shadcn Dialog, Button, Badge, Alert, Empty, and Table. Its version ledger is screen composition around these primitives; charcoal/amber tokens and Phosphor icons remain unchanged.
 
 Fieldwork uses [Kokonut UI](https://kokonutui.com/docs) and [shadcn/ui](https://ui.shadcn.com/docs/components) throughout its web workspace while retaining the industrial notebook direction in DESIGN.md. Kokonut provides the finder, shortcut button, selection strips, and photo uploader. The shared shadcn foundation supplies the remaining UI primitives. Controls keep the same charcoal, amber, and workflow-status colors throughout sign-in, dispatch, inspection, review, resources, and offline work.

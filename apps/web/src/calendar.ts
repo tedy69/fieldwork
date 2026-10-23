@@ -18,3 +18,24 @@ export function calendarLabel(date: string, full = false) {
     day: 'numeric',
   });
 }
+
+export function shiftMonth(date: string, months: number) {
+  const first = new Date(`${date.slice(0, 7)}-01T12:00:00Z`);
+  first.setUTCMonth(first.getUTCMonth() + months);
+  return first.toISOString().slice(0, 10);
+}
+
+export function monthDates(date: string) {
+  const first = `${date.slice(0, 7)}-01`;
+  const last = new Date(`${first}T12:00:00Z`);
+  last.setUTCMonth(last.getUTCMonth() + 1, 0);
+  return Array.from({ length: last.getUTCDate() }, (_, index) => addDays(first, index));
+}
+
+export function monthLabel(date: string) {
+  return new Date(`${date}T12:00:00Z`).toLocaleDateString(undefined, {
+    timeZone: 'UTC',
+    month: 'long',
+    year: 'numeric',
+  });
+}

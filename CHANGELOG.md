@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Monthly web planner with daily workloads, keyboard date selection, filtered exports, and offline browsing. Managers can assign work for a selected date, including leap days.
+
 - Saved report history in the web app, including original answers, photos, assignment details, and manager feedback. Schema 2 recovers earlier submission acknowledgments and labels unavailable legacy reviews.
 
 - Complete the web component foundation with shadcn dialogs, radio groups, labels, fields, native selects, empty states, avatars, and report tables. Existing Kokonut components, colors, offline drafts, and print behavior are retained.

@@ -1,4 +1,5 @@
 import { Button } from './components/ui/button';
+import { Form } from './components/ui/form';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { FieldError } from './components/ui/field';
@@ -82,7 +83,8 @@ export default function RescheduleOrder({
       </Button>
       {!online && <p className="muted">Connect to change the due date.</p>}
       {editing && (
-        <form
+        <Form
+          noValidate
           id="schedule-form"
           aria-label="Change due date"
           onSubmit={save}
@@ -131,7 +133,7 @@ export default function RescheduleOrder({
               </Button>
             )}
           </div>
-        </form>
+        </Form>
       )}
     </section>
   );

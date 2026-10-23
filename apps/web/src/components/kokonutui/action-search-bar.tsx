@@ -17,6 +17,7 @@ import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check';
 import { CaretRightIcon } from '@phosphor-icons/react/dist/csr/CaretRight';
 import { CircleNotchIcon } from '@phosphor-icons/react/dist/csr/CircleNotch';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass';
+import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { animate, useReducedMotion } from 'motion/react';
 import {
   type ChangeEvent,
@@ -833,6 +834,21 @@ function ActionSearchBar({
             type="text"
             value={query}
           />
+          {query && (
+            <Button
+              type="button"
+              variant="ghost"
+              aria-label="Clear search"
+              disabled={running !== null}
+              onClick={() => {
+                setQuery('');
+                setActiveIndex(0);
+                inputRef.current?.focus();
+              }}
+            >
+              <XIcon aria-hidden="true" />
+            </Button>
+          )}
           {!open && (
             <span aria-hidden="true" className="flex shrink-0 gap-0.5">
               <Kbd>{isMac ? '⌘' : 'Ctrl'}</Kbd>

@@ -1,4 +1,39 @@
+---
+version: alpha
+colors:
+  ink: '#151d20'
+  surface: '#1c2629'
+  raised: '#243034'
+  foreground: '#edf1ee'
+  muted: '#adbbb6'
+  primary: '#f5c66d'
+typography:
+  body:
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    fontSize: 15px
+    lineHeight: 1.5
+  heading:
+    fontFamily: "'Avenir Next', 'Segoe UI', sans-serif"
+    fontSize: 42px
+    lineHeight: 1.25
+  reference:
+    fontFamily: 'ui-monospace, SFMono-Regular, Consolas, monospace'
+    fontSize: 12px
+    lineHeight: 1.5
+rounded:
+  control: 6px
+spacing:
+  field: 12px
+  section: 24px
+  page: 48px
+omitted:
+  - section: components
+    reason: 'Existing runtime component recipes own state styling; mapping is documented below.'
+---
+
 # Fieldwork design direction
+
+## Overview
 
 Direction chosen by Tedy: **Industrial field notebook: charcoal, amber, dense operational screens.**
 
@@ -41,3 +76,42 @@ Weekday recurrence extends the existing dispatch selector and date ledger. The M
 Photo evidence is a real checklist policy, chosen with the existing shared Native Select in setup and identified in the catalog/assignment options. Worker guidance stays beside the existing photo count and upload actions, with the same rule in Expo. Missing evidence uses the existing field-error treatment while the draft remains editable. No new surface, navigation, icon, palette, or motion is introduced; ENERGY 2 / RHYTHM 2 / MOTION 1 remains unchanged.
 
 All web UI primitives come from Kokonut UI or shadcn. Shadcn's Radix dialogs own modal focus and dismissal, its radio groups own checklist selection and arrow-key navigation, and its labels, fields, Native Select, empty state, avatar fallback, and table components complete the foundation. Brand tokens, flat surfaces, compact spacing, readable report pagination, and labeled 44px answer targets remain the direction. Page layouts, record metadata, and screen composition remain semantic HTML built from these primitives. ENERGY 2 / RHYTHM 2 / MOTION 1 is unchanged.
+
+## Colors
+
+The 2026-10-23 redesign retains the user's charcoal and amber palette. `apps/web/src/tokens.css` is the canonical runtime owner (existing-runtime model); the frontmatter mirrors its accepted roles. `--ink`, `--surface`, `--surface-raised`, `--ui-foreground`, `--muted`, and `--amber` implement the six colors above. The sidebar and input are darker related neutrals. Amber is reserved for the primary commit, current selection and work needing attention, rather than every heading or count. Error and approved tones remain semantic exceptions with text labels.
+
+## Typography
+
+System body fonts stay readable without a download. Avenir Next gives headings the open, readable shapes of printed inspection sheets; it falls back to Segoe UI or sans-serif. Monospace remains confined to record references. The 15px body, 16px fields, 14px actions, 12px metadata and 32–42px page titles give records a clear hierarchy. Dense information does not require tiny labels.
+
+## Layout
+
+Keep the inspection ledger as the focal point. The signature is a notebook margin identifying the active destination or selected date, paired with plain, readable records. Workload counts form one quiet ruled summary rather than competing dashboard cards. A 224px desktop sidebar leaves room for work; page gutters scale from 20px to 48px. Phones preserve labeled navigation, stack record metadata, and allow the page to grow naturally.
+
+Inspection questions use separate fieldsets because each requires an independent answer and optional note. Metadata, instructions, evidence and review have distinct reading groups. Resources pair saved catalog records with their creation forms. Empty and failed states explain the next available action.
+
+## Elevation & Depth
+
+Flat surfaces distinguish records from editable fields. Shadows belong only to modal layers; no glow, decorative grid, gradient or floating-card treatment is added. The global scrollbar baseline inherits without an opt-in class and returns to platform colors in forced-colors mode.
+
+## Shapes
+
+Shared surfaces and controls use a 6px radius, statuses 4px, and rule-separated list rows remain rectangular. This distinction keeps static metadata from looking like a button. Minimum 44px actions and explicit focus rings support touch and keyboard use.
+
+## Components
+
+| Runtime owner                                   | Adapter / consumers                                 | Rationale                                                                  |
+| ----------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------- |
+| tokens.css                                      | styles.css and workspace-ui.css                     | One runtime theme for page composition and shared primitives               |
+| --font-body / --font-heading / --font-reference | body, headings, references                          | Separate reading, task hierarchy and identifiers without downloaded assets |
+| --ui-radius / --ui-control-border / --ui-field  | shadcn Input, Native Select, Textarea, Button, Card | Consistent control geometry and visible boundaries                         |
+| --space-page                                    | main and topbar                                     | A common alignment from desktop to phone                                   |
+| --scroll-*                                      | Global standard scrollbar and engine fallback       | Visible navigation in every owned overflow region                          |
+| --z-backdrop / --z-dialog                       | Radix overlays                                      | Predictable modal stacking above workspace content                         |
+
+Shared Form owns validation, Input owns password reveal, SearchField owns clear/focus, and Textarea owns bounded growth. Behavior is documented in [UX-CONTRACT.md](UX-CONTRACT.md). Existing Phosphor eyes and close glyphs identify reveal/clear actions; no new logo, avatar or illustration is needed. MOTION 1 means brief color feedback only, disabled under reduced motion.
+
+## Do's and Don'ts
+
+Use real seeded records in documentation and name them as synthetic. Keep every existing workflow available, preserve non-sensitive input after errors, and retain device drafts. Do not reduce information to unlabeled icons, add fabricated activity, rely on color alone, or add alternate screen-local themes.

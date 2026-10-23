@@ -6,7 +6,7 @@ import SmoothTab from './components/kokonutui/smooth-tab';
 import { ClipboardTextIcon } from '@phosphor-icons/react/dist/csr/ClipboardText';
 import { TrayIcon } from '@phosphor-icons/react/dist/csr/Tray';
 import { BuildingsIcon } from '@phosphor-icons/react/dist/csr/Buildings';
-import { Input } from './components/ui/input';
+import { SearchField } from './components/ui/search-field';
 import { Label } from './components/ui/label';
 import { Avatar, AvatarFallback } from './components/ui/avatar';
 import { useEffect, useMemo, useState } from 'react';
@@ -137,6 +137,19 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
   const assignedCount = state.orders.filter(
     (order) => order.status === 'ASSIGNED' || order.status === 'CHANGES_REQUESTED',
   ).length;
+  useEffect(() => {
+    const title =
+      view === 'resources'
+        ? 'Sites & checklists'
+        : view === 'outbox'
+          ? 'Sync outbox'
+          : order
+            ? order.reference
+            : user.role === 'manager'
+              ? 'Work orders'
+              : 'My assignments';
+    document.title = `${title} · Fieldwork`;
+  }, [view, order?.reference, user.role]);
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main">
@@ -150,6 +163,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
         <nav aria-label="Workspace">
           <Button
             variant="ghost"
+            aria-current={view === 'orders' ? 'page' : undefined}
             className={view === 'orders' ? 'nav-active' : ''}
             onClick={() => {
               setView('orders');
@@ -160,6 +174,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           </Button>
           <Button
             variant="ghost"
+            aria-current={view === 'outbox' ? 'page' : undefined}
             className={view === 'outbox' ? 'nav-active' : ''}
             onClick={() => {
               setView('outbox');
@@ -171,6 +186,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           {user.role === 'manager' && (
             <Button
               variant="ghost"
+              aria-current={view === 'resources' ? 'page' : undefined}
               className={view === 'resources' ? 'nav-active' : ''}
               onClick={() => {
                 setView('resources');
@@ -483,11 +499,11 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                 />
                 <Label className="search">
                   <span className="sr-only">Search work orders</span>
-                  <Input
+                  <SearchField
+                    aria-label="Search work orders"
                     value={search}
-                    onChange={(event) => setSearch(event.target.value)}
+                    onValueChange={setSearch}
                     placeholder="Search orders, sites, people…"
-                    type="search"
                   />
                 </Label>
               </div>
@@ -527,7 +543,6 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   }}
                 />
               )}
-              {user.role === 'manager' && <ReportExport orders={visible} onNotice={setNotice} />}
               <div className="list-header" aria-hidden="true">
                 <span>WORK ORDER / SITE</span>
                 <span>ASSIGNED TO</span>
@@ -603,6 +618,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                 </span>
                 <span>Saved on this device · {state.outbox.length} queued</span>
               </footer>
+              {user.role === 'manager' && <ReportExport orders={visible} onNotice={setNotice} />}
             </>
           )}
           {creating && (

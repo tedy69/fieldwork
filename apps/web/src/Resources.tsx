@@ -1,4 +1,5 @@
 import { Button } from './components/ui/button';
+import { Form } from './components/ui/form';
 import { Card } from './components/ui/card';
 import { Alert } from './components/ui/alert';
 import { Input } from './components/ui/input';
@@ -112,7 +113,7 @@ export default function Resources({
               </li>
             ))}
           </ul>
-          <form aria-label="Add a site" onSubmit={(event) => void create(event, 'site')}>
+          <Form noValidate aria-label="Add a site" onSubmit={(event) => void create(event, 'site')}>
             <h3>Add a site</h3>
             <Label>
               Site name
@@ -139,7 +140,7 @@ export default function Resources({
             <Button className="primary" disabled={busy}>
               Add site
             </Button>
-          </form>
+          </Form>
         </Card>
         <Card>
           <h2>
@@ -159,7 +160,11 @@ export default function Resources({
               </li>
             ))}
           </ul>
-          <form aria-label="Add a checklist" onSubmit={(event) => void create(event, 'template')}>
+          <Form
+            noValidate
+            aria-label="Add a checklist"
+            onSubmit={(event) => void create(event, 'template')}
+          >
             <h3>Add a checklist</h3>
             <Label>
               Checklist name
@@ -168,6 +173,7 @@ export default function Resources({
             <Label>
               Inspection items, one per line
               <Textarea
+                className="resize-none"
                 name="items"
                 required
                 rows={5}
@@ -189,10 +195,10 @@ export default function Resources({
             <Button className="primary" disabled={busy}>
               Add checklist
             </Button>
-          </form>
+          </Form>
         </Card>
       </div>
-      <Card className="brief">
+      <Card className="brief worker-directory">
         <h2>Field workers</h2>
         <div className="invitation-actions">
           <WorkerInvitations online={online} />
@@ -205,11 +211,11 @@ export default function Resources({
             .join(' · ') || 'No field workers yet.'}
         </p>
         <p>
-          Create accounts with <code>npm run user:create</code>. See the{' '}
+          Invite workers to set up their accounts, or use the{' '}
           <a href="https://github.com/tedy69/fieldwork/blob/main/docs/self-hosting.md">
             self-hosting guide
           </a>{' '}
-          for setup.
+          for server setup.
         </p>
       </Card>
     </>

@@ -8,6 +8,8 @@ import {
 import { ApiError } from '@fieldwork/sdk';
 import { client, labels, dateLabel, message } from './lib';
 import { Button } from './components/ui/button';
+import { Form } from './components/ui/form';
+import { SearchField } from './components/ui/search-field';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { FieldSet } from './components/ui/field';
@@ -217,16 +219,16 @@ export default function ServerSearch({
             drafts and saved filters stay intact.
           </DialogDescription>
         </header>
-        <form aria-label="Search server records" onSubmit={search}>
+        <Form noValidate aria-label="Search server records" onSubmit={search}>
           <FieldSet className="server-search-fields" disabled={Boolean(opening)}>
             <Label className="server-search-text">
               Search text
-              <Input
-                ref={searchInput}
-                type="search"
+              <SearchField
+                aria-label="Search text"
+                inputRef={searchInput}
                 maxLength={200}
                 value={filters.q}
-                onChange={(event) => change({ q: event.target.value })}
+                onValueChange={(q) => change({ q })}
                 placeholder="Order, reference, site, or person"
               />
             </Label>
@@ -313,7 +315,7 @@ export default function ServerSearch({
               Clear filters
             </Button>
           </div>
-        </form>
+        </Form>
         {!online && (
           <Alert role="status" className="banner notice">
             You’re offline. Loaded results stay visible. Connect to search or open an order; saved

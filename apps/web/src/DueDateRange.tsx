@@ -18,7 +18,7 @@ export default function DueDateRange({
   const invalid = Boolean(from && through && from > through);
   return (
     <FieldSet className="due-range">
-      <FieldLegend>Due dates</FieldLegend>
+      <FieldLegend className="sr-only">Due dates</FieldLegend>
       <div className="due-range-fields">
         <Label>
           Due from

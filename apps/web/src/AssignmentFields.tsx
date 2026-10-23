@@ -102,6 +102,7 @@ export default function AssignmentFields({
       <Label>
         Instructions
         <Textarea
+          className="resize-none"
           name="instructions"
           rows={3}
           maxLength={4000}

@@ -14,6 +14,7 @@ import { localDate } from './dates';
 import { recurrenceLabels } from './recurrence-labels';
 import AssignmentFields from './AssignmentFields';
 import { Button } from './components/ui/button';
+import { Form } from './components/ui/form';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import {
@@ -360,7 +361,7 @@ function RecurringDialog({
             )}
           </>
         ) : (
-          <form onSubmit={submit}>
+          <Form noValidate onSubmit={submit}>
             <FieldSet disabled={busy}>
               <AssignmentFields
                 catalog={catalog}
@@ -411,7 +412,7 @@ function RecurringDialog({
             <Button className="primary full" disabled={busy || !online || activeDates.length === 0}>
               {busy ? 'Saving batch…' : `Assign ${activeDates.length || ''} work orders`}
             </Button>
-          </form>
+          </Form>
         )}
       </DialogContent>
     </Dialog>

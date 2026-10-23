@@ -243,6 +243,7 @@ export default function CommandButton({
       ref={buttonRef}
       type="button"
       {...props}
+      onClick={props.onClick}
     >
       {children}
       {shortcut && (

@@ -3,6 +3,7 @@ import { Card } from './components/ui/card';
 import { Alert } from './components/ui/alert';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
+import { Form } from './components/ui/form';
 import { useEffect, useState, type FormEvent } from 'react';
 import { UserSchema, type User } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
@@ -68,6 +69,9 @@ function AuthenticatedApp({ initialEmail }: { initialEmail: string }) {
   const [user, setUser] = useState<User | null>(initialUser);
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(true);
+  useEffect(() => {
+    if (!user) document.title = 'Sign in · Fieldwork';
+  }, [user]);
   useEffect(() => {
     if (sessionStorage.getItem('fieldwork.locked')) {
       setChecking(false);
@@ -137,7 +141,7 @@ function AuthenticatedApp({ initialEmail }: { initialEmail: string }) {
           <Card>
             <h2>Open your notebook</h2>
             <p className="muted">Sign in to your team's workspace.</p>
-            <form onSubmit={login}>
+            <Form noValidate onSubmit={login}>
               <Label>
                 Email
                 <Input
@@ -151,13 +155,19 @@ function AuthenticatedApp({ initialEmail }: { initialEmail: string }) {
               </Label>
               <Label>
                 Password
-                <Input name="password" type="password" autoComplete="current-password" required />
+                <Input
+                  name="password"
+                  type="password"
+                  aria-label="Password"
+                  autoComplete="current-password"
+                  required
+                />
               </Label>
               {error && <Alert className="error">{error}</Alert>}
               <Button className="primary full" disabled={checking}>
                 {checking ? 'Connecting…' : 'Sign in'}
               </Button>
-            </form>
+            </Form>
           </Card>
           <aside className="demo-note">
             <strong>Running the local demo?</strong>

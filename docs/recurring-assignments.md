@@ -34,6 +34,19 @@ Schema 3 adds `order_series` and `order_series_members` in one explicit SQLite t
 
 Back up the database, including committed WAL content, before deploying an upgrade. Open it with the new server to apply schema 3. Upgrade tests preserve schema 2 data, reopen without duplicate migrations, and inject a migration failure to prove rollback and retry. Restore the backup with the previous server for a full rollback; do not remove migration markers from a live database.
 
+## Browse saved batches
+
+Managers open **Recurring batches** beside assignment creation. The ledger shows original schedules, workers, and occurrence counts. Selecting a batch loads its current orders, with planned and current due dates labeled separately. Independent rescheduling, reassignment, and report status appear in those current orders. **Refresh batch details** reloads that comparison; **Refresh batches** restarts the ledger. Loaded data represents the time of its last successful read.
+
+The ledger loads 20 batches at a time and offers **Load more batches**. Failed pages keep earlier rows and the selected comparison available for retry. Offline transitions retain loaded details but disable server actions. Closing the viewer discards its temporary data. Opening an order fetches fresh authorization/state and awaits individual-order persistence before navigation; it does not replace the saved collection or change drafts, outbox entries, assignment versions, or reports. A failed open or local write leaves the viewer available for retry.
+
+Read-only API methods, restricted to current manager accounts:
+
+- `GET /api/v1/work-order-series?limit=20&cursor=<batch-id>`, through `client.orderSeries(query)`, returns `{ data, total, nextCursor }`. Limits are 1–50, default 20. Rows contain `id`, `title`, `createdAt`, `createdBy` (ID/name), `frequency`, `occurrences`, `firstDueDate`, `lastDueDate`, and original `assignee` (ID/name). Mutation IDs, hashes, full request bodies, and original receipts are omitted.
+- `GET /api/v1/work-order-series/:id`, through `client.orderSeriesDetail(id)`, returns that summary plus `orders: [{ occurrence, plannedDueDate, order }]`. Members stay in original occurrence order, while each `order` contains its current complete work-order state. Creator names use the current account display name; original worker/date metadata uses the creation snapshot.
+
+Lists sort newest first by creation timestamp, then batch ID. The cursor anchors the next older page; later arrivals do not shift that boundary. Totals reflect the current database, not a frozen historical snapshot. Unknown cursors return 422 `INVALID_CURSOR`; malformed queries/IDs return 422 `VALIDATION`; unknown valid batch IDs return 404. Authorization runs before pagination or lookup. An incomplete membership record returns an error rather than a successful partial batch. These reads use existing schema 3 tables without a new migration; large-scale indexed querying remains separate work.
+
 ## Boundaries and contributor entry points
 
 There is no background scheduler, infinite series, weekend/holiday policy, monthly rule, bulk editing, or series cancellation. Each materialized order can be rescheduled, reassigned, submitted, and reviewed independently through the existing versioned workflow. Template changes do not rewrite its saved checklist. Future scheduling rules and series management need their own contract and migration discussion.
@@ -44,4 +57,5 @@ There is no background scheduler, infinite series, weekend/holiday policy, month
 - Transport and response validation: `packages/sdk/src/index.ts`.
 - Web form and recovery: `apps/web/src/RecurringDispatch.tsx`, shared `AssignmentFields.tsx`, and `pending-series.ts`.
 - Browser recovery and cross-tab checks: `tests/e2e/recurring-dispatch.spec.ts`.
+- Read-only queries and viewer: `apps/api/src/order-series.ts`, `apps/web/src/SeriesOverview.tsx`, `tests/order-series.test.ts`, and `tests/e2e/series-overview.spec.ts`.
 - Permission, retry, rollback, and upgrade regressions: `tests/recurring-orders.test.ts`.

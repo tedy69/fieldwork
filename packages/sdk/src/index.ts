@@ -1,6 +1,9 @@
 import {
   CatalogSchema,
   OrderSeriesReceiptSchema,
+  OrderSeriesPageSchema,
+  OrderSeriesDetailSchema,
+  type OrderSeriesQuery,
   type CreateOrderSeries,
   MeSchema,
   OrderPageSchema,
@@ -99,6 +102,14 @@ export function createClient(
       ),
     createOrderSeries: (input: CreateOrderSeries) =>
       request('/work-order-series', OrderSeriesReceiptSchema, 'POST', input),
+    orderSeries: (query: OrderSeriesQuery = {}) => {
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(query))
+        if (value !== undefined) params.set(key, String(value));
+      return request(`/work-order-series?${params}`, OrderSeriesPageSchema);
+    },
+    orderSeriesDetail: (id: string) =>
+      request(`/work-order-series/${encodeURIComponent(id)}`, OrderSeriesDetailSchema),
     createOrder: (input: CreateOrder) => request('/work-orders', WorkOrderSchema, 'POST', input),
     rescheduleOrder: (id: string, input: RescheduleOrder) =>
       request(`/work-orders/${encodeURIComponent(id)}/schedule`, WorkOrderSchema, 'PATCH', input),

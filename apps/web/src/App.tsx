@@ -7,6 +7,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { UserSchema, type User } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import Workspace from './Workspace';
+import { MapSettingsProvider } from './MapSettings';
 import { client, message } from './lib';
 function initialUser(): User | null {
   try {
@@ -120,5 +121,9 @@ export default function App() {
         </section>
       </main>
     );
-  return <Workspace key={user.id} user={user} logout={logout} />;
+  return (
+    <MapSettingsProvider key={user.id}>
+      <Workspace user={user} logout={logout} />
+    </MapSettingsProvider>
+  );
 }

@@ -4,20 +4,33 @@ import { Alert } from './components/ui/alert';
 import { Input } from './components/ui/input';
 import { Textarea } from './components/ui/textarea';
 import { Label } from './components/ui/label';
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import type { Catalog } from '@fieldwork/contracts';
 import { createClient } from '@fieldwork/sdk';
+import { parseCoordinateInputs } from './coordinate-input';
+import SiteLocation from './SiteLocation';
 const client = createClient();
 export default function Resources({
   catalog,
   refresh,
+  online,
 }: {
   catalog: Catalog;
   refresh: () => Promise<void>;
+  online: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const siteForm = useRef<HTMLFormElement>(null);
+  const checklistForm = useRef<HTMLFormElement>(null);
+  async function beforeReload() {
+    if (busy) throw new Error('Wait for the workspace save to finish before reloading.');
+    for (const form of [siteForm.current, checklistForm.current]) {
+      if (form && [...new FormData(form).values()].some((value) => String(value).trim()))
+        throw new Error('Your workspace form has unsaved text. Save or clear it before reloading.');
+    }
+  }
   async function create(event: FormEvent<HTMLFormElement>, kind: 'site' | 'template') {
     event.preventDefault();
     const form = event.currentTarget;
@@ -27,7 +40,14 @@ export default function Resources({
     setNotice('');
     try {
       if (kind === 'site')
-        await client.createSite(String(data.get('name')), String(data.get('address')));
+        await client.createSite(
+          String(data.get('name')),
+          String(data.get('address')),
+          parseCoordinateInputs(
+            String(data.get('latitude') ?? ''),
+            String(data.get('longitude') ?? ''),
+          ),
+        );
       else
         await client.createTemplate(
           String(data.get('name')),
@@ -68,10 +88,15 @@ export default function Resources({
               <li key={site.id}>
                 <strong>{site.name}</strong>
                 <p>{site.address}</p>
+                <SiteLocation site={site} online={online} beforeReload={beforeReload} />
               </li>
             ))}
           </ul>
-          <form aria-label="Add a site" onSubmit={(event) => void create(event, 'site')}>
+          <form
+            ref={siteForm}
+            aria-label="Add a site"
+            onSubmit={(event) => void create(event, 'site')}
+          >
             <h3>Add a site</h3>
             <Label>
               Site name
@@ -81,6 +106,20 @@ export default function Resources({
               Address
               <Input name="address" required minLength={3} maxLength={250} />
             </Label>
+            <p className="muted">
+              Coordinates are optional. Enter them only when the location should be shared with your
+              workspace.
+            </p>
+            <div className="form-grid">
+              <Label>
+                Latitude
+                <Input name="latitude" type="number" step="any" min={-90} max={90} />
+              </Label>
+              <Label>
+                Longitude
+                <Input name="longitude" type="number" step="any" min={-180} max={180} />
+              </Label>
+            </div>
             <Button className="primary" disabled={busy}>
               Add site
             </Button>
@@ -103,7 +142,11 @@ export default function Resources({
               </li>
             ))}
           </ul>
-          <form aria-label="Add a checklist" onSubmit={(event) => void create(event, 'template')}>
+          <form
+            ref={checklistForm}
+            aria-label="Add a checklist"
+            onSubmit={(event) => void create(event, 'template')}
+          >
             <h3>Add a checklist</h3>
             <Label>
               Checklist name

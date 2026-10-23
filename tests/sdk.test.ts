@@ -1,6 +1,38 @@
 import { expect, it, vi } from 'vitest';
 import { createClient } from '@fieldwork/sdk';
 
+it('sends optional site coordinates and validates provider settings before map use', async () => {
+  const coordinates = { latitude: 0, longitude: 0 };
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: 'site',
+          name: 'Synthetic site',
+          address: 'Test address',
+          coordinates,
+        }),
+      ),
+    )
+    .mockResolvedValueOnce(new Response(JSON.stringify({ provider: null })))
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ provider: { name: 'Invalid', tileUrlTemplate: 'http://invalid.test' } }),
+      ),
+    );
+  const client = createClient('https://fieldwork.example', undefined, fetcher);
+  expect(
+    (await client.createSite('Synthetic site', 'Test address', coordinates)).coordinates,
+  ).toEqual(coordinates);
+  expect(fetcher.mock.calls[0][1]?.body).toBe(
+    JSON.stringify({ name: 'Synthetic site', address: 'Test address', coordinates }),
+  );
+  expect(await client.mapSettings()).toEqual({ provider: null });
+  expect(fetcher.mock.calls[1][0]).toBe('https://fieldwork.example/api/v1/map-settings');
+  await expect(client.mapSettings()).rejects.toThrow();
+});
+
 it('encodes batch cursors and IDs and rejects malformed overview responses', async () => {
   const fetcher = vi
     .fn<typeof fetch>()

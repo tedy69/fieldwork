@@ -10,6 +10,8 @@ Base path: `/api/v1`. JSON requests use `Content-Type: application/json`. Input/
 
 ## Workspace
 
+Site creation accepts optional `coordinates: { latitude, longitude }` through `client.createSite(name, address, coordinates?)`. Both numbers are required when present and must be within geographic bounds. `GET /map-settings`, through `client.mapSettings()`, returns a validated raster provider or null for a disabled workspace. Reads require a session; site writes remain manager-only. Coordinates follow catalog visibility, and new assignment snapshots retain them. See [site maps](site-maps.md) for provider settings, consent, snapshot behavior, and the web viewer.
+
 `GET /work-orders/search` provides combined text/status/assignee/priority/date filters and cursor pagination through `client.searchOrders(query)`. It returns `{ data, total, nextCursor }`; default limit is 25, maximum 100. Worker access is reapplied on each page. See [server search](server-search.md) for input fields, literal Unicode matching, cursor restart behavior, and performance limits. The original offset endpoint below continues to serve offline synchronization.
 
 | Method | Endpoint                                               | Access                     | Result                                                          |

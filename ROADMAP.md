@@ -25,11 +25,12 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Bounded recurring assignment API and SDK with daily/weekly dates, atomic creation, and durable retry receipts.
 - [x] Web recurring assignment creation with a date preview, planner date preset, and durable recovery after uncertain writes.
 - [x] Read-only recurring batch overview, paginated API/SDK, planned/current order comparison, and fresh individual-order opening.
+- [x] Optional coordinates on new sites/assignments and opt-in web maps with configurable raster tiles, attribution, keyboard controls, and offline-readable coordinates.
 
 ## Next · Make daily work easier
 
 - Scheduling rules beyond finite daily/weekly batches, plus editing or retiring future series work.
-- Maps with opt-in site coordinates and a documented tile provider.
+- Coordinate editing for existing sites, while keeping inspection snapshots fixed.
 - Accessible checklist field types: readings, numbers, text, and required evidence.
 - User invitation and account lifecycle UI.
 - Automated native flows on Android and iOS.

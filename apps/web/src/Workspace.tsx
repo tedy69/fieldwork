@@ -265,7 +265,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
             </Alert>
           )}
           {view === 'resources' ? (
-            <Resources catalog={catalog} refresh={refresh} />
+            <Resources catalog={catalog} refresh={refresh} online={online} />
           ) : view === 'outbox' ? (
             <>
               <PageHeading

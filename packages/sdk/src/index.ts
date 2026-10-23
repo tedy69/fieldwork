@@ -1,5 +1,7 @@
 import {
   CatalogSchema,
+  MapSettingsSchema,
+  type Coordinates,
   OrderSeriesReceiptSchema,
   OrderSeriesPageSchema,
   OrderSeriesDetailSchema,
@@ -83,8 +85,9 @@ export function createClient(
     logout: () => request('/sessions/current', { parse: () => undefined }, 'DELETE'),
     me: () => request('/me', MeSchema),
     catalog: () => request('/catalog', CatalogSchema),
-    createSite: (name: string, address: string) =>
-      request('/sites', SiteSchema, 'POST', { name, address }),
+    mapSettings: () => request('/map-settings', MapSettingsSchema),
+    createSite: (name: string, address: string, coordinates?: Coordinates) =>
+      request('/sites', SiteSchema, 'POST', { name, address, coordinates }),
     createTemplate: (name: string, items: string[]) =>
       request('/templates', TemplateSchema, 'POST', { name, items }),
     orders: (offset = 0) => request(`/work-orders?limit=100&offset=${offset}`, OrderPageSchema),

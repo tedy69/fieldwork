@@ -8,6 +8,9 @@ import { existsSync } from 'node:fs';
 import { z, ZodError } from 'zod';
 import {
   CreateOrderSchema,
+  CreateSiteSchema,
+  MapProviderSchema,
+  type MapProvider,
   CreateOrderSeriesSchema,
   OrderSeriesQuerySchema,
   recurrenceDates,
@@ -25,6 +28,7 @@ import {
 import { openStore, verifyPassword } from './store';
 import { createOrderSearch } from './order-search';
 import { createSeriesQueries } from './order-series';
+import { defaultMapProvider } from './map-settings';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -46,6 +50,7 @@ function fail(status: number, code: string, message: string): never {
 }
 const digest = (value: string) => createHash('sha256').update(value).digest('hex');
 export type AppOptions = {
+  mapProvider?: MapProvider | null;
   databasePath: string;
   webOrigin?: string;
   staticRoot?: string;
@@ -55,6 +60,10 @@ export type AppOptions = {
 };
 
 export async function buildApp(options: AppOptions) {
+  const mapProvider =
+    options.mapProvider === null
+      ? null
+      : MapProviderSchema.parse(options.mapProvider ?? defaultMapProvider);
   const store = openStore(options.databasePath);
   const series = createSeriesQueries(store);
   const app = Fastify({
@@ -188,6 +197,7 @@ export async function buildApp(options: AppOptions) {
     return reply.status(204).send();
   });
   app.get('/api/v1/me', async (request) => ({ user: request.actor }));
+  app.get('/api/v1/map-settings', async () => ({ provider: mapProvider }));
   app.get('/api/v1/catalog', async (request) => {
     const catalog = store.catalog();
     return {
@@ -197,13 +207,7 @@ export async function buildApp(options: AppOptions) {
   });
   app.post('/api/v1/sites', async (request, reply) => {
     manager(request);
-    const input = z
-      .object({
-        name: z.string().trim().min(2).max(120),
-        address: z.string().trim().min(3).max(250),
-      })
-      .strict()
-      .parse(request.body);
+    const input = CreateSiteSchema.parse(request.body);
     const site = { id: randomUUID(), ...input };
     store.transaction(() => {
       const { sites, templates } = store.catalog();

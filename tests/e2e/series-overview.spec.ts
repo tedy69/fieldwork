@@ -74,7 +74,10 @@ test('manager compares planned and current orders, pages with retry, and uses ke
   await expect(
     dialog.getByRole('heading', { name: 'Recurring batches', exact: true }),
   ).toBeFocused();
-  await dialog.getByRole('button', { name: 'Refresh batches', exact: true }).focus();
+  const refresh = dialog.getByRole('button', { name: 'Refresh batches', exact: true });
+  await expect(refresh).toBeEnabled();
+  await refresh.focus();
+  await expect(refresh).toBeFocused();
   await page.keyboard.press('Shift+Tab');
   await expect(dialog.getByRole('button', { name: 'Close dialog', exact: true })).toBeFocused();
   await page.keyboard.press('Escape');

@@ -10,6 +10,8 @@ Base path: `/api/v1`. JSON requests use `Content-Type: application/json`. Input/
 
 ## Workspace
 
+`GET /work-orders/search` provides combined text/status/assignee/priority/date filters and cursor pagination through `client.searchOrders(query)`. It returns `{ data, total, nextCursor }`; default limit is 25, maximum 100. Worker access is reapplied on each page. See [server search](server-search.md) for input fields, literal Unicode matching, cursor restart behavior, and performance limits. The original offset endpoint below continues to serve offline synchronization.
+
 | Method | Endpoint                                               | Access                     | Result                                                          |
 | ------ | ------------------------------------------------------ | -------------------------- | --------------------------------------------------------------- |
 | GET    | `/catalog`                                             | Signed in                  | Sites, templates, and visible users                             |

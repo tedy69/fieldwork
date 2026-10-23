@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Read-only server work-order search with combined filters, literal Unicode text matching, and cursor pagination. The original offset-based sync endpoint remains compatible.
+
 - Monthly web planner with daily workloads, keyboard date selection, filtered exports, and offline browsing. Managers can assign work for a selected date, including leap days.
 
 - Saved report history in the web app, including original answers, photos, assignment details, and manager feedback. Schema 2 recovers earlier submission acknowledgments and labels unavailable legacy reviews.

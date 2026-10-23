@@ -1,5 +1,11 @@
 # Verification
 
+## Server work-order search API
+
+Validation covers 160 unit/API tests and all 34 existing browser workflows. New API/SDK cases verify authentication, current-worker restrictions before filters and cursors, combined filters, inclusive date bounds, explicit local overdue dates with approved work excluded, Unicode NFC/case matching, literal wildcard/quote handling, creation-time ties, newly arriving orders between pages, changed-access/filter cursor rejection, malformed query rejection, read-only behavior, response validation, encoded SDK parameters, and compatibility with offset-based full sync.
+
+Formatting, strict web/mobile types, production build, Expo compatibility, and Android/iOS JavaScript exports pass locally. No UI, dependency, schema migration, or offline engine change is introduced. Existing browser inspection, permissions, drafts, outbox, photos, reports, planner, export, and history flows remain covered. Text/date filters currently scan JSON; this is not a benchmarked full-text index. See [server search](server-search.md) for the public contract and pagination limits.
+
 ## Monthly planner
 
 Validation covers 132 unit/API tests and 34 browser workflows. Sixteen new calendar cases cover 28/29/30/31-day months, leap-century rules, daylight-saving dates, year boundaries, month-end navigation without skipped months, and the supported year limits. Three browser workflows cover manager and worker views in America/Los_Angeles and Asia/Jakarta, plus leap-day and year navigation.

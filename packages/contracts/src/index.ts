@@ -138,6 +138,29 @@ export const OrderPageSchema = z.object({
   limit: z.number(),
   offset: z.number(),
 });
+export const OrderSearchQuerySchema = z
+  .object({
+    q: z.string().trim().max(200).optional(),
+    status: StatusSchema.optional(),
+    assigneeId: z.string().min(1).max(100).optional(),
+    priority: z.enum(['routine', 'urgent']).optional(),
+    dueFrom: z.iso.date().optional(),
+    dueThrough: z.iso.date().optional(),
+    overdueBefore: z.iso.date().optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(25),
+    cursor: z.string().min(1).max(100).optional(),
+  })
+  .strict()
+  .refine((query) => !query.dueFrom || !query.dueThrough || query.dueFrom <= query.dueThrough, {
+    message: 'The end date must be on or after the start date.',
+    path: ['dueThrough'],
+  });
+export type OrderSearchQuery = Partial<z.infer<typeof OrderSearchQuerySchema>>;
+export const OrderSearchPageSchema = z.object({
+  data: z.array(WorkOrderSchema),
+  total: z.number().int().nonnegative(),
+  nextCursor: z.string().nullable(),
+});
 export const SessionSchema = z.object({ user: UserSchema, token: z.string() });
 export const MeSchema = z.object({ user: UserSchema });
 export type Draft = {

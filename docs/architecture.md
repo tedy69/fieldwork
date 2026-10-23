@@ -36,6 +36,8 @@ The database stores users, hashed sessions, the catalog, work orders, idempotenc
 
 ## Offline identity
 
+Server search is a separate read-only query through shared contracts and the SDK. It uses creation-time/ID cursor boundaries, current-assignee authorization, and explicit date filters. Results are not a complete workspace snapshot and must never be passed to `cacheOrders`, which replaces the offline collection. The existing offset list endpoint remains the full-sync source. See [server search](server-search.md).
+
 Each user's local cache has a separate key. Signing out locks the UI and leaves unsent work for that same account's next sign-in. It does not erase pending reports or migrate them to another account. API authorization is checked again on sync. Cached data is not an authorization credential.
 
 Browser writes use an IndexedDB transaction. Native writes are serialized by the shared repository on a single app instance. The outbox is at-least-once: the server's persisted idempotency record is the duplicate boundary. Read [offline-sync.md](offline-sync.md) before changing it.

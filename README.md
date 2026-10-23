@@ -26,6 +26,7 @@ An open-source field operations platform. Assign an inspection, complete it with
 - [CSV report exports](docs/report-export.md) for the manager's filtered work-order list, including offline exports from saved data.
 - [Printable inspection reports](docs/print-reports.md) with checklist results and review details, available from saved web records offline.
 - Local SQLite persistence, a typed API client, and Docker self-hosting.
+- A [server search API and SDK](docs/server-search.md) with combined filters and cursor pagination, alongside the existing offline sync endpoint.
 
 Maps, recurring assignments, notifications, organizations, and integrations are planned in the [roadmap](ROADMAP.md). They are not shipped features.
 

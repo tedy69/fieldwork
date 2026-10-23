@@ -2,6 +2,7 @@ import {
   CatalogSchema,
   MeSchema,
   OrderPageSchema,
+  OrderSearchPageSchema,
   ReportHistoryPageSchema,
   SessionSchema,
   WorkOrderSchema,
@@ -11,6 +12,7 @@ import {
   type ReportInput,
   type RescheduleOrder,
   type ReassignOrder,
+  type OrderSearchQuery,
 } from '@fieldwork/contracts';
 
 export class ApiError extends Error {
@@ -81,6 +83,12 @@ export function createClient(
     createTemplate: (name: string, items: string[]) =>
       request('/templates', TemplateSchema, 'POST', { name, items }),
     orders: (offset = 0) => request(`/work-orders?limit=100&offset=${offset}`, OrderPageSchema),
+    searchOrders: (query: OrderSearchQuery = {}) => {
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(query))
+        if (value !== undefined) params.set(key, String(value));
+      return request(`/work-orders/search?${params}`, OrderSearchPageSchema);
+    },
     order: (id: string) => request(`/work-orders/${encodeURIComponent(id)}`, WorkOrderSchema),
     reportHistory: (id: string, cursor?: string) =>
       request(

@@ -1,5 +1,6 @@
 import type { Catalog, CreateOrder } from '@fieldwork/contracts';
 import { Input } from './components/ui/input';
+import { DatePicker } from './components/ui/date-picker';
 import { Textarea } from './components/ui/textarea';
 import {
   NativeSelect as Select,
@@ -61,12 +62,12 @@ export default function AssignmentFields({
         </Label>
         <Label>
           Due date
-          <Input
+          <DatePicker
             name="dueDate"
-            type="date"
+            calendarLabel="Choose due date"
             required
             defaultValue={initial?.dueDate ?? localDate()}
-            onChange={(event) => onDateChange?.(event.target.value)}
+            onValueChange={(value) => onDateChange?.(value)}
           />
         </Label>
       </div>

@@ -96,7 +96,7 @@ PanelHeader and ActionGroup own section hierarchy and wrapping actions. DialogHe
 
 ## Elevation & Depth
 
-Flat surfaces distinguish records from editable fields. Shadows belong only to modal layers; no glow, decorative grid, gradient or floating-card treatment is added. The global scrollbar baseline inherits without an opt-in class and returns to platform colors in forced-colors mode.
+Flat surfaces distinguish records from editable fields. Shadows belong only to modal layers and the date popover, where elevation distinguishes the temporary calendar from the form underneath. No glow, decorative grid, gradient or floating-card treatment is added. The global scrollbar baseline inherits without an opt-in class and returns to platform colors in forced-colors mode.
 
 ## Shapes
 
@@ -116,6 +116,8 @@ Shared panels use a 10px radius, controls 6px, statuses 4px, and rule-separated 
 | DialogHeader / DialogContent size               | All workspace dialogs                               | One modal frame with widths matched to the actual task                     |
 
 Shared Form owns validation, Input owns password reveal, SearchField owns clear/focus, and Textarea owns bounded growth. Behavior is documented in [UX-CONTRACT.md](UX-CONTRACT.md). Existing Phosphor eyes and close glyphs identify reveal/clear actions; no new logo, avatar or illustration is needed. MOTION 1 means brief color feedback only, disabled under reduced motion.
+
+DatePicker owns every web date field, with a shadcn Calendar and Radix Popover above an editable YYYY-MM-DD input. Phosphor's calendar glyph opens date selection; its carets move months. The chosen date uses amber, today has a thin boundary, and adjacent-month dates use muted text. This keeps the calendar legible without making every day an accent. A 44px day height supports touch; seven columns compress in width at 320px so the complete week fits without horizontal scrolling. The popup uses the shared 10px surface radius, 6px controls and `--z-popover` above dialogs, and scrolls within short viewports. ENERGY 2 / RHYTHM 2 / MOTION 1 stays unchanged.
 
 ## Do's and Don'ts
 

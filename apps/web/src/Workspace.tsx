@@ -21,7 +21,7 @@ import CreateOrder from './CreateOrderDialog';
 import RecurringDispatch from './RecurringDispatch';
 import SeriesOverview from './SeriesOverview';
 import OrderDetail from './OrderDetail';
-import { isInDueRange, isOverdue } from './dates';
+import { isInDueRange, isOverdue, isValidDueRange } from './dates';
 import { useLocalDate } from './useLocalDate';
 import ReportExport from './ReportExport';
 import DueDateRange from './DueDateRange';
@@ -45,7 +45,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
   const planner = plannerView !== 'list';
   const [plannerAnchor, setPlannerAnchor] = useState(today);
   const [plannerDay, setPlannerDay] = useState('');
-  const invalidRange = !planner && Boolean(dueFrom && dueThrough && dueFrom > dueThrough);
+  const invalidRange = !planner && !isValidDueRange(dueFrom, dueThrough);
   const [creating, setCreating] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
   const [busy, setBusy] = useState(false);

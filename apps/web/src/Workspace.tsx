@@ -265,7 +265,17 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
             </Alert>
           )}
           {view === 'resources' ? (
-            <Resources catalog={catalog} refresh={refresh} online={online} />
+            <Resources
+              catalog={catalog}
+              refresh={refresh}
+              online={online}
+              onSiteUpdated={(updated) =>
+                setCatalog((current) => ({
+                  ...current,
+                  sites: current.sites.map((site) => (site.id === updated.id ? updated : site)),
+                }))
+              }
+            />
           ) : view === 'outbox' ? (
             <>
               <PageHeading

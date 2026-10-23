@@ -18,6 +18,8 @@ Site creation accepts optional `coordinates: { latitude, longitude }` through `c
 | ------ | ------------------------------------------------------ | -------------------------- | --------------------------------------------------------------- |
 | GET    | `/catalog`                                             | Signed in                  | Sites, templates, and visible users                             |
 | POST   | `/sites`                                               | Manager                    | New site from `{ name, address }`                               |
+| GET    | `/sites/:id`                                           | Signed in                  | Current catalog site                                            |
+| PATCH  | `/sites/:id/location`                                  | Manager                    | Compare and update coordinates; null clears them                |
 | POST   | `/templates`                                           | Manager                    | New template from `{ name, items: string[] }`                   |
 | GET    | `/work-orders?limit=100&offset=0&status=ASSIGNED`      | Signed in                  | `{ data, total, limit, offset }`; workers see their assignments |
 | GET    | `/work-orders/:id`                                     | Assigned worker or manager | Work order                                                      |

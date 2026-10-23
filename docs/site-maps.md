@@ -6,6 +6,14 @@ Coordinates follow existing workspace catalog permissions: signed-in workers can
 
 New assignments, including recurring occurrences, embed coordinates in their ordinary site snapshot. Existing assignments and report snapshots remain unchanged. Native clients can store the optional data with their existing order cache; this increment adds the map viewer to the web app.
 
+## Edit an existing site
+
+Managers can choose **Add coordinates** or **Edit coordinates** beside a site. Opening the inline editor reads that site's current catalog data before enabling the fields. Enter both values and **Save coordinates**, or **Clear both fields** and save to remove them. Cancel or Escape discards the proposal and returns focus to the launcher; a save in progress must finish before dismissal. Editing requires a connection. Temporary disconnection keeps proposed values in the open editor, but they are not a durable offline draft.
+
+The editor shows the loaded pair separately from proposed values. A competing edit, failed save, or lost response locks saving until **Reload site** succeeds. Reloading keeps the proposal and shows the latest stored pair so the manager can review it before explicitly saving again. A lost response may already have saved the change; reloading and saving the same current values is a no-op. There is no automatic retry or silent overwrite.
+
+Changing coordinates affects future assignments only. Existing assignments, reports, revision history, versions, worker drafts, and outbox entries stay unchanged. Saving or reloading a different point closes the catalog map; loading its new area needs another explicit **Load site map** action. Map-tool recovery blocks page reload while any coordinate editor is open, including a proposed removal with both fields empty or a pending save.
+
 ## View a location
 
 A location card appears for a site or assignment with saved coordinates. Coordinates remain readable from saved work after an offline reload. The card loads first-party provider settings, names the provider, and explains what tile requests share. It contacts that provider only after **Load site map**.
@@ -38,6 +46,17 @@ Leaflet is pinned to 1.9.4, the stable release on its [download page](https://le
 
 `POST /api/v1/sites` keeps `name`/`address` and accepts optional `coordinates: { latitude, longitude }`. Both numeric fields are required when the object is present; strings, null, extra keys, and out-of-range values return 422. Manager and cookie-origin checks remain. The SDK adds an optional third parameter: `client.createSite(name, address, coordinates?)`.
 
+`GET /api/v1/sites/:id`, through `client.site(id)`, reads the current catalog site under existing signed-in catalog visibility. Unknown IDs return 404. Managers can use `PATCH /api/v1/sites/:id/location`, through `client.updateSiteLocation(id, input)`, with both required fields:
+
+```json
+{
+  "expectedCoordinates": { "latitude": 51.5, "longitude": -0.1 },
+  "coordinates": null
+}
+```
+
+Use `expectedCoordinates: null` when the site has no coordinates. `coordinates: null` removes the optional property; otherwise both bounded numeric fields are required. The update compares numeric pairs in one SQLite transaction. A stale expected pair returns 409 `LOCATION_CONFLICT` without changing the catalog; fetch current data before another attempt. An unchanged desired pair returns the current site without a database write. The response is the updated site. This endpoint cannot rename a site or modify assignment snapshots, and rejects extra patch keys. Comparing coordinates prevents overwriting a different current point; it does not provide a revision counter or detect an intervening change that returned to the same pair.
+
 `GET /api/v1/map-settings`, through `client.mapSettings()`, returns `{ provider }` for a signed-in account. A disabled provider returns null. Provider fields are `name`, `tileUrlTemplate`, `attributionText`, `attributionUrl`, and `maxZoom`; site coordinates and server environment variables are not part of this response. The SDK validates settings before map use.
 
 No table or migration marker changes. Optional fields extend existing catalog/order JSON contracts. Tests reopen older records unchanged, retain new coordinates across restart, and preserve assignment/report coordinates after catalog changes. Map viewing does not alter inspection contents, queue reports, or change assignment versions. Reload recovery uses the existing draft repository to confirm persistence first.
@@ -47,8 +66,9 @@ No table or migration marker changes. Optional fields extend existing catalog/or
 - Domain contracts/transport: `packages/contracts/src/index.ts` and `packages/sdk/src/index.ts`.
 - Site/provider API: `apps/api/src/app.ts`, `map-settings.ts`, and `main.ts`.
 - Web form parsing: `apps/web/src/coordinate-input.ts` and `Resources.tsx`.
+- Existing-site editor: `SiteCoordinatesEditor.tsx`, `site-coordinates-editor.css`, `tests/site-location.test.ts`, and `tests/e2e/site-coordinate-editor.spec.ts`.
 - Account-scoped settings and viewer: `MapSettings.tsx`, `SiteLocation.tsx`, `SiteMap.tsx`, and `site-location.css`.
 - Domain, permission, persistence, and input cases: `tests/site-maps.test.ts`, `tests/coordinate-input.test.ts`, and `tests/sdk.test.ts`.
 - Opt-in requests, keyboard controls, no device geolocation, referrers, attribution links, errors, and offline photo drafts: `tests/e2e/site-maps.spec.ts`.
 
-Browser tests intercept every tile request and use visibly labeled synthetic tiles. They do not pan/zoom against public tiles or certify provider availability. Verify your configured provider from a normal browser before deployment. Existing-site editing, changing an assignment's site snapshot, native map screens, GPS, directions, offline map downloads, physical-device checks, and full screen-reader acceptance remain separate work.
+Browser tests intercept every tile request and use visibly labeled synthetic tiles. They do not pan/zoom against public tiles or certify provider availability. Verify your configured provider from a normal browser before deployment. Changing an assignment's site snapshot, native map screens, GPS, directions, offline map downloads, physical-device checks, and full screen-reader acceptance remain separate work.

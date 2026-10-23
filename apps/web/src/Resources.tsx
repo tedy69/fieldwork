@@ -5,28 +5,32 @@ import { Input } from './components/ui/input';
 import { Textarea } from './components/ui/textarea';
 import { Label } from './components/ui/label';
 import { useRef, useState, type FormEvent } from 'react';
-import type { Catalog } from '@fieldwork/contracts';
+import type { Catalog, Site } from '@fieldwork/contracts';
 import { createClient } from '@fieldwork/sdk';
 import { parseCoordinateInputs } from './coordinate-input';
 import SiteLocation from './SiteLocation';
+import SiteCoordinatesEditor from './SiteCoordinatesEditor';
 const client = createClient();
 export default function Resources({
   catalog,
   refresh,
   online,
+  onSiteUpdated,
 }: {
   catalog: Catalog;
   refresh: () => Promise<void>;
   online: boolean;
+  onSiteUpdated: (site: Site) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
-  const siteForm = useRef<HTMLFormElement>(null);
-  const checklistForm = useRef<HTMLFormElement>(null);
+  const forms = useRef<HTMLDivElement>(null);
   async function beforeReload() {
     if (busy) throw new Error('Wait for the workspace save to finish before reloading.');
-    for (const form of [siteForm.current, checklistForm.current]) {
+    if (forms.current?.querySelector('[data-site-coordinate-form]'))
+      throw new Error('Save or cancel the open coordinate editor before reloading.');
+    for (const form of forms.current?.querySelectorAll<HTMLFormElement>('form') ?? []) {
       if (form && [...new FormData(form).values()].some((value) => String(value).trim()))
         throw new Error('Your workspace form has unsaved text. Save or clear it before reloading.');
     }
@@ -78,7 +82,7 @@ export default function Resources({
           {notice}
         </Alert>
       )}
-      <div className="resource-grid">
+      <div ref={forms} className="resource-grid">
         <Card>
           <h2>
             Sites <span className="muted">/ {catalog.sites.length}</span>
@@ -88,15 +92,17 @@ export default function Resources({
               <li key={site.id}>
                 <strong>{site.name}</strong>
                 <p>{site.address}</p>
-                <SiteLocation site={site} online={online} beforeReload={beforeReload} />
+                <SiteCoordinatesEditor site={site} online={online} onUpdated={onSiteUpdated} />
+                <SiteLocation
+                  key={`${site.id}:${site.coordinates?.latitude ?? ''}:${site.coordinates?.longitude ?? ''}`}
+                  site={site}
+                  online={online}
+                  beforeReload={beforeReload}
+                />
               </li>
             ))}
           </ul>
-          <form
-            ref={siteForm}
-            aria-label="Add a site"
-            onSubmit={(event) => void create(event, 'site')}
-          >
+          <form aria-label="Add a site" onSubmit={(event) => void create(event, 'site')}>
             <h3>Add a site</h3>
             <Label>
               Site name
@@ -142,11 +148,7 @@ export default function Resources({
               </li>
             ))}
           </ul>
-          <form
-            ref={checklistForm}
-            aria-label="Add a checklist"
-            onSubmit={(event) => void create(event, 'template')}
-          >
+          <form aria-label="Add a checklist" onSubmit={(event) => void create(event, 'template')}>
             <h3>Add a checklist</h3>
             <Label>
               Checklist name

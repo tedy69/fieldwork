@@ -3,6 +3,7 @@ import type { OrderSeriesDetail, WorkOrder } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { client, labels, message } from './lib';
 import { calendarLabel } from './calendar';
+import { recurrenceLabels } from './recurrence-labels';
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
 import { Alert } from './components/ui/alert';
@@ -231,8 +232,8 @@ export default function SeriesOverview({
                         <span className="reference">Batch {batch.id.slice(0, 8)}</span>
                         <strong>{batch.title}</strong>
                         <span className="muted">
-                          {batch.frequency === 'daily' ? 'Daily' : 'Weekly'} · {batch.occurrences}{' '}
-                          orders · {batch.assignee.name}
+                          {recurrenceLabels[batch.frequency]} · {batch.occurrences} orders ·{' '}
+                          {batch.assignee.name}
                         </span>
                         <span className="muted">
                           {calendarLabel(batch.firstDueDate, true)} to{' '}

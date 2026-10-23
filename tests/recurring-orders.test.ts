@@ -81,6 +81,72 @@ describe('calendar recurrence', () => {
 });
 
 describe('recurring assignments', () => {
+  it('creates weekday batches with stable receipts, browsing, worker visibility, and unchanged old schedules', async () => {
+    const legacy = { ...input(), dueDate: '2026-12-25', frequency: 'daily' as const };
+    const oldReceipt = (await create(legacy)).json();
+    const payload = {
+      ...input(),
+      dueDate: '2026-12-25',
+      frequency: 'weekdays' as const,
+      occurrences: 7,
+    };
+    const response = await create(payload);
+    expect(response.statusCode).toBe(201);
+    const receipt = OrderSeriesReceiptSchema.parse(response.json());
+    expect(receipt.frequency).toBe('weekdays');
+    expect(receipt.orders.map((order) => order.dueDate)).toEqual([
+      '2026-12-25',
+      '2026-12-28',
+      '2026-12-29',
+      '2026-12-30',
+      '2026-12-31',
+      '2027-01-01',
+      '2027-01-04',
+    ]);
+    expect((await create(payload)).json()).toEqual(receipt);
+    const changed = await create({ ...payload, frequency: 'daily' });
+    expect(changed.statusCode).toBe(422);
+    expect(changed.json().error.code).toBe('MUTATION_REUSED');
+    const detail = await fixture.app.inject({
+      url: `/api/v1/work-order-series/${receipt.id}`,
+      headers: bearer(manager),
+    });
+    expect(detail.statusCode).toBe(200);
+    expect(detail.json().frequency).toBe('weekdays');
+    expect(
+      detail.json().orders.map((order: { plannedDueDate: string }) => order.plannedDueDate),
+    ).toEqual(receipt.orders.map((order) => order.dueDate));
+    const list = await fixture.app.inject({
+      url: '/api/v1/work-order-series',
+      headers: bearer(manager),
+    });
+    expect(
+      list.json().data.find((batch: { id: string }) => batch.id === receipt.id).frequency,
+    ).toBe('weekdays');
+    for (const order of receipt.orders)
+      expect(
+        (
+          await fixture.app.inject({
+            url: `/api/v1/work-orders/${order.id}`,
+            headers: bearer(worker),
+          })
+        ).statusCode,
+      ).toBe(200);
+    expect((await create(legacy)).json()).toEqual(oldReceipt);
+    expect(oldReceipt.orders.map((order: { dueDate: string }) => order.dueDate)).toEqual([
+      '2026-12-25',
+      '2026-12-26',
+      '2026-12-27',
+    ]);
+  });
+  it.each(['2026-12-26', '2026-12-27', '9999-12-31'])(
+    'rejects unsupported weekday start %s atomically',
+    async (dueDate) => {
+      const before = counts();
+      expect((await create({ ...input(), frequency: 'weekdays', dueDate })).statusCode).toBe(422);
+      expect(counts()).toEqual(before);
+    },
+  );
   it('rejects a changed session account before creating or replaying a batch', async () => {
     const payload = { ...input(), expectedActorId: 'manager' };
     expect((await create(payload)).statusCode).toBe(201);
@@ -125,25 +191,31 @@ describe('recurring assignments', () => {
     ).toBe(201);
   });
 
-  it('accepts the maximum batch through the SDK and replays its validated receipt', async () => {
-    const { createClient } = await import('@fieldwork/sdk');
-    const fetcher: typeof fetch = async (url, init) => {
-      const response = await fixture.app.inject({
-        method: 'POST',
-        url: new URL(String(url)).pathname,
-        headers: init!.headers as Record<string, string>,
-        payload: init!.body as string,
-      });
-      return new Response(response.body, { status: response.statusCode });
-    };
-    const client = createClient('https://fieldwork.example', () => manager, fetcher);
-    const payload = { ...input(), frequency: 'daily' as const, occurrences: 52 };
-    const receipt = await client.createOrderSeries(payload);
-    expect(receipt.orders).toHaveLength(52);
-    expect(receipt.orders.at(-1)!.dueDate).toBe('2027-02-17');
-    expect(await client.createOrderSeries(payload)).toEqual(receipt);
-    expect(counts()).toEqual([55, 52, 1, 52]);
-  });
+  it.each([
+    ['daily', '2027-02-17'],
+    ['weekdays', '2027-03-09'],
+  ] as const)(
+    'accepts the maximum %s batch through the SDK and replays its validated receipt',
+    async (frequency, lastDate) => {
+      const { createClient } = await import('@fieldwork/sdk');
+      const fetcher: typeof fetch = async (url, init) => {
+        const response = await fixture.app.inject({
+          method: 'POST',
+          url: new URL(String(url)).pathname,
+          headers: init!.headers as Record<string, string>,
+          payload: init!.body as string,
+        });
+        return new Response(response.body, { status: response.statusCode });
+      };
+      const client = createClient('https://fieldwork.example', () => manager, fetcher);
+      const payload = { ...input(), frequency, occurrences: 52 };
+      const receipt = await client.createOrderSeries(payload);
+      expect(receipt.orders).toHaveLength(52);
+      expect(receipt.orders.at(-1)!.dueDate).toBe(lastDate);
+      expect(await client.createOrderSeries(payload)).toEqual(receipt);
+      expect(counts()).toEqual([55, 52, 1, 52]);
+    },
+  );
 
   it('scopes retry identity to the creating manager account', async () => {
     fixture.store.db.prepare("UPDATE users SET role='manager' WHERE id='worker-2'").run();

@@ -30,4 +30,6 @@ Reading this as an operations notebook for dispatch managers and field workers, 
 
 Use explicit labels, 44px targets where practical on mobile, visible focus, semantic headings, and useful loading/error/empty states. Never fabricate customer logos, usage numbers, testimonials, or reports. Documentation screenshots use seeded demo data and say so.
 
+Weekday recurrence extends the existing dispatch selector and date ledger. The Mon–Fri label appears consistently in creation, saved-request recovery, and batch browsing. Plain guidance explains weekend starts and included holidays beside the preview. No new navigation, surface, color, or motion is needed; ENERGY 2 / RHYTHM 2 / MOTION 1 remains unchanged.
+
 All web UI primitives come from Kokonut UI or shadcn. Shadcn's Radix dialogs own modal focus and dismissal, its radio groups own checklist selection and arrow-key navigation, and its labels, fields, Native Select, empty state, avatar fallback, and table components complete the foundation. Brand tokens, flat surfaces, compact spacing, readable report pagination, and labeled 44px answer targets remain the direction. Page layouts, record metadata, and screen composition remain semantic HTML built from these primitives. ENERGY 2 / RHYTHM 2 / MOTION 1 is unchanged.

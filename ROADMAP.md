@@ -27,10 +27,11 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Read-only recurring batch overview, paginated API/SDK, planned/current order comparison, and fresh individual-order opening.
 - [x] Optional coordinates on new sites/assignments and opt-in web maps with configurable raster tiles, attribution, keyboard controls, and offline-readable coordinates.
 - [x] Manager coordinate editing for existing sites, with conflict recovery, explicit clearing, and unchanged inspection snapshots.
+- [x] Weekday-only recurring batches with Monday–Friday previews, saved-request recovery, and batch browsing.
 
 ## Next · Make daily work easier
 
-- Scheduling rules beyond finite daily/weekly batches, plus editing or retiring future series work.
+- Broader scheduling rules, holiday calendars, and editing or retiring future series work.
 - Accessible checklist field types: readings, numbers, text, and required evidence.
 - User invitation and account lifecycle UI.
 - Automated native flows on Android and iOS.

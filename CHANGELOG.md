@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Manager access-history browsing for worker accounts, with actor/time details, stable cursor pages, read recovery, and temporary offline viewing. Uses existing schema-5 events.
+
 - Manager worker-account deactivation/reactivation with session revocation, active assignment choices, version checks, access events, and preserved offline reports. Includes an additive schema-5 upgrade.
 
 - Web server search with combined filters, paged results, retry/restart actions, and a fresh permission check when opening an order. Browsing preserves saved work and drafts.

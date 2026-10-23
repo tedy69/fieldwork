@@ -2,6 +2,36 @@ import { expect, it, vi } from 'vitest';
 import { createClient } from '@fieldwork/sdk';
 import { randomBytes, randomUUID } from 'node:crypto';
 
+it('encodes worker access history requests and validates recorded events', async () => {
+  const event = {
+    id: 12,
+    workerId: 'worker/a',
+    enabled: false,
+    at: '2026-10-23T00:00:00Z',
+    actor: { id: 'manager', name: 'Synthetic manager' },
+  };
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ data: [event], total: 21, nextCursor: 12 })),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ data: [{ ...event, enabled: 'false' }], total: 1, nextCursor: null }),
+      ),
+    );
+  const client = createClient('https://fieldwork.example', undefined, fetcher);
+  expect((await client.workerAccessHistory('worker/a', { limit: 1, cursor: 15 })).data).toEqual([
+    event,
+  ]);
+  expect(fetcher.mock.calls[0][0]).toBe(
+    'https://fieldwork.example/api/v1/workers/worker%2Fa/access-history?limit=1&cursor=15',
+  );
+  expect(fetcher.mock.calls[0][1]?.method).toBe('GET');
+  expect(fetcher.mock.calls[0][1]?.body).toBeUndefined();
+  await expect(client.workerAccessHistory('worker/a')).rejects.toThrow();
+});
+
 it('encodes worker account reads and optimistic access updates and validates responses', async () => {
   const account = {
     user: { id: 'worker/a', name: 'Synthetic worker', email: 'worker@example.com', role: 'worker' },

@@ -2,6 +2,8 @@ import {
   CatalogSchema,
   WorkerPageSchema,
   WorkerAccountSchema,
+  WorkerAccessHistoryPageSchema,
+  type WorkerAccessHistoryQuery,
   type WorkerQuery,
   type UpdateWorkerAccess,
   InvitationReceiptSchema,
@@ -104,6 +106,15 @@ export function createClient(
       return request(`/workers?${params}`, WorkerPageSchema);
     },
     worker: (id: string) => request(`/workers/${encodeURIComponent(id)}`, WorkerAccountSchema),
+    workerAccessHistory: (id: string, query: WorkerAccessHistoryQuery = {}) => {
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(query))
+        if (value !== undefined) params.set(key, String(value));
+      return request(
+        `/workers/${encodeURIComponent(id)}/access-history?${params}`,
+        WorkerAccessHistoryPageSchema,
+      );
+    },
     updateWorkerAccess: (id: string, input: UpdateWorkerAccess) =>
       request(`/workers/${encodeURIComponent(id)}/access`, WorkerAccountSchema, 'PATCH', input),
     createInvitation: (input: CreateInvitation) =>

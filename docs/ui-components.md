@@ -1,5 +1,7 @@
 # Kokonut UI and shadcn in Fieldwork
 
+The worker access-history section uses shared Button, Badge, and Alert inside the existing manager Dialog. The selected worker heading receives amber focus; flat chronological rows show real actor/time metadata. Read errors retain loaded rows, offline controls disable, and narrow actions wrap without a new surface or animation.
+
 Worker accounts reuses shared Dialog, Button, Badge, and Alert primitives, the flat worker ledger, and an inline confirmation. Access state has a text label, headings receive amber focus, and change failures require a fresh read. Loaded rows remain visible offline; controls keep 44px targets and wrap at narrow widths. See [worker access](worker-access.md).
 
 Worker invitations use the shared Dialog, Button, Input, Label, FieldSet, FieldError, Badge, Alert, and Empty controls. A flat ledger sits below creation or the one-time link. The acceptance page reuses the notebook sign-in layout with labeled password fields and explicit account confirmation. Amber focus styling covers programmatically focused headings as well as controls; links are masked in documentation screenshots.

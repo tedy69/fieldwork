@@ -23,9 +23,12 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Read-only server search API and SDK with text, status, worker, priority, date filters, and cursor pagination.
 - [x] Web server search with combined filters, incremental result loading, fresh authorization on opening, and preserved offline drafts.
 
+- [x] Bounded recurring assignment API and SDK with daily/weekly dates, atomic creation, and durable retry receipts.
+
 ## Next · Make daily work easier
 
-- Recurring assignments and scheduling rules.
+- Web recurring assignment creation with a date preview and durable recovery after uncertain writes.
+- Scheduling rules beyond finite daily/weekly batches, plus series management.
 - Maps with opt-in site coordinates and a documented tile provider.
 - Accessible checklist field types: readings, numbers, text, and required evidence.
 - User invitation and account lifecycle UI.

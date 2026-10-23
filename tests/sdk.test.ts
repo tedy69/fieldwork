@@ -62,3 +62,35 @@ it('aborts a stalled connection and leaves its outcome retryable', async () => {
     vi.useRealTimers();
   }
 });
+
+it('posts a recurring assignment without changing its retry identity and rejects malformed receipts', async () => {
+  const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+    new Response(
+      JSON.stringify({
+        id: 'not-a-series-receipt',
+        orders: [],
+      }),
+    ),
+  );
+  const client = createClient('https://fieldwork.example', () => 'synthetic-token', fetcher);
+  const input = {
+    mutationId: '7f801668-8c5c-4f48-9262-3cc91ba4b1bd',
+    title: 'Check the gate',
+    instructions: '',
+    siteId: 'north',
+    assigneeId: 'worker',
+    templateId: 'routine',
+    dueDate: '2026-10-24',
+    priority: 'routine' as const,
+    frequency: 'weekly' as const,
+    occurrences: 3,
+  };
+  await expect(client.createOrderSeries(input)).rejects.toThrow();
+  expect(fetcher.mock.calls[0][0]).toBe('https://fieldwork.example/api/v1/work-order-series');
+  expect(fetcher.mock.calls[0][1]).toMatchObject({
+    method: 'POST',
+    credentials: 'include',
+    headers: { Authorization: 'Bearer synthetic-token' },
+    body: JSON.stringify(input),
+  });
+});

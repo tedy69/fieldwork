@@ -178,6 +178,27 @@ export function openStore(path: string) {
         }
         db.prepare('INSERT INTO migrations VALUES(2)').run();
       });
+    if (!db.prepare('SELECT version FROM migrations WHERE version=3').get())
+      transaction(() => {
+        db.exec(`
+          CREATE TABLE order_series(
+            id TEXT PRIMARY KEY,
+            actor_id TEXT NOT NULL REFERENCES users(id),
+            mutation_id TEXT NOT NULL,
+            hash TEXT NOT NULL,
+            input TEXT NOT NULL,
+            receipt TEXT NOT NULL,
+            UNIQUE(actor_id,mutation_id)
+          );
+          CREATE TABLE order_series_members(
+            series_id TEXT NOT NULL REFERENCES order_series(id),
+            order_id TEXT NOT NULL UNIQUE REFERENCES work_orders(id),
+            occurrence INTEGER NOT NULL CHECK(occurrence BETWEEN 1 AND 52),
+            PRIMARY KEY(series_id,occurrence)
+          );
+          INSERT INTO migrations VALUES(3);
+        `);
+      });
   } catch (error) {
     db.close();
     throw error;

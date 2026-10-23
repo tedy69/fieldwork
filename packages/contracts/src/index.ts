@@ -107,6 +107,53 @@ export const CreateOrderSchema = z
   })
   .strict();
 export type CreateOrder = z.infer<typeof CreateOrderSchema>;
+export const RecurrenceSchema = z
+  .object({
+    dueDate: z.iso.date(),
+    frequency: z.enum(['daily', 'weekly']),
+    occurrences: z.number().int().min(2).max(52),
+  })
+  .strict()
+  .refine(
+    (input) => {
+      const last = new Date(`${input.dueDate}T12:00:00Z`);
+      last.setUTCDate(
+        last.getUTCDate() + (input.occurrences - 1) * (input.frequency === 'weekly' ? 7 : 1),
+      );
+      return Number.isFinite(last.getTime()) && last.getUTCFullYear() <= 9999;
+    },
+    { message: 'All occurrences must fall within a four-digit calendar year.', path: ['dueDate'] },
+  );
+export type Recurrence = z.infer<typeof RecurrenceSchema>;
+export function recurrenceDates(input: Recurrence): string[] {
+  const schedule = RecurrenceSchema.parse(input);
+  const date = new Date(`${schedule.dueDate}T12:00:00Z`);
+  return Array.from({ length: schedule.occurrences }, (_, index) => {
+    if (index) date.setUTCDate(date.getUTCDate() + (schedule.frequency === 'weekly' ? 7 : 1));
+    return date.toISOString().slice(0, 10);
+  });
+}
+export const CreateOrderSeriesSchema = CreateOrderSchema.extend({
+  mutationId: z.uuid(),
+  frequency: z.enum(['daily', 'weekly']),
+  occurrences: z.number().int().min(2).max(52),
+}).refine(
+  (input) =>
+    RecurrenceSchema.safeParse({
+      dueDate: input.dueDate,
+      frequency: input.frequency,
+      occurrences: input.occurrences,
+    }).success,
+  { message: 'Choose a valid recurrence within a four-digit calendar year.', path: ['dueDate'] },
+);
+export type CreateOrderSeries = z.infer<typeof CreateOrderSeriesSchema>;
+export const OrderSeriesReceiptSchema = z.object({
+  id: z.uuid(),
+  createdAt: z.iso.datetime(),
+  frequency: z.enum(['daily', 'weekly']),
+  orders: z.array(WorkOrderSchema).min(2).max(52),
+});
+export type OrderSeriesReceipt = z.infer<typeof OrderSeriesReceiptSchema>;
 export const RescheduleOrderSchema = z
   .object({ baseVersion: z.number().int().positive(), dueDate: z.iso.date() })
   .strict();

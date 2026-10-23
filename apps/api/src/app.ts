@@ -13,10 +13,12 @@ import {
   RescheduleOrderSchema,
   ReassignOrderSchema,
   StatusSchema,
+  OrderSearchQuerySchema,
   type User,
   type WorkOrder,
 } from '@fieldwork/contracts';
 import { openStore, verifyPassword } from './store';
+import { createOrderSearch } from './order-search';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -225,6 +227,12 @@ export async function buildApp(options: AppOptions) {
         .run(JSON.stringify({ sites, templates: [...templates, template] }));
     });
     return reply.status(201).send(template);
+  });
+  const searchOrders = createOrderSearch(store);
+  app.get('/api/v1/work-orders/search', async (request) => {
+    const page = searchOrders(request.actor!, OrderSearchQuerySchema.parse(request.query));
+    if (!page) fail(422, 'INVALID_CURSOR', 'Search results changed. Start a new search.');
+    return page;
   });
   app.get('/api/v1/work-orders', async (request) => {
     const query = z

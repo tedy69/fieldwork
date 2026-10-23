@@ -42,7 +42,7 @@ React and React Native upgrades must match the installed Expo SDK. Run `npm run 
 - Keep existing work-order checklist snapshots stable when a template changes.
 - Use synthetic fixtures. Screenshots must not contain real people, addresses, tokens, or customer data.
 - Add keyboard support, visible focus, labels, and useful empty/error states to UI changes.
-- For Kokonut UI components, follow [the integration notes](docs/ui-components.md). Preserve attribution, Fieldwork's theme, scoped utilities, and local accessibility adaptations when updating upstream source.
+- Use the shared Kokonut UI/shadcn components for web controls, dialogs, fields, feedback, and tables. Follow [the integration notes](docs/ui-components.md), and preserve attribution, Fieldwork's theme, scoped utilities, and local accessibility adaptations when updating upstream source.
 - Use a plain commit title such as `fix: retain queued photos after a failed sync`.
 
 ## Reviews and community

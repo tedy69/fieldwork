@@ -1,6 +1,6 @@
-# Kokonut UI in Fieldwork
+# Kokonut UI and shadcn in Fieldwork
 
-Fieldwork uses [Kokonut UI](https://kokonutui.com/docs) across its web workspace while retaining the industrial notebook direction in DESIGN.md. The app combines adapted registry components with the shadcn foundation primitives in Kokonut's own repository. Shared controls keep the same charcoal, amber, and workflow-status colors throughout sign-in, dispatch, inspection, review, resources, and offline work.
+Fieldwork uses [Kokonut UI](https://kokonutui.com/docs) and [shadcn/ui](https://ui.shadcn.com/docs/components) throughout its web workspace while retaining the industrial notebook direction in DESIGN.md. Kokonut provides the finder, shortcut button, selection strips, and photo uploader. The shared shadcn foundation supplies the remaining UI primitives. Controls keep the same charcoal, amber, and workflow-status colors throughout sign-in, dispatch, inspection, review, resources, and offline work.
 
 ## Component coverage
 
@@ -12,10 +12,20 @@ Fieldwork uses [Kokonut UI](https://kokonutui.com/docs) across its web workspace
 | Work finder                          | CommandButton, ActionSearchBar       | Visible shortcut keycaps, real navigation/search, host-managed modal and keyboard shortcut            |
 | Assignment, rescheduling, and review | Shared buttons and fields            | Existing permissions, online requirements, conflict handling, and saved-report behavior               |
 | Inspection photos                    | FileUpload                           | File picker or drop zone writes photos into the durable draft; submission still happens explicitly    |
-| Outbox, resources, and empty states  | Card, Alert, Button                  | Real queued items, catalog forms, errors, notices, and empty-state instructions                       |
+| Outbox, resources, and empty states  | Card, Alert, Button, Empty           | Real queued items, catalog forms, errors, notices, and empty-state instructions                       |
 | CSV and print actions                | Button                               | Existing download/print behavior; controls remain excluded from paper output                          |
 
-`Select` is a Fieldwork-authored native select styled with the same tokens. The native date, radio, and file inputs retain browser behavior; the component foundation wraps these controls rather than replacing them with fake widgets. No chart, trend, sample account, or demo navigation action was added.
+| Additional area                            | Shared components                                                        | Behavior retained                                                                                               |
+| ------------------------------------------ | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Assignment and finder modals               | Dialog, DialogContent, DialogTitle, DialogDescription                    | Radix focus containment, background hiding, Escape, focus restoration, and protected in-flight assignment saves |
+| Checklist answers                          | RadioGroup, RadioGroupItem, Label, FieldSet, FieldLegend                 | Required answers, pass/issue/N/A values, arrow-key selection, local draft persistence                           |
+| Forms and validation                       | Input, Textarea, NativeSelect, NativeSelectOption, Label, FieldError     | Native date/file/select behavior, browser validation, real errors and form submission                           |
+| Empty/loading screens and account initials | Empty, EmptyHeader, EmptyTitle, EmptyDescription, Avatar, AvatarFallback | Actual empty/loading messages and initials derived from the signed-in account                                   |
+| Printable report                           | Table, TableHeader, TableBody, TableRow, TableHead, TableCell            | Semantic row/column headers, wrapped notes, repeated print headings, and multi-page output                      |
+
+`NativeSelect` comes from shadcn's [official native select](https://ui.shadcn.com/docs/components/radix/native-select), with a Phosphor caret and Fieldwork's field tokens. It keeps browser/OS option selection and FormData behavior. Date and file inputs use shadcn Input; checklist answers use the Radix-backed RadioGroup. Textarea has its own module. Native inputs are an intentional part of the shadcn foundation.
+
+Use components from `src/components/ui/` or `src/components/kokonutui/` for web UI primitives. Do not add another local button, field, modal, or selection widget in a screen. Application screens still compose semantic forms, navigation, sections, lists, headings, record metadata, and layout containers; these are product structure rather than a second component library. This migration is for the DOM-based web app. Expo keeps its platform-native interface.
 
 ## Find saved work
 
@@ -33,15 +43,20 @@ Searching does not submit reports, clear drafts, or flush the outbox. Search his
 - Local source: `apps/web/src/components/kokonutui/action-search-bar.tsx`.
 - Copyright (c) 2025 kokonutUI, MIT. The [full notice](../apps/web/public/licenses/kokonut-ui-MIT.txt) ships with the built web app at `/licenses/kokonut-ui-MIT.txt`.
 
-The same pinned commit supplies `command-button.tsx`, `smooth-tab.tsx`, and `file-upload.tsx` under `components/kokonutui/`, plus the `button`, `input`, `textarea`, `card`, `alert`, and `badge` primitives under `components/ui/`. Their local copies live in the corresponding web directories. The [shadcn MIT notice](../apps/web/public/licenses/shadcn-ui-MIT.txt) ships alongside the Kokonut notice, including in the offline precache.
+The same pinned Kokonut commit supplies `command-button.tsx`, `smooth-tab.tsx`, and `file-upload.tsx` under `components/kokonutui/`, plus the original `button`, `input`, `card`, `alert`, and `badge` foundation under `components/ui/`. Their local copies live in the corresponding web directories.
+
+The additional shadcn source is pinned at [3d98900](https://github.com/shadcn-ui/ui/tree/3d98900e9b73c45f035f8109e9d41ba6a51685e7/apps/v4/registry/new-york-v4/ui): `dialog.tsx`, `radio-group.tsx`, `label.tsx`, `native-select.tsx`, `textarea.tsx`, `field.tsx`, `empty.tsx`, `avatar.tsx`, `table.tsx`, and Button's `asChild`/Slot support. Local files retain source notices. The used exports are adapted to Fieldwork's styles rather than bringing in default registry colors, animation utilities, or unused variants. EmptyTitle renders a real heading, the table container permits print pagination, and the radio indicator uses a CSS dot instead of another icon dependency.
+
+`radix-ui` is pinned to 1.8.1 in the web workspace for Dialog, RadioGroup, Label, Avatar, and Slot behavior. React, React Native, and Expo versions are unchanged. The [shadcn MIT notice](../apps/web/public/licenses/shadcn-ui-MIT.txt) and [Radix MIT notice](../apps/web/public/licenses/radix-ui-MIT.txt) ship alongside the Kokonut notice and are cached offline.
 
 Adaptations are deliberate:
 
-- ActionSearchBar removes demo commands/default recents, requires real handlers, uses Phosphor icons, disables transitions, removes the artificial completion delay, encodes group IDs, and lets its host modal manage focus.
+- ActionSearchBar removes demo commands/default recents, requires real handlers, uses Phosphor icons, disables transitions, removes the artificial completion delay, and encodes group IDs. Its input, label, and button use shared primitives; its shadcn host modal manages focus and ignores the shortcut while another modal is open.
 - CommandButton retains shortcut keycaps and the upstream keyboard parsing. Global handling is off by default because WorkFinder owns Cmd/Ctrl+K and its modal checks. Motion and default sample labels/shortcuts are removed from the product configuration.
 - SmoothTab is a controlled selection strip for one work list. Demo panels, swipe physics, and animation are omitted. Native buttons expose `aria-pressed`, retain Enter/Space, add arrow/Home/End navigation, and keep the selected filter visible when used from a keyboard.
 - FileUpload retains file-drop and picker interaction but requires a real `onFiles` handler. Simulated progress, remote upload scheduling, retries, and temporary upload queues are omitted because photos belong to Fieldwork's existing durable draft and report outbox. Existing MIME, 2 MB, and three-photo limits remain in OrderDetail.
-- Foundation primitives use Fieldwork's colors, small corners, 44px controls, and existing status colors. Native button props/ref/form semantics are preserved. Unused Slot/CVA dependencies and demo variants are omitted; `unstyled` supports work-order rows and calendar-day buttons with their own layouts.
+- Foundation primitives use Fieldwork's colors, small corners, 44px controls, and existing status colors. Native button props/ref/form semantics are preserved, with Radix Slot for `asChild`. Unused CVA variants are omitted; `unstyled` supports work-order rows and calendar-day buttons with their own layouts.
+- Dialog delegates focus trapping, background hiding, and dismissal to Radix. The host restores the launch control on cancellation and the main content after navigation/creation. Assignment creation blocks Escape and dismissal while saving. NativeSelect supplies its standard wrapper/option structure; RadioGroup keeps browser required validation and forwards each explicit answer into the durable draft.
 
 ## Icons
 

@@ -1,4 +1,5 @@
 import { Button } from './components/ui/button';
+import { FieldError } from './components/ui/field';
 import { useState } from 'react';
 import type { WorkOrder } from '@fieldwork/contracts';
 import { localDate } from './dates';
@@ -49,11 +50,7 @@ export default function ReportExport({
       <Button className="quiet" onClick={download} disabled={count === 0}>
         Export reports ({count})
       </Button>
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      )}
+      {error && <FieldError>{error}</FieldError>}
     </section>
   );
 }

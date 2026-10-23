@@ -1,7 +1,9 @@
 import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 import { Alert } from './components/ui/alert';
-import { Input, Textarea } from './components/ui/input';
+import { Input } from './components/ui/input';
+import { Textarea } from './components/ui/textarea';
+import { Label } from './components/ui/label';
 import { useState, type FormEvent } from 'react';
 import type { Catalog } from '@fieldwork/contracts';
 import { createClient } from '@fieldwork/sdk';
@@ -71,14 +73,14 @@ export default function Resources({
           </ul>
           <form aria-label="Add a site" onSubmit={(event) => void create(event, 'site')}>
             <h3>Add a site</h3>
-            <label>
+            <Label>
               Site name
               <Input name="name" required minLength={2} maxLength={120} />
-            </label>
-            <label>
+            </Label>
+            <Label>
               Address
               <Input name="address" required minLength={3} maxLength={250} />
-            </label>
+            </Label>
             <Button className="primary" disabled={busy}>
               Add site
             </Button>
@@ -103,11 +105,11 @@ export default function Resources({
           </ul>
           <form aria-label="Add a checklist" onSubmit={(event) => void create(event, 'template')}>
             <h3>Add a checklist</h3>
-            <label>
+            <Label>
               Checklist name
               <Input name="name" required minLength={2} maxLength={120} />
-            </label>
-            <label>
+            </Label>
+            <Label>
               Inspection items, one per line
               <Textarea
                 name="items"
@@ -115,7 +117,7 @@ export default function Resources({
                 rows={5}
                 placeholder={'Check access route\nCheck equipment condition'}
               />
-            </label>
+            </Label>
             <p className="muted">Up to 50 items. Assigned orders keep their original checklist.</p>
             <Button className="primary" disabled={busy}>
               Add checklist
@@ -123,7 +125,7 @@ export default function Resources({
           </form>
         </Card>
       </div>
-      <section className="brief">
+      <Card className="brief">
         <h2>Field workers</h2>
         <p>
           {catalog.users
@@ -138,7 +140,7 @@ export default function Resources({
           </a>{' '}
           for setup.
         </p>
-      </section>
+      </Card>
     </>
   );
 }

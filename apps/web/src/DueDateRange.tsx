@@ -1,5 +1,7 @@
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
+import { Label } from './components/ui/label';
+import { FieldSet, FieldLegend, FieldError } from './components/ui/field';
 export default function DueDateRange({
   from,
   through,
@@ -15,10 +17,10 @@ export default function DueDateRange({
 }) {
   const invalid = Boolean(from && through && from > through);
   return (
-    <fieldset className="due-range">
-      <legend>Due dates</legend>
+    <FieldSet className="due-range">
+      <FieldLegend>Due dates</FieldLegend>
       <div className="due-range-fields">
-        <label>
+        <Label>
           Due from
           <Input
             type="date"
@@ -27,8 +29,8 @@ export default function DueDateRange({
             aria-invalid={invalid || undefined}
             aria-describedby={invalid ? 'due-range-error' : 'due-range-help'}
           />
-        </label>
-        <label>
+        </Label>
+        <Label>
           Due through
           <Input
             type="date"
@@ -37,20 +39,20 @@ export default function DueDateRange({
             aria-invalid={invalid || undefined}
             aria-describedby={invalid ? 'due-range-error' : 'due-range-help'}
           />
-        </label>
+        </Label>
         <Button className="quiet" onClick={onClear} disabled={!from && !through}>
           Clear dates
         </Button>
       </div>
       {invalid ? (
-        <p id="due-range-error" role="alert" className="error">
+        <FieldError id="due-range-error">
           Due through must be on or after Due from. Change a date or clear the range.
-        </p>
+        </FieldError>
       ) : (
         <p id="due-range-help" className="muted">
           Includes both dates. Leave either end open.
         </p>
       )}
-    </fieldset>
+    </FieldSet>
   );
 }

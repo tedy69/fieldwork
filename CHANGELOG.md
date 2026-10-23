@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Complete the web component foundation with shadcn dialogs, radio groups, labels, fields, native selects, empty states, avatars, and report tables. Existing Kokonut components, colors, offline drafts, and print behavior are retained.
+
 - Managers can reassign unfinished web orders to another worker. Version checks protect concurrent work, and unavailable assignments keep their blocked reports and photos in the original worker's outbox.
 
 - Shared Kokonut UI controls across the web workspace, with the existing charcoal-and-amber palette, keyboard filter navigation, and photo drop/picker support that preserves offline drafts.

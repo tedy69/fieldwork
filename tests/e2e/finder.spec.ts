@@ -51,7 +51,8 @@ test('manager finds real work and pages with Kokonut keyboard navigation and mod
   const input = page.getByRole('combobox', { name: 'Search saved work and pages', exact: true });
   await launcher.click();
   await expect(input).toBeFocused();
-  expect(await dialog.evaluate((node) => node.matches(':modal'))).toBe(true);
+  await expect(dialog).toHaveAttribute('aria-modal', 'true');
+  await expect(dialog).toHaveAttribute('data-slot', 'dialog-content');
   await expect(
     dialog.getByRole('option', { name: 'Sites & checklists', exact: true }),
   ).toBeVisible();

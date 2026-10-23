@@ -223,9 +223,11 @@
 .detail > .report.ui-card {
   padding: 22px;
 }
-.empty.ui-card {
+.empty.ui-empty {
   background: transparent;
+  border: 1px solid var(--line);
   border-style: dashed;
+  border-radius: var(--ui-radius);
 }
 .identity.ui-card {
   padding: 12px;
@@ -362,7 +364,105 @@
 .kokonut-command > span {
   transition: none;
 }
+.ui-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: #070c0fd9;
+}
+.ui-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 71;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  overscroll-behavior: contain;
+}
+.ui-dialog-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+.ui-field-set {
+  min-width: 0;
+}
+.ui-field-error {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.schedule .ui-field-error {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.ui-native-select {
+  position: relative;
+  width: 100%;
+  margin-top: 7px;
+}
+.ui-native-select select {
+  appearance: none;
+  margin-top: 0;
+  padding-right: 38px;
+}
+.ui-native-select > svg {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  color: var(--muted);
+}
+.ui-native-select:has(select:disabled) {
+  opacity: 0.5;
+}
+.ui-radio-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--ui-control-border);
+  border-radius: 50%;
+  color: var(--amber);
+  background: var(--ui-field);
+}
+.ui-radio-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.ui-radio-group .answer {
+  min-height: 44px;
+}
+.ui-radio-group .answer:has(:focus-visible) {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+}
+.ui-avatar-fallback {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+}
+.ui-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
 @media print {
+  .ui-dialog,
+  .ui-dialog-overlay {
+    display: none !important;
+  }
+  .ui-table-container {
+    overflow: visible;
+  }
   .ui-card {
     box-shadow: none;
   }

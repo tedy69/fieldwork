@@ -1,7 +1,12 @@
 import { useRef, useState, type FormEvent } from 'react';
 import type { User, WorkOrder } from '@fieldwork/contracts';
 import { Button } from './components/ui/button';
-import { Select } from './components/ui/input';
+import {
+  NativeSelect as Select,
+  NativeSelectOption as Option,
+} from './components/ui/native-select';
+import { Label } from './components/ui/label';
+import { FieldError } from './components/ui/field';
 import { client, message } from './lib';
 import './reschedule.css';
 
@@ -106,7 +111,7 @@ export default function ReassignOrder({
             order. Unsent drafts stay on the original worker's device. Coordinate the handover
             before saving.
           </p>
-          <label>
+          <Label>
             New field worker
             <Select
               autoFocus
@@ -118,21 +123,17 @@ export default function ReassignOrder({
               onChange={(event) => setAssigneeId(event.target.value)}
             >
               {!choices.some((worker) => worker.id === order.assignee.id) && (
-                <option value={order.assignee.id}>{order.assignee.name} (current)</option>
+                <Option value={order.assignee.id}>{order.assignee.name} (current)</Option>
               )}
               {choices.map((worker) => (
-                <option value={worker.id} key={worker.id}>
+                <Option value={worker.id} key={worker.id}>
                   {worker.name}
                   {worker.id === order.assignee.id ? ' (current)' : ''}
-                </option>
+                </Option>
               ))}
             </Select>
-          </label>
-          {error && (
-            <p className="error" role="alert">
-              {error}
-            </p>
-          )}
+          </Label>
+          {error && <FieldError>{error}</FieldError>}
           <div className="schedule-actions">
             <Button
               className="primary"

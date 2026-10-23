@@ -4,6 +4,7 @@ import { Alert } from './components/ui/alert';
 import { Input } from './components/ui/input';
 import { Textarea } from './components/ui/textarea';
 import { Label } from './components/ui/label';
+import { NativeSelect, NativeSelectOption } from './components/ui/native-select';
 import { useRef, useState, type FormEvent } from 'react';
 import type { Catalog, Site } from '@fieldwork/contracts';
 import { createClient } from '@fieldwork/sdk';
@@ -32,7 +33,9 @@ export default function Resources({
       throw new Error('Save or cancel the open coordinate editor before reloading.');
     for (const form of forms.current?.querySelectorAll<HTMLFormElement>('form') ?? []) {
       if (form && [...new FormData(form).values()].some((value) => String(value).trim()))
-        throw new Error('Your workspace form has unsaved text. Save or clear it before reloading.');
+        throw new Error(
+          'Your workspace form has unsaved changes. Save or clear it before reloading.',
+        );
     }
   }
   async function create(event: FormEvent<HTMLFormElement>, kind: 'site' | 'template') {
@@ -59,6 +62,7 @@ export default function Resources({
             .split('\n')
             .map((item) => item.trim())
             .filter(Boolean),
+          data.get('requiresPhoto') === 'required',
         );
       await refresh();
       form.reset();
@@ -140,6 +144,7 @@ export default function Resources({
               <li key={template.id}>
                 <strong>{template.name}</strong>
                 <p>{template.items.length} inspection items</p>
+                {template.requiresPhoto && <p>At least one site photo required per submission.</p>}
                 <ol>
                   {template.items.map((item) => (
                     <li key={item.id}>{item.label}</li>
@@ -163,7 +168,18 @@ export default function Resources({
                 placeholder={'Check access route\nCheck equipment condition'}
               />
             </Label>
-            <p className="muted">Up to 50 items. Assigned orders keep their original checklist.</p>
+            <Label>
+              Photo evidence
+              <NativeSelect name="requiresPhoto" aria-label="Photo evidence" defaultValue="">
+                <NativeSelectOption value="">Optional photos</NativeSelectOption>
+                <NativeSelectOption value="required">
+                  At least one photo required
+                </NativeSelectOption>
+              </NativeSelect>
+            </Label>
+            <p className="muted">
+              Up to 50 items. Assigned orders keep their original checklist and photo requirement.
+            </p>
             <Button className="primary" disabled={busy}>
               Add checklist
             </Button>

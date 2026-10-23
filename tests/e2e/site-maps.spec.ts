@@ -414,7 +414,7 @@ test('map-tool recovery blocks a page reload while site or checklist forms have 
   await card.getByRole('button', { name: 'Load site map', exact: true }).click();
   await expect(card.getByRole('alert')).toContainText('Map tools could not load.');
   await card.getByRole('button', { name: 'Reload page', exact: true }).click();
-  await expect(card.getByRole('alert')).toContainText('Your workspace form has unsaved text.');
+  await expect(card.getByRole('alert')).toContainText('Your workspace form has unsaved changes.');
   await expect(siteName).toHaveValue('Unsent site form');
   await expect(checklistName).toHaveValue('Unsent checklist form');
   await siteName.fill('');

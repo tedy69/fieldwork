@@ -82,6 +82,7 @@ export default function AssignmentFields({
             {catalog.templates.map((template) => (
               <Option key={template.id} value={template.id}>
                 {template.name}
+                {template.requiresPhoto ? ' · Photo required' : ''}
               </Option>
             ))}
           </Select>

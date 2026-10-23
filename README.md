@@ -20,6 +20,7 @@ An open-source field operations platform. Assign an inspection, complete it with
 - Shared Kokonut UI/shadcn components throughout the web workspace, including dialogs, checklist radios, form fields, status filters, cards, report tables, and draft photo attachments, with Fieldwork's charcoal-and-amber colors.
 - An offline web notebook and a native Expo worker app.
 - Durable checklists, notes, and photo attachments on the worker's device.
+- [Required photo evidence](docs/photo-evidence.md) for checklists, with web/Expo guidance, offline draft validation, and server enforcement.
 - A retryable outbox with duplicate protection and visible version conflicts.
 - Manager approval or requests for changes, with an action history.
 - [Report revision history](docs/report-history.md) in the web app, with saved checklist answers, photos, assignment snapshots, and review feedback.

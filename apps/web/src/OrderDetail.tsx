@@ -315,6 +315,11 @@ export default function OrderDetail({
             <h2>
               Site photos <span className="muted">{draft.photos.length}/3</span>
             </h2>
+            {order.template.requiresPhoto && (
+              <p className="muted">
+                At least one site photo is required for each submission, including corrections.
+              </p>
+            )}
             <div className="photos">
               {draft.photos.map((photo, index) => (
                 <div key={photo.id}>

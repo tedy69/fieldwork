@@ -41,6 +41,83 @@ function memory() {
   return storage;
 }
 describe('durable outbox', () => {
+  it('retains an older client queue and draft when the server reports missing photo evidence', async () => {
+    const storage = memory();
+    const original = order('legacy-evidence');
+    const payload = input();
+    const draft = { answers: payload.answers, summary: payload.summary, photos: payload.photos };
+    await storage.write({
+      ...emptyState(),
+      orders: [original],
+      drafts: { [original.id]: draft },
+      outbox: [
+        {
+          orderId: original.id,
+          input: payload,
+          state: 'pending',
+          createdAt: '2026-10-23T00:00:00Z',
+        },
+      ],
+    });
+    const send = vi
+      .fn()
+      .mockRejectedValue(
+        Object.assign(
+          new Error('Attach at least one site photo before submitting this checklist.'),
+          { status: 422 },
+        ),
+      );
+    const repo = createOfflineRepository(storage, send);
+    await repo.flush();
+    expect((await repo.read()).outbox[0]).toMatchObject({
+      input: payload,
+      state: 'blocked',
+      error: 'Attach at least one site photo before submitting this checklist.',
+    });
+    expect((await repo.read()).drafts[original.id]).toEqual(draft);
+    const upgraded = { ...original, template: { ...original.template, requiresPhoto: true } };
+    await repo.cacheOrder(upgraded);
+    await repo.discard(original.id);
+    await expect(repo.enqueue(original.id, payload)).rejects.toThrow(
+      'Attach at least one site photo',
+    );
+    expect((await repo.read()).drafts[original.id]).toEqual(draft);
+  });
+  it('keeps a photo-required draft when queueing without evidence fails, then persists a valid report across restart', async () => {
+    const storage = memory();
+    const send = vi.fn().mockRejectedValue(new Error('Offline'));
+    const repo = createOfflineRepository(storage, send);
+    const required = {
+      ...order('evidence'),
+      status: 'ASSIGNED' as const,
+      template: { ...order('evidence').template, requiresPhoto: true },
+    };
+    await repo.cacheOrders([required]);
+    const payload = { ...input(), baseVersion: required.version };
+    const draft = { answers: payload.answers, summary: payload.summary, photos: payload.photos };
+    await repo.saveDraft(required.id, draft);
+    await expect(repo.enqueue(required.id, payload)).rejects.toThrow(
+      'Attach at least one site photo before submitting this checklist.',
+    );
+    expect((await repo.read()).outbox).toEqual([]);
+    expect((await repo.read()).drafts[required.id]).toEqual(draft);
+    expect(send).not.toHaveBeenCalled();
+    const withPhoto = {
+      ...payload,
+      photos: [{ id: randomUUID(), mimeType: 'image/png' as const, data: 'synthetic-photo' }],
+    };
+    await repo.enqueue(required.id, withPhoto);
+    const restarted = createOfflineRepository(storage, send);
+    expect((await restarted.read()).orders[0].template.requiresPhoto).toBe(true);
+    expect((await restarted.read()).outbox[0].input).toEqual(withPhoto);
+    await restarted.flush();
+    expect((await restarted.read()).outbox[0].input).toEqual(withPhoto);
+    expect((await restarted.read()).drafts[required.id]).toEqual(draft);
+    send.mockResolvedValueOnce({ ...required, status: 'SUBMITTED', version: 3 });
+    await restarted.flush();
+    expect((await restarted.read()).outbox).toEqual([]);
+    expect(send.mock.calls[0][1].mutationId).toBe(send.mock.calls[1][1].mutationId);
+  });
   it('keeps queued reports and unqueued drafts when reassigned work disappears from the active list', async () => {
     const storage = memory();
     const send = vi

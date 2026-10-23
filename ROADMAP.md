@@ -28,11 +28,12 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Optional coordinates on new sites/assignments and opt-in web maps with configurable raster tiles, attribution, keyboard controls, and offline-readable coordinates.
 - [x] Manager coordinate editing for existing sites, with conflict recovery, explicit clearing, and unchanged inspection snapshots.
 - [x] Weekday-only recurring batches with Monday–Friday previews, saved-request recovery, and batch browsing.
+- [x] Checklist-wide photo requirements, web/Expo guidance, offline draft protection, and server enforcement.
 
 ## Next · Make daily work easier
 
 - Broader scheduling rules, holiday calendars, and editing or retiring future series work.
-- Accessible checklist field types: readings, numbers, text, and required evidence.
+- Accessible checklist field types: readings, numbers, text, and per-item evidence.
 - User invitation and account lifecycle UI.
 - Automated native flows on Android and iOS.
 - Translations, beginning with English and Indonesian.

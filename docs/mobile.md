@@ -23,6 +23,7 @@ Alternatively set `EXPO_PUBLIC_API_URL` when starting Metro. This is a public se
 6. Expire the session while a report is pending; sign in with the same account and recover the queue.
 7. Have another device submit or change the order; confirm a conflict is shown and the local draft remains.
 8. Check large text, screen reader labels, keyboard avoidance, and Android back behavior.
+9. Assign a checklist that requires a photo. Confirm its guidance appears, saving without a photo keeps the draft and shows an actionable error, and attaching/removing/re-attaching evidence works offline through restart. Submit a correction with fresh evidence after a manager requests changes.
 
 The iOS simulator does not emulate a real camera or cellular conditions. JavaScript export, simulator smoke tests, physical-device acceptance, and store release are separate checks; record them accurately in docs/verification.md.
 

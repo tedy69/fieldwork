@@ -1,6 +1,30 @@
 import { expect, it, vi } from 'vitest';
 import { createClient } from '@fieldwork/sdk';
 
+it('preserves optional template creation calls and validates the photo requirement in responses', async () => {
+  const template = {
+    id: 'template',
+    name: 'Synthetic evidence',
+    items: [{ id: 'check', label: 'Check access' }],
+  };
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(new Response(JSON.stringify(template)))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ ...template, requiresPhoto: true })))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ ...template, requiresPhoto: 'true' })));
+  const client = createClient('https://fieldwork.example', undefined, fetcher);
+  expect(await client.createTemplate(template.name, ['Check access'])).toEqual(template);
+  expect(JSON.parse(fetcher.mock.calls[0][1]!.body as string)).toEqual({
+    name: template.name,
+    items: ['Check access'],
+  });
+  expect((await client.createTemplate(template.name, ['Check access'], true)).requiresPhoto).toBe(
+    true,
+  );
+  expect(JSON.parse(fetcher.mock.calls[1][1]!.body as string).requiresPhoto).toBe(true);
+  await expect(client.createTemplate(template.name, ['Check access'])).rejects.toThrow();
+});
+
 it('encodes site lookups and location patches and keeps their expected coordinate pair', async () => {
   const site = { id: 'site/a', name: 'Synthetic site', address: 'Test address' };
   const point = { latitude: 0, longitude: 0 };

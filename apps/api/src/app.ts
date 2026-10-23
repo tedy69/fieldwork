@@ -9,6 +9,8 @@ import { z, ZodError } from 'zod';
 import {
   CreateOrderSchema,
   CreateSiteSchema,
+  CreateTemplateSchema,
+  PHOTO_REQUIRED_MESSAGE,
   UpdateSiteLocationSchema,
   MapProviderSchema,
   type MapProvider,
@@ -254,17 +256,12 @@ export async function buildApp(options: AppOptions) {
   });
   app.post('/api/v1/templates', async (request, reply) => {
     manager(request);
-    const input = z
-      .object({
-        name: z.string().trim().min(2).max(120),
-        items: z.array(z.string().trim().min(2).max(250)).min(1).max(50),
-      })
-      .strict()
-      .parse(request.body);
+    const input = CreateTemplateSchema.parse(request.body);
     const template = {
       id: randomUUID(),
       name: input.name,
       items: input.items.map((label) => ({ id: randomUUID(), label })),
+      ...(input.requiresPhoto === undefined ? {} : { requiresPhoto: input.requiresPhoto }),
     };
     store.transaction(() => {
       const { sites, templates } = store.catalog();
@@ -515,6 +512,8 @@ export async function buildApp(options: AppOptions) {
         order.template.items.some((item) => !ids.has(item.id))
       )
         fail(422, 'CHECKLIST', 'Answer every checklist item exactly once.');
+      if (order.template.requiresPhoto && input.photos.length === 0)
+        fail(422, 'PHOTO_REQUIRED', PHOTO_REQUIRED_MESSAGE);
       for (const photo of input.photos) {
         const bytes = Buffer.from(photo.data, 'base64');
         const valid =

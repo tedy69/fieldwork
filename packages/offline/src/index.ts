@@ -1,4 +1,5 @@
 import type { Draft, ReportInput, WorkOrder } from '@fieldwork/contracts';
+import { PHOTO_REQUIRED_MESSAGE } from '@fieldwork/contracts';
 
 export interface StorageAdapter {
   read(): Promise<State | null>;
@@ -126,6 +127,9 @@ export function createOfflineRepository(
           throw new Error(
             'This order already has a queued report. Resolve it before submitting another.',
           );
+        const order = state.orders.find((order) => order.id === orderId);
+        if (order?.template.requiresPhoto && input.photos.length === 0)
+          throw new Error(PHOTO_REQUIRED_MESSAGE);
         return {
           ...state,
           outbox: [

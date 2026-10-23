@@ -18,6 +18,7 @@ import { client, labels, message, dateLabel } from './lib';
 import { PageHeading, Empty } from './components';
 import Resources from './Resources';
 import CreateOrder from './CreateOrderDialog';
+import RecurringDispatch from './RecurringDispatch';
 import OrderDetail from './OrderDetail';
 import { isInDueRange, isOverdue } from './dates';
 import { useLocalDate } from './useLocalDate';
@@ -354,18 +355,31 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   }
                 />
                 {user.role === 'manager' && (
-                  <Button
-                    className="primary"
-                    onClick={() => setCreating(true)}
-                    disabled={
-                      !online ||
-                      catalog.sites.length === 0 ||
-                      catalog.templates.length === 0 ||
-                      !catalog.users.some((user) => user.role === 'worker')
-                    }
-                  >
-                    {planner && plannerDay ? '+ Assign for selected day' : '+ Assign work order'}
-                  </Button>
+                  <div className="assignment-actions">
+                    <RecurringDispatch
+                      userId={user.id}
+                      catalog={catalog}
+                      online={online}
+                      initialDueDate={planner && plannerDay ? plannerDay : undefined}
+                      onCreated={async (receipt) => {
+                        await refresh();
+                        setSelected(receipt.orders[0].id);
+                        setNotice(`${receipt.orders.length} recurring work orders confirmed.`);
+                      }}
+                    />
+                    <Button
+                      className="primary"
+                      onClick={() => setCreating(true)}
+                      disabled={
+                        !online ||
+                        catalog.sites.length === 0 ||
+                        catalog.templates.length === 0 ||
+                        !catalog.users.some((user) => user.role === 'worker')
+                      }
+                    >
+                      {planner && plannerDay ? '+ Assign for selected day' : '+ Assign work order'}
+                    </Button>
+                  </div>
                 )}
               </div>
               <div className="ledger-summary">

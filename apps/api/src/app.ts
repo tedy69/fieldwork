@@ -313,6 +313,12 @@ export async function buildApp(options: AppOptions) {
   app.post('/api/v1/work-order-series', async (request, reply) => {
     manager(request);
     const input = CreateOrderSeriesSchema.parse(request.body);
+    if (input.expectedActorId && input.expectedActorId !== request.actor!.id)
+      fail(
+        403,
+        'ACTOR_CHANGED',
+        'The signed-in account changed. Sign back into the account that saved this batch.',
+      );
     // Explicit field order makes retries independent of JSON property order.
     const normalized = {
       mutationId: input.mutationId,

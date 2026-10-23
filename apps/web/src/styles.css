@@ -326,6 +326,7 @@ main#main {
 }
 .heading-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 22px;
   align-items: center;
@@ -961,6 +962,55 @@ main#main {
   grid-template-columns: 1fr 1fr;
   gap: 15px;
   margin: 17px 0;
+}
+.recurring-dispatch {
+  max-width: 100%;
+}
+.assignment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  max-width: 100%;
+}
+.recurrence-preview ol:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 4px;
+}
+@media (max-width: 850px) {
+  .assignment-actions {
+    margin-top: 20px;
+  }
+}
+.recurring-dialog .ui-field-set {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.recurrence-preview {
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--ink);
+}
+.recurrence-preview h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+.recurrence-preview ol {
+  max-height: 160px;
+  overflow: auto;
+  padding-left: 24px;
+  margin: 0;
+  line-height: 1.8;
+}
+.recurring-dialog h3,
+.recurring-dialog .error {
+  overflow-wrap: anywhere;
+}
+.recurrence-recovery {
+  margin: 18px 0;
 }
 .login-page {
   min-height: 100dvh;

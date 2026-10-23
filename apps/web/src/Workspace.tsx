@@ -15,7 +15,7 @@ import { ApiError } from '@fieldwork/sdk';
 import { emptyState, type State } from '@fieldwork/offline';
 import { repositoryFor } from './storage';
 import { client, labels, message, dateLabel } from './lib';
-import { PageHeading, Empty } from './components';
+import { PageHeading, Empty, ActionGroup } from './components';
 import Resources from './Resources';
 import CreateOrder from './CreateOrderDialog';
 import RecurringDispatch from './RecurringDispatch';
@@ -159,7 +159,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
         <div className="brand">
           Fieldwork<span className="version">v0.1</span>
         </div>
-        <p className="workspace-label">OPERATIONS NOTEBOOK</p>
+        <p className="workspace-label">Operations notebook</p>
         <nav aria-label="Workspace">
           <Button
             variant="ghost"
@@ -232,8 +232,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
       </aside>
       <div className="main-column">
         <header className="topbar">
-          <span>
-            Workspace <span className="slash">/</span>{' '}
+          <span className="workspace-context">
             {user.role === 'manager' ? 'Dispatch desk' : 'Field notebook'}
           </span>
           <div className="connection">
@@ -243,32 +242,34 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
               {busy ? 'Syncing…' : 'Sync now'}
             </Button>
           </div>
-          <WorkFinder
-            user={user}
-            orders={state.orders}
-            onNavigate={(view) => {
-              setView(view);
-              setSelected(null);
-            }}
-            onOrder={(id) => {
-              setView('orders');
-              setSelected(id);
-            }}
-          />
-          <ServerSearch
-            user={user}
-            workers={catalog.users}
-            online={online}
-            today={today}
-            onCache={async (order) => {
-              await repo.cacheOrder(order);
-              setState(await repo.read());
-            }}
-            onOpened={(id) => {
-              setView('orders');
-              setSelected(id);
-            }}
-          />
+          <div className="topbar-tools">
+            <WorkFinder
+              user={user}
+              orders={state.orders}
+              onNavigate={(view) => {
+                setView(view);
+                setSelected(null);
+              }}
+              onOrder={(id) => {
+                setView('orders');
+                setSelected(id);
+              }}
+            />
+            <ServerSearch
+              user={user}
+              workers={catalog.users}
+              online={online}
+              today={today}
+              onCache={async (order) => {
+                await repo.cacheOrder(order);
+                setState(await repo.read());
+              }}
+              onOpened={(id) => {
+                setView('orders');
+                setSelected(id);
+              }}
+            />
+          </div>
         </header>
         <main id="main" tabIndex={-1}>
           {error && <Alert className="banner error">{error}</Alert>}
@@ -305,7 +306,6 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           ) : view === 'outbox' ? (
             <>
               <PageHeading
-                eyebrow="DEVICE STORAGE"
                 title="Sync outbox"
                 description="Queued reports stay here until the server confirms receipt."
               />
@@ -383,7 +383,6 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
             <>
               <div className="heading-row">
                 <PageHeading
-                  eyebrow={user.role === 'manager' ? 'DISPATCH DESK' : 'YOUR FIELD NOTEBOOK'}
                   title={user.role === 'manager' ? 'Work orders' : 'My assignments'}
                   description={
                     user.role === 'manager'
@@ -392,7 +391,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   }
                 />
                 {user.role === 'manager' && (
-                  <div className="assignment-actions">
+                  <ActionGroup className="assignment-actions">
                     <SeriesOverview
                       online={online}
                       onCache={async (order) => {
@@ -424,30 +423,26 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                     >
                       {planner && plannerDay ? '+ Assign for selected day' : '+ Assign work order'}
                     </Button>
-                  </div>
+                  </ActionGroup>
                 )}
               </div>
               <div className="ledger-summary">
                 <Card>
-                  <span className="summary-number">
-                    {assignedCount.toString().padStart(2, '0')}
-                  </span>
+                  <span className="summary-number">{assignedCount}</span>
                   <div>
                     <strong>In the field</strong>
                     <small>Assigned &amp; changes requested</small>
                   </div>
                 </Card>
                 <Card>
-                  <span className="summary-number amber">
-                    {reviewCount.toString().padStart(2, '0')}
-                  </span>
+                  <span className="summary-number amber">{reviewCount}</span>
                   <div>
                     <strong>Ready for review</strong>
                     <small>Submitted inspection reports</small>
                   </div>
                 </Card>
                 <div className="last-sync">
-                  <span className="eyebrow">LAST SYNC</span>
+                  <span className="muted">Last sync</span>
                   <strong>
                     {state.lastSynced
                       ? new Date(state.lastSynced).toLocaleTimeString([], {
@@ -458,167 +453,172 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   </strong>
                 </div>
               </div>
-              <SmoothTab
-                className="work-view-toggle"
-                label="Work order view"
-                value={plannerView}
-                onChange={(value) => {
-                  if (value !== 'list' && value !== 'week' && value !== 'month') return;
-                  if (value === plannerView) return;
-                  if (plannerDay) setPlannerAnchor(plannerDay);
-                  setPlannerDay('');
-                  setPlannerView(value);
-                }}
-                items={[
-                  { id: 'list', title: 'List' },
-                  { id: 'week', title: 'Week planner' },
-                  { id: 'month', title: 'Month planner' },
-                ]}
-              />
-              <div className="list-toolbar">
-                <SmoothTab
-                  label="Filter work orders"
-                  value={filter}
-                  onChange={setFilter}
-                  items={[
-                    'ALL',
-                    'OVERDUE',
-                    'ASSIGNED',
-                    'SUBMITTED',
-                    'APPROVED',
-                    'CHANGES_REQUESTED',
-                  ].map((status) => ({
-                    id: status,
-                    title:
-                      status === 'ALL'
-                        ? 'All orders'
-                        : status === 'OVERDUE'
-                          ? 'Overdue'
-                          : labels[status],
-                  }))}
-                />
-                <Label className="search">
-                  <span className="sr-only">Search work orders</span>
-                  <SearchField
-                    aria-label="Search work orders"
-                    value={search}
-                    onValueChange={setSearch}
-                    placeholder="Search orders, sites, people…"
+              <Card className="work-board">
+                <div className="board-heading">
+                  <SmoothTab
+                    className="work-view-toggle"
+                    label="Work order view"
+                    value={plannerView}
+                    onChange={(value) => {
+                      if (value !== 'list' && value !== 'week' && value !== 'month') return;
+                      if (value === plannerView) return;
+                      if (plannerDay) setPlannerAnchor(plannerDay);
+                      setPlannerDay('');
+                      setPlannerView(value);
+                    }}
+                    items={[
+                      { id: 'list', title: 'List' },
+                      { id: 'week', title: 'Week planner' },
+                      { id: 'month', title: 'Month planner' },
+                    ]}
                   />
-                </Label>
-              </div>
-              {plannerView === 'month' ? (
-                <MonthPlanner
-                  anchor={plannerAnchor}
-                  today={today}
-                  day={plannerDay}
-                  orders={matching}
-                  onMonth={(date) => {
-                    setPlannerAnchor(date);
-                    setPlannerDay('');
-                  }}
-                  onDay={setPlannerDay}
-                />
-              ) : planner ? (
-                <WeekPlanner
-                  anchor={plannerAnchor}
-                  today={today}
-                  day={plannerDay}
-                  orders={matching}
-                  onWeek={(date) => {
-                    setPlannerAnchor(date);
-                    setPlannerDay('');
-                  }}
-                  onDay={setPlannerDay}
-                />
-              ) : (
-                <DueDateRange
-                  from={dueFrom}
-                  through={dueThrough}
-                  onFrom={setDueFrom}
-                  onThrough={setDueThrough}
-                  onClear={() => {
-                    setDueFrom('');
-                    setDueThrough('');
-                  }}
-                />
-              )}
-              <div className="list-header" aria-hidden="true">
-                <span>WORK ORDER / SITE</span>
-                <span>ASSIGNED TO</span>
-                <span>DUE</span>
-                <span>STATUS</span>
-              </div>
-              <ul className="order-list">
-                {visible.map((order) => (
-                  <li key={order.id}>
-                    <Button
-                      variant="unstyled"
-                      className="order-row"
-                      onClick={() => setSelected(order.id)}
-                      aria-label={`Open ${order.reference}: ${order.title}`}
-                    >
-                      <div>
-                        <div className="reference">
-                          <span>{order.reference}</span>
-                          {order.priority === 'urgent' && <span className="urgent">URGENT</span>}
-                          {state.outbox.some((item) => item.orderId === order.id) && (
-                            <span className="urgent">QUEUED</span>
-                          )}
+                  <Label className="search">
+                    <span className="sr-only">Search work orders</span>
+                    <SearchField
+                      aria-label="Search work orders"
+                      value={search}
+                      onValueChange={setSearch}
+                      placeholder="Search orders, sites, people…"
+                    />
+                  </Label>
+                </div>
+                <div className="list-toolbar">
+                  <SmoothTab
+                    className="status-filters"
+                    label="Filter work orders"
+                    value={filter}
+                    onChange={setFilter}
+                    items={[
+                      'ALL',
+                      'OVERDUE',
+                      'ASSIGNED',
+                      'SUBMITTED',
+                      'APPROVED',
+                      'CHANGES_REQUESTED',
+                    ].map((status) => ({
+                      id: status,
+                      title:
+                        status === 'ALL'
+                          ? 'All orders'
+                          : status === 'OVERDUE'
+                            ? 'Overdue'
+                            : labels[status],
+                    }))}
+                  />
+                </div>
+                {plannerView === 'month' ? (
+                  <MonthPlanner
+                    anchor={plannerAnchor}
+                    today={today}
+                    day={plannerDay}
+                    orders={matching}
+                    onMonth={(date) => {
+                      setPlannerAnchor(date);
+                      setPlannerDay('');
+                    }}
+                    onDay={setPlannerDay}
+                  />
+                ) : planner ? (
+                  <WeekPlanner
+                    anchor={plannerAnchor}
+                    today={today}
+                    day={plannerDay}
+                    orders={matching}
+                    onWeek={(date) => {
+                      setPlannerAnchor(date);
+                      setPlannerDay('');
+                    }}
+                    onDay={setPlannerDay}
+                  />
+                ) : (
+                  <DueDateRange
+                    from={dueFrom}
+                    through={dueThrough}
+                    onFrom={setDueFrom}
+                    onThrough={setDueThrough}
+                    onClear={() => {
+                      setDueFrom('');
+                      setDueThrough('');
+                    }}
+                  />
+                )}
+                <div className="list-header" aria-hidden="true">
+                  <span>Work order / site</span>
+                  <span>Assigned to</span>
+                  <span>Due</span>
+                  <span>Status</span>
+                </div>
+                <ul className="order-list">
+                  {visible.map((order) => (
+                    <li key={order.id}>
+                      <Button
+                        variant="unstyled"
+                        className="order-row"
+                        onClick={() => setSelected(order.id)}
+                        aria-label={`Open ${order.reference}: ${order.title}`}
+                      >
+                        <div>
+                          <div className="reference">
+                            <span>{order.reference}</span>
+                            {order.priority === 'urgent' && <span className="urgent">Urgent</span>}
+                            {state.outbox.some((item) => item.orderId === order.id) && (
+                              <span className="urgent">Queued</span>
+                            )}
+                          </div>
+                          <strong className="order-title">{order.title}</strong>
+                          <span className="muted site-name">{order.site.name}</span>
                         </div>
-                        <strong className="order-title">{order.title}</strong>
-                        <span className="muted site-name">{order.site.name}</span>
-                      </div>
-                      <span className="assignee">{order.assignee.name}</span>
-                      <span className="due">{dateLabel(order.dueDate)}</span>
-                      <Badge className={`status status-${order.status.toLowerCase()}`}>
-                        {labels[order.status]}
-                      </Badge>
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-              {visible.length === 0 && !invalidRange && (
-                <Empty
-                  title={
-                    !loaded
-                      ? 'Loading your workspace…'
-                      : planner
-                        ? plannerDay
-                          ? 'No work orders for this day'
-                          : plannerView === 'month'
-                            ? 'No work orders this month'
-                            : 'No work orders this week'
-                        : dueFrom || dueThrough
-                          ? 'No work orders in this date range'
-                          : filter === 'OVERDUE'
-                            ? overdueEmpty.title
-                            : search || filter !== 'ALL'
-                              ? 'No matching work orders'
-                              : 'A clean page'
-                  }
-                  description={
-                    !loaded
-                      ? 'Checking for saved assignments and recent changes.'
-                      : planner
-                        ? `Choose another day or ${plannerView === 'month' ? 'month' : 'week'}, or adjust your search and status filter.`
-                        : dueFrom || dueThrough
-                          ? 'Change or clear the dates, or adjust your search and status filter.'
-                          : filter === 'OVERDUE'
-                            ? overdueEmpty.description
-                            : user.role === 'manager'
-                              ? 'Assign a work order to start the first inspection.'
-                              : 'Your manager will assign work here. Sync to check for new jobs.'
-                  }
-                />
-              )}
-              <footer className="list-footer">
-                <span>
-                  {visible.length} of {state.orders.length} work orders
-                </span>
-                <span>Saved on this device · {state.outbox.length} queued</span>
-              </footer>
-              {user.role === 'manager' && <ReportExport orders={visible} onNotice={setNotice} />}
+                        <span className="assignee">{order.assignee.name}</span>
+                        <span className="due">{dateLabel(order.dueDate)}</span>
+                        <Badge className={`status status-${order.status.toLowerCase()}`}>
+                          {labels[order.status]}
+                        </Badge>
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+                {visible.length === 0 && !invalidRange && (
+                  <Empty
+                    title={
+                      !loaded
+                        ? 'Loading your workspace…'
+                        : planner
+                          ? plannerDay
+                            ? 'No work orders for this day'
+                            : plannerView === 'month'
+                              ? 'No work orders this month'
+                              : 'No work orders this week'
+                          : dueFrom || dueThrough
+                            ? 'No work orders in this date range'
+                            : filter === 'OVERDUE'
+                              ? overdueEmpty.title
+                              : search || filter !== 'ALL'
+                                ? 'No matching work orders'
+                                : 'A clean page'
+                    }
+                    description={
+                      !loaded
+                        ? 'Checking for saved assignments and recent changes.'
+                        : planner
+                          ? `Choose another day or ${plannerView === 'month' ? 'month' : 'week'}, or adjust your search and status filter.`
+                          : dueFrom || dueThrough
+                            ? 'Change or clear the dates, or adjust your search and status filter.'
+                            : filter === 'OVERDUE'
+                              ? overdueEmpty.description
+                              : user.role === 'manager'
+                                ? 'Assign a work order to start the first inspection.'
+                                : 'Your manager will assign work here. Sync to check for new jobs.'
+                    }
+                  />
+                )}
+                <footer className="list-footer">
+                  <span>
+                    {visible.length} of {state.orders.length} work orders
+                  </span>
+                  <span>Saved on this device · {state.outbox.length} queued</span>
+                </footer>
+                {user.role === 'manager' && <ReportExport orders={visible} onNotice={setNotice} />}
+              </Card>
             </>
           )}
           {creating && (

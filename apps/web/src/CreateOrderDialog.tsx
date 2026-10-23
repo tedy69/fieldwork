@@ -1,6 +1,12 @@
 import { Button } from './components/ui/button';
 import { Form } from './components/ui/form';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from './components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogHeader,
+} from './components/ui/dialog';
 import { FieldError } from './components/ui/field';
 import { useRef, useState, type FormEvent } from 'react';
 import type { Catalog, WorkOrder } from '@fieldwork/contracts';
@@ -76,14 +82,17 @@ export default function CreateOrder({
         }}
       >
         <Form noValidate onSubmit={submit}>
-          <div className="dialog-heading">
-            <span className="eyebrow">DISPATCH</span>
+          <DialogHeader>
+            <div>
+              <DialogTitle>Assign a work order</DialogTitle>
+              <DialogDescription>
+                Give the field team a clear brief and a checklist.
+              </DialogDescription>
+            </div>
             <Button type="button" className="quiet" onClick={onClose} disabled={busy}>
               Cancel
             </Button>
-          </div>
-          <DialogTitle>Assign a work order</DialogTitle>
-          <DialogDescription>Give the field team a clear brief and a checklist.</DialogDescription>
+          </DialogHeader>
           <AssignmentFields catalog={catalog} initial={{ dueDate: initialDueDate }} />
           {error && <FieldError>{error}</FieldError>}
           <Button className="primary full" disabled={busy}>

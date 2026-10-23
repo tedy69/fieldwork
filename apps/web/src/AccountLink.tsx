@@ -163,9 +163,6 @@ export default function AccountLink({
   return (
     <main className="login-page">
       <section className="login-intro">
-        <span className="eyebrow">
-          FIELDWORK · {reset ? 'PASSWORD RECOVERY' : 'WORKER INVITATION'}
-        </span>
         <h1 ref={heading} tabIndex={-1}>
           {reset ? 'Return to your notebook.' : 'Join the field team.'}
         </h1>

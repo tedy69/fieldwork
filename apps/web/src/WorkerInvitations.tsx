@@ -13,6 +13,7 @@ import {
   Dialog,
   DialogTrigger,
   DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from './components/ui/dialog';
@@ -190,6 +191,7 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
         </Button>
       </DialogTrigger>
       <DialogContent
+        size="directory"
         className="invitation-dialog"
         showCloseButton={false}
         onEscapeKeyDown={(event) => {
@@ -206,8 +208,16 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
           else document.getElementById('main')?.focus();
         }}
       >
-        <div className="invitation-toolbar">
-          <span className="eyebrow">WORKER ACCESS</span>
+        <DialogHeader>
+          <div>
+            <DialogTitle ref={heading} tabIndex={-1}>
+              Worker invitations
+            </DialogTitle>
+            <DialogDescription>
+              Create a 72-hour link for a field worker to choose their own password. Copy and share
+              the link directly.
+            </DialogDescription>
+          </div>
           <Button
             type="button"
             className="quiet"
@@ -216,14 +226,7 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
           >
             Close invitations
           </Button>
-        </div>
-        <DialogTitle ref={heading} tabIndex={-1}>
-          Worker invitations
-        </DialogTitle>
-        <DialogDescription>
-          Create a 72-hour link for a field worker to choose their own password. Copy and share the
-          link directly.
-        </DialogDescription>
+        </DialogHeader>
         {!online && (
           <Alert className="banner notice" role="status">
             Loaded invitations stay visible offline. Reconnect to create, refresh, or revoke.

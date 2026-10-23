@@ -8,6 +8,7 @@ import { Alert } from './components/ui/alert';
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
@@ -153,6 +154,7 @@ export default function WorkerAccounts({
         </Button>
       </DialogTrigger>
       <DialogContent
+        size="directory"
         className="invitation-dialog"
         showCloseButton={false}
         onEscapeKeyDown={(event) => {
@@ -169,19 +171,20 @@ export default function WorkerAccounts({
           else document.getElementById('main')?.focus();
         }}
       >
-        <div className="invitation-toolbar">
-          <span className="eyebrow">WORKER ACCESS</span>
+        <DialogHeader>
+          <div>
+            <DialogTitle ref={heading} tabIndex={-1}>
+              Worker accounts
+            </DialogTitle>
+            <DialogDescription>
+              Control who can sign in and receive new assignments. Saved inspections and device
+              notebooks stay with their original accounts.
+            </DialogDescription>
+          </div>
           <Button className="quiet" disabled={busy === 'saving'} onClick={() => changeOpen(false)}>
             Close accounts
           </Button>
-        </div>
-        <DialogTitle ref={heading} tabIndex={-1}>
-          Worker accounts
-        </DialogTitle>
-        <DialogDescription>
-          Control who can sign in and receive new assignments. Saved inspections and device
-          notebooks stay with their original accounts.
-        </DialogDescription>
+        </DialogHeader>
         {!online && (
           <Alert role="status" className="banner notice">
             Loaded accounts stay visible offline. Reconnect to refresh or change access.

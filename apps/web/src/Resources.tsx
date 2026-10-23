@@ -14,6 +14,7 @@ import SiteLocation from './SiteLocation';
 import SiteCoordinatesEditor from './SiteCoordinatesEditor';
 import WorkerInvitations from './WorkerInvitations';
 import WorkerAccounts from './WorkerAccounts';
+import { PageHeading, PanelHeader } from './components';
 const client = createClient();
 export default function Resources({
   catalog,
@@ -82,11 +83,10 @@ export default function Resources({
   }
   return (
     <>
-      <div className="page-heading">
-        <span className="eyebrow">WORKSPACE SETUP</span>
-        <h1>Sites &amp; checklists</h1>
-        <p>Define the places and inspection standards your team works with.</p>
-      </div>
+      <PageHeading
+        title="Sites & checklists"
+        description="Manage the places, inspection standards, and people your team works with."
+      />
       {error && <Alert className="banner error">{error}</Alert>}
       {notice && (
         <Alert className="banner notice" role="status">
@@ -94,122 +94,152 @@ export default function Resources({
         </Alert>
       )}
       <div ref={forms} className="resource-grid">
-        <Card>
-          <h2>
-            Sites <span className="muted">/ {catalog.sites.length}</span>
-          </h2>
-          <ul className="resource-list">
-            {catalog.sites.map((site) => (
-              <li key={site.id}>
-                <strong>{site.name}</strong>
-                <p>{site.address}</p>
-                <SiteCoordinatesEditor site={site} online={online} onUpdated={onSiteUpdated} />
-                <SiteLocation
-                  key={`${site.id}:${site.coordinates?.latitude ?? ''}:${site.coordinates?.longitude ?? ''}`}
-                  site={site}
-                  online={online}
-                  beforeReload={beforeReload}
-                />
-              </li>
-            ))}
-          </ul>
-          <Form noValidate aria-label="Add a site" onSubmit={(event) => void create(event, 'site')}>
-            <h3>Add a site</h3>
-            <Label>
-              Site name
-              <Input name="name" required minLength={2} maxLength={120} />
-            </Label>
-            <Label>
-              Address
-              <Input name="address" required minLength={3} maxLength={250} />
-            </Label>
-            <p className="muted">
-              Coordinates are optional. Enter them only when the location should be shared with your
-              workspace.
-            </p>
-            <div className="form-grid">
+        <Card className="catalog-panel">
+          <PanelHeader
+            title={
+              <>
+                Sites <span className="panel-count">{catalog.sites.length}</span>
+              </>
+            }
+            description="Saved locations for your team."
+          />
+          <div className="catalog-columns">
+            <ul className="resource-list">
+              {catalog.sites.map((site) => (
+                <li key={site.id}>
+                  <strong>{site.name}</strong>
+                  <p>{site.address}</p>
+                  <SiteCoordinatesEditor site={site} online={online} onUpdated={onSiteUpdated} />
+                  <SiteLocation
+                    key={`${site.id}:${site.coordinates?.latitude ?? ''}:${site.coordinates?.longitude ?? ''}`}
+                    site={site}
+                    online={online}
+                    beforeReload={beforeReload}
+                  />
+                </li>
+              ))}
+            </ul>
+            <Form
+              noValidate
+              aria-label="Add a site"
+              onSubmit={(event) => void create(event, 'site')}
+            >
+              <h3>Add a site</h3>
               <Label>
-                Latitude
-                <Input name="latitude" type="number" step="any" min={-90} max={90} />
+                Site name
+                <Input name="name" required minLength={2} maxLength={120} />
               </Label>
               <Label>
-                Longitude
-                <Input name="longitude" type="number" step="any" min={-180} max={180} />
+                Address
+                <Input name="address" required minLength={3} maxLength={250} />
               </Label>
-            </div>
-            <Button className="primary" disabled={busy}>
-              Add site
-            </Button>
-          </Form>
+              <p className="muted">
+                Coordinates are optional. Enter them only when the location should be shared with
+                your workspace.
+              </p>
+              <div className="form-grid">
+                <Label>
+                  Latitude
+                  <Input name="latitude" type="number" step="any" min={-90} max={90} />
+                </Label>
+                <Label>
+                  Longitude
+                  <Input name="longitude" type="number" step="any" min={-180} max={180} />
+                </Label>
+              </div>
+              <Button className="primary" disabled={busy}>
+                Add site
+              </Button>
+            </Form>
+          </div>
         </Card>
-        <Card>
-          <h2>
-            Checklists <span className="muted">/ {catalog.templates.length}</span>
-          </h2>
-          <ul className="resource-list">
-            {catalog.templates.map((template) => (
-              <li key={template.id}>
-                <strong>{template.name}</strong>
-                <p>{template.items.length} inspection items</p>
-                {template.requiresPhoto && <p>At least one site photo required per submission.</p>}
-                <ol>
-                  {template.items.map((item) => (
-                    <li key={item.id}>{item.label}</li>
-                  ))}
-                </ol>
-              </li>
-            ))}
-          </ul>
-          <Form
-            noValidate
-            aria-label="Add a checklist"
-            onSubmit={(event) => void create(event, 'template')}
-          >
-            <h3>Add a checklist</h3>
-            <Label>
-              Checklist name
-              <Input name="name" required minLength={2} maxLength={120} />
-            </Label>
-            <Label>
-              Inspection items, one per line
-              <Textarea
-                className="resize-none"
-                name="items"
-                required
-                rows={5}
-                placeholder={'Check access route\nCheck equipment condition'}
-              />
-            </Label>
-            <Label>
-              Photo evidence
-              <NativeSelect name="requiresPhoto" aria-label="Photo evidence" defaultValue="">
-                <NativeSelectOption value="">Optional photos</NativeSelectOption>
-                <NativeSelectOption value="required">
-                  At least one photo required
-                </NativeSelectOption>
-              </NativeSelect>
-            </Label>
-            <p className="muted">
-              Up to 50 items. Assigned orders keep their original checklist and photo requirement.
-            </p>
-            <Button className="primary" disabled={busy}>
-              Add checklist
-            </Button>
-          </Form>
+        <Card className="catalog-panel">
+          <PanelHeader
+            title={
+              <>
+                Checklists <span className="panel-count">{catalog.templates.length}</span>
+              </>
+            }
+            description="Reusable questions for new assignments."
+          />
+          <div className="catalog-columns">
+            <ul className="resource-list">
+              {catalog.templates.map((template) => (
+                <li key={template.id}>
+                  <strong>{template.name}</strong>
+                  <p>{template.items.length} inspection items</p>
+                  {template.requiresPhoto && (
+                    <p>At least one site photo required per submission.</p>
+                  )}
+                  <ol>
+                    {template.items.map((item) => (
+                      <li key={item.id}>{item.label}</li>
+                    ))}
+                  </ol>
+                </li>
+              ))}
+            </ul>
+            <Form
+              noValidate
+              aria-label="Add a checklist"
+              onSubmit={(event) => void create(event, 'template')}
+            >
+              <h3>Add a checklist</h3>
+              <Label>
+                Checklist name
+                <Input name="name" required minLength={2} maxLength={120} />
+              </Label>
+              <Label>
+                Inspection items, one per line
+                <Textarea
+                  className="resize-none"
+                  name="items"
+                  required
+                  rows={5}
+                  placeholder={'Check access route\nCheck equipment condition'}
+                />
+              </Label>
+              <Label>
+                Photo evidence
+                <NativeSelect name="requiresPhoto" aria-label="Photo evidence" defaultValue="">
+                  <NativeSelectOption value="">Optional photos</NativeSelectOption>
+                  <NativeSelectOption value="required">
+                    At least one photo required
+                  </NativeSelectOption>
+                </NativeSelect>
+              </Label>
+              <p className="muted">
+                Up to 50 items. Assigned orders keep their original checklist and photo requirement.
+              </p>
+              <Button className="primary" disabled={busy}>
+                Add checklist
+              </Button>
+            </Form>
+          </div>
         </Card>
       </div>
       <Card className="brief worker-directory">
-        <h2>Field workers</h2>
-        <div className="invitation-actions">
-          <WorkerInvitations online={online} />
-          <WorkerAccounts online={online} onCatalog={onCatalog} onUpdated={onWorkerUpdated} />
-        </div>
-        <p>
+        <PanelHeader
+          title="Field workers"
+          description="Invite people and manage their access to the workspace."
+          actions={
+            <>
+              <WorkerInvitations online={online} />
+              <WorkerAccounts online={online} onCatalog={onCatalog} onUpdated={onWorkerUpdated} />
+            </>
+          }
+        />
+        <ul className="worker-summary">
           {catalog.users
             .filter((user) => user.role === 'worker')
-            .map((user) => user.name)
-            .join(' · ') || 'No field workers yet.'}
-        </p>
+            .map((user) => (
+              <li key={user.id}>
+                <strong>{user.name}</strong>
+                <span className="muted">Field worker</span>
+              </li>
+            ))}
+        </ul>
+        {!catalog.users.some((user) => user.role === 'worker') && <p>No field workers yet.</p>}
         <p>
           Invite workers to set up their accounts, or use the{' '}
           <a href="https://github.com/tedy69/fieldwork/blob/main/docs/self-hosting.md">

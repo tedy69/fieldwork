@@ -11,6 +11,7 @@ import {
   Dialog,
   DialogTrigger,
   DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from './components/ui/dialog';
@@ -154,6 +155,7 @@ export default function SeriesOverview({
         </Button>
       </DialogTrigger>
       <DialogContent
+        size="compare"
         className="series-dialog"
         aria-modal="true"
         onOpenAutoFocus={(event) => {
@@ -167,13 +169,17 @@ export default function SeriesOverview({
           else trigger.current.focus();
         }}
       >
-        <DialogTitle ref={heading} tabIndex={-1}>
-          Recurring batches
-        </DialogTitle>
-        <DialogDescription>
-          Compare original schedules with current orders. Opening an order fetches its latest
-          details and keeps your drafts.
-        </DialogDescription>
+        <DialogHeader>
+          <div>
+            <DialogTitle ref={heading} tabIndex={-1}>
+              Recurring batches
+            </DialogTitle>
+            <DialogDescription>
+              Compare original schedules with current orders. Opening an order fetches its latest
+              details and keeps your drafts.
+            </DialogDescription>
+          </div>
+        </DialogHeader>
         <div className="series-actions">
           <Button
             className="quiet"

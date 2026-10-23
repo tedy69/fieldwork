@@ -23,7 +23,13 @@ import {
 } from './components/ui/native-select';
 import { Alert } from './components/ui/alert';
 import { FieldError, FieldSet } from './components/ui/field';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from './components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogHeader,
+} from './components/ui/dialog';
 
 function datesFor(dueDate: string, frequency: Recurrence['frequency'], occurrences: number) {
   try {
@@ -290,18 +296,19 @@ function RecurringDialog({
           target?.focus();
         }}
       >
-        <div className="dialog-heading">
-          <span className="eyebrow">DISPATCH</span>
+        <DialogHeader>
+          <div>
+            <DialogTitle ref={heading} tabIndex={-1}>
+              Assign recurring work
+            </DialogTitle>
+            <DialogDescription>
+              Schedule daily, weekly, or weekday work. Each date becomes an independent work order.
+            </DialogDescription>
+          </div>
           <Button className="quiet" onClick={onClose} disabled={busy}>
             Close
           </Button>
-        </div>
-        <DialogTitle ref={heading} tabIndex={-1}>
-          Assign recurring work
-        </DialogTitle>
-        <DialogDescription>
-          Schedule daily, weekly, or weekday work. Each date becomes an independent work order.
-        </DialogDescription>
+        </DialogHeader>
         {pending ? (
           <>
             <Alert className="recurrence-recovery">

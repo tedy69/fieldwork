@@ -21,6 +21,7 @@ import {
   Dialog,
   DialogTrigger,
   DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from './components/ui/dialog';
@@ -199,6 +200,7 @@ export default function ServerSearch({
         </Button>
       </DialogTrigger>
       <DialogContent
+        size="compare"
         className="server-search-dialog"
         aria-modal="true"
         onOpenAutoFocus={(event) => {
@@ -212,13 +214,15 @@ export default function ServerSearch({
           else trigger.current.focus();
         }}
       >
-        <header className="server-search-heading">
-          <DialogTitle>Search server</DialogTitle>
-          <DialogDescription>
-            Find current records online. Opening a result saves that order on this device. Your
-            drafts and saved filters stay intact.
-          </DialogDescription>
-        </header>
+        <DialogHeader className="server-search-heading">
+          <div>
+            <DialogTitle>Search server</DialogTitle>
+            <DialogDescription>
+              Find current records online. Opening a result saves that order on this device. Your
+              drafts and saved filters stay intact.
+            </DialogDescription>
+          </div>
+        </DialogHeader>
         <Form noValidate aria-label="Search server records" onSubmit={search}>
           <FieldSet className="server-search-fields" disabled={Boolean(opening)}>
             <Label className="server-search-text">

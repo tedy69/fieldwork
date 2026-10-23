@@ -125,6 +125,67 @@ test('redesigned screens retain readable layouts, modal focus and shared tokens'
   ).toBeFocused();
 });
 
+test('every workspace dialog keeps its title, close action and keyboard focus usable', async ({
+  page,
+}) => {
+  await login(page, 'manager');
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 700 });
+    for (const [destination, trigger, close] of [
+      ['orders', '+ Assign work order', 'Cancel'],
+      ['orders', 'Assign recurring work', 'Close'],
+      ['orders', 'Recurring batches', 'Close dialog'],
+      ['orders', 'Search server', 'Close dialog'],
+      ['orders', 'Find work', 'Close finder'],
+      ['resources', 'Worker accounts', 'Close accounts'],
+      ['resources', 'Worker invitations', 'Close invitations'],
+      ['detail', 'Report history', 'Close dialog'],
+    ] as const) {
+      if (destination === 'resources')
+        await page.getByRole('button', { name: 'Sites & checklists', exact: true }).click();
+      else {
+        await page.getByRole('button', { name: /^Work orders/ }).click();
+        if (destination === 'detail')
+          await page.getByRole('button', { name: /^Open FW-001:/ }).click();
+      }
+      const opener = page.getByRole('button', { name: trigger, exact: true });
+      await opener.click();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+      const title = dialog.getByRole('heading', { level: 2 }).first();
+      const closer = dialog.getByRole('button', { name: close, exact: true });
+      const [a, b, bounds] = await Promise.all([
+        title.boundingBox(),
+        closer.boundingBox(),
+        dialog.boundingBox(),
+      ]);
+      expect(a).not.toBeNull();
+      expect(b).not.toBeNull();
+      expect(bounds).not.toBeNull();
+      expect(
+        a!.x < b!.x + b!.width &&
+          a!.x + a!.width > b!.x &&
+          a!.y < b!.y + b!.height &&
+          a!.y + a!.height > b!.y,
+      ).toBe(false);
+      expect(bounds!.x).toBeGreaterThanOrEqual(0);
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+      expect(bounds!.height).toBeLessThanOrEqual(700);
+      expect(b!.height).toBeGreaterThanOrEqual(44);
+      for (let index = 0; index < 4; index++) {
+        await page.keyboard.press('Tab');
+        expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(
+          true,
+        );
+      }
+      await closer.click();
+      await expect(dialog).toHaveCount(0);
+      await expect(opener).toBeFocused();
+      await fits(page);
+    }
+  }
+});
+
 test('documentation walkthrough shows real dispatch, planning, setup and field screens', async ({
   browser,
 }) => {
@@ -159,6 +220,8 @@ test('documentation walkthrough shows real dispatch, planning, setup and field s
   const page = await context.newPage();
   const save = async (name: string, fullPage = true) => {
     await fits(page);
+    if (fullPage) await page.evaluate(() => window.scrollTo(0, 0));
+    await page.mouse.move(0, 0);
     await page.screenshot({
       path: process.env.UPDATE_README_IMAGES
         ? resolve('docs/images', name)
@@ -172,10 +235,19 @@ test('documentation walkthrough shows real dispatch, planning, setup and field s
   await page.getByLabel('Search work orders', { exact: true }).fill('Demo work:');
   await expect(page.locator('.order-row')).toHaveCount(3);
   await save('dispatch-desk.png');
+  await page.getByRole('button', { name: '+ Assign work order', exact: true }).click();
+  await save('notebook-dispatch-dialog.png', false);
+  await page.keyboard.press('Escape');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await save('notebook-work-orders-phone.png');
+  await page.setViewportSize({ width: 1440, height: 1100 });
   await page.getByRole('button', { name: 'Month planner', exact: true }).click();
   await save('notebook-planner.png');
   await page.getByRole('button', { name: 'Sites & checklists', exact: true }).click();
   await save('notebook-resources.png');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await save('notebook-resources-phone.png');
+  await page.setViewportSize({ width: 1440, height: 1100 });
   await page.getByRole('button', { name: 'Worker accounts', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(
@@ -183,6 +255,8 @@ test('documentation walkthrough shows real dispatch, planning, setup and field s
   ).toBeVisible();
   await save('notebook-worker-access.png', false);
   await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: /Sync outbox/ }).click();
+  await save('notebook-outbox.png');
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page, 'worker');

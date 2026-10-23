@@ -1,6 +1,12 @@
 import { Button } from './components/ui/button';
 import CommandButton from './components/kokonutui/command-button';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from './components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogHeader,
+} from './components/ui/dialog';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { User, WorkOrder } from '@fieldwork/contracts';
 import ActionSearchBar, { type CommandItem } from './components/kokonutui/action-search-bar';
@@ -99,6 +105,7 @@ export default function WorkFinder({
         Find work
       </CommandButton>
       <DialogContent
+        size="finder"
         aria-modal="true"
         ref={dialog}
         className="command-dialog"
@@ -117,15 +124,17 @@ export default function WorkFinder({
       >
         {open && (
           <>
-            <div className="command-dialog-heading">
-              <DialogTitle>Find saved work</DialogTitle>
+            <DialogHeader>
+              <div>
+                <DialogTitle>Find saved work</DialogTitle>
+                <DialogDescription>
+                  Search saved references, titles, sites, or people. Open with Cmd+K or Ctrl+K.
+                </DialogDescription>
+              </div>
               <Button className="quiet" onClick={close}>
                 Close finder
               </Button>
-            </div>
-            <DialogDescription>
-              Search saved references, titles, sites, or people. Open with Cmd+K or Ctrl+K.
-            </DialogDescription>
+            </DialogHeader>
             <ActionSearchBar
               items={items}
               onSelect={select}

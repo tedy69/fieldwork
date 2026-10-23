@@ -1,6 +1,6 @@
 # Recurring assignments
 
-Managers can create a finite batch of daily or weekly assignments through `POST /api/v1/work-order-series` or `client.createOrderSeries(input)`. Each occurrence becomes an ordinary work order immediately, visible in the existing list, search, planner, and worker sync. Managers use **Assign recurring work** beside ordinary assignment in the web dispatch desk. A selected planner date becomes the first date. The form previews every occurrence before creating the batch.
+Managers can create a finite batch of daily, weekly, or weekday assignments through `POST /api/v1/work-order-series` or `client.createOrderSeries(input)`. Each occurrence becomes an ordinary work order immediately, visible in the existing list, search, planner, and worker sync. Managers use **Assign recurring work** beside ordinary assignment in the web dispatch desk. A selected planner date becomes the first date. The form previews every occurrence before creating the batch.
 
 ## Contract
 
@@ -14,7 +14,13 @@ Use the ordinary assignment fields (`title`, `instructions`, `siteId`, `template
 }
 ```
 
-`dueDate` is the first occurrence. Daily advances by one calendar day; weekly advances by seven. Counts must be integers from 2 through 52, including the first occurrence. Dates use UTC calendar arithmetic without a time-of-day or daylight-saving adjustment. Every generated date must fit a four-digit year. Past dates are allowed, as with ordinary assignments. The exported `recurrenceDates` helper validates the same schedule for a client preview.
+`dueDate` is the first occurrence. `daily` advances by one calendar day; `weekly` advances by seven. `weekdays` advances to the next Monday–Friday date, skipping Saturday and Sunday. A weekday batch must start on a weekday; weekend starts return 422 without creating any work. The form disables creation for that schedule and explains the weekday requirement. A planner weekend preset stays visible so the manager can choose a weekday or another frequency rather than silently shifting the first assignment.
+
+Weekday schedules include public holidays. They are a Monday–Friday calendar rule, not a locale-specific business-day or holiday calendar. For example, a seven-occurrence batch starting Friday 2026-12-25 produces Dec 25, 28, 29, 30, 31, Jan 1, and Jan 4. Those dates are synthetic planning examples.
+
+Counts must be integers from 2 through 52, including the first occurrence. Dates use UTC calendar arithmetic without a time-of-day or daylight-saving adjustment. Every generated date, including weekend skips, must fit a four-digit year. Past dates are allowed, as with ordinary assignments. The exported `recurrenceDates` helper validates the same schedule for a client preview; `RecurrenceFrequencySchema` defines all three supported values consistently across requests, receipts, and batch summaries. Existing daily/weekly calculations and receipts remain unchanged.
+
+The web selector, recovered request, and batch ledger use **Weekdays (Mon–Fri)** for the new rule. Lost-response recovery retains and replays the original `weekdays` payload and mutation ID. No recurrence edits, background scheduling, holiday configuration, new dependency, or database migration are introduced. Update the server and web bundle together when enabling the new frequency; older clients with a two-value frequency schema cannot parse weekday batch metadata.
 
 A new batch returns 201 with `{ id, createdAt, frequency, orders }`. Each order has its own ID, reference, version 1, ASSIGNED status, and site/worker/checklist snapshots. The series definition, original receipt, all orders, membership, and assignment events commit together. Invalid catalog choices return 422 `INVALID_ASSIGNMENT`; malformed recurrence returns 422 `VALIDATION`. Missing sessions and worker accounts cannot create batches.
 

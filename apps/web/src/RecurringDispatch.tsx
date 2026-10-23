@@ -5,11 +5,13 @@ import {
   type Catalog,
   type CreateOrderSeries,
   type OrderSeriesReceipt,
+  type Recurrence,
 } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { pendingSeriesFor, PendingDispatchError } from './pending-series';
 import { client, message } from './lib';
 import { localDate } from './dates';
+import { recurrenceLabels } from './recurrence-labels';
 import AssignmentFields from './AssignmentFields';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
@@ -22,7 +24,7 @@ import { Alert } from './components/ui/alert';
 import { FieldError, FieldSet } from './components/ui/field';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './components/ui/dialog';
 
-function datesFor(dueDate: string, frequency: 'daily' | 'weekly', occurrences: number) {
+function datesFor(dueDate: string, frequency: Recurrence['frequency'], occurrences: number) {
   try {
     return recurrenceDates({ dueDate, frequency, occurrences });
   } catch {
@@ -196,7 +198,9 @@ function RecurringDialog({
   const [error, setError] = useState('');
   const [editable, setEditable] = useState(false);
   const [dueDate, setDueDate] = useState(pending?.dueDate ?? initialDueDate ?? localDate());
-  const [frequency, setFrequency] = useState<'daily' | 'weekly'>(pending?.frequency ?? 'weekly');
+  const [frequency, setFrequency] = useState<Recurrence['frequency']>(
+    pending?.frequency ?? 'weekly',
+  );
   const [occurrences, setOccurrences] = useState(pending?.occurrences ?? 4);
   const draft = useRef<CreateOrderSeries | null>(pending);
   const dialog = useRef<HTMLDivElement>(null);
@@ -295,7 +299,7 @@ function RecurringDialog({
           Assign recurring work
         </DialogTitle>
         <DialogDescription>
-          Schedule daily or weekly work. Each date becomes an independent work order.
+          Schedule daily, weekly, or weekday work. Each date becomes an independent work order.
         </DialogDescription>
         {pending ? (
           <>
@@ -308,8 +312,7 @@ function RecurringDialog({
             </Alert>
             <h3>{pending.title}</h3>
             <p className="muted">
-              {pending.frequency === 'daily' ? 'Daily' : 'Weekly'} · {pending.occurrences} work
-              orders
+              {recurrenceLabels[pending.frequency]} · {pending.occurrences} work orders
             </p>
             <DatePreview dates={activeDates} />
             {error && <FieldError>{error}</FieldError>}
@@ -370,10 +373,13 @@ function RecurringDialog({
                   <Select
                     aria-label="Repeat"
                     value={frequency}
-                    onChange={(event) => setFrequency(event.target.value as 'daily' | 'weekly')}
+                    onChange={(event) =>
+                      setFrequency(event.target.value as Recurrence['frequency'])
+                    }
                   >
                     <Option value="daily">Daily</Option>
                     <Option value="weekly">Weekly</Option>
+                    <Option value="weekdays">Weekdays (Mon–Fri)</Option>
                   </Select>
                 </Label>
                 <Label>
@@ -390,6 +396,12 @@ function RecurringDialog({
                 </Label>
               </div>
             </FieldSet>
+            {frequency === 'weekdays' && (
+              <p className="muted">
+                Choose a Monday–Friday first date. Weekday repeats skip weekends and include
+                holidays.
+              </p>
+            )}
             <DatePreview dates={activeDates} />
             <p className="muted">
               The due date is the first occurrence. All orders are assigned now.

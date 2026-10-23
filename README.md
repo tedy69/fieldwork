@@ -27,11 +27,11 @@ An open-source field operations platform. Assign an inspection, complete it with
 - [Printable inspection reports](docs/print-reports.md) with checklist results and review details, available from saved web records offline.
 - Local SQLite persistence, a typed API client, and Docker self-hosting.
 - [Server search in the web app, API, and SDK](docs/server-search.md) with combined filters, incremental result loading, and individual-order caching alongside the existing offline notebook.
-- [Recurring assignments](docs/recurring-assignments.md) with a web date preview, daily/weekly batches, duplicate-safe recovery, and a manager overview comparing planned and current orders.
+- [Recurring assignments](docs/recurring-assignments.md) with a web date preview, daily/weekly/weekday batches, duplicate-safe recovery, and a manager overview comparing planned and current orders.
 - [Optional site coordinates and web maps](docs/site-maps.md) with explicit tile loading, configurable providers, keyboard controls, and offline-readable coordinates.
 - Edit or clear existing site coordinates with conflict recovery; saved assignments and reports keep their original location.
 
-Maps, recurring assignments, notifications, organizations, and integrations are planned in the [roadmap](ROADMAP.md). They are not shipped features.
+Notifications, organizations, and integrations are planned in the [roadmap](ROADMAP.md). They are not shipped features.
 
 ## Run the demo
 

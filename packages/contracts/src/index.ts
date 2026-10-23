@@ -171,36 +171,51 @@ export const CreateOrderSchema = z
   })
   .strict();
 export type CreateOrder = z.infer<typeof CreateOrderSchema>;
+export const RecurrenceFrequencySchema = z.enum(['daily', 'weekly', 'weekdays']);
+function advanceRecurrence(date: Date, frequency: z.infer<typeof RecurrenceFrequencySchema>) {
+  date.setUTCDate(date.getUTCDate() + (frequency === 'weekly' ? 7 : 1));
+  if (frequency === 'weekdays')
+    while (date.getUTCDay() === 0 || date.getUTCDay() === 6) date.setUTCDate(date.getUTCDate() + 1);
+}
 export const RecurrenceSchema = z
   .object({
     dueDate: z.iso.date(),
-    frequency: z.enum(['daily', 'weekly']),
+    frequency: RecurrenceFrequencySchema,
     occurrences: z.number().int().min(2).max(52),
   })
   .strict()
-  .refine(
-    (input) => {
-      const last = new Date(`${input.dueDate}T12:00:00Z`);
-      last.setUTCDate(
-        last.getUTCDate() + (input.occurrences - 1) * (input.frequency === 'weekly' ? 7 : 1),
-      );
-      return Number.isFinite(last.getTime()) && last.getUTCFullYear() <= 9999;
-    },
-    { message: 'All occurrences must fall within a four-digit calendar year.', path: ['dueDate'] },
-  );
+  .superRefine((input, context) => {
+    if (!Number.isInteger(input.occurrences) || input.occurrences < 2 || input.occurrences > 52)
+      return;
+    const last = new Date(`${input.dueDate}T12:00:00Z`);
+    if (input.frequency === 'weekdays' && (last.getUTCDay() === 0 || last.getUTCDay() === 6))
+      context.addIssue({
+        code: 'custom',
+        message: 'Choose a Monday–Friday first date for weekday repeats.',
+        path: ['dueDate'],
+      });
+    for (let index = 1; index < input.occurrences; index++)
+      advanceRecurrence(last, input.frequency);
+    if (!Number.isFinite(last.getTime()) || last.getUTCFullYear() > 9999)
+      context.addIssue({
+        code: 'custom',
+        message: 'All occurrences must fall within a four-digit calendar year.',
+        path: ['dueDate'],
+      });
+  });
 export type Recurrence = z.infer<typeof RecurrenceSchema>;
 export function recurrenceDates(input: Recurrence): string[] {
   const schedule = RecurrenceSchema.parse(input);
   const date = new Date(`${schedule.dueDate}T12:00:00Z`);
   return Array.from({ length: schedule.occurrences }, (_, index) => {
-    if (index) date.setUTCDate(date.getUTCDate() + (schedule.frequency === 'weekly' ? 7 : 1));
+    if (index) advanceRecurrence(date, schedule.frequency);
     return date.toISOString().slice(0, 10);
   });
 }
 export const CreateOrderSeriesSchema = CreateOrderSchema.extend({
   mutationId: z.uuid(),
   expectedActorId: z.string().min(1).max(100).optional(),
-  frequency: z.enum(['daily', 'weekly']),
+  frequency: RecurrenceFrequencySchema,
   occurrences: z.number().int().min(2).max(52),
 }).refine(
   (input) =>
@@ -215,7 +230,7 @@ export type CreateOrderSeries = z.infer<typeof CreateOrderSeriesSchema>;
 export const OrderSeriesReceiptSchema = z.object({
   id: z.uuid(),
   createdAt: z.iso.datetime(),
-  frequency: z.enum(['daily', 'weekly']),
+  frequency: RecurrenceFrequencySchema,
   orders: z.array(WorkOrderSchema).min(2).max(52),
 });
 export type OrderSeriesReceipt = z.infer<typeof OrderSeriesReceiptSchema>;
@@ -231,7 +246,7 @@ export const OrderSeriesSummarySchema = z.object({
   createdAt: z.iso.datetime(),
   createdBy: UserSchema.pick({ id: true, name: true }),
   title: z.string(),
-  frequency: z.enum(['daily', 'weekly']),
+  frequency: RecurrenceFrequencySchema,
   occurrences: z.number().int().min(2).max(52),
   firstDueDate: z.iso.date(),
   lastDueDate: z.iso.date(),

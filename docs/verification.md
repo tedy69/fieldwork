@@ -1,5 +1,31 @@
 # Verification
 
+## Expo notebook redesign (2026-10-23)
+
+The native worker app now follows the web notebook's charcoal/amber roles through one native theme and component set. Sign-in, assignment rows, inspection questions, report reading, notices and actions share typography, spacing and control shapes. Safe-area handling uses the SDK-compatible react-native-safe-area-context package; no API, schema, SecureStore key or SQLite format changed.
+
+Local checks pass: formatting, strict root/mobile types, 414 unit/API tests, production web build, 86 Chromium workflows, Expo dependency compatibility and iOS/Android JavaScript exports. The lockfile dry-run install succeeds. The existing strict web project audit and DESIGN.md lint still have zero errors/warnings; these static checks do not replace native testing.
+
+Native execution used Expo Go 58.0.5 on a dedicated iPhone 18 Pro simulator running iOS 27.0 (402 by 874 points), with a loopback-only in-memory seeded API. No existing simulator, app data or keychain was cleared. The committed `tests/native/worker-notebook.yaml` passed all 28 commands: it opens a real assignment, selects every checklist answer, edits the summary, restarts Expo Go and verifies the SQLite draft.
+
+Additional recorded native click-through:
+
+- Sign-in fields, Email-to-Password keyboard progression, password-key sign-in, Show/Hide password with retained input, Done editing and an actionable invalid-email error.
+- Real assignment navigation, Pass/Issue found/N/A changes, per-question notes, summary editing, and Back to assignments.
+- Native library picker cancellation, adding a synthetic one-pixel PNG, removing it, reattaching it, and opening/canceling the native camera.
+- An API 503 outage while Metro remained reachable, followed by app restart: saved answers, summary and photo stayed available. Explicit submission stayed queued through another restart. The test server still had ASSIGNED status and zero report revisions during the outage.
+- Restoring the API and explicit sync produced SUBMITTED status, exactly one revision, four pass answers, the original summary and one photo. Another sync kept one revision. Signing out and returning to the same account retained a separate unsent draft.
+- The largest iOS accessibility text setting exposed cramped header/answer layouts; the shared fix stacks them and keeps the entire notebook scrollable. A radio choice was activated at that setting, and normal text size was restored afterward.
+
+- Hard gate PASS: actual native actions and the committed smoke flow run against synthetic records. Text and controls wrap without horizontal escape in the inspected standard/maximum-text screens; focus is visible, keyboard progression and dismissal are exercised, and loading/error/empty/queued states retain useful guidance. Source scans find no em dashes or fabricated customer/security/performance claims in changed app copy. Current-token contrast is body/root 14.99:1, muted/panel 7.77:1, primary action 10.73:1, field boundary 5.11:1, secondary boundary 4.66:1 and error text 8.24:1. The existing native Report saved alert remains a working platform acknowledgement.
+- Purpose gate PASS: DESIGN.md records why the existing brand palette repeats, system type works offline, records share a ledger, each question needs its own answer/note group, metadata precedes inspection, and panels/controls/status use distinct radii. No decorative icon, illustration, shadow, gradient or animation is added. The selected radio mark and amber focus identify real interaction state.
+- Liveliness PASS: the design read remains a field notebook for workers with ENERGY 2 / RHYTHM 2 / MOTION 1. Assignment records and the current inspection lead their screens. Shared spacing groups the brief, questions, evidence and submission. Amber is reserved for actions, selection and attention; native scrolling and keyboard behavior remain familiar.
+- Craftsmanship PASS: shared native primitives replace screen-local buttons, inputs and answer styling. Actions are at least 48 points high, Dynamic Type remains enabled, and fields offer reliable Done editing without depending on an accessory toolbar. Source and native checks retain local draft/photo/outbox behavior, including restart, acknowledgement and same-account return. The new test fixture is never imported by production code and cannot open a persistent development database.
+
+Visually inspected captures: [sign-in](images/native-sign-in.png), [assignments](images/native-assignments.png), [inspection](images/native-inspection.png), [report](images/native-report.png), [queued report](images/native-offline-queue.png) and [maximum text](images/native-large-text.png). README and the mobile guide show the current native UI with synthetic data.
+
+Limits: native execution in this pass is iOS simulator coverage. Android compatibility/types and JavaScript export pass, but Android runtime/back acceptance, physical-camera and permission-denial acceptance, a full screen-reader audit, cellular conditions and store release remain separate. The outage test is an unavailable API, not a claim that airplane mode was exercised. The existing Vite chunk advisory remains.
+
 ## Unified web workspace (2026-10-23)
 
 The second design pass connects the screens through shared composition: one work board, inspection content beside order tools, catalogs beside their forms, and a single modal frame. The charcoal/amber palette, Kokonut/shadcn controls, Phosphor icons and domain behavior remain. [DESIGN.md](../DESIGN.md) and [UX-CONTRACT.md](../UX-CONTRACT.md) describe the current geometry and ownership; older entries below record their original feature checks.

@@ -1,0 +1,56 @@
+appId: host.exp.Exponent
+name: Worker notebook draft retention
+env:
+  METRO_URL: exp://localhost:8082
+  ORDER_REFERENCE: FW-003
+---
+# Use a dedicated seeded fixture and sign in before running. Never clear app data.
+- launchApp
+- openLink: ${METRO_URL}
+- extendedWaitUntil:
+    visible: My assignments
+    timeout: 10000
+- scrollUntilVisible:
+    element: 'Open ${ORDER_REFERENCE}:.*'
+    centerElement: true
+- tapOn: 'Open ${ORDER_REFERENCE}:.*'
+- scrollUntilVisible:
+    element: 'Access route is clear and secure: pass'
+    centerElement: true
+- tapOn: 'Access route is clear and secure: pass'
+- scrollUntilVisible:
+    element: 'Equipment has no visible damage or leaks: pass'
+- tapOn: 'Equipment has no visible damage or leaks: pass'
+- scrollUntilVisible:
+    element: 'Safety signage is present and readable: pass'
+- tapOn: 'Safety signage is present and readable: pass'
+- scrollUntilVisible:
+    element: 'Work area is clean and free of hazards: pass'
+- tapOn: 'Work area is clean and free of hazards: pass'
+- scrollUntilVisible:
+    element:
+      id: inspection-summary
+    centerElement: true
+- tapOn:
+    id: inspection-summary
+- inputText: Synthetic native draft retained after restart.
+- tapOn: Done editing
+- scrollUntilVisible:
+    element: Back to assignments
+    direction: UP
+- tapOn: Back to assignments
+- launchApp
+- openLink: ${METRO_URL}
+- extendedWaitUntil:
+    visible: My assignments
+    timeout: 10000
+- scrollUntilVisible:
+    element: 'Open ${ORDER_REFERENCE}:.*'
+- tapOn: 'Open ${ORDER_REFERENCE}:.*'
+- scrollUntilVisible:
+    element:
+      id: inspection-summary
+    centerElement: true
+- assertVisible:
+    id: inspection-summary
+    text: Synthetic native draft retained after restart.

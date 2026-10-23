@@ -35,6 +35,13 @@ These are current web screens using synthetic demo people, sites, and inspection
 
 </details>
 
+The Expo worker app uses the same notebook style with native controls. These are iOS simulator captures of synthetic demo assignments:
+
+<img src="docs/images/native-assignments.png" alt="Expo worker assignment ledger" width="280" />
+<img src="docs/images/native-inspection.png" alt="Expo inspection checklist with shared native controls" width="280" />
+
+See [mobile development](docs/mobile.md) for the component system and repeatable native smoke test.
+
 ## What works today
 
 - Manager and worker accounts with server-enforced permissions.

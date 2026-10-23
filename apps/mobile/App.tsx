@@ -2,17 +2,18 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   AppState,
+  BackHandler,
   Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
+  useWindowDimensions,
+  type TextInput,
   View,
 } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
 import Storage from 'expo-sqlite/kv-store';
@@ -32,40 +33,26 @@ import {
   type OfflineRepository,
   type State,
 } from '@fieldwork/offline';
+import {
+  AnswerChoice,
+  Brand,
+  Button,
+  Copy,
+  Field,
+  Notice,
+  Panel,
+  SectionHeading,
+  StatusBadge,
+  statusLabels,
+} from './notebook-ui';
+import { colors, radius, size, spacing } from './theme';
 
 type Session = { user: User; token: string; baseUrl: string };
-const statusLabel = {
-  ASSIGNED: 'Assigned',
-  SUBMITTED: 'Submitted',
-  APPROVED: 'Approved',
-  CHANGES_REQUESTED: 'Changes requested',
-};
 const errorText = (error: unknown) =>
   error instanceof Error ? error.message : 'Unable to complete this action.';
-function Button({
-  title,
-  onPress,
-  disabled = false,
-  quiet = false,
-}: {
-  title: string;
-  onPress: () => void;
-  disabled?: boolean;
-  quiet?: boolean;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      style={[styles.button, quiet && styles.quiet, disabled && { opacity: 0.5 }]}
-    >
-      <Text style={[styles.buttonText, quiet && { color: '#edf1ee' }]}>{title}</Text>
-    </Pressable>
-  );
-}
 export default function App() {
+  const emailInput = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const passwordInput = useRef<React.ComponentRef<typeof TextInput>>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
   const [baseUrl, setBaseUrl] = useState(
@@ -112,80 +99,98 @@ export default function App() {
     setSession(null);
   }
   return (
-    <SafeAreaView style={styles.screen}>
-      <StatusBar style="light" />
-      {session ? (
-        <Notebook key={session.user.id} session={session} logout={logout} />
-      ) : (
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.screen}>
+        <StatusBar style="light" />
         <KeyboardAvoidingView
-          style={{ flex: 1 }}
+          style={styles.screen}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <ScrollView contentContainerStyle={styles.login} keyboardShouldPersistTaps="handled">
-            <Text style={styles.eyebrow}>FIELD OPERATIONS / v0.1</Text>
-            <Text style={styles.brand}>Fieldwork</Text>
-            <Text style={styles.title}>Your field notebook.</Text>
-            <Text style={styles.muted}>
-              Sign in while connected. Your assigned inspections, notes, and photos stay available
-              on site.
-            </Text>
-            <Text style={styles.label}>Server address</Text>
-            <TextInput
-              accessibilityLabel="Server address"
-              style={styles.input}
-              value={baseUrl}
-              onChangeText={setBaseUrl}
-              autoCapitalize="none"
-              keyboardType="url"
-            />
-            <Text style={styles.hint}>
-              On a physical device, use your server's LAN address or HTTPS URL.
-            </Text>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              accessibilityLabel="Email"
-              testID="login-email"
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-            />
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              accessibilityLabel="Password"
-              testID="login-password"
-              returnKeyType="go"
-              onSubmitEditing={() => {
-                if (!busy && email && password) void login();
-              }}
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoComplete="current-password"
-            />
-            {error ? (
-              <Text accessibilityRole="alert" style={styles.error}>
-                {error}
-              </Text>
-            ) : null}
-            <Button
-              title={busy || !ready ? 'Opening notebook…' : 'Sign in'}
-              onPress={() => void login()}
-              disabled={busy || !ready || !email || !password}
-            />
-            <Text style={styles.hint}>
-              Local demo: worker@fieldwork.local / fieldwork-demo. Run the seed command first.
-            </Text>
-          </ScrollView>
+          {session ? (
+            <Notebook key={session.user.id} session={session} logout={logout} />
+          ) : (
+            <ScrollView
+              contentInsetAdjustmentBehavior="automatic"
+              contentContainerStyle={styles.login}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+            >
+              <Brand />
+              <View style={styles.introduction}>
+                <Copy accessibilityRole="header" variant="title">
+                  Open your notebook
+                </Copy>
+                <Copy muted>
+                  Sign in while connected. Keep the inspection with you on site, even offline.
+                </Copy>
+              </View>
+              <Panel>
+                <Field
+                  label="Server address"
+                  value={baseUrl}
+                  onChangeText={setBaseUrl}
+                  autoCapitalize="none"
+                  keyboardType="url"
+                  clearButtonMode="while-editing"
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => emailInput.current?.focus()}
+                  autoCorrect={false}
+                  hint="On a physical device, use your server's LAN address or HTTPS URL."
+                />
+                <Field
+                  label="Email"
+                  testID="login-email"
+                  inputRef={emailInput}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  autoCorrect={false}
+                  clearButtonMode="while-editing"
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => passwordInput.current?.focus()}
+                  placeholder="you@your-team.com"
+                />
+                <Field
+                  label="Password"
+                  testID="login-password"
+                  inputRef={passwordInput}
+                  returnKeyType="go"
+                  onSubmitEditing={() => {
+                    if (!busy && email && password) void login();
+                  }}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoComplete="current-password"
+                />
+                {error ? (
+                  <Notice error title="Could not open the notebook">
+                    {error}
+                  </Notice>
+                ) : null}
+                <Button
+                  title={busy || !ready ? 'Opening notebook…' : 'Sign in'}
+                  onPress={() => void login()}
+                  disabled={busy || !ready || !email || !password}
+                />
+              </Panel>
+              <Copy variant="caption" muted>
+                Running the local demo? Use worker@fieldwork.local with password fieldwork-demo
+                after seeding the server.
+              </Copy>
+            </ScrollView>
+          )}
         </KeyboardAvoidingView>
-      )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 function Notebook({ session, logout }: { session: Session; logout: () => Promise<void> }) {
+  const { fontScale } = useWindowDimensions();
   const client = useMemo(() => createClient(session.baseUrl, () => session.token), [session]);
   const repo = useMemo(
     () =>
@@ -205,7 +210,15 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
   const [state, setState] = useState<State>(emptyState);
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(true);
+  useEffect(() => {
+    const listener = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (!selected) return false;
+      setSelected(null);
+      return true;
+    });
+    return () => listener.remove();
+  }, [selected]);
   async function sync() {
     setBusy(true);
     setError('');
@@ -243,26 +256,30 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
   }, [repo]);
   const order = state.orders.find((order) => order.id === selected);
   return (
-    <>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.brandSmall}>Fieldwork</Text>
-          <Text style={styles.hint}>{session.user.name}</Text>
+    <ScrollView
+      contentInsetAdjustmentBehavior="automatic"
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
+    >
+      <View style={[styles.header, fontScale > 1.4 && styles.headerLarge]}>
+        <View style={styles.headerIdentity}>
+          <Brand />
+          <Copy variant="caption" muted>
+            {session.user.name}
+          </Copy>
         </View>
         <Button
-          title={
-            busy ? 'Syncing…' : `Sync${state.outbox.length ? ` (${state.outbox.length})` : ''}`
-          }
+          title={busy ? 'Syncing…' : 'Sync now'}
           onPress={() => void sync()}
           disabled={busy}
           quiet
         />
       </View>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <View style={styles.content}>
         {error ? (
-          <Text accessibilityRole="alert" style={styles.error}>
+          <Notice error title="Sync needs attention">
             {error}
-          </Text>
+          </Notice>
         ) : null}
         {order ? (
           <Inspection
@@ -277,17 +294,33 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
           />
         ) : (
           <>
-            <Text style={styles.eyebrow}>YOUR ASSIGNMENTS</Text>
-            <Text style={styles.title}>Out in the field.</Text>
-            <Text style={styles.muted}>
-              {state.orders.length} work orders · {state.outbox.length} waiting to sync
-            </Text>
+            <View style={styles.introduction}>
+              <Copy accessibilityRole="header" variant="title">
+                My assignments
+              </Copy>
+              <Copy muted>Open a work order. Keep the inspection with you.</Copy>
+            </View>
+            <View style={styles.summary}>
+              <View style={styles.metric}>
+                <Copy variant="heading">{state.orders.length}</Copy>
+                <Copy muted variant="caption">
+                  Saved assignments
+                </Copy>
+              </View>
+              <View style={styles.metric}>
+                <Copy variant="heading" style={{ color: colors.amber }}>
+                  {state.outbox.length}
+                </Copy>
+                <Copy muted variant="caption">
+                  Waiting to sync
+                </Copy>
+              </View>
+            </View>
             {state.outbox
               .filter((item) => item.state === 'blocked')
               .map((item) => (
-                <View style={styles.notice} key={item.input.mutationId}>
-                  <Text style={styles.amber}>Report needs attention</Text>
-                  <Text style={styles.muted}>{item.error}</Text>
+                <Notice title="Report needs attention" key={item.input.mutationId}>
+                  <Copy muted>{item.error}</Copy>
                   <Button
                     quiet
                     title="Keep draft and open latest"
@@ -297,46 +330,59 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
                       setSelected(item.orderId);
                     }}
                   />
-                </View>
+                </Notice>
               ))}
             {state.orders.length === 0 ? (
-              <Text style={styles.notice}>
-                No saved assignments yet. Connect and sync after your manager assigns work.
-              </Text>
+              <Notice title={busy ? 'Loading assignments…' : 'No saved assignments yet'}>
+                {busy
+                  ? 'Opening your saved notebook and checking the server.'
+                  : 'Connect and sync after your manager assigns work.'}
+              </Notice>
             ) : (
-              state.orders.map((order) => (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${order.reference}: ${order.title}`}
-                  key={order.id}
-                  onPress={() => setSelected(order.id)}
-                  style={styles.order}
-                >
-                  <Text style={styles.eyebrow}>
-                    {order.reference} {order.priority === 'urgent' ? '/ URGENT' : ''}
-                  </Text>
-                  <Text style={styles.orderTitle}>{order.title}</Text>
-                  <Text style={styles.muted}>{order.site.name}</Text>
-                  <View style={styles.row}>
-                    <Text style={styles.hint}>Due {order.dueDate}</Text>
-                    <Text style={styles.amber}>{statusLabel[order.status]}</Text>
-                  </View>
-                </Pressable>
-              ))
+              <Panel style={styles.ledger}>
+                {state.orders.map((order) => (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${order.reference}: ${order.title}`}
+                    key={order.id}
+                    onPress={() => setSelected(order.id)}
+                    style={({ pressed }) => [styles.order, pressed && styles.orderPressed]}
+                  >
+                    <View style={styles.referenceRow}>
+                      <Copy variant="reference" muted>
+                        {order.reference}
+                      </Copy>
+                      {order.priority === 'urgent' && (
+                        <Copy variant="caption" style={{ color: colors.amber }}>
+                          Urgent
+                        </Copy>
+                      )}
+                    </View>
+                    <Copy variant="label">{order.title}</Copy>
+                    <Copy muted>{order.site.name}</Copy>
+                    <View style={styles.row}>
+                      <Copy muted variant="caption">
+                        Due {order.dueDate}
+                      </Copy>
+                      <StatusBadge status={order.status} />
+                    </View>
+                  </Pressable>
+                ))}
+              </Panel>
             )}
-            <Text style={styles.hint}>
+            <Copy muted variant="caption">
               {state.lastSynced
                 ? `Last synced ${new Date(state.lastSynced).toLocaleString()}`
                 : 'Not yet synced'}
-            </Text>
-            <Button quiet title="Lock notebook / sign out" onPress={() => void logout()} />
-            <Text style={styles.hint}>
+            </Copy>
+            <Button quiet title="Sign out" onPress={() => void logout()} />
+            <Copy muted variant="caption">
               Unsent drafts stay on this device and return when you sign in with the same account.
-            </Text>
+            </Copy>
           </>
         )}
-      </ScrollView>
-    </>
+      </View>
+    </ScrollView>
   );
 }
 function Inspection({
@@ -362,6 +408,7 @@ function Inspection({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [preparingPhoto, setPreparingPhoto] = useState(false);
   const queued = state.outbox.find((item) => item.orderId === order.id);
   const editable = ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status) && !queued;
   async function save(value: Draft) {
@@ -379,6 +426,7 @@ function Inspection({
     }
   }
   async function attach(camera: boolean) {
+    setPreparingPhoto(true);
     setBusy(true);
     setError('');
     try {
@@ -409,6 +457,7 @@ function Inspection({
       setError(errorText(error));
     } finally {
       setBusy(false);
+      setPreparingPhoto(false);
     }
   }
   async function submit() {
@@ -436,45 +485,88 @@ function Inspection({
   return (
     <>
       <Button title="Back to assignments" quiet onPress={back} />
-      <Text style={styles.eyebrow}>
-        {order.reference} / {statusLabel[order.status]}
-      </Text>
-      <Text style={styles.title}>{order.title}</Text>
-      <Text style={styles.orderTitle}>{order.site.name}</Text>
-      <Text style={styles.muted}>{order.site.address}</Text>
-      <Text style={styles.notice}>{order.instructions}</Text>
-      {order.review && (
-        <View style={styles.notice}>
-          <Text style={styles.amber}>{statusLabel[order.review.decision]}</Text>
-          <Text style={styles.muted}>{order.review.note}</Text>
+      <View style={styles.introduction}>
+        <Copy variant="reference" muted>
+          {order.reference}
+        </Copy>
+        <Copy accessibilityRole="header" variant="title">
+          {order.title}
+        </Copy>
+        <StatusBadge status={order.status} />
+      </View>
+      <View style={styles.metadata}>
+        <View style={styles.introduction}>
+          <Copy muted variant="caption">
+            Site
+          </Copy>
+          <Copy variant="label">{order.site.name}</Copy>
+          <Copy muted variant="caption">
+            {order.site.address}
+          </Copy>
         </View>
+        <View style={styles.row}>
+          <View style={styles.introduction}>
+            <Copy muted variant="caption">
+              Assigned to
+            </Copy>
+            <Copy>{order.assignee.name}</Copy>
+          </View>
+          <View style={styles.introduction}>
+            <Copy muted variant="caption">
+              Due / priority
+            </Copy>
+            <Copy>
+              {order.dueDate} · {order.priority}
+            </Copy>
+          </View>
+        </View>
+      </View>
+      <Panel>
+        <SectionHeading title="Field brief" />
+        <Copy>{order.instructions || 'Complete the checklist and describe your findings.'}</Copy>
+      </Panel>
+      {order.review && (
+        <Notice title={statusLabels[order.review.decision]}>
+          {order.review.note || 'The inspection report has been accepted.'}
+        </Notice>
       )}
       {queued && (
-        <Text style={styles.notice}>
-          {queued.error ?? 'Report queued. Sync when a connection is available.'}
-        </Text>
+        <Notice
+          title={
+            queued.state === 'blocked'
+              ? 'Sync needs your attention'
+              : 'Report queued on this device'
+          }
+        >
+          {queued.error ??
+            'Your checklist, notes, and photos are saved. Sync when a connection is available.'}
+        </Notice>
       )}
       {editable ? (
         <>
-          <View style={styles.row}>
-            <Text style={styles.orderTitle}>Inspection checklist</Text>
-            <Text style={styles.hint}>{saving ? 'Saving…' : 'Saved locally'}</Text>
-          </View>
+          <SectionHeading
+            title="Inspection checklist"
+            detail={saving ? 'Saving locally…' : 'Draft saved on this device'}
+          />
           {order.template.items.map((item, index) => {
             const answer = draft.answers.find((answer) => answer.itemId === item.id)!;
             return (
-              <View key={item.id} style={styles.checkItem}>
-                <Text style={styles.label}>
-                  {String(index + 1).padStart(2, '0')} / {item.label}
-                </Text>
-                <View style={styles.row}>
+              <Panel key={item.id}>
+                <View style={styles.questionHeading}>
+                  <Copy variant="reference" muted>
+                    {index + 1}
+                  </Copy>
+                  <Copy variant="label" style={styles.flex}>
+                    {item.label}
+                  </Copy>
+                </View>
+                <View style={styles.answers}>
                   {(['pass', 'fail', 'na'] as const).map((value) => (
-                    <Pressable
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: answer.value === value }}
-                      accessibilityLabel={`${item.label}: ${value}`}
+                    <AnswerChoice
+                      selected={answer.value === value}
+                      name={`${item.label}: ${value}`}
+                      label={value === 'pass' ? 'Pass' : value === 'fail' ? 'Issue found' : 'N/A'}
                       key={value}
-                      style={[styles.option, answer.value === value && styles.optionSelected]}
                       onPress={() =>
                         void save({
                           ...draft,
@@ -483,18 +575,14 @@ function Inspection({
                           ),
                         })
                       }
-                    >
-                      <Text style={answer.value === value ? styles.amber : styles.muted}>
-                        {value === 'pass' ? 'Pass' : value === 'fail' ? 'Issue' : 'N/A'}
-                      </Text>
-                    </Pressable>
+                    />
                   ))}
                 </View>
-                <TextInput
-                  accessibilityLabel={`Note: ${item.label}`}
-                  style={styles.input}
+                <Field
+                  label={`Note: ${item.label}`}
+                  testID={`inspection-note-${item.id}`}
+                  hideLabel
                   placeholder="Add a note (optional)"
-                  placeholderTextColor="#adbbb6"
                   value={answer.note}
                   maxLength={1000}
                   onChangeText={(note) =>
@@ -506,98 +594,112 @@ function Inspection({
                     })
                   }
                 />
-              </View>
+              </Panel>
             );
           })}
-          <Text style={styles.label}>Inspection summary</Text>
-          <TextInput
-            accessibilityLabel="Inspection summary"
+          <Field
+            label="Inspection summary"
+            testID="inspection-summary"
             placeholder="Describe the site condition and follow-up work."
-            placeholderTextColor="#adbbb6"
-            style={[styles.input, { minHeight: 110, textAlignVertical: 'top' }]}
             multiline
             value={draft.summary}
             maxLength={4000}
             onChangeText={(summary) => void save({ ...draft, summary })}
           />
-          <Text style={styles.label}>Site photos / {draft.photos.length} of 3</Text>
-          {order.template.requiresPhoto && (
-            <Text style={styles.hint}>
-              At least one site photo is required for each submission, including corrections.
-            </Text>
-          )}
-          {draft.photos.map((photo, index) => (
-            <View key={photo.id}>
-              <Image
-                accessibilityLabel={`Site photo ${index + 1}`}
-                source={{ uri: `data:${photo.mimeType};base64,${photo.data}` }}
-                style={styles.photo}
-              />
-              <Button
-                title={`Remove photo ${index + 1}`}
-                quiet
-                onPress={() =>
-                  void save({
-                    ...draft,
-                    photos: draft.photos.filter((entry) => entry.id !== photo.id),
-                  })
-                }
-              />
+          <Panel>
+            <SectionHeading title="Site photos" detail={`${draft.photos.length} of 3 attached`} />
+            {order.template.requiresPhoto && (
+              <Copy muted variant="caption">
+                At least one site photo is required for each submission, including corrections.
+              </Copy>
+            )}
+            {draft.photos.map((photo, index) => (
+              <View key={photo.id}>
+                <Image
+                  accessibilityLabel={`Site photo ${index + 1}`}
+                  source={{ uri: `data:${photo.mimeType};base64,${photo.data}` }}
+                  style={styles.photo}
+                />
+                <Button
+                  title={`Remove photo ${index + 1}`}
+                  quiet
+                  onPress={() =>
+                    void save({
+                      ...draft,
+                      photos: draft.photos.filter((entry) => entry.id !== photo.id),
+                    })
+                  }
+                />
+              </View>
+            ))}
+            <View style={styles.row}>
+              <View style={styles.photoAction}>
+                <Button
+                  title="Take photo"
+                  quiet
+                  disabled={busy || draft.photos.length >= 3}
+                  onPress={() => void attach(true)}
+                />
+              </View>
+              <View style={styles.photoAction}>
+                <Button
+                  title="Choose photo"
+                  quiet
+                  disabled={busy || draft.photos.length >= 3}
+                  onPress={() => void attach(false)}
+                />
+              </View>
             </View>
-          ))}
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Button
-                title="Take photo"
-                quiet
-                disabled={busy || draft.photos.length >= 3}
-                onPress={() => void attach(true)}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Button
-                title="Choose photo"
-                quiet
-                disabled={busy || draft.photos.length >= 3}
-                onPress={() => void attach(false)}
-              />
-            </View>
-          </View>
-          <Text style={styles.hint}>
-            Up to 3 photos, 2 MB each. Photos are saved with your offline draft.
-          </Text>
+            <Copy muted variant="caption">
+              Up to 3 photos, 2 MB each. Photos are saved with your offline draft.
+            </Copy>
+          </Panel>
           {error ? (
-            <Text accessibilityRole="alert" style={styles.error}>
+            <Notice error title="Inspection needs attention">
               {error}
-            </Text>
+            </Notice>
           ) : null}
-          <Button
-            title={busy ? 'Saving report…' : 'Save and sync inspection'}
-            disabled={
-              busy ||
-              saving ||
-              !draft.summary.trim() ||
-              draft.answers.some((answer) => !answer.value)
-            }
-            onPress={() => void submit()}
-          />
+          <View style={styles.submitBar}>
+            <Copy muted variant="caption">
+              Your report stays on this device until the server confirms it.
+            </Copy>
+            <Button
+              title={
+                busy
+                  ? preparingPhoto
+                    ? 'Preparing photo…'
+                    : 'Saving report…'
+                  : 'Save and sync inspection'
+              }
+              disabled={
+                busy ||
+                saving ||
+                !draft.summary.trim() ||
+                draft.answers.some((answer) => !answer.value)
+              }
+              onPress={() => void submit()}
+            />
+          </View>
         </>
       ) : order.report ? (
-        <>
-          <Text style={styles.title}>Inspection report</Text>
+        <Panel>
+          <SectionHeading
+            title="Inspection report"
+            detail={`Submitted ${new Date(order.report.submittedAt).toLocaleString()}`}
+          />
           {order.report.answers.map((answer) => (
             <View key={answer.itemId} style={styles.checkItem}>
-              <Text style={styles.label}>
+              <Copy variant="label">
                 {order.template.items.find((item) => item.id === answer.itemId)?.label}
-              </Text>
-              <Text style={styles.amber}>
+              </Copy>
+              <Copy style={answer.value === 'fail' ? { color: colors.amber } : undefined}>
                 {answer.value === 'fail' ? 'Issue found' : answer.value === 'pass' ? 'Pass' : 'N/A'}
-              </Text>
-              {answer.note ? <Text style={styles.muted}>{answer.note}</Text> : null}
+              </Copy>
+              {answer.note ? <Copy muted>{answer.note}</Copy> : null}
             </View>
           ))}
-          <Text style={styles.label}>Summary</Text>
-          <Text style={styles.muted}>{order.report.summary}</Text>
+          <SectionHeading title="Summary" />
+          <Copy>{order.report.summary}</Copy>
           {order.report.photos.map((photo) => (
             <Image
               key={photo.id}
@@ -609,85 +711,91 @@ function Inspection({
               style={styles.photo}
             />
           ))}
-        </>
+        </Panel>
       ) : null}
     </>
   );
 }
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#151d20' },
-  login: { padding: 26, gap: 10, paddingTop: 65 },
-  content: { padding: 22, gap: 17, paddingBottom: 50 },
+  screen: { flex: 1, backgroundColor: colors.ink },
+  login: {
+    padding: spacing.xl,
+    gap: spacing.section,
+    paddingVertical: spacing.page,
+    width: '100%',
+    maxWidth: size.content,
+    alignSelf: 'center',
+  },
+  content: {
+    padding: spacing.xl,
+    gap: spacing.section,
+    paddingBottom: spacing.page,
+    width: '100%',
+    maxWidth: size.content,
+    alignSelf: 'center',
+  },
+  introduction: { gap: spacing.sm },
+  headerIdentity: { flexGrow: 1, flexShrink: 1, minWidth: 200, gap: spacing.xs },
+  headerLarge: { flexDirection: 'column', alignItems: 'stretch' },
   header: {
-    paddingHorizontal: 22,
-    paddingVertical: 15,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderColor: '#344145',
+    borderColor: colors.line,
+    backgroundColor: colors.sidebar,
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  brand: { color: '#edf1ee', fontSize: 42, fontWeight: '700', marginBottom: 25 },
-  brandSmall: { color: '#edf1ee', fontSize: 24, fontWeight: '700' },
-  title: { color: '#edf1ee', fontSize: 31, fontWeight: '600', lineHeight: 38 },
-  eyebrow: { color: '#adbbb6', fontSize: 10, letterSpacing: 1.3 },
-  label: { color: '#edf1ee', fontSize: 14, fontWeight: '600', lineHeight: 23, marginTop: 8 },
-  muted: { color: '#adbbb6', fontSize: 14, lineHeight: 23 },
-  hint: { color: '#adbbb6', fontSize: 11, lineHeight: 18 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#526164',
-    backgroundColor: '#1c2629',
-    color: '#edf1ee',
-    padding: 13,
-    borderRadius: 4,
-    fontSize: 15,
+  summary: {
+    flexDirection: 'row',
+    gap: spacing.section,
+    flexWrap: 'wrap',
+    paddingBottom: spacing.xl,
+    borderBottomWidth: 1,
+    borderColor: colors.line,
   },
-  button: {
-    backgroundColor: '#f5c66d',
-    padding: 15,
-    borderRadius: 4,
-    alignItems: 'center',
-    minHeight: 46,
+  metric: { flex: 1, minWidth: 120, gap: spacing.xs },
+  ledger: { padding: 0, gap: 0, overflow: 'hidden' },
+  order: {
+    padding: spacing.xl,
+    gap: spacing.sm,
+    borderBottomColor: colors.line,
+    borderBottomWidth: 1,
   },
-  buttonText: { color: '#151d20', fontWeight: '700', fontSize: 13 },
-  quiet: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#526164' },
-  error: {
-    color: '#ffb6a9',
-    fontSize: 13,
-    lineHeight: 22,
-    padding: 12,
-    backgroundColor: '#362a28',
+  orderPressed: { backgroundColor: colors.raised },
+  referenceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  metadata: {
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: colors.line,
+    paddingVertical: spacing.xl,
+    gap: spacing.xl,
   },
-  notice: {
-    color: '#d7e1db',
-    backgroundColor: '#273131',
-    padding: 16,
-    borderLeftColor: '#f5c66d',
-    borderLeftWidth: 3,
-    lineHeight: 24,
-    fontSize: 14,
-    gap: 12,
-  },
-  order: { paddingVertical: 22, gap: 10, borderBottomColor: '#344145', borderBottomWidth: 1 },
-  orderTitle: { color: '#edf1ee', fontSize: 17, fontWeight: '600', lineHeight: 25 },
+  questionHeading: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
+  answers: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, alignItems: 'stretch' },
+  flex: { flex: 1 },
   row: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing.sm,
     justifyContent: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
   },
-  amber: { color: '#f5c66d', fontSize: 12, lineHeight: 20 },
-  checkItem: { paddingVertical: 14, borderBottomColor: '#344145', borderBottomWidth: 1, gap: 14 },
-  option: {
-    flex: 1,
-    alignItems: 'center',
-    padding: 12,
-    borderColor: '#526164',
-    borderWidth: 1,
-    borderRadius: 4,
+  checkItem: {
+    paddingBottom: spacing.lg,
+    borderBottomColor: colors.line,
+    borderBottomWidth: 1,
+    gap: spacing.sm,
   },
-  optionSelected: { borderColor: '#f5c66d', backgroundColor: '#383c30' },
-  photo: { width: '100%', height: 200, resizeMode: 'cover', borderRadius: 4 },
+  photoAction: { flex: 1, minWidth: 120 },
+  submitBar: {
+    borderTopWidth: 1,
+    borderColor: colors.line,
+    paddingTop: spacing.xl,
+    gap: spacing.lg,
+  },
+  photo: { width: '100%', height: size.photo, resizeMode: 'cover', borderRadius: radius.control },
 });

@@ -1,5 +1,22 @@
 # Kokonut UI and shadcn in Fieldwork
 
+## Notebook redesign
+
+The web workspace now uses `tokens.css` as its runtime theme source, documented in [DESIGN.md](../DESIGN.md). Page headings, compact workload summaries, record rows, question fieldsets, workspace setup and dialogs share the charcoal/amber direction. Exports follow the work list instead of interrupting its filters. The [UX contract](../UX-CONTRACT.md) names shared behavior and its domain sources.
+
+`Form` composes the shadcn fields and Alert, owns constraint validation without browser bubbles, associates recovery text and focuses the first invalid control. Shared Input provides password reveal; SearchField provides immediate clearing and input focus. Label separates these controls from their action buttons, preserving a real label association. Textarea grows in supporting browsers up to a bounded height and remains scrollable everywhere. The global scrollbar baseline applies to all owned overflow regions, with forced-colors support.
+
+The README gallery is captured from the production web build and a fresh in-memory synthetic workspace:
+
+```sh
+npm run build -w @fieldwork/web
+UPDATE_README_IMAGES=1 npm exec -- playwright test tests/e2e/redesign.spec.ts
+```
+
+The screenshot workflow creates demo assignments through the SDK, renders desktop and phone views, and saves images only when `UPDATE_README_IMAGES=1` is set. Without that flag, screenshots stay in ignored test output. Use a free port 4173; the fixture server never reads or overwrites a development database. Account links and credentials are absent from the captures.
+
+## Feature integrations
+
 Worker password recovery uses shared Button, Input, Label, Badge, and Alert inside the existing Dialog. The shared AccountLink screen handles invitations and password reset with shadcn Card, fields, and explicit password confirmation. Amber focus marks headings and controls; no new primitive, palette, or animation is introduced. Link inputs are masked in documentation screenshots, and password fields are empty.
 
 The worker access-history section uses shared Button, Badge, and Alert inside the existing manager Dialog. The selected worker heading receives amber focus; flat chronological rows show real actor/time metadata. Read errors retain loaded rows, offline controls disable, and narrow actions wrap without a new surface or animation.

@@ -3,6 +3,7 @@ import { ApiError } from '@fieldwork/sdk';
 import { client, message } from './lib';
 import { invitationLink } from './invitation-link';
 import { Button } from './components/ui/button';
+import { Form } from './components/ui/form';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { Badge } from './components/ui/badge';
@@ -278,7 +279,7 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
             </div>
           </section>
         ) : (
-          <form aria-label="Invite a field worker" onSubmit={create}>
+          <Form noValidate aria-label="Invite a field worker" onSubmit={create}>
             <FieldSet disabled={!online || Boolean(busy)}>
               <div className="form-grid">
                 <Label>
@@ -294,7 +295,7 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
             <Button className="primary" disabled={!online || Boolean(busy)}>
               {busy === 'creating' ? 'Creating invitation…' : 'Create invitation'}
             </Button>
-          </form>
+          </Form>
         )}
         <section aria-label="Saved worker invitations" className="invitation-ledger">
           <div className="invitation-toolbar">

@@ -3,7 +3,6 @@ import type { ComponentProps } from 'react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { cn } from '@/lib/utils';
-import { Button } from './button';
 
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
@@ -25,10 +24,12 @@ export function DialogContent({
       >
         {children}
         {showCloseButton && (
-          <DialogPrimitive.Close asChild>
-            <Button type="button" className="quiet ui-dialog-close" aria-label="Close dialog">
-              <XIcon aria-hidden="true" />
-            </Button>
+          <DialogPrimitive.Close
+            type="button"
+            className="ui-button ui-button-outline quiet ui-dialog-close"
+            aria-label="Close dialog"
+          >
+            <XIcon aria-hidden="true" />
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>

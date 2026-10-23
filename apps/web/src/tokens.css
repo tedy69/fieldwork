@@ -1,0 +1,25 @@
+:root {
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-heading: 'Avenir Next', 'Segoe UI', sans-serif;
+  --font-reference: ui-monospace, SFMono-Regular, Consolas, monospace;
+  --ink: #151d20;
+  --surface: #1c2629;
+  --surface-raised: #243034;
+  --surface-hover: #2d393c;
+  --sidebar: #11191c;
+  --line: #344145;
+  --muted: #adbbb6;
+  --amber: #f5c66d;
+  --amber-hover: #ffda8f;
+  --ui-foreground: #edf1ee;
+  --ui-field: #151e21;
+  --ui-control-border: #7f918d;
+  --ui-radius: 6px;
+  --space-page: clamp(20px, 3vw, 48px);
+  --scroll-thumb: #7f918d;
+  --scroll-track: #151d20;
+  --scroll-hover: #adbbb6;
+  --scroll-active: #f5c66d;
+  --z-backdrop: 70;
+  --z-dialog: 71;
+}

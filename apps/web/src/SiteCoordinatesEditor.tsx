@@ -3,6 +3,7 @@ import type { Coordinates, Site } from '@fieldwork/contracts';
 import { client, message } from './lib';
 import { parseCoordinateInputs } from './coordinate-input';
 import { Button } from './components/ui/button';
+import { Form } from './components/ui/form';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { FieldError, FieldSet, FieldLegend } from './components/ui/field';
@@ -144,7 +145,8 @@ export default function SiteCoordinatesEditor({
         </p>
       )}
       {editing && (
-        <form
+        <Form
+          noValidate
           id={formId}
           data-site-coordinate-form
           aria-label={`Edit coordinates for ${site.name}`}
@@ -252,7 +254,7 @@ export default function SiteCoordinatesEditor({
               Cancel
             </Button>
           </div>
-        </form>
+        </Form>
       )}
     </section>
   );

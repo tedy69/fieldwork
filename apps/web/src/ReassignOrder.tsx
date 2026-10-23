@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import type { User, WorkOrder } from '@fieldwork/contracts';
 import { Button } from './components/ui/button';
+import { Form } from './components/ui/form';
 import {
   NativeSelect as Select,
   NativeSelectOption as Option,
@@ -95,7 +96,8 @@ export default function ReassignOrder({
         </p>
       ) : null}
       {editing && (
-        <form
+        <Form
+          noValidate
           id="assignee-form"
           aria-label="Change worker"
           onSubmit={save}
@@ -161,7 +163,7 @@ export default function ReassignOrder({
               </Button>
             )}
           </div>
-        </form>
+        </Form>
       )}
     </section>
   );

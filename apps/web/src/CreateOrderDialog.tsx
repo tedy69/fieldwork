@@ -1,4 +1,5 @@
 import { Button } from './components/ui/button';
+import { Form } from './components/ui/form';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './components/ui/dialog';
 import { FieldError } from './components/ui/field';
 import { useRef, useState, type FormEvent } from 'react';
@@ -74,7 +75,7 @@ export default function CreateOrder({
           target?.focus();
         }}
       >
-        <form onSubmit={submit}>
+        <Form noValidate onSubmit={submit}>
           <div className="dialog-heading">
             <span className="eyebrow">DISPATCH</span>
             <Button type="button" className="quiet" onClick={onClose} disabled={busy}>
@@ -88,7 +89,7 @@ export default function CreateOrder({
           <Button className="primary full" disabled={busy}>
             {busy ? 'Assigning…' : 'Assign work order'}
           </Button>
-        </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

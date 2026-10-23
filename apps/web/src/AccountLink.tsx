@@ -4,6 +4,7 @@ import { ApiError } from '@fieldwork/sdk';
 import { client, message } from './lib';
 import { clearInvitationHash } from './invitation-link';
 import { Button } from './components/ui/button';
+import { Form } from './components/ui/form';
 import { Card } from './components/ui/card';
 import { Alert } from './components/ui/alert';
 import { Input } from './components/ui/input';
@@ -42,6 +43,9 @@ export default function AccountLink({
   const resultHeading = useRef<HTMLHeadingElement>(null);
   const confirmInput = useRef<HTMLInputElement>(null);
   const hint = useId();
+  useEffect(() => {
+    document.title = `${reset ? 'Password recovery' : 'Worker invitation'} · Fieldwork`;
+  }, [reset]);
   useEffect(() => {
     const changed = () => setOnline(navigator.onLine);
     window.addEventListener('online', changed);
@@ -223,12 +227,13 @@ export default function AccountLink({
                       saved drafts and queued photos stay on this device.
                     </p>
                   )}
-                  <form onSubmit={accept}>
+                  <Form noValidate onSubmit={accept}>
                     <FieldSet disabled={Boolean(busy) || needsReload || !online}>
                       <Label>
                         Password
                         <Input
                           type="password"
+                          aria-label="Password"
                           autoComplete="new-password"
                           required
                           minLength={12}
@@ -248,6 +253,7 @@ export default function AccountLink({
                         Confirm password
                         <Input
                           ref={confirmInput}
+                          aria-label="Confirm password"
                           type="password"
                           autoComplete="new-password"
                           required
@@ -273,7 +279,7 @@ export default function AccountLink({
                           ? 'Change password'
                           : 'Create worker account'}
                     </Button>
-                  </form>
+                  </Form>
                 </>
               )}
             </>

@@ -6,6 +6,27 @@ An open-source field operations platform. Assign an inspection, complete it with
 
 ![Fieldwork dispatch desk with synthetic demo work orders](docs/images/dispatch-desk.png)
 
+## Screenshots
+
+These are current web screens using synthetic demo people, sites, and inspections. The same workspace adapts from the dispatch desk to a phone in the field.
+
+| Plan the month                                                                          | Set up the workspace                                                                         |
+| --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| ![Monthly planner showing synthetic demo assignments](docs/images/notebook-planner.png) | ![Sites and inspection checklists in the demo workspace](docs/images/notebook-resources.png) |
+
+<details>
+<summary>Sign-in, field inspection, report review, and worker accounts</summary>
+
+![Fieldwork sign-in screen](docs/images/notebook-sign-in.png)
+
+<img src="docs/images/notebook-inspection-phone.png" alt="A demo inspection checklist on a 390-pixel phone viewport" width="300" />
+
+![Reviewing a synthetic inspection report](docs/images/notebook-report.png)
+
+![Managing synthetic worker accounts](docs/images/notebook-worker-access.png)
+
+</details>
+
 ## What works today
 
 - Manager and worker accounts with server-enforced permissions.
@@ -87,6 +108,8 @@ On a physical phone, start the API with `HOST=0.0.0.0 npm run dev` and use your 
 ## Contribute
 
 Start with [CONTRIBUTING.md](CONTRIBUTING.md), then pick an [open issue](https://github.com/tedy69/fieldwork/issues) or a [good first issue](https://github.com/tedy69/fieldwork/labels/good%20first%20issue). Documentation, accessibility, translations, tests, mobile work, and integrations all matter here.
+
+For web UI changes, read [DESIGN.md](DESIGN.md) and the [UX contract](UX-CONTRACT.md). Shared Kokonut UI/shadcn primitives keep controls, validation, focus, and recovery consistent. Screenshot capture instructions are in [UI components](docs/ui-components.md).
 
 ```sh
 npm run check       # formatting, types, unit/API tests, web production build

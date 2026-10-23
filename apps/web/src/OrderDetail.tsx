@@ -1,4 +1,5 @@
 import { Button } from './components/ui/button';
+import { Form } from './components/ui/form';
 import { Card } from './components/ui/card';
 import { Badge } from './components/ui/badge';
 import { Alert } from './components/ui/alert';
@@ -238,7 +239,7 @@ export default function OrderDetail({
         </Alert>
       )}
       {editable && (
-        <form className="inspection-form" onSubmit={submit}>
+        <Form noValidate className="inspection-form" onSubmit={submit}>
           <div className="section-heading">
             <h2>Inspection checklist</h2>
             <span className="muted" role="status">
@@ -302,6 +303,7 @@ export default function OrderDetail({
           <Label className="report-summary">
             Inspection summary
             <Textarea
+              className="resize-none"
               aria-label="Inspection summary"
               required
               maxLength={4000}
@@ -355,7 +357,7 @@ export default function OrderDetail({
                   : 'Save report for sync'}
             </Button>
           </div>
-        </form>
+        </Form>
       )}
       {order.report && !editable && (
         <Card className="report">
@@ -404,6 +406,7 @@ export default function OrderDetail({
               <Label>
                 Review note
                 <Textarea
+                  className="resize-none"
                   aria-label="Review note"
                   maxLength={2000}
                   rows={3}

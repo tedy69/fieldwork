@@ -1,22 +1,41 @@
 :root {
-  font-family:
-    Inter,
-    'Segoe UI',
-    system-ui,
-    -apple-system,
-    sans-serif;
-  color: #edf1ee;
-  background: #151d20;
+  font-family: var(--font-body);
+  color: var(--ui-foreground);
+  background: var(--ink);
   font-synthesis: none;
-  --surface: #1c2629;
-  --line: #344145;
-  --muted: #adbbb6;
-  --amber: #f5c66d;
-  --ink: #151d20;
   color-scheme: dark;
+  font-size: 15px;
+  line-height: 1.5;
+  scrollbar-gutter: stable;
 }
 * {
   box-sizing: border-box;
+  scrollbar-width: auto;
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+  scroll-margin-block: 20px;
+}
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border: 3px solid var(--scroll-track);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-hover);
+}
+::-webkit-scrollbar-thumb:active {
+  background: var(--scroll-active);
+}
+@media (forced-colors: active) {
+  * {
+    scrollbar-color: auto;
+  }
 }
 body {
   margin: 0;
@@ -70,8 +89,14 @@ p {
   margin-top: 0;
 }
 h2 {
-  font-size: 20px;
-  letter-spacing: -0.4px;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+}
+h1,
+h2,
+.brand {
+  font-family: var(--font-heading);
+  line-height: 1.25;
 }
 h3 {
   font-size: 16px;
@@ -101,7 +126,9 @@ textarea::placeholder {
   color: #a4b2ae;
 }
 textarea {
-  resize: vertical;
+  resize: none;
+  field-sizing: content;
+  max-height: 28rem;
 }
 input[type='radio'] {
   display: inline;
@@ -115,7 +142,7 @@ form > label {
 }
 code,
 .reference {
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-reference);
 }
 .muted {
   color: var(--muted);
@@ -130,7 +157,7 @@ code,
   color: var(--muted);
   font-size: 11px;
   font-weight: 650;
-  letter-spacing: 1.6px;
+  letter-spacing: 1px;
 }
 .primary,
 .quiet {
@@ -170,9 +197,9 @@ code,
   color: var(--amber);
 }
 .brand {
-  font-size: 26px;
+  font-size: 30px;
   letter-spacing: -1px;
-  font-weight: 750;
+  font-weight: 700;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -190,23 +217,24 @@ code,
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 238px minmax(0, 1fr);
+  grid-template-columns: 224px minmax(0, 1fr);
 }
 .sidebar {
-  padding: 31px 21px 18px;
-  background: #11191c;
+  padding: 28px 16px 18px;
+  background: var(--sidebar);
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
 }
 .workspace-label {
   font-size: 10px;
-  letter-spacing: 1.8px;
+  letter-spacing: 1px;
   color: var(--muted);
-  margin: 12px 0 38px;
+  margin: 8px 0 32px;
 }
 .sidebar nav {
   display: grid;
@@ -236,7 +264,7 @@ code,
 }
 .sidebar-note {
   margin-top: auto;
-  padding: 20px 10px 34px;
+  padding: 32px 10px;
   font-size: 12px;
 }
 .sidebar-note strong {
@@ -286,13 +314,13 @@ code,
   min-width: 0;
 }
 .topbar {
-  height: 80px;
+  min-height: 76px;
   border-bottom: 1px solid var(--line);
-  padding: 0 40px;
+  padding: 14px var(--space-page);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
   gap: 12px;
 }
@@ -320,8 +348,8 @@ code,
   background: var(--amber);
 }
 main#main {
-  padding: 42px 40px 30px;
-  max-width: 1600px;
+  padding: 36px var(--space-page) 48px;
+  max-width: 1560px;
   margin: auto;
 }
 .heading-row {
@@ -329,13 +357,13 @@ main#main {
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 22px;
-  align-items: center;
+  align-items: flex-start;
 }
 .page-heading h1 {
-  font-size: 36px;
-  letter-spacing: -1.6px;
-  font-weight: 650;
-  margin: 11px 0 8px;
+  font-size: clamp(32px, 3vw, 42px);
+  letter-spacing: -1.1px;
+  font-weight: 600;
+  margin: 6px 0 8px;
 }
 .page-heading p {
   font-size: 14px;
@@ -344,9 +372,9 @@ main#main {
 }
 .ledger-summary {
   display: flex;
-  gap: 42px;
-  margin-top: 34px;
-  padding: 24px 0 25px;
+  gap: 32px;
+  margin-top: 28px;
+  padding: 20px 0;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -389,7 +417,7 @@ main#main {
   justify-content: space-between;
   gap: 16px;
   align-items: center;
-  margin: 27px 0 21px;
+  margin: 20px 0;
   flex-wrap: wrap;
 }
 .tabs {
@@ -412,7 +440,7 @@ main#main {
   color: var(--amber);
 }
 .search {
-  width: 260px;
+  width: 280px;
   max-width: 100%;
 }
 .search input {
@@ -424,8 +452,8 @@ main#main {
 .list-header,
 .order-row {
   display: grid;
-  grid-template-columns: minmax(220px, 2.5fr) minmax(110px, 1fr) 70px 135px;
-  gap: 20px;
+  grid-template-columns: minmax(200px, 2.5fr) minmax(100px, 1fr) 76px 132px;
+  gap: 16px;
   align-items: center;
 }
 .work-view-switch {
@@ -515,15 +543,17 @@ main#main {
   }
 }
 .due-range {
-  border: 0;
-  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius);
+  padding: 12px 16px;
   margin: 0 0 20px;
   min-width: 0;
 }
 .due-range legend {
   font-size: 12px;
   font-weight: 650;
-  margin-bottom: 8px;
+  margin-bottom: 0;
+  padding: 0 6px;
 }
 .due-range-fields {
   display: flex;
@@ -532,9 +562,16 @@ main#main {
   gap: 12px;
 }
 .due-range-fields label {
-  flex: 1 1 170px;
-  max-width: 210px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 1 276px;
   min-width: 0;
+  white-space: nowrap;
+}
+.due-range-fields input {
+  margin: 0;
+  width: 180px;
 }
 .due-range input {
   min-width: 0;
@@ -550,43 +587,53 @@ main#main {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
 }
 .report-export .export-note {
   margin: 0;
   font-size: 12px;
 }
 .list-header {
-  font-size: 9px;
-  letter-spacing: 1.1px;
+  font-size: 11px;
+  letter-spacing: 0.3px;
   color: #adbbb6;
-  padding: 13px 18px;
+  padding: 12px 20px;
+  background: var(--surface);
+  border-radius: var(--ui-radius) var(--ui-radius) 0 0;
   border-bottom: 1px solid var(--line);
 }
 .order-list {
   list-style: none;
   padding: 0;
   margin: 0;
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 var(--ui-radius) var(--ui-radius);
 }
 .order-list li {
   border-bottom: 1px solid var(--line);
 }
+.order-list li:last-child {
+  border-bottom: 0;
+}
 .order-row {
   text-align: left;
   width: 100%;
-  padding: 22px 18px;
+  padding: 20px;
   background: transparent;
   color: inherit;
   border-left: 2px solid transparent;
   transition: background 0.12s;
 }
 .order-row:hover {
-  background: #202b2d;
+  background: var(--surface-raised);
   border-left-color: var(--amber);
 }
 .reference {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.6px;
   display: flex;
   gap: 12px;
@@ -600,18 +647,18 @@ main#main {
 }
 .order-title {
   display: block;
-  margin: 9px 0 7px;
-  font-size: 15px;
-  font-weight: 550;
+  margin: 6px 0 4px;
+  font-size: 16px;
+  font-weight: 600;
   line-height: 1.45;
 }
 .site-name {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
 }
 .assignee,
 .due {
-  font-size: 12px;
+  font-size: 13px;
   color: #cbd6d0;
 }
 .status {
@@ -645,7 +692,7 @@ main#main {
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   padding: 18px 0;
 }
@@ -700,7 +747,7 @@ main#main {
   margin-top: 30px;
 }
 .detail {
-  max-width: 1040px;
+  max-width: 1000px;
 }
 .back {
   margin-bottom: 25px;
@@ -713,7 +760,7 @@ main#main {
   gap: 20px;
 }
 .detail h1 {
-  font-size: 32px;
+  font-size: clamp(30px, 3vw, 40px);
   letter-spacing: -1px;
   line-height: 1.25;
   margin: 12px 0 26px;
@@ -725,19 +772,21 @@ main#main {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
   gap: 24px;
-  padding: 23px 0;
+  padding: 24px;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   margin: 0 0 28px;
+  background: var(--surface);
+  border-radius: var(--ui-radius);
 }
 .order-meta dt {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   margin-bottom: 9px;
 }
 .order-meta dd {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.6;
 }
 .order-meta small {
@@ -747,10 +796,10 @@ main#main {
   margin-top: 4px;
 }
 .brief h2 {
-  font-size: 14px;
+  font-size: 18px;
 }
 .brief p {
-  font-size: 13px;
+  font-size: 14px;
   color: #d2dbd7;
   white-space: pre-wrap;
 }
@@ -774,15 +823,16 @@ main#main {
   font-size: 10px;
 }
 .checklist-item {
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  padding: 15px 0 22px;
-  margin: 16px 0 0;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius);
+  padding: 18px 20px 20px;
+  margin: 24px 0 0;
+  background: var(--surface);
 }
 .checklist-item legend {
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.7;
-  padding: 0;
+  padding: 0 8px;
 }
 .checklist-item legend > span {
   font-family: monospace;
@@ -793,13 +843,13 @@ main#main {
 .answers {
   display: flex;
   gap: 9px;
-  margin: 0 0 12px 30px;
+  margin: 0 0 16px;
 }
 .answer {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 400;
   padding: 9px 12px;
   border: 1px solid #4c595b;
@@ -812,12 +862,11 @@ main#main {
   color: var(--amber);
 }
 .item-note {
-  margin-left: 30px;
+  margin-left: 0;
 }
 .item-note input {
-  background: transparent;
-  border-color: #39484a;
-  font-size: 12px;
+  background: var(--ui-field);
+  font-size: 15px;
 }
 .inspection-form .report-summary {
   margin-top: 28px;
@@ -929,15 +978,15 @@ main#main {
   font-size: 19px;
 }
 .dialog {
-  padding: 30px;
-  width: 520px;
+  padding: 32px;
+  width: 580px;
   max-width: calc(100% - 32px);
   max-height: calc(100dvh - 40px);
   overflow: auto;
   border: 1px solid #59625b;
   border-radius: 6px;
   color: inherit;
-  background: #202a2c;
+  background: var(--surface);
   box-shadow: 0 20px 80px #0008;
 }
 .dialog h2 {
@@ -1015,22 +1064,21 @@ main#main {
 .login-page {
   min-height: 100dvh;
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  max-width: 1500px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
   margin: auto;
 }
 .login-intro {
-  padding: 90px 12%;
-  background: #11191c;
+  padding: 64px clamp(32px, 6vw, 104px);
+  background: var(--sidebar);
   display: flex;
   flex-direction: column;
   justify-content: center;
   border-right: 1px solid var(--line);
 }
 .login-intro h1 {
-  font-size: clamp(44px, 5vw, 78px);
+  font-size: clamp(48px, 6vw, 88px);
   font-weight: 600;
-  letter-spacing: -3px;
+  letter-spacing: -2px;
   line-height: 1.08;
   margin: 28px 0;
 }
@@ -1053,13 +1101,13 @@ main#main {
   font-size: 12px;
 }
 .login-panel {
-  max-width: 490px;
+  max-width: 520px;
   width: 100%;
-  padding: 65px 45px;
+  padding: 48px 32px;
   margin: auto;
 }
 .login-panel .brand {
-  margin-bottom: 55px;
+  margin-bottom: 32px;
 }
 .login-panel h2 {
   font-size: 27px;
@@ -1216,8 +1264,8 @@ main#main {
     margin-left: 8px;
   }
   .topbar {
-    height: 58px;
-    font-size: 11px;
+    min-height: 64px;
+    font-size: 12px;
   }
   .ledger-summary {
     margin-top: 25px;
@@ -1277,7 +1325,8 @@ main#main {
     margin-left: auto;
   }
   .heading-row {
-    display: block;
+    display: flex;
+    flex-direction: column;
   }
   .heading-row > .primary {
     margin: 20px 0 0;
@@ -1296,10 +1345,10 @@ main#main {
     gap: 10px;
   }
   .ledger-summary strong {
-    font-size: 11px;
+    font-size: 13px;
   }
   .ledger-summary small {
-    font-size: 10px;
+    font-size: 12px;
     line-height: 1.6;
     max-width: 130px;
   }
@@ -1313,33 +1362,47 @@ main#main {
   .list-header {
     display: none;
   }
+  .due-range-fields label {
+    display: block;
+    flex: 1 1 110px;
+    white-space: normal;
+  }
+  .due-range-fields input {
+    width: 100%;
+    margin-top: 7px;
+  }
+  .order-list {
+    border-top: 1px solid var(--line);
+    border-radius: var(--ui-radius);
+  }
   .order-row {
     grid-template-columns: 1fr auto;
     gap: 12px 8px;
-    padding: 20px 8px;
+    padding: 20px 16px;
   }
   .order-row > div {
     grid-column: 1/-1;
   }
   .assignee {
     grid-row: 2;
-    font-size: 11px;
+    font-size: 13px;
   }
   .due {
     grid-row: 3;
-    font-size: 10px;
+    font-size: 13px;
   }
   .order-row > .status {
     grid-column: 2;
     grid-row: 2/4;
-    font-size: 10px;
+    font-size: 12px;
   }
   .order-title {
-    font-size: 15px;
+    font-size: 17px;
   }
   .list-footer {
-    font-size: 9px;
+    font-size: 12px;
     gap: 8px;
+    flex-wrap: wrap;
   }
   .detail-heading {
     display: block;
@@ -1362,7 +1425,7 @@ main#main {
     grid-column: auto;
   }
   .checklist-item legend {
-    font-size: 13px;
+    font-size: 15px;
   }
   .checklist-item legend > span {
     margin-right: 8px;
@@ -1371,8 +1434,8 @@ main#main {
     margin-left: 0;
   }
   .answer {
-    font-size: 11px;
-    padding: 10px;
+    font-size: 13px;
+    padding: 10px 7px;
     flex: 1;
     justify-content: center;
   }
@@ -1416,7 +1479,7 @@ main#main {
     font-size: 9px;
   }
   .login-intro h1 {
-    font-size: 44px;
+    font-size: 38px;
     letter-spacing: -2px;
     margin: 16px 0;
   }
@@ -1432,7 +1495,7 @@ main#main {
     display: none;
   }
   .login-panel {
-    padding: 32px 25px;
+    padding: 28px 20px;
   }
   .login-panel .brand {
     margin-bottom: 30px;
@@ -1447,8 +1510,12 @@ main#main {
 .resource-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  margin: 36px 0;
+  gap: 24px;
+  margin: 28px 0;
+  align-items: start;
+}
+.worker-directory {
+  padding: 24px;
 }
 .resource-grid > section {
   min-width: 0;

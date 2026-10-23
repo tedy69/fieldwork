@@ -7,6 +7,58 @@ export const UserSchema = z.object({
   role: z.enum(['manager', 'worker']),
 });
 export type User = z.infer<typeof UserSchema>;
+export const InvitationTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
+export const CreateInvitationSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120),
+    email: z
+      .email()
+      .max(254)
+      .transform((value) => value.toLowerCase()),
+  })
+  .strict();
+export type CreateInvitation = z.infer<typeof CreateInvitationSchema>;
+export const InvitationSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  email: z.email(),
+  createdAt: z.iso.datetime(),
+  expiresAt: z.iso.datetime(),
+  createdBy: UserSchema.pick({ id: true, name: true }),
+  status: z.enum(['pending', 'accepted', 'revoked', 'expired']),
+  acceptedAt: z.iso.datetime().nullable(),
+  acceptedUserId: z.uuid().nullable(),
+  revokedAt: z.iso.datetime().nullable(),
+});
+export type Invitation = z.infer<typeof InvitationSchema>;
+export const InvitationReceiptSchema = z.object({
+  invitation: InvitationSchema,
+  token: InvitationTokenSchema,
+});
+export const InvitationQuerySchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+    cursor: z.uuid().optional(),
+  })
+  .strict();
+export type InvitationQuery = Partial<z.infer<typeof InvitationQuerySchema>>;
+export const InvitationPageSchema = z.object({
+  data: z.array(InvitationSchema),
+  total: z.number().int().nonnegative(),
+  nextCursor: z.uuid().nullable(),
+});
+export const InvitationAccessSchema = z.object({ token: InvitationTokenSchema }).strict();
+export const AcceptInvitationSchema = InvitationAccessSchema.extend({
+  password: z.string().min(12).max(256),
+});
+export const InvitationPreviewSchema = z.object({
+  name: z.string(),
+  email: z.email(),
+  expiresAt: z.iso.datetime(),
+});
+export const InvitationAcceptanceSchema = z.object({
+  user: UserSchema.extend({ role: z.literal('worker') }),
+});
 export const CoordinatesSchema = z
   .object({
     latitude: z.number().min(-90).max(90),

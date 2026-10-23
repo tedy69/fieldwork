@@ -199,6 +199,28 @@ export function openStore(path: string) {
           INSERT INTO migrations VALUES(3);
         `);
       });
+    if (!db.prepare('SELECT version FROM migrations WHERE version=4').get())
+      transaction(() => {
+        db.exec(`
+          CREATE TABLE invitations(
+            id TEXT PRIMARY KEY,
+            token_hash TEXT NOT NULL UNIQUE CHECK(length(token_hash)=64),
+            email TEXT NOT NULL,
+            name TEXT NOT NULL,
+            created_by TEXT NOT NULL REFERENCES users(id),
+            created_at TEXT NOT NULL,
+            expires INTEGER NOT NULL,
+            accepted_at TEXT,
+            accepted_user_id TEXT REFERENCES users(id),
+            revoked_at TEXT,
+            CHECK((accepted_at IS NULL)=(accepted_user_id IS NULL)),
+            CHECK(accepted_at IS NULL OR revoked_at IS NULL)
+          );
+          CREATE INDEX invitations_email ON invitations(email);
+          CREATE INDEX invitations_created ON invitations(created_at DESC,id DESC);
+          INSERT INTO migrations VALUES(4);
+        `);
+      });
   } catch (error) {
     db.close();
     throw error;

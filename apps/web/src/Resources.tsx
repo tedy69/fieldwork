@@ -11,6 +11,7 @@ import { createClient } from '@fieldwork/sdk';
 import { parseCoordinateInputs } from './coordinate-input';
 import SiteLocation from './SiteLocation';
 import SiteCoordinatesEditor from './SiteCoordinatesEditor';
+import WorkerInvitations from './WorkerInvitations';
 const client = createClient();
 export default function Resources({
   catalog,
@@ -188,6 +189,7 @@ export default function Resources({
       </div>
       <Card className="brief">
         <h2>Field workers</h2>
+        <WorkerInvitations online={online} />
         <p>
           {catalog.users
             .filter((user) => user.role === 'worker')

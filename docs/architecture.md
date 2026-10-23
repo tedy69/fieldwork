@@ -42,6 +42,8 @@ Recurring assignments materialize a finite daily, weekly, or weekday batch in on
 
 ## Offline identity
 
+Schema 4 stores worker invitations separately from accounts and inspection snapshots. Managers issue a random capability once; only its hash is retained. Public preview/acceptance use POST bodies, and acceptance creates a worker and consumes the capability in one transaction without creating a session. The web fragment route keeps invitation setup separate from the signed-in workspace; the explicit continuation action uses normal sign-out/sign-in while retaining device notebooks. See [worker invitations](worker-invitations.md) for transport, recovery, and upgrade behavior.
+
 Server search is a separate read-only query through shared contracts and the SDK. It uses creation-time/ID cursor boundaries, current-assignee authorization, and explicit date filters. Results are not a complete workspace snapshot and must never be passed to `cacheOrders`, which replaces the offline collection. The existing offset list endpoint remains the full-sync source. See [server search](server-search.md).
 
 Each user's local cache has a separate key. Signing out locks the UI and leaves unsent work for that same account's next sign-in. It does not erase pending reports or migrate them to another account. API authorization is checked again on sync. Cached data is not an authorization credential.

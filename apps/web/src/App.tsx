@@ -9,6 +9,8 @@ import { ApiError } from '@fieldwork/sdk';
 import Workspace from './Workspace';
 import { MapSettingsProvider } from './MapSettings';
 import { client, message } from './lib';
+import AcceptInvitation from './AcceptInvitation';
+import { clearInvitationHash, invitationTokenFromHash } from './invitation-link';
 function initialUser(): User | null {
   try {
     return UserSchema.parse(JSON.parse(localStorage.getItem('fieldwork.user') ?? 'null'));
@@ -18,6 +20,35 @@ function initialUser(): User | null {
 }
 
 export default function App() {
+  const [token, setToken] = useState(() => invitationTokenFromHash(location.hash));
+  const [initialEmail, setInitialEmail] = useState('');
+  useEffect(() => {
+    const changed = () => setToken(invitationTokenFromHash(location.hash));
+    window.addEventListener('hashchange', changed);
+    return () => window.removeEventListener('hashchange', changed);
+  }, []);
+  function returnToApp() {
+    clearInvitationHash();
+    setToken(null);
+  }
+  async function signIn(email: string) {
+    try {
+      await client.logout();
+    } catch (error) {
+      if (!(error instanceof ApiError && error.status === 401)) throw error;
+    }
+    localStorage.removeItem('fieldwork.user');
+    sessionStorage.setItem('fieldwork.locked', '1');
+    setInitialEmail(email);
+    returnToApp();
+  }
+  return token !== null ? (
+    <AcceptInvitation key={token} token={token} onReturn={returnToApp} onSignIn={signIn} />
+  ) : (
+    <AuthenticatedApp initialEmail={initialEmail} />
+  );
+}
+function AuthenticatedApp({ initialEmail }: { initialEmail: string }) {
   const [user, setUser] = useState<User | null>(initialUser);
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(true);
@@ -99,6 +130,7 @@ export default function App() {
                   autoComplete="username"
                   required
                   placeholder="you@your-team.com"
+                  defaultValue={initialEmail}
                 />
               </Label>
               <Label>

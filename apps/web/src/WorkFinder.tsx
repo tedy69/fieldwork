@@ -1,5 +1,6 @@
 import { Button } from './components/ui/button';
 import CommandButton from './components/kokonutui/command-button';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from './components/ui/dialog';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { User, WorkOrder } from '@fieldwork/contracts';
 import ActionSearchBar, { type CommandItem } from './components/kokonutui/action-search-bar';
@@ -17,7 +18,7 @@ export default function WorkFinder({
   onOrder: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const dialog = useRef<HTMLDialogElement>(null);
+  const dialog = useRef<HTMLDivElement>(null);
   const previousFocus = useRef<HTMLElement | null>(null);
   const navigated = useRef(false);
   const items = useMemo<CommandItem[]>(
@@ -45,7 +46,8 @@ export default function WorkFinder({
   );
 
   function show() {
-    if (document.querySelector('dialog:modal')) return;
+    if (document.querySelector('dialog:modal, [data-slot="dialog-content"][data-state="open"]'))
+      return;
     previousFocus.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     navigated.current = false;
@@ -53,16 +55,7 @@ export default function WorkFinder({
   }
   function close() {
     setOpen(false);
-    dialog.current?.close();
-    const target = navigated.current ? document.getElementById('main') : previousFocus.current;
-    target?.focus();
   }
-  useEffect(() => {
-    if (open && dialog.current && !dialog.current.open) {
-      dialog.current.showModal();
-      dialog.current.querySelector('input')?.focus();
-    }
-  }, [open]);
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (
@@ -75,7 +68,9 @@ export default function WorkFinder({
         event.key.toLowerCase() !== 'k'
       )
         return;
-      const modal = document.querySelector('dialog:modal');
+      const modal = document.querySelector(
+        'dialog:modal, [data-slot="dialog-content"][data-state="open"]',
+      );
       if (modal && modal !== dialog.current) return;
       event.preventDefault();
       if (open) close();
@@ -93,7 +88,7 @@ export default function WorkFinder({
   }
 
   return (
-    <>
+    <Dialog open={open} onOpenChange={setOpen}>
       <CommandButton
         className="quiet command-launcher"
         shortcut="mod+k"
@@ -103,47 +98,34 @@ export default function WorkFinder({
       >
         Find work
       </CommandButton>
-      <dialog
+      <DialogContent
+        aria-modal="true"
         ref={dialog}
         className="command-dialog"
-        aria-modal="true"
-        aria-labelledby="finder-heading"
-        aria-describedby="finder-description"
-        onCancel={(event) => {
+        showCloseButton={false}
+        onOpenAutoFocus={(event) => {
           event.preventDefault();
-          close();
+          dialog.current?.querySelector('input')?.focus();
         }}
-        onClose={() => {
-          // An earlier close event can arrive after the dialog has reopened.
-          if (!dialog.current?.open) setOpen(false);
-        }}
-        onKeyDown={(event) => {
-          if (event.key !== 'Tab') return;
-          const controls = event.currentTarget.querySelectorAll<HTMLElement>(
-            'button:not([disabled]):not([tabindex="-1"]), input:not([disabled])',
-          );
-          const first = controls[0];
-          const last = controls[controls.length - 1];
-          if (event.shiftKey && document.activeElement === first) {
-            event.preventDefault();
-            last?.focus();
-          } else if (!event.shiftKey && document.activeElement === last) {
-            event.preventDefault();
-            first?.focus();
-          }
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          const target = navigated.current
+            ? document.getElementById('main')
+            : previousFocus.current;
+          target?.focus();
         }}
       >
         {open && (
           <>
             <div className="command-dialog-heading">
-              <h2 id="finder-heading">Find saved work</h2>
+              <DialogTitle>Find saved work</DialogTitle>
               <Button className="quiet" onClick={close}>
                 Close finder
               </Button>
             </div>
-            <p id="finder-description" className="muted">
+            <DialogDescription>
               Search saved references, titles, sites, or people. Open with Cmd+K or Ctrl+K.
-            </p>
+            </DialogDescription>
             <ActionSearchBar
               items={items}
               onSelect={select}
@@ -158,7 +140,7 @@ export default function WorkFinder({
             />
           </>
         )}
-      </dialog>
-    </>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,6 +1,14 @@
 import { Button } from './components/ui/button';
-import { Input, Textarea, Select } from './components/ui/input';
-import { useEffect, useState, type FormEvent } from 'react';
+import { Input } from './components/ui/input';
+import { Textarea } from './components/ui/textarea';
+import {
+  NativeSelect as Select,
+  NativeSelectOption as Option,
+} from './components/ui/native-select';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from './components/ui/dialog';
+import { Label } from './components/ui/label';
+import { FieldError } from './components/ui/field';
+import { useRef, useState, type FormEvent } from 'react';
 import type { Catalog, WorkOrder } from '@fieldwork/contracts';
 import { client, message } from './lib';
 import { localDate } from './dates';
@@ -17,13 +25,9 @@ export default function CreateOrder({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  useEffect(() => {
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !busy) onClose();
-    };
-    window.addEventListener('keydown', escape);
-    return () => window.removeEventListener('keydown', escape);
-  }, [busy, onClose]);
+  const dialog = useRef<HTMLDivElement>(null);
+  const previousFocus = useRef(document.activeElement);
+  const created = useRef(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -39,6 +43,7 @@ export default function CreateOrder({
         dueDate: String(data.get('dueDate')),
         priority: data.get('priority') as 'routine' | 'urgent',
       });
+      created.current = true;
       await onCreated(order);
     } catch (error) {
       setError(message(error));
@@ -46,107 +51,123 @@ export default function CreateOrder({
     }
   }
   return (
-    <dialog
+    <Dialog
       open
-      className="dialog"
-      aria-labelledby="create-title"
-      ref={(dialog) => {
-        if (dialog && !dialog.matches(':modal')) {
-          dialog.close();
-          dialog.showModal();
-        }
+      onOpenChange={(open) => {
+        if (!open && !busy) onClose();
       }}
     >
-      <form onSubmit={submit}>
-        <div className="dialog-heading">
-          <span className="eyebrow">DISPATCH</span>
-          <Button type="button" className="quiet" onClick={onClose} disabled={busy}>
-            Cancel
-          </Button>
-        </div>
-        <h2 id="create-title">Assign a work order</h2>
-        <p className="muted">Give the field team a clear brief and a checklist.</p>
-        <label>
-          Work order title
-          <Input
-            name="title"
-            autoFocus
-            required
-            minLength={3}
-            maxLength={140}
-            placeholder="e.g. Inspect the north access gate"
-          />
-        </label>
-        <label>
-          Site
-          <Select name="siteId" aria-label="Site" required>
-            {catalog.sites.map((site) => (
-              <option key={site.id} value={site.id}>
-                {site.name}
-              </option>
-            ))}
-          </Select>
-        </label>
-        <div className="form-grid">
-          <label>
-            Assign to
-            <Select name="assigneeId" aria-label="Assign to" required>
-              {catalog.users
-                .filter((user) => user.role === 'worker')
-                .map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-            </Select>
-          </label>
-          <label>
-            Due date
+      <DialogContent
+        aria-modal="true"
+        ref={dialog}
+        className="dialog"
+        showCloseButton={false}
+        onEscapeKeyDown={(event) => {
+          if (busy) event.preventDefault();
+        }}
+        onInteractOutside={(event) => event.preventDefault()}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          dialog.current?.querySelector<HTMLInputElement>('input[name="title"]')?.focus();
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          const target =
+            !created.current &&
+            previousFocus.current instanceof HTMLElement &&
+            previousFocus.current.isConnected
+              ? previousFocus.current
+              : document.getElementById('main');
+          target?.focus();
+        }}
+      >
+        <form onSubmit={submit}>
+          <div className="dialog-heading">
+            <span className="eyebrow">DISPATCH</span>
+            <Button type="button" className="quiet" onClick={onClose} disabled={busy}>
+              Cancel
+            </Button>
+          </div>
+          <DialogTitle>Assign a work order</DialogTitle>
+          <DialogDescription>Give the field team a clear brief and a checklist.</DialogDescription>
+          <Label>
+            Work order title
             <Input
-              name="dueDate"
-              type="date"
+              name="title"
+              autoFocus
               required
-              defaultValue={initialDueDate ?? localDate()}
+              minLength={3}
+              maxLength={140}
+              placeholder="e.g. Inspect the north access gate"
             />
-          </label>
-        </div>
-        <div className="form-grid">
-          <label>
-            Checklist
-            <Select name="templateId" aria-label="Checklist" required>
-              {catalog.templates.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {template.name}
-                </option>
+          </Label>
+          <Label>
+            Site
+            <Select name="siteId" aria-label="Site" required>
+              {catalog.sites.map((site) => (
+                <Option key={site.id} value={site.id}>
+                  {site.name}
+                </Option>
               ))}
             </Select>
-          </label>
-          <label>
-            Priority
-            <Select name="priority" aria-label="Priority">
-              <option value="routine">Routine</option>
-              <option value="urgent">Urgent</option>
-            </Select>
-          </label>
-        </div>
-        <label>
-          Instructions
-          <Textarea
-            name="instructions"
-            rows={3}
-            maxLength={4000}
-            placeholder="What should the worker check?"
-          />
-        </label>
-        {error && (
-          <p role="alert" className="error">
-            {error}
-          </p>
-        )}
-        <Button className="primary full" disabled={busy}>
-          {busy ? 'Assigning…' : 'Assign work order'}
-        </Button>
-      </form>
-    </dialog>
+          </Label>
+          <div className="form-grid">
+            <Label>
+              Assign to
+              <Select name="assigneeId" aria-label="Assign to" required>
+                {catalog.users
+                  .filter((user) => user.role === 'worker')
+                  .map((user) => (
+                    <Option key={user.id} value={user.id}>
+                      {user.name}
+                    </Option>
+                  ))}
+              </Select>
+            </Label>
+            <Label>
+              Due date
+              <Input
+                name="dueDate"
+                type="date"
+                required
+                defaultValue={initialDueDate ?? localDate()}
+              />
+            </Label>
+          </div>
+          <div className="form-grid">
+            <Label>
+              Checklist
+              <Select name="templateId" aria-label="Checklist" required>
+                {catalog.templates.map((template) => (
+                  <Option key={template.id} value={template.id}>
+                    {template.name}
+                  </Option>
+                ))}
+              </Select>
+            </Label>
+            <Label>
+              Priority
+              <Select name="priority" aria-label="Priority">
+                <Option value="routine">Routine</Option>
+                <Option value="urgent">Urgent</Option>
+              </Select>
+            </Label>
+          </div>
+          <Label>
+            Instructions
+            <Textarea
+              name="instructions"
+              rows={3}
+              maxLength={4000}
+              placeholder="What should the worker check?"
+            />
+          </Label>
+          {error && <FieldError>{error}</FieldError>}
+          <Button className="primary full" disabled={busy}>
+            {busy ? 'Assigning…' : 'Assign work order'}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

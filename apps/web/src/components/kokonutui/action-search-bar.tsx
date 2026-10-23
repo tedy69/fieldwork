@@ -33,6 +33,9 @@ import {
   useState,
 } from 'react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export interface CommandItem {
   id: string;
@@ -790,7 +793,8 @@ function ActionSearchBar({
             className="size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
           />
           {stack.map((p, i) => (
-            <button
+            <Button
+              variant="unstyled"
               aria-label={`Back from ${p.label}`}
               className="inline-flex h-6 shrink-0 items-center rounded-md bg-zinc-100 px-2 font-medium text-xs text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
               key={p.id}
@@ -805,12 +809,12 @@ function ActionSearchBar({
               type="button"
             >
               {p.label}
-            </button>
+            </Button>
           ))}
-          <label className="sr-only" htmlFor={inputId}>
+          <Label className="sr-only" htmlFor={inputId}>
             {label}
-          </label>
-          <input
+          </Label>
+          <Input
             aria-activedescendant={activeRow ? optionId(highlighted) : undefined}
             aria-autocomplete="list"
             aria-controls={open ? listboxId : undefined}

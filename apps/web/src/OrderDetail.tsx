@@ -3,7 +3,11 @@ import { Card } from './components/ui/card';
 import { Badge } from './components/ui/badge';
 import { Alert } from './components/ui/alert';
 import FileUpload from './components/kokonutui/file-upload';
-import { Input, Textarea } from './components/ui/input';
+import { Input } from './components/ui/input';
+import { Textarea } from './components/ui/textarea';
+import { Label } from './components/ui/label';
+import { FieldSet, FieldLegend, FieldError } from './components/ui/field';
+import { RadioGroup, RadioGroupItem } from './components/ui/radio-group';
 import { useRef, useState, type FormEvent } from 'react';
 import {
   ReportInputSchema,
@@ -222,37 +226,39 @@ export default function OrderDetail({
           {order.template.items.map((item, index) => {
             const answer = draft.answers.find((answer) => answer.itemId === item.id)!;
             return (
-              <fieldset className="checklist-item" key={item.id}>
-                <legend>
+              <FieldSet className="checklist-item" key={item.id}>
+                <FieldLegend id={`item-${item.id}`}>
                   <span>{String(index + 1).padStart(2, '0')}</span>
                   {item.label}
-                </legend>
-                <div className="answers">
+                </FieldLegend>
+                <RadioGroup
+                  className="answers"
+                  aria-labelledby={`item-${item.id}`}
+                  required
+                  name={item.id}
+                  value={answer.value}
+                  onValueChange={(value) => {
+                    if (value !== 'pass' && value !== 'fail' && value !== 'na') return;
+                    void save({
+                      ...draft,
+                      answers: draft.answers.map((entry) =>
+                        entry.itemId === item.id ? { ...entry, value } : entry,
+                      ),
+                    });
+                  }}
+                >
                   {(['pass', 'fail', 'na'] as const).map((value) => (
-                    <label
+                    <Label
                       key={value}
+                      htmlFor={`answer-${item.id}-${value}`}
                       className={answer.value === value ? 'answer selected' : 'answer'}
                     >
-                      <Input
-                        required
-                        type="radio"
-                        name={item.id}
-                        value={value}
-                        checked={answer.value === value}
-                        onChange={() =>
-                          void save({
-                            ...draft,
-                            answers: draft.answers.map((entry) =>
-                              entry.itemId === item.id ? { ...entry, value } : entry,
-                            ),
-                          })
-                        }
-                      />
+                      <RadioGroupItem id={`answer-${item.id}-${value}`} value={value} />
                       {value === 'pass' ? 'Pass' : value === 'fail' ? 'Issue found' : 'N/A'}
-                    </label>
+                    </Label>
                   ))}
-                </div>
-                <label className="item-note">
+                </RadioGroup>
+                <Label className="item-note">
                   <span className="sr-only">Notes: {item.label}</span>
                   <Input
                     placeholder="Add a note (optional)"
@@ -267,11 +273,11 @@ export default function OrderDetail({
                       })
                     }
                   />
-                </label>
-              </fieldset>
+                </Label>
+              </FieldSet>
             );
           })}
-          <label className="report-summary">
+          <Label className="report-summary">
             Inspection summary
             <Textarea
               aria-label="Inspection summary"
@@ -282,7 +288,7 @@ export default function OrderDetail({
               value={draft.summary}
               onChange={(event) => void save({ ...draft, summary: event.target.value })}
             />
-          </label>
+          </Label>
           <section className="photo-section">
             <h2>
               Site photos <span className="muted">{draft.photos.length}/3</span>
@@ -311,11 +317,7 @@ export default function OrderDetail({
             </div>
             <FileUpload onFiles={photos} disabled={busy || draft.photos.length >= 3} busy={busy} />
           </section>
-          {error && (
-            <p role="alert" className="error">
-              {error}
-            </p>
-          )}
+          {error && <FieldError>{error}</FieldError>}
           <div className="submit-bar">
             <p>Your report stays on this device until the server confirms it.</p>
             <Button className="primary" disabled={busy || saving}>
@@ -372,7 +374,7 @@ export default function OrderDetail({
           {user.role === 'manager' && order.status === 'SUBMITTED' && (
             <section className="review-box">
               <h2>Manager review</h2>
-              <label>
+              <Label>
                 Review note
                 <Textarea
                   aria-label="Review note"
@@ -382,12 +384,8 @@ export default function OrderDetail({
                   onChange={(event) => setReview(event.target.value)}
                   placeholder="Add feedback or explain what needs to change."
                 />
-              </label>
-              {error && (
-                <p role="alert" className="error">
-                  {error}
-                </p>
-              )}
+              </Label>
+              {error && <FieldError>{error}</FieldError>}
               <div className="review-actions">
                 <Button
                   className="quiet"

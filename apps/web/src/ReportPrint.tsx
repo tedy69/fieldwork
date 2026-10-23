@@ -1,4 +1,13 @@
 import { Button } from './components/ui/button';
+import { FieldError } from './components/ui/field';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from './components/ui/table';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { WorkOrder } from '@fieldwork/contracts';
@@ -28,11 +37,7 @@ export default function ReportPrint({
           Print report
         </Button>
         <p className="muted">Print or save as PDF. Unsent edits and photo files are excluded.</p>
-        {error && (
-          <p role="alert" className="error">
-            {error}
-          </p>
-        )}
+        {error && <FieldError>{error}</FieldError>}
       </section>
       {createPortal(
         <article className="print-report" aria-label="Printable inspection report">
@@ -89,33 +94,33 @@ export default function ReportPrint({
           </section>
           <section>
             <h2>{order.template.name}</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Checklist item</th>
-                  <th scope="col">Result</th>
-                  <th scope="col">Notes</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead scope="col">Checklist item</TableHead>
+                  <TableHead scope="col">Result</TableHead>
+                  <TableHead scope="col">Notes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {report.answers.map((answer) => (
-                  <tr key={answer.itemId}>
-                    <th scope="row">
+                  <TableRow key={answer.itemId}>
+                    <TableHead scope="row">
                       {order.template.items.find((item) => item.id === answer.itemId)?.label ??
                         answer.itemId}
-                    </th>
-                    <td>
+                    </TableHead>
+                    <TableCell>
                       {answer.value === 'pass'
                         ? 'Pass'
                         : answer.value === 'fail'
                           ? 'Issue found'
                           : 'N/A'}
-                    </td>
-                    <td className="print-lines">{answer.note}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="print-lines">{answer.note}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </section>
           <section>
             <h2>Inspection summary</h2>

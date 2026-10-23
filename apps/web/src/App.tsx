@@ -2,6 +2,7 @@ import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 import { Alert } from './components/ui/alert';
 import { Input } from './components/ui/input';
+import { Label } from './components/ui/label';
 import { useEffect, useState, type FormEvent } from 'react';
 import { UserSchema, type User } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
@@ -89,7 +90,7 @@ export default function App() {
             <h2>Open your notebook</h2>
             <p className="muted">Sign in to your team's workspace.</p>
             <form onSubmit={login}>
-              <label>
+              <Label>
                 Email
                 <Input
                   name="email"
@@ -98,11 +99,11 @@ export default function App() {
                   required
                   placeholder="you@your-team.com"
                 />
-              </label>
-              <label>
+              </Label>
+              <Label>
                 Password
                 <Input name="password" type="password" autoComplete="current-password" required />
-              </label>
+              </Label>
               {error && <Alert className="error">{error}</Alert>}
               <Button className="primary full" disabled={checking}>
                 {checking ? 'Connecting…' : 'Sign in'}

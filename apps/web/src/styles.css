@@ -939,9 +939,6 @@ main#main {
   background: #202a2c;
   box-shadow: 0 20px 80px #0008;
 }
-.dialog::backdrop {
-  background: #070c0fd9;
-}
 .dialog h2 {
   font-size: 25px;
   margin-bottom: 10px;

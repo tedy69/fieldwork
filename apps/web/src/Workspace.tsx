@@ -7,6 +7,8 @@ import { ClipboardTextIcon } from '@phosphor-icons/react/dist/csr/ClipboardText'
 import { TrayIcon } from '@phosphor-icons/react/dist/csr/Tray';
 import { BuildingsIcon } from '@phosphor-icons/react/dist/csr/Buildings';
 import { Input } from './components/ui/input';
+import { Label } from './components/ui/label';
+import { Avatar, AvatarFallback } from './components/ui/avatar';
 import { useEffect, useMemo, useState } from 'react';
 import { type User, type Catalog } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
@@ -185,13 +187,15 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           </a>
         </div>
         <Card className="identity">
-          <span className="avatar" aria-hidden="true">
-            {user.name
-              .split(' ')
-              .map((name) => name[0])
-              .join('')
-              .slice(0, 2)}
-          </span>
+          <Avatar className="avatar" aria-hidden="true">
+            <AvatarFallback>
+              {user.name
+                .split(' ')
+                .map((name) => name[0])
+                .join('')
+                .slice(0, 2)}
+            </AvatarFallback>
+          </Avatar>
           <div>
             <strong>{user.name}</strong>
             <small>{user.role === 'manager' ? 'Dispatch manager' : 'Field worker'}</small>
@@ -410,7 +414,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                           : labels[status],
                   }))}
                 />
-                <label className="search">
+                <Label className="search">
                   <span className="sr-only">Search work orders</span>
                   <Input
                     value={search}
@@ -418,7 +422,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                     placeholder="Search orders, sites, people…"
                     type="search"
                   />
-                </label>
+                </Label>
               </div>
               {planner ? (
                 <WeekPlanner

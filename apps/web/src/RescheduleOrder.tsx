@@ -1,5 +1,7 @@
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
+import { Label } from './components/ui/label';
+import { FieldError } from './components/ui/field';
 import { useRef, useState, type FormEvent } from 'react';
 import type { WorkOrder } from '@fieldwork/contracts';
 import { client, dateLabel, message } from './lib';
@@ -94,7 +96,7 @@ export default function RescheduleOrder({
           <p className="muted">
             Current due date: {dateLabel(order.dueDate)}. Saved reports stay unchanged.
           </p>
-          <label>
+          <Label>
             New due date
             <Input
               type="date"
@@ -104,12 +106,8 @@ export default function RescheduleOrder({
               disabled={Boolean(busy)}
               onChange={(event) => setDueDate(event.target.value)}
             />
-          </label>
-          {error && (
-            <p className="error" role="alert">
-              {error}
-            </p>
-          )}
+          </Label>
+          {error && <FieldError>{error}</FieldError>}
           <div className="schedule-actions">
             <Button
               className="primary"

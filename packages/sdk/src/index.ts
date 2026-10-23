@@ -9,6 +9,7 @@ import {
   type CreateOrder,
   type ReportInput,
   type RescheduleOrder,
+  type ReassignOrder,
 } from '@fieldwork/contracts';
 
 export class ApiError extends Error {
@@ -83,6 +84,8 @@ export function createClient(
     createOrder: (input: CreateOrder) => request('/work-orders', WorkOrderSchema, 'POST', input),
     rescheduleOrder: (id: string, input: RescheduleOrder) =>
       request(`/work-orders/${encodeURIComponent(id)}/schedule`, WorkOrderSchema, 'PATCH', input),
+    reassignOrder: (id: string, input: ReassignOrder) =>
+      request(`/work-orders/${encodeURIComponent(id)}/assignee`, WorkOrderSchema, 'PATCH', input),
     submitReport: (id: string, input: ReportInput) =>
       request(`/work-orders/${encodeURIComponent(id)}/reports`, WorkOrderSchema, 'POST', input),
     review: (

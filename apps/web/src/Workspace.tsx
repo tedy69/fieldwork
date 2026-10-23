@@ -275,14 +275,28 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                       {item.state === 'blocked' && (
                         <Button
                           className="quiet"
+                          disabled={busy || !online}
                           onClick={async () => {
-                            await repo.discard(item.orderId);
-                            setSelected(item.orderId);
-                            setView('orders');
-                            await refresh();
-                            setNotice(
-                              'Your draft is kept. Check the latest order before submitting it again.',
-                            );
+                            setBusy(true);
+                            setError('');
+                            try {
+                              const latest = await client.order(item.orderId);
+                              await repo.cacheOrder(latest);
+                              await repo.discard(item.orderId);
+                              setSelected(item.orderId);
+                              setView('orders');
+                              setNotice(
+                                'Your draft is kept. Check the latest order before submitting it again.',
+                              );
+                            } catch (error) {
+                              setError(
+                                error instanceof ApiError && error.status === 404
+                                  ? 'This assignment is no longer available to your account. Your queued report is kept on this device. Contact your manager before trying again.'
+                                  : `${message(error)} Your queued report is kept on this device.`,
+                              );
+                            } finally {
+                              setBusy(false);
+                            }
                           }}
                         >
                           Keep draft and open latest order
@@ -298,6 +312,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
               key={`${order.id}:${order.version}`}
               user={user}
               order={order}
+              workers={catalog.users}
               repo={repo}
               state={state}
               online={online}

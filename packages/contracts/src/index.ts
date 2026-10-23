@@ -84,6 +84,10 @@ export const RescheduleOrderSchema = z
   .object({ baseVersion: z.number().int().positive(), dueDate: z.iso.date() })
   .strict();
 export type RescheduleOrder = z.infer<typeof RescheduleOrderSchema>;
+export const ReassignOrderSchema = z
+  .object({ baseVersion: z.number().int().positive(), assigneeId: z.string().min(1).max(100) })
+  .strict();
+export type ReassignOrder = z.infer<typeof ReassignOrderSchema>;
 export const ReviewSchema = z
   .object({
     baseVersion: z.number().int().positive(),

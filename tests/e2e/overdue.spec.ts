@@ -116,6 +116,9 @@ for (const scenario of [
 }
 
 test('an empty notebook explains when work becomes overdue', async ({ page }) => {
+  await page.route('**/api/v1/work-orders?*', (route) =>
+    route.fulfill({ json: { data: [], total: 0, limit: 100, offset: 0 } }),
+  );
   await page.goto('/');
   await page.getByLabel('Email', { exact: true }).fill('jordan@fieldwork.local');
   await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');

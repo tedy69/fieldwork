@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Managers can reassign unfinished web orders to another worker. Version checks protect concurrent work, and unavailable assignments keep their blocked reports and photos in the original worker's outbox.
+
 - Shared Kokonut UI controls across the web workspace, with the existing charcoal-and-amber palette, keyboard filter navigation, and photo drop/picker support that preserves offline drafts.
 
 - Managers can change due dates on unfinished web assignments. Version checks prevent stale writes; older offline reports remain available for review and resubmission.

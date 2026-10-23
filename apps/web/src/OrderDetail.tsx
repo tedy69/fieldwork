@@ -18,9 +18,11 @@ import { client, labels, dateLabel, message } from './lib';
 import { Empty } from './components';
 import ReportPrint from './ReportPrint';
 import RescheduleOrder from './RescheduleOrder';
+import ReassignOrder from './ReassignOrder';
 export default function OrderDetail({
   user,
   order,
+  workers,
   repo,
   state,
   online,
@@ -30,6 +32,7 @@ export default function OrderDetail({
 }: {
   user: User;
   order: WorkOrder;
+  workers: User[];
   repo: OfflineRepository;
   state: State;
   online: boolean;
@@ -161,6 +164,17 @@ export default function OrderDetail({
           </dd>
         </div>
       </dl>
+      {user.role === 'manager' && ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status) && (
+        <ReassignOrder
+          order={order}
+          workers={workers}
+          online={online}
+          onSaved={async (updated) => {
+            await repo.cacheOrder(updated);
+          }}
+          onNotice={onNotice}
+        />
+      )}
       {user.role === 'manager' && ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status) && (
         <RescheduleOrder
           order={order}

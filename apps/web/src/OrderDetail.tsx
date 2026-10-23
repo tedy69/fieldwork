@@ -23,6 +23,7 @@ import { Empty } from './components';
 import ReportPrint from './ReportPrint';
 import RescheduleOrder from './RescheduleOrder';
 import ReassignOrder from './ReassignOrder';
+import ReportHistory from './ReportHistory';
 export default function OrderDetail({
   user,
   order,
@@ -190,6 +191,7 @@ export default function OrderDetail({
         />
       )}
       {order.report && <ReportPrint order={order} report={order.report} />}
+      <ReportHistory orderId={order.id} online={online} />
       <Card className="brief">
         <h2>Field brief</h2>
         <p>{order.instructions || 'Complete the checklist and describe your findings.'}</p>

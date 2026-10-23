@@ -68,6 +68,33 @@ export const WorkOrderSchema = z.object({
     .nullable(),
 });
 export type WorkOrder = z.infer<typeof WorkOrderSchema>;
+export const ReportSnapshotSchema = WorkOrderSchema.omit({
+  status: true,
+  version: true,
+  createdAt: true,
+  review: true,
+  report: true,
+}).extend({
+  assignee: UserSchema.pick({ id: true, name: true }),
+  report: ReportSchema,
+});
+export const ReportRevisionSchema = z
+  .object({
+    snapshot: ReportSnapshotSchema,
+    submissionVersion: z.number().int().positive().nullable(),
+    source: z.enum(['submission', 'saved_snapshot']),
+    reviewStatus: z.enum(['awaiting_review', 'reviewed', 'not_retained']),
+    review: WorkOrderSchema.shape.review,
+  })
+  .refine((revision) => (revision.reviewStatus === 'reviewed') === (revision.review !== null), {
+    message: 'Recorded review status must match its saved review.',
+  });
+export type ReportRevision = z.infer<typeof ReportRevisionSchema>;
+export const ReportHistoryPageSchema = z.object({
+  data: z.array(ReportRevisionSchema),
+  total: z.number().int().nonnegative(),
+  nextCursor: z.string().nullable(),
+});
 export const CreateOrderSchema = z
   .object({
     title: z.string().trim().min(3).max(140),

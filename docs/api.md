@@ -10,20 +10,21 @@ Base path: `/api/v1`. JSON requests use `Content-Type: application/json`. Input/
 
 ## Workspace
 
-| Method | Endpoint                                          | Access                     | Result                                                          |
-| ------ | ------------------------------------------------- | -------------------------- | --------------------------------------------------------------- |
-| GET    | `/catalog`                                        | Signed in                  | Sites, templates, and visible users                             |
-| POST   | `/sites`                                          | Manager                    | New site from `{ name, address }`                               |
-| POST   | `/templates`                                      | Manager                    | New template from `{ name, items: string[] }`                   |
-| GET    | `/work-orders?limit=100&offset=0&status=ASSIGNED` | Signed in                  | `{ data, total, limit, offset }`; workers see their assignments |
-| GET    | `/work-orders/:id`                                | Assigned worker or manager | Work order                                                      |
-| POST   | `/work-orders`                                    | Manager                    | Created order, status 201                                       |
-| PATCH  | `/work-orders/:id/schedule`                       | Manager                    | Confirmed order with updated due date                           |
-| PATCH  | `/work-orders/:id/assignee`                       | Manager                    | Confirmed order with updated field worker                       |
-| POST   | `/work-orders/:id/reports`                        | Assigned worker            | Confirmed order                                                 |
-| POST   | `/work-orders/:id/reviews`                        | Manager                    | Reviewed order                                                  |
-| GET    | `/work-orders/:id/events`                         | Assigned worker or manager | `{ data: [{ action, at, actor }] }`                             |
-| GET    | `/photos/:id`                                     | Assigned worker or manager | Authenticated image bytes                                       |
+| Method | Endpoint                                               | Access                     | Result                                                          |
+| ------ | ------------------------------------------------------ | -------------------------- | --------------------------------------------------------------- |
+| GET    | `/catalog`                                             | Signed in                  | Sites, templates, and visible users                             |
+| POST   | `/sites`                                               | Manager                    | New site from `{ name, address }`                               |
+| POST   | `/templates`                                           | Manager                    | New template from `{ name, items: string[] }`                   |
+| GET    | `/work-orders?limit=100&offset=0&status=ASSIGNED`      | Signed in                  | `{ data, total, limit, offset }`; workers see their assignments |
+| GET    | `/work-orders/:id`                                     | Assigned worker or manager | Work order                                                      |
+| POST   | `/work-orders`                                         | Manager                    | Created order, status 201                                       |
+| PATCH  | `/work-orders/:id/schedule`                            | Manager                    | Confirmed order with updated due date                           |
+| PATCH  | `/work-orders/:id/assignee`                            | Manager                    | Confirmed order with updated field worker                       |
+| POST   | `/work-orders/:id/reports`                             | Assigned worker            | Confirmed order                                                 |
+| POST   | `/work-orders/:id/reviews`                             | Manager                    | Reviewed order                                                  |
+| GET    | `/work-orders/:id/events`                              | Assigned worker or manager | `{ data: [{ action, at, actor }] }`                             |
+| GET    | `/work-orders/:id/history?limit=10&cursor=<report-id>` | Assigned worker or manager | `{ data: ReportRevision[], total, nextCursor }`                 |
+| GET    | `/photos/:id`                                          | Assigned worker or manager | Authenticated image bytes                                       |
 
 List limit is 1–100. Offset is a non-negative integer. Status uses the uppercase enum in `packages/contracts`.
 
@@ -66,6 +67,8 @@ A stale version returns 409 `VERSION_CONFLICT`; a closed workflow state returns 
 Reassignment takes `{ "baseVersion": 1, "assigneeId": "existing-worker-id" }`. Only `ASSIGNED` and `CHANGES_REQUESTED` orders can move to an existing worker account. It changes the embedded/indexed worker and version atomically and records the old/new workers in history. Saved reports and feedback remain with the order; local drafts are not transferred. Current-version no-op requests create no version/event; stale versions return 409 `VERSION_CONFLICT`, closed states return 409 `INVALID_STATE`, and missing/non-worker accounts return 422 `INVALID_ASSIGNMENT`. Reload after uncertain outcomes before saving again. The original worker loses server access; blocked queued reports remain on their device. See [reassignment](reassignment.md) for the handover and recovery flow.
 
 ## Errors and health
+
+Report history returns saved report/assignment snapshots with original `submissionVersion` (nullable for recovered saved orders), `source`, `reviewStatus`, and nullable `review`. History limits are 1–50, default 10. Use `nextCursor` for the next older page; new submissions do not shift older pages. Unknown or foreign-order cursors return 422 `INVALID_CURSOR`. Authorization is checked before cursor lookup. Reassignment transfers historical report/photo access to the new worker. See [report history](report-history.md) for response fields, legacy review limits, and upgrade behavior.
 
 Errors have `{ "error": { "code": "VERSION_CONFLICT", "message": "..." } }`. Common statuses: 401 session required, 403 permission/origin denied, 404 inaccessible resource, 409 version/state conflict, 422 invalid input, 429 rate limit. Unexpected internal details are logged on the server and not returned to clients.
 

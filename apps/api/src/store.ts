@@ -2,7 +2,15 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
-import type { User, WorkOrder, Catalog } from '@fieldwork/contracts';
+import {
+  WorkOrderSchema,
+  ReportSnapshotSchema,
+  ReportRevisionSchema,
+  type User,
+  type WorkOrder,
+  type Catalog,
+  type ReportRevision,
+} from '@fieldwork/contracts';
 
 export function hashPassword(password: string) {
   const salt = randomBytes(16).toString('hex');
@@ -42,6 +50,68 @@ export function openStore(path: string) {
     return db.prepare('SELECT id,name,email,role FROM users WHERE id=?').get(id) as
       User | undefined;
   };
+  function insertRevision(
+    order: WorkOrder,
+    submissionVersion: number | null,
+    source: ReportRevision['source'],
+    reviewStatus: ReportRevision['reviewStatus'],
+    ignoreExisting = false,
+  ) {
+    const snapshot = ReportSnapshotSchema.parse(order);
+    db.prepare(
+      `${ignoreExisting ? 'INSERT OR IGNORE' : 'INSERT'} INTO report_revisions(order_id,report_id,submission_version,source,snapshot,review_status,review) VALUES(?,?,?,?,?,?,?)`,
+    ).run(
+      order.id,
+      snapshot.report.id,
+      submissionVersion,
+      source,
+      JSON.stringify(snapshot),
+      reviewStatus,
+      order.review && reviewStatus === 'reviewed' ? JSON.stringify(order.review) : null,
+    );
+  }
+  function recordSubmission(order: WorkOrder) {
+    insertRevision(order, order.version, 'submission', 'awaiting_review');
+  }
+  function recordReview(order: WorkOrder) {
+    if (!order.report || !order.review) throw new Error('A saved report and review are required.');
+    const result = db
+      .prepare(
+        "UPDATE report_revisions SET review=?,review_status='reviewed' WHERE order_id=? AND report_id=?",
+      )
+      .run(JSON.stringify(order.review), order.id, order.report.id);
+    if (result.changes !== 1) throw new Error('The saved report revision is missing.');
+  }
+  function reportHistory(orderId: string, limit: number, cursor?: string) {
+    const before = cursor
+      ? db
+          .prepare('SELECT sequence FROM report_revisions WHERE order_id=? AND report_id=?')
+          .get(orderId, cursor)
+      : null;
+    if (cursor && !before) return null;
+    const rows = db
+      .prepare(
+        `SELECT * FROM report_revisions WHERE order_id=?${before ? ' AND sequence<?' : ''} ORDER BY sequence DESC LIMIT ?`,
+      )
+      .all(...(before ? [orderId, before.sequence as number, limit + 1] : [orderId, limit + 1]));
+    const data = rows.slice(0, limit).map((row) =>
+      ReportRevisionSchema.parse({
+        snapshot: JSON.parse(row.snapshot as string),
+        submissionVersion: row.submission_version,
+        source: row.source,
+        reviewStatus: row.review_status,
+        review: row.review ? JSON.parse(row.review as string) : null,
+      }),
+    );
+    const total = db
+      .prepare('SELECT COUNT(*) AS count FROM report_revisions WHERE order_id=?')
+      .get(orderId)!.count as number;
+    return {
+      data,
+      total,
+      nextCursor: rows.length > limit ? data.at(-1)!.snapshot.report.id : null,
+    };
+  }
   function writeOrder(order: WorkOrder) {
     db.prepare(
       `INSERT INTO work_orders VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET
@@ -67,6 +137,61 @@ export function openStore(path: string) {
       users: db.prepare('SELECT id,name,email,role FROM users ORDER BY name').all(),
     };
   }
-  return { db, getOrder, getUser, writeOrder, transaction, catalog };
+  try {
+    if (!db.prepare('SELECT version FROM migrations WHERE version=2').get())
+      transaction(() => {
+        db.exec(`
+        CREATE TABLE report_revisions(
+          sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+          order_id TEXT NOT NULL REFERENCES work_orders(id),
+          report_id TEXT NOT NULL,
+          submission_version INTEGER CHECK(submission_version IS NULL OR submission_version>0),
+          source TEXT NOT NULL CHECK(source IN ('submission','saved_snapshot')),
+          snapshot TEXT NOT NULL,
+          review_status TEXT NOT NULL CHECK(review_status IN ('awaiting_review','reviewed','not_retained')),
+          review TEXT,
+          UNIQUE(order_id,report_id)
+        );
+        CREATE INDEX report_revisions_order ON report_revisions(order_id,sequence DESC);
+      `);
+        for (const row of db
+          .prepare(
+            "SELECT response FROM mutations ORDER BY json_extract(response,'$.version'),user_id,id",
+          )
+          .iterate()) {
+          const acknowledged = WorkOrderSchema.parse(JSON.parse(row.response as string));
+          if (acknowledged.report && getOrder(acknowledged.id))
+            insertRevision(acknowledged, acknowledged.version, 'submission', 'not_retained', true);
+        }
+        for (const row of db.prepare('SELECT data FROM work_orders').iterate()) {
+          const order = WorkOrderSchema.parse(JSON.parse(row.data as string));
+          if (!order.report) continue;
+          const existing = db
+            .prepare('SELECT report_id FROM report_revisions WHERE order_id=? AND report_id=?')
+            .get(order.id, order.report.id);
+          if (!existing) insertRevision(order, null, 'saved_snapshot', 'not_retained');
+          if (order.review) recordReview(order);
+          else if (order.status === 'SUBMITTED')
+            db.prepare(
+              "UPDATE report_revisions SET review_status='awaiting_review' WHERE order_id=? AND report_id=?",
+            ).run(order.id, order.report.id);
+        }
+        db.prepare('INSERT INTO migrations VALUES(2)').run();
+      });
+  } catch (error) {
+    db.close();
+    throw error;
+  }
+  return {
+    db,
+    getOrder,
+    getUser,
+    writeOrder,
+    transaction,
+    catalog,
+    recordSubmission,
+    recordReview,
+    reportHistory,
+  };
 }
 export type Store = ReturnType<typeof openStore>;

@@ -2,6 +2,7 @@ import {
   CatalogSchema,
   MeSchema,
   OrderPageSchema,
+  ReportHistoryPageSchema,
   SessionSchema,
   WorkOrderSchema,
   SiteSchema,
@@ -81,6 +82,11 @@ export function createClient(
       request('/templates', TemplateSchema, 'POST', { name, items }),
     orders: (offset = 0) => request(`/work-orders?limit=100&offset=${offset}`, OrderPageSchema),
     order: (id: string) => request(`/work-orders/${encodeURIComponent(id)}`, WorkOrderSchema),
+    reportHistory: (id: string, cursor?: string) =>
+      request(
+        `/work-orders/${encodeURIComponent(id)}/history?limit=10${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`,
+        ReportHistoryPageSchema,
+      ),
     createOrder: (input: CreateOrder) => request('/work-orders', WorkOrderSchema, 'POST', input),
     rescheduleOrder: (id: string, input: RescheduleOrder) =>
       request(`/work-orders/${encodeURIComponent(id)}/schedule`, WorkOrderSchema, 'PATCH', input),

@@ -21,6 +21,7 @@ An open-source field operations platform. Assign an inspection, complete it with
 - Durable checklists, notes, and photo attachments on the worker's device.
 - A retryable outbox with duplicate protection and visible version conflicts.
 - Manager approval or requests for changes, with an action history.
+- [Report revision history](docs/report-history.md) in the web app, with saved checklist answers, photos, assignment snapshots, and review feedback.
 - [CSV report exports](docs/report-export.md) for the manager's filtered work-order list, including offline exports from saved data.
 - [Printable inspection reports](docs/print-reports.md) with checklist results and review details, available from saved web records offline.
 - Local SQLite persistence, a typed API client, and Docker self-hosting.

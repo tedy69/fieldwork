@@ -403,6 +403,7 @@ export async function buildApp(options: AppOptions) {
       };
       store.writeOrder(updated);
       audit(order.id, actor, 'Inspection submitted');
+      store.recordSubmission(updated);
       store.db
         .prepare('INSERT INTO mutations VALUES(?,?,?,?)')
         .run(actor.id, input.mutationId, hash, JSON.stringify(updated));
@@ -428,6 +429,7 @@ export async function buildApp(options: AppOptions) {
         },
       };
       store.writeOrder(updated);
+      store.recordReview(updated);
       audit(
         order.id,
         request.actor!,
@@ -454,6 +456,19 @@ export async function buildApp(options: AppOptions) {
         )
         .all(request.params.id),
     };
+  });
+  app.get<{ Params: { id: string } }>('/api/v1/work-orders/:id/history', async (request) => {
+    accessible(request.params.id, request);
+    const query = z
+      .object({
+        limit: z.coerce.number().int().min(1).max(50).default(10),
+        cursor: z.string().min(1).max(100).optional(),
+      })
+      .strict()
+      .parse(request.query);
+    const page = store.reportHistory(request.params.id, query.limit, query.cursor);
+    if (!page) fail(422, 'INVALID_CURSOR', 'Choose a saved submission from this work order.');
+    return page;
   });
   if (options.staticRoot && existsSync(options.staticRoot)) {
     await app.register(serveStatic, { root: options.staticRoot });

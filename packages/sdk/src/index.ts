@@ -2,6 +2,7 @@ import {
   CatalogSchema,
   MapSettingsSchema,
   type Coordinates,
+  type UpdateSiteLocation,
   OrderSeriesReceiptSchema,
   OrderSeriesPageSchema,
   OrderSeriesDetailSchema,
@@ -88,6 +89,9 @@ export function createClient(
     mapSettings: () => request('/map-settings', MapSettingsSchema),
     createSite: (name: string, address: string, coordinates?: Coordinates) =>
       request('/sites', SiteSchema, 'POST', { name, address, coordinates }),
+    site: (id: string) => request(`/sites/${encodeURIComponent(id)}`, SiteSchema),
+    updateSiteLocation: (id: string, input: UpdateSiteLocation) =>
+      request(`/sites/${encodeURIComponent(id)}/location`, SiteSchema, 'PATCH', input),
     createTemplate: (name: string, items: string[]) =>
       request('/templates', TemplateSchema, 'POST', { name, items }),
     orders: (offset = 0) => request(`/work-orders?limit=100&offset=${offset}`, OrderPageSchema),

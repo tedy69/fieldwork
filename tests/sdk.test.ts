@@ -1,6 +1,26 @@
 import { expect, it, vi } from 'vitest';
 import { createClient } from '@fieldwork/sdk';
 
+it('encodes site lookups and location patches and keeps their expected coordinate pair', async () => {
+  const site = { id: 'site/a', name: 'Synthetic site', address: 'Test address' };
+  const point = { latitude: 0, longitude: 0 };
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(new Response(JSON.stringify(site)))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ ...site, coordinates: point })));
+  const client = createClient('https://fieldwork.example', undefined, fetcher);
+  expect(await client.site(site.id)).toEqual(site);
+  expect(
+    await client.updateSiteLocation(site.id, { expectedCoordinates: null, coordinates: point }),
+  ).toMatchObject({ coordinates: point });
+  expect(fetcher.mock.calls[0][0]).toBe('https://fieldwork.example/api/v1/sites/site%2Fa');
+  expect(fetcher.mock.calls[1][0]).toBe('https://fieldwork.example/api/v1/sites/site%2Fa/location');
+  expect(fetcher.mock.calls[1][1]).toMatchObject({
+    method: 'PATCH',
+    body: JSON.stringify({ expectedCoordinates: null, coordinates: point }),
+  });
+});
+
 it('sends optional site coordinates and validates provider settings before map use', async () => {
   const coordinates = { latitude: 0, longitude: 0 };
   const fetcher = vi

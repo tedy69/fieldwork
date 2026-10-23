@@ -1,0 +1,25 @@
+.site-coordinate-editor {
+  margin-top: 14px;
+  overflow-wrap: anywhere;
+}
+.resource-grid .site-coordinate-editor form {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--amber);
+  border-radius: 6px;
+  background: var(--ink);
+}
+.site-coordinate-editor .ui-field-set {
+  padding: 0;
+  margin: 16px 0;
+  border: 0;
+}
+.site-coordinate-editor .muted {
+  font-size: 13px;
+}
+.site-coordinate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}

@@ -28,6 +28,13 @@ export const CreateSiteSchema = z
     coordinates: CoordinatesSchema.optional(),
   })
   .strict();
+export const UpdateSiteLocationSchema = z
+  .object({
+    expectedCoordinates: CoordinatesSchema.nullable(),
+    coordinates: CoordinatesSchema.nullable(),
+  })
+  .strict();
+export type UpdateSiteLocation = z.infer<typeof UpdateSiteLocationSchema>;
 const secureUrl = (value: string) => {
   try {
     const url = new URL(value);

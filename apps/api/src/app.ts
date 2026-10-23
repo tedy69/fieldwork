@@ -9,6 +9,7 @@ import { z, ZodError } from 'zod';
 import {
   CreateOrderSchema,
   CreateSiteSchema,
+  UpdateSiteLocationSchema,
   MapProviderSchema,
   type MapProvider,
   CreateOrderSeriesSchema,
@@ -216,6 +217,40 @@ export async function buildApp(options: AppOptions) {
         .run(JSON.stringify({ sites: [...sites, site], templates }));
     });
     return reply.status(201).send(site);
+  });
+  app.get<{ Params: { id: string } }>('/api/v1/sites/:id', async (request) => {
+    const id = z.string().min(1).max(100).parse(request.params.id);
+    const site = store.catalog().sites.find((site) => site.id === id);
+    if (!site) fail(404, 'NOT_FOUND', 'Site not found.');
+    return site;
+  });
+  app.patch<{ Params: { id: string } }>('/api/v1/sites/:id/location', async (request) => {
+    manager(request);
+    const id = z.string().min(1).max(100).parse(request.params.id);
+    const input = UpdateSiteLocationSchema.parse(request.body);
+    return store.transaction(() => {
+      const { sites, templates } = store.catalog();
+      const site = sites.find((site) => site.id === id);
+      if (!site) fail(404, 'NOT_FOUND', 'Site not found.');
+      const current = site.coordinates ?? null;
+      const same = (a: typeof current, b: typeof current) =>
+        a === null
+          ? b === null
+          : b !== null && a.latitude === b.latitude && a.longitude === b.longitude;
+      if (!same(current, input.expectedCoordinates))
+        fail(409, 'LOCATION_CONFLICT', 'Site coordinates changed. Reload them before saving.');
+      if (same(current, input.coordinates)) return site;
+      const updated = { ...site };
+      if (input.coordinates) updated.coordinates = input.coordinates;
+      else delete updated.coordinates;
+      store.db.prepare('UPDATE catalog SET data=? WHERE id=1').run(
+        JSON.stringify({
+          sites: sites.map((saved) => (saved.id === id ? updated : saved)),
+          templates,
+        }),
+      );
+      return updated;
+    });
   });
   app.post('/api/v1/templates', async (request, reply) => {
     manager(request);

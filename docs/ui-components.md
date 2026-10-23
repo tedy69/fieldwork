@@ -1,5 +1,7 @@
 # Kokonut UI and shadcn in Fieldwork
 
+Existing-site coordinate editing uses shared Button, Input, Label, FieldSet, FieldLegend, and FieldError primitives. The inline charcoal form repeats the amber edit rule used for rescheduling, separates loaded and proposed coordinates, and wraps actions on phones. Conflict recovery preserves the proposal and requires a fresh site read before saving.
+
 The [site map](site-maps.md) uses shared Card, Button, and Alert primitives around Leaflet's geographic canvas. Default Leaflet controls are disabled; Fieldwork supplies labeled zoom/recenter/hide controls, visible attribution, and the existing charcoal/amber theme. Leaflet handles tile geometry and pointer interaction, while map-only keyboard handlers disable animated movement. Its BSD notice is shipped alongside the existing component licenses.
 
 The [web server-search dialog](server-search.md#web-search) uses the shared Dialog, Button, Input, Native Select, Label, FieldSet, Badge, Alert, and Empty foundation. Screen composition groups actual filters and temporary server results; opening a result uses the existing local cache adapter.

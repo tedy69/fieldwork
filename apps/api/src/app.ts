@@ -11,6 +11,7 @@ import {
   ReportInputSchema,
   ReviewSchema,
   RescheduleOrderSchema,
+  ReassignOrderSchema,
   StatusSchema,
   type User,
   type WorkOrder,
@@ -308,6 +309,29 @@ export async function buildApp(options: AppOptions) {
       const updated: WorkOrder = { ...order, dueDate: input.dueDate, version: order.version + 1 };
       store.writeOrder(updated);
       audit(order.id, request.actor!, `Due date changed from ${order.dueDate} to ${input.dueDate}`);
+      return updated;
+    });
+  });
+  app.patch<{ Params: { id: string } }>('/api/v1/work-orders/:id/assignee', async (request) => {
+    manager(request);
+    const input = ReassignOrderSchema.parse(request.body);
+    return store.transaction(() => {
+      const order = accessible(request.params.id, request);
+      if (order.version !== input.baseVersion)
+        fail(409, 'VERSION_CONFLICT', 'This work order changed. Reload it before reassigning.');
+      if (!['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status))
+        fail(409, 'INVALID_STATE', 'Only unfinished assignments can be reassigned.');
+      const assignee = store.getUser(input.assigneeId);
+      if (!assignee || assignee.role !== 'worker')
+        fail(422, 'INVALID_ASSIGNMENT', 'Choose an existing field worker.');
+      if (order.assignee.id === assignee.id) return order;
+      const updated: WorkOrder = { ...order, assignee, version: order.version + 1 };
+      store.writeOrder(updated);
+      audit(
+        order.id,
+        request.actor!,
+        `Worker changed from ${order.assignee.name} (${order.assignee.id}) to ${assignee.name} (${assignee.id})`,
+      );
       return updated;
     });
   });

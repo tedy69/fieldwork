@@ -19,6 +19,7 @@ Base path: `/api/v1`. JSON requests use `Content-Type: application/json`. Input/
 | GET    | `/work-orders/:id`                                | Assigned worker or manager | Work order                                                      |
 | POST   | `/work-orders`                                    | Manager                    | Created order, status 201                                       |
 | PATCH  | `/work-orders/:id/schedule`                       | Manager                    | Confirmed order with updated due date                           |
+| PATCH  | `/work-orders/:id/assignee`                       | Manager                    | Confirmed order with updated field worker                       |
 | POST   | `/work-orders/:id/reports`                        | Assigned worker            | Confirmed order                                                 |
 | POST   | `/work-orders/:id/reviews`                        | Manager                    | Reviewed order                                                  |
 | GET    | `/work-orders/:id/events`                         | Assigned worker or manager | `{ data: [{ action, at, actor }] }`                             |
@@ -59,6 +60,10 @@ Reviews take `{ baseVersion, decision, note }`. Decision is `APPROVED` or `CHANG
 Rescheduling takes `{ "baseVersion": 1, "dueDate": "2026-10-27" }`. The date is a calendar date, without a time zone; past dates are allowed. Only `ASSIGNED` and `CHANGES_REQUESTED` orders may change. The transaction checks the current version, changes only `dueDate` and `version`, and records the previous/new dates in action history. Existing reports, photos, feedback, assignees, and checklist snapshots remain unchanged. An identical date returns the existing order without a new version or event, provided the supplied version is current.
 
 A stale version returns 409 `VERSION_CONFLICT`; a closed workflow state returns 409 `INVALID_STATE`. This endpoint does not queue offline writes or accept a mutation ID. After a timeout or uncertain response, fetch the latest order and review its date/version before retrying. The browser requires Reload order after a failed save. See [rescheduling](rescheduling.md) for worker draft conflicts.
+
+## Reassignment
+
+Reassignment takes `{ "baseVersion": 1, "assigneeId": "existing-worker-id" }`. Only `ASSIGNED` and `CHANGES_REQUESTED` orders can move to an existing worker account. It changes the embedded/indexed worker and version atomically and records the old/new workers in history. Saved reports and feedback remain with the order; local drafts are not transferred. Current-version no-op requests create no version/event; stale versions return 409 `VERSION_CONFLICT`, closed states return 409 `INVALID_STATE`, and missing/non-worker accounts return 422 `INVALID_ASSIGNMENT`. Reload after uncertain outcomes before saving again. The original worker loses server access; blocked queued reports remain on their device. See [reassignment](reassignment.md) for the handover and recovery flow.
 
 ## Errors and health
 

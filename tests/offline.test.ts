@@ -41,6 +41,35 @@ function memory() {
   return storage;
 }
 describe('durable outbox', () => {
+  it('keeps queued reports and unqueued drafts when reassigned work disappears from the active list', async () => {
+    const storage = memory();
+    const send = vi
+      .fn()
+      .mockRejectedValue(Object.assign(new Error('Work order not found.'), { status: 404 }));
+    const repo = createOfflineRepository(storage, send);
+    const payload = {
+      ...input(),
+      photos: [{ id: randomUUID(), mimeType: 'image/png' as const, data: 'photo-bytes' }],
+    };
+    const draft = { answers: payload.answers, summary: payload.summary, photos: payload.photos };
+    await repo.cacheOrders([order('one'), order('two')]);
+    await repo.saveDraft('one', draft);
+    await repo.saveDraft('two', { ...draft, summary: 'Still on this device, never queued.' });
+    await repo.enqueue('one', payload);
+    await repo.flush();
+    await repo.cacheOrders([]);
+    const restored = createOfflineRepository(storage, send);
+    const state = await restored.read();
+    expect(state.orders).toEqual([]);
+    expect(state.drafts.one).toEqual(draft);
+    expect(state.drafts.two.summary).toBe('Still on this device, never queued.');
+    expect(state.outbox).toEqual([expect.objectContaining({ input: payload, state: 'blocked' })]);
+    await restored.flush();
+    expect(send).toHaveBeenCalledTimes(1);
+    await restored.cacheOrder({ ...order('one'), version: 4, status: 'ASSIGNED' });
+    await restored.discard('one');
+    expect((await restored.read()).drafts.one).toEqual(draft);
+  });
   it('merges a confirmed order without losing another order, draft photos, or queued reports', async () => {
     const storage = memory();
     const repo = createOfflineRepository(storage, async () => order('one'));

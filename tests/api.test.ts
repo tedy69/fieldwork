@@ -268,6 +268,209 @@ describe('inspection lifecycle', () => {
   });
 });
 
+describe('assignment handover', () => {
+  const reassign = (payload: Record<string, unknown>, token = manager, id = 'demo-1') =>
+    app.inject({
+      method: 'PATCH',
+      url: `/api/v1/work-orders/${id}/assignee`,
+      headers: bearer(token),
+      payload,
+    });
+  const access = (url: string, token: string) => app.inject({ url, headers: bearer(token) });
+  const events = () => store.db.prepare('SELECT * FROM audit WHERE order_id=?').all('demo-1');
+
+  it('requires an authenticated manager, an existing order, and a trusted cookie origin', async () => {
+    const payload = { baseVersion: 1, assigneeId: 'worker-2' };
+    expect(
+      (await app.inject({ method: 'PATCH', url: '/api/v1/work-orders/demo-1/assignee', payload }))
+        .statusCode,
+    ).toBe(401);
+    expect((await reassign(payload, worker)).statusCode).toBe(403);
+    expect((await reassign(payload, other)).statusCode).toBe(403);
+    expect((await reassign(payload, manager, 'missing')).statusCode).toBe(404);
+    expect(
+      (
+        await app.inject({
+          method: 'PATCH',
+          url: '/api/v1/work-orders/demo-1/assignee',
+          payload,
+          headers: { cookie: `session=${manager}`, origin: 'https://outside.example' },
+        })
+      ).statusCode,
+    ).toBe(403);
+    expect(store.getOrder('demo-1')!.assignee.id).toBe('worker');
+    expect(events()).toHaveLength(0);
+  });
+
+  it.each([
+    { baseVersion: 0, assigneeId: 'worker-2' },
+    { baseVersion: 1.5, assigneeId: 'worker-2' },
+    { assigneeId: 'worker-2' },
+    { baseVersion: 1, assigneeId: '' },
+    { baseVersion: 1, assigneeId: 'missing' },
+    { baseVersion: 1, assigneeId: 'manager' },
+    { baseVersion: 1, assigneeId: 'worker-2', status: 'APPROVED' },
+  ])('rejects invalid handover %j without modifying the order or history', async (payload) => {
+    const before = store.getOrder('demo-1');
+    expect((await reassign(payload)).statusCode).toBe(422);
+    expect(store.getOrder('demo-1')).toEqual(before);
+    expect(events()).toHaveLength(0);
+  });
+
+  it('changes the worker and indexed visibility together, with a named audit record', async () => {
+    const before = store.getOrder('demo-1')!;
+    const response = await reassign({ baseVersion: 1, assigneeId: 'worker-2' });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ...before, version: 2, assignee: store.getUser('worker-2') });
+    expect(store.getOrder('demo-1')).toEqual(response.json());
+    expect(
+      store.db.prepare('SELECT assignee_id,version FROM work_orders WHERE id=?').get('demo-1'),
+    ).toEqual({ assignee_id: 'worker-2', version: 2 });
+    expect(
+      (await access('/api/v1/work-orders', worker)).json().data.map((order: WorkOrder) => order.id),
+    ).not.toContain('demo-1');
+    expect(
+      (await access('/api/v1/work-orders', other)).json().data.map((order: WorkOrder) => order.id),
+    ).toContain('demo-1');
+    expect((await access('/api/v1/work-orders/demo-1', worker)).statusCode).toBe(404);
+    expect((await access('/api/v1/work-orders/demo-1/events', worker)).statusCode).toBe(404);
+    expect((await access('/api/v1/work-orders/demo-1', other)).statusCode).toBe(200);
+    expect((await access('/api/v1/work-orders/demo-1/events', other)).json().data).toEqual([
+      expect.objectContaining({
+        actor: 'Alex Morgan',
+        action: 'Worker changed from Sam Rivera (worker) to Jordan Lee (worker-2)',
+      }),
+    ]);
+    expect((await submit()).statusCode).toBe(404);
+    expect((await submit({ ...report(), baseVersion: 2 }, other)).statusCode).toBe(200);
+  });
+
+  it('does not write a new version or history for the current worker', async () => {
+    const before = store.getOrder('demo-1');
+    expect((await reassign({ baseVersion: 1, assigneeId: 'worker' })).json()).toEqual(before);
+    expect(events()).toHaveLength(0);
+  });
+
+  it.each(['SUBMITTED', 'APPROVED'] as const)('keeps %s work locked', async (status) => {
+    await submit();
+    if (status === 'APPROVED')
+      await app.inject({
+        method: 'POST',
+        url: '/api/v1/work-orders/demo-1/reviews',
+        headers: bearer(manager),
+        payload: { baseVersion: 2, decision: 'APPROVED', note: '' },
+      });
+    const before = store.getOrder('demo-1')!;
+    const count = events().length;
+    const response = await reassign({ baseVersion: before.version, assigneeId: 'worker-2' });
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.code).toBe('INVALID_STATE');
+    expect(store.getOrder('demo-1')).toEqual(before);
+    expect(events()).toHaveLength(count);
+  });
+
+  it('preserves correction snapshots, moves photo access, and replays only the original acknowledged submission', async () => {
+    const input = report();
+    const photo = {
+      id: randomUUID(),
+      mimeType: 'image/png' as const,
+      data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jq1sAAAAASUVORK5CYII=',
+    };
+    input.photos = [photo];
+    const submitted = (await submit(input)).json();
+    await app.inject({
+      method: 'POST',
+      url: '/api/v1/work-orders/demo-1/reviews',
+      headers: bearer(manager),
+      payload: { baseVersion: 2, decision: 'CHANGES_REQUESTED', note: 'Inspect the latch again.' },
+    });
+    const before = store.getOrder('demo-1')!;
+    const moved = await reassign({ baseVersion: 3, assigneeId: 'worker-2' });
+    expect(moved.json()).toEqual({ ...before, version: 4, assignee: store.getUser('worker-2') });
+    expect((await access(`/api/v1/photos/${photo.id}`, worker)).statusCode).toBe(404);
+    const bytes = await access(`/api/v1/photos/${photo.id}`, other);
+    expect(bytes.statusCode).toBe(200);
+    expect(bytes.rawPayload).toEqual(Buffer.from(photo.data, 'base64'));
+    expect((await submit(input)).json()).toEqual(submitted);
+    expect((await submit({ ...input, mutationId: randomUUID() })).statusCode).toBe(404);
+    const corrected = await submit(
+      { ...report(), baseVersion: 4, summary: 'Replacement worker checked the latch.' },
+      other,
+    );
+    expect(corrected.statusCode).toBe(200);
+    expect(corrected.json().report.submittedBy).toBe('worker-2');
+    expect(corrected.json().version).toBe(5);
+  });
+
+  it('accepts one concurrent handover and rejects a stale retry even when its worker matches', async () => {
+    const responses = await Promise.all(
+      Array.from({ length: 2 }, () => reassign({ baseVersion: 1, assigneeId: 'worker-2' })),
+    );
+    expect(responses.map((response) => response.statusCode).sort()).toEqual([200, 409]);
+    expect(events()).toHaveLength(1);
+    expect((await reassign({ baseVersion: 1, assigneeId: 'worker-2' })).statusCode).toBe(409);
+    expect(store.getOrder('demo-1')!.version).toBe(2);
+  });
+
+  it('rejects a handover when a worker submitted against the same version first', async () => {
+    await submit();
+    expect((await reassign({ baseVersion: 1, assigneeId: 'worker-2' })).json().error.code).toBe(
+      'VERSION_CONFLICT',
+    );
+    expect(store.getOrder('demo-1')!.report!.summary).toBe(report().summary);
+    expect(store.getOrder('demo-1')!.assignee.id).toBe('worker');
+  });
+
+  it('rolls back the indexed and embedded worker if action history cannot be saved', async () => {
+    const before = store.getOrder('demo-1');
+    store.db.exec(
+      "CREATE TRIGGER fail_audit BEFORE INSERT ON audit BEGIN SELECT RAISE(ABORT, 'test audit failure'); END",
+    );
+    expect((await reassign({ baseVersion: 1, assigneeId: 'worker-2' })).statusCode).toBe(500);
+    expect(store.getOrder('demo-1')).toEqual(before);
+    expect(
+      store.db.prepare('SELECT assignee_id FROM work_orders WHERE id=?').get('demo-1')!.assignee_id,
+    ).toBe('worker');
+    expect(events()).toHaveLength(0);
+  });
+
+  it('retains the handover and action history across an API restart', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'fieldwork-handover-'));
+    const path = join(directory, 'test.sqlite');
+    const persistent = await buildApp({ databasePath: path, rateLimits: false });
+    seed(persistent.store);
+    try {
+      const session = await persistent.app.inject({
+        method: 'POST',
+        url: '/api/v1/sessions',
+        payload: { email: 'manager@fieldwork.local', password: 'fieldwork-demo' },
+      });
+      const moved = await persistent.app.inject({
+        method: 'PATCH',
+        url: '/api/v1/work-orders/demo-1/assignee',
+        headers: bearer(session.json().token),
+        payload: { baseVersion: 1, assigneeId: 'worker-2' },
+      });
+      expect(moved.statusCode).toBe(200);
+    } finally {
+      await persistent.app.close();
+    }
+    const reopened = openStore(path);
+    try {
+      expect(reopened.getOrder('demo-1')!.assignee.id).toBe('worker-2');
+      expect(reopened.getOrder('demo-1')!.version).toBe(2);
+      expect(
+        reopened.db.prepare('SELECT assignee_id FROM work_orders WHERE id=?').get('demo-1')!
+          .assignee_id,
+      ).toBe('worker-2');
+      expect(reopened.db.prepare('SELECT action FROM audit').all()).toHaveLength(1);
+    } finally {
+      reopened.db.close();
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('assignment rescheduling', () => {
   const schedule = (payload: Record<string, unknown>, token = manager, id = 'demo-1') =>
     app.inject({

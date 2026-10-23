@@ -14,6 +14,7 @@ An open-source field operations platform. Assign an inspection, complete it with
 - [Due-date ranges](docs/work-order-filters.md) for planning from the cached web list, with open-ended or inclusive start/end dates.
 - A [weekly planner](docs/week-planner.md) with daily workloads, offline browsing, and date-preset assignments for managers.
 - [Due-date rescheduling](docs/rescheduling.md) for unfinished assignments, with manager permissions, conflict checks, and preserved worker drafts.
+- [Worker reassignment](docs/reassignment.md) for unfinished web assignments, with version checks and preserved reports and local drafts.
 - A [Kokonut UI work finder](docs/ui-components.md) for searching saved orders and opening workspace pages with Cmd+K or Ctrl+K, including offline.
 - Shared Kokonut UI controls across the web workspace, including forms, status filters, cards, and draft photo attachments, with Fieldwork's charcoal-and-amber colors.
 - An offline web notebook and a native Expo worker app.

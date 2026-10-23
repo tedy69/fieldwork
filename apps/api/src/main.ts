@@ -1,9 +1,11 @@
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildApp } from './app';
+import { mapProviderFromEnv } from './map-settings';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const { app } = await buildApp({
+  mapProvider: mapProviderFromEnv(),
   databasePath: resolve(root, process.env.DATABASE_PATH ?? 'data/fieldwork.sqlite'),
   webOrigin: process.env.WEB_ORIGIN,
   staticRoot: resolve(root, 'apps/web/dist'),

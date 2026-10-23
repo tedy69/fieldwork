@@ -24,6 +24,7 @@ import ReportPrint from './ReportPrint';
 import RescheduleOrder from './RescheduleOrder';
 import ReassignOrder from './ReassignOrder';
 import ReportHistory from './ReportHistory';
+import SiteLocation from './SiteLocation';
 export default function OrderDetail({
   user,
   order,
@@ -192,6 +193,25 @@ export default function OrderDetail({
       )}
       {order.report && <ReportPrint order={order} report={order.report} />}
       <ReportHistory orderId={order.id} online={online} />
+      <SiteLocation
+        key={order.site.id}
+        site={order.site}
+        online={online}
+        beforeReload={async () => {
+          if (busy || pendingWrites.current > 0)
+            throw new Error('Wait for the current report action to finish before reloading.');
+          if (review.trim())
+            throw new Error('Your review has unsaved text. Send or clear it before reloading.');
+          if (editable) {
+            const snapshot = currentDraft.current;
+            await repo.saveDraft(order.id, snapshot);
+            if (pendingWrites.current > 0 || snapshot !== currentDraft.current)
+              throw new Error(
+                'Your draft changed while saving. Wait for it to finish before reloading.',
+              );
+          }
+        }}
+      />
       <Card className="brief">
         <h2>Field brief</h2>
         <p>{order.instructions || 'Complete the checklist and describe your findings.'}</p>

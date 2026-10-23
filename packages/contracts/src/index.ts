@@ -7,7 +7,64 @@ export const UserSchema = z.object({
   role: z.enum(['manager', 'worker']),
 });
 export type User = z.infer<typeof UserSchema>;
-export const SiteSchema = z.object({ id: z.string(), name: z.string(), address: z.string() });
+export const CoordinatesSchema = z
+  .object({
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+  })
+  .strict();
+export type Coordinates = z.infer<typeof CoordinatesSchema>;
+export const SiteSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  address: z.string(),
+  coordinates: CoordinatesSchema.optional(),
+});
+export type Site = z.infer<typeof SiteSchema>;
+export const CreateSiteSchema = z
+  .object({
+    name: z.string().trim().min(2).max(120),
+    address: z.string().trim().min(3).max(250),
+    coordinates: CoordinatesSchema.optional(),
+  })
+  .strict();
+const secureUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+};
+export const MapProviderSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    tileUrlTemplate: z
+      .string()
+      .max(2000)
+      .refine(
+        (value) => {
+          const tokens = ['{z}', '{x}', '{y}'];
+          if (/\s/.test(value) || tokens.some((token) => value.split(token).length !== 2))
+            return false;
+          const resolved = tokens.reduce((url, token) => url.replace(token, '0'), value);
+          return !/[{}]/.test(resolved) && secureUrl(resolved) && !new URL(resolved).hash;
+        },
+        {
+          message:
+            'Use an HTTPS tile URL with one each of {z}, {x}, and {y}, without credentials or a fragment.',
+        },
+      ),
+    attributionText: z.string().trim().min(1).max(200),
+    attributionUrl: z
+      .string()
+      .max(1000)
+      .refine(secureUrl, { message: 'Use an HTTPS attribution URL without credentials.' }),
+    maxZoom: z.number().int().min(1).max(19),
+  })
+  .strict();
+export type MapProvider = z.infer<typeof MapProviderSchema>;
+export const MapSettingsSchema = z.object({ provider: MapProviderSchema.nullable() });
 export const ItemSchema = z.object({ id: z.string(), label: z.string() });
 export const TemplateSchema = z.object({
   id: z.string(),

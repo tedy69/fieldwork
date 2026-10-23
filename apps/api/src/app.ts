@@ -9,6 +9,7 @@ import { z, ZodError } from 'zod';
 import {
   CreateOrderSchema,
   CreateOrderSeriesSchema,
+  OrderSeriesQuerySchema,
   recurrenceDates,
   type CreateOrder,
   type OrderSeriesReceipt,
@@ -23,6 +24,7 @@ import {
 } from '@fieldwork/contracts';
 import { openStore, verifyPassword } from './store';
 import { createOrderSearch } from './order-search';
+import { createSeriesQueries } from './order-series';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -54,6 +56,7 @@ export type AppOptions = {
 
 export async function buildApp(options: AppOptions) {
   const store = openStore(options.databasePath);
+  const series = createSeriesQueries(store);
   const app = Fastify({
     bodyLimit: 9_000_000,
     logger: options.logger
@@ -309,6 +312,20 @@ export async function buildApp(options: AppOptions) {
       audit(order.id, request.actor!, 'Work order assigned');
     });
     return reply.status(201).send(order);
+  });
+  app.get('/api/v1/work-order-series', async (request) => {
+    manager(request);
+    const query = OrderSeriesQuerySchema.parse(request.query);
+    const result = series.list(query.limit, query.cursor);
+    if (!result) fail(422, 'INVALID_CURSOR', 'This batch cursor is unavailable. Start a new list.');
+    return result;
+  });
+  app.get<{ Params: { id: string } }>('/api/v1/work-order-series/:id', async (request) => {
+    manager(request);
+    const id = z.uuid().parse(request.params.id);
+    const result = series.detail(id);
+    if (!result) fail(404, 'NOT_FOUND', 'Recurring batch not found.');
+    return result;
   });
   app.post('/api/v1/work-order-series', async (request, reply) => {
     manager(request);

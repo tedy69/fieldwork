@@ -155,6 +155,43 @@ export const OrderSeriesReceiptSchema = z.object({
   orders: z.array(WorkOrderSchema).min(2).max(52),
 });
 export type OrderSeriesReceipt = z.infer<typeof OrderSeriesReceiptSchema>;
+export const OrderSeriesQuerySchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+    cursor: z.uuid().optional(),
+  })
+  .strict();
+export type OrderSeriesQuery = Partial<z.infer<typeof OrderSeriesQuerySchema>>;
+export const OrderSeriesSummarySchema = z.object({
+  id: z.uuid(),
+  createdAt: z.iso.datetime(),
+  createdBy: UserSchema.pick({ id: true, name: true }),
+  title: z.string(),
+  frequency: z.enum(['daily', 'weekly']),
+  occurrences: z.number().int().min(2).max(52),
+  firstDueDate: z.iso.date(),
+  lastDueDate: z.iso.date(),
+  assignee: UserSchema.pick({ id: true, name: true }),
+});
+export type OrderSeriesSummary = z.infer<typeof OrderSeriesSummarySchema>;
+export const OrderSeriesPageSchema = z.object({
+  data: z.array(OrderSeriesSummarySchema),
+  total: z.number().int().nonnegative(),
+  nextCursor: z.uuid().nullable(),
+});
+export const OrderSeriesDetailSchema = OrderSeriesSummarySchema.extend({
+  orders: z
+    .array(
+      z.object({
+        occurrence: z.number().int().min(1).max(52),
+        plannedDueDate: z.iso.date(),
+        order: WorkOrderSchema,
+      }),
+    )
+    .min(2)
+    .max(52),
+});
+export type OrderSeriesDetail = z.infer<typeof OrderSeriesDetailSchema>;
 export const RescheduleOrderSchema = z
   .object({ baseVersion: z.number().int().positive(), dueDate: z.iso.date() })
   .strict();

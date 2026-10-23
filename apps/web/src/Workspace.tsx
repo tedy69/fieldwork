@@ -19,6 +19,7 @@ import { PageHeading, Empty } from './components';
 import Resources from './Resources';
 import CreateOrder from './CreateOrderDialog';
 import RecurringDispatch from './RecurringDispatch';
+import SeriesOverview from './SeriesOverview';
 import OrderDetail from './OrderDetail';
 import { isInDueRange, isOverdue } from './dates';
 import { useLocalDate } from './useLocalDate';
@@ -356,6 +357,14 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                 />
                 {user.role === 'manager' && (
                   <div className="assignment-actions">
+                    <SeriesOverview
+                      online={online}
+                      onCache={async (order) => {
+                        await repo.cacheOrder(order);
+                        setState(await repo.read());
+                      }}
+                      onOpened={(id) => setSelected(id)}
+                    />
                     <RecurringDispatch
                       userId={user.id}
                       catalog={catalog}

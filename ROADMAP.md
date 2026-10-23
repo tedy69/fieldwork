@@ -22,14 +22,13 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Monthly web planner with daily workloads, keyboard navigation, filtered exports, offline browsing, and date-preset assignments.
 - [x] Read-only server search API and SDK with text, status, worker, priority, date filters, and cursor pagination.
 - [x] Web server search with combined filters, incremental result loading, fresh authorization on opening, and preserved offline drafts.
-
 - [x] Bounded recurring assignment API and SDK with daily/weekly dates, atomic creation, and durable retry receipts.
-
 - [x] Web recurring assignment creation with a date preview, planner date preset, and durable recovery after uncertain writes.
+- [x] Read-only recurring batch overview, paginated API/SDK, planned/current order comparison, and fresh individual-order opening.
 
 ## Next · Make daily work easier
 
-- Scheduling rules beyond finite daily/weekly batches, plus series management.
+- Scheduling rules beyond finite daily/weekly batches, plus editing or retiring future series work.
 - Maps with opt-in site coordinates and a documented tile provider.
 - Accessible checklist field types: readings, numbers, text, and required evidence.
 - User invitation and account lifecycle UI.

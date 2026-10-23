@@ -32,6 +32,8 @@ List limit is 1–100. Offset is a non-negative integer. Status uses the upperca
 
 `POST /work-order-series` creates 2–52 daily or weekly assignments as one atomic batch. It accepts the ordinary order fields plus `mutationId`, `frequency`, and `occurrences`; the first date is `dueDate`. New batches return 201 and identical retries return 200 with the original `{ id, createdAt, frequency, orders }` receipt. Manager access and cookie-origin checks apply. Optional `expectedActorId` binds a pending dispatch to its originating account; a mismatch returns 403 `ACTOR_CHANGED` before any batch lookup or write. See [recurring assignments](recurring-assignments.md) before implementing retry behavior.
 
+Managers browse saved batches with `GET /work-order-series?limit=20&cursor=<batch-id>` through `client.orderSeries(query)`. The response is `{ data: OrderSeriesSummary[], total, nextCursor }`, ordered by creation time and ID descending. Limits are 1–50. `GET /work-order-series/:id`, through `client.orderSeriesDetail(id)`, adds ordered `{ occurrence, plannedDueDate, order }` members with current order state. These read-only results must not replace a complete offline cache. See [batch browsing](recurring-assignments.md#browse-saved-batches) for fields, errors, and cursor behavior.
+
 Create an order:
 
 ```json

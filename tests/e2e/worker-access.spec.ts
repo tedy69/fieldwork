@@ -109,7 +109,8 @@ test('manager confirms access changes with keyboard, refreshes assignment choice
   await expect(
     dialog(page).getByRole('button', { name: 'Refresh accounts', exact: true }),
   ).toBeDisabled();
-  await expect(row(page, user.email).getByRole('button')).toBeDisabled();
+  for (const button of await row(page, user.email).getByRole('button').all())
+    await expect(button).toBeDisabled();
   await dialog(page).getByRole('button', { name: 'Close accounts', exact: true }).click();
   await expect(page.getByRole('main')).toBeFocused();
   await context.setOffline(false);
@@ -133,7 +134,9 @@ test('uncertain writes lock retries, keep the dialog open while saving and recov
     await held;
     await route.abort('failed');
   });
-  await row(page, user.email).getByRole('button').click();
+  await row(page, user.email)
+    .getByRole('button', { name: `Disable ${user.email}`, exact: true })
+    .click();
   const save = dialog(page).getByRole('button', { name: 'Confirm disable', exact: true });
   await save.click();
   await expect.poll(() => applied).toBe(true);
@@ -150,7 +153,9 @@ test('uncertain writes lock retries, keep the dialog open while saving and recov
   await page.unroute(endpoint);
   await dialog(page).getByRole('button', { name: 'Retry accounts', exact: true }).click();
   await expect(row(page, user.email).getByText('Disabled', { exact: true })).toBeVisible();
-  await row(page, user.email).getByRole('button').click();
+  await row(page, user.email)
+    .getByRole('button', { name: `Reactivate ${user.email}`, exact: true })
+    .click();
   await manager.updateWorkerAccess(user.id, { enabled: true, expectedVersion: 1 });
   await dialog(page).getByRole('button', { name: 'Confirm reactivation', exact: true }).click();
   await expect(dialog(page).getByRole('alert')).toContainText('This worker account changed.');

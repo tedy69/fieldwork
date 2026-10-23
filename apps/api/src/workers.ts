@@ -3,6 +3,8 @@ import {
   UpdateWorkerAccessSchema,
   WorkerAccountSchema,
   WorkerQuerySchema,
+  WorkerAccessHistoryQuerySchema,
+  WorkerAccessEventSchema,
 } from '@fieldwork/contracts';
 import type { Store } from './store';
 import { fail } from './problems';
@@ -49,6 +51,39 @@ export function registerWorkerRoutes(
   app.get<{ Params: { id: string } }>('/api/v1/workers/:id', async (request) => {
     manager(request);
     return account(request.params.id);
+  });
+  app.get<{ Params: { id: string } }>('/api/v1/workers/:id/access-history', async (request) => {
+    manager(request);
+    const { limit, cursor } = WorkerAccessHistoryQuerySchema.parse(request.query);
+    const { user } = account(request.params.id);
+    if (
+      cursor &&
+      !store.db
+        .prepare('SELECT sequence FROM worker_access_events WHERE worker_id=? AND sequence=?')
+        .get(user.id, cursor)
+    )
+      fail(422, 'CURSOR', 'This access history cursor is unavailable. Refresh access history.');
+    const rows = store.db
+      .prepare(
+        `SELECT e.*,u.name AS actor_name FROM worker_access_events e JOIN users u ON u.id=e.actor_id WHERE e.worker_id=?${cursor ? ' AND e.sequence<?' : ''} ORDER BY e.sequence DESC LIMIT ?`,
+      )
+      .all(...(cursor ? [user.id, cursor, limit + 1] : [user.id, limit + 1]));
+    const data = rows.slice(0, limit).map((row) =>
+      WorkerAccessEventSchema.parse({
+        id: row.sequence,
+        workerId: row.worker_id,
+        enabled: row.enabled === 1,
+        at: row.at,
+        actor: { id: row.actor_id, name: row.actor_name },
+      }),
+    );
+    return {
+      data,
+      total: store.db
+        .prepare('SELECT COUNT(*) AS n FROM worker_access_events WHERE worker_id=?')
+        .get(user.id)!.n,
+      nextCursor: rows.length > limit ? data.at(-1)!.id : null,
+    };
   });
   app.patch<{ Params: { id: string } }>(
     '/api/v1/workers/:id/access',

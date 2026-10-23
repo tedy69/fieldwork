@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from './components/ui/dialog';
 import './invitations.css';
+import WorkerAccessHistory from './WorkerAccessHistory';
 
 type Page = Awaited<ReturnType<typeof client.workers>>;
 export default function WorkerAccounts({
@@ -27,6 +28,7 @@ export default function WorkerAccounts({
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState<Page | null>(null);
   const [selected, setSelected] = useState<WorkerAccount | null>(null);
+  const [history, setHistory] = useState<WorkerAccount | null>(null);
   const [busy, setBusy] = useState<'loading' | 'saving' | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -50,6 +52,7 @@ export default function WorkerAccounts({
     setOpen(next);
     setPage(null);
     setSelected(null);
+    setHistory(null);
     setBusy(null);
     setError('');
     setNotice('');
@@ -84,6 +87,7 @@ export default function WorkerAccounts({
       onCatalog(catalog);
       setNeedsReload(false);
       setSelected(null);
+      setHistory(null);
       setNotice('Worker accounts refreshed.');
     } catch (error) {
       if (current === generation.current) {
@@ -117,6 +121,7 @@ export default function WorkerAccounts({
       );
       onUpdated(updated);
       setSelected(null);
+      setHistory(null);
       setNotice(
         updated.enabled
           ? `${updated.user.name} can sign in again with their existing password.`
@@ -250,6 +255,17 @@ export default function WorkerAccounts({
             </div>
           </section>
         )}
+        {history && (
+          <WorkerAccessHistory
+            key={history.user.id}
+            worker={history.user}
+            online={online}
+            onClose={() => {
+              setHistory(null);
+              heading.current?.focus();
+            }}
+          />
+        )}
         {page && (
           <>
             <p className="muted" role="status">
@@ -284,12 +300,28 @@ export default function WorkerAccounts({
                     disabled={!online || Boolean(busy) || needsReload}
                     onClick={() => {
                       setSelected(account);
+                      setHistory(null);
                       setNotice('');
                       setError('');
                       requestAnimationFrame(() => confirmation.current?.focus());
                     }}
                   >
                     {account.enabled ? 'Disable worker' : 'Reactivate worker'}
+                  </Button>
+                  <Button
+                    className="quiet"
+                    aria-label={`View access history for ${account.user.email}`}
+                    disabled={!online || Boolean(busy)}
+                    onClick={() => {
+                      setHistory(account);
+                      setSelected(null);
+                      setNotice('');
+                      requestAnimationFrame(() =>
+                        document.getElementById('worker-access-history-title')?.focus(),
+                      );
+                    }}
+                  >
+                    Access history
                   </Button>
                 </li>
               ))}

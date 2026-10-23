@@ -34,15 +34,25 @@ Successful password verification for a disabled worker returns 403 `ACCOUNT_DISA
 
 The implementation applies server-side invalidation and fresh-authentication principles described in [OWASP's session management guidance](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html). This feature does not claim full compliance with that guide.
 
+## Browse access history
+
+Choose **Access history** beside a worker in the accounts dialog. The viewer shows committed disables and reactivations, newest first, with the responsible manager and time. Account creation, invitations, and sign-in activity are not included. Names reflect current account details; the event keeps the original worker and actor IDs.
+
+Refresh access history loads newer changes; Load older access changes follows a stable sequence cursor. A failed page keeps earlier records visible and retries that same page. An unavailable cursor offers Restart access history. Loaded history stays readable offline until closed, with network actions disabled. Opening a different worker, closing history, or dismissing the dialog ignores late responses. Browsing does not submit the outbox or clear workspace form inputs.
+
+`GET /api/v1/workers/:id/access-history?limit=20&cursor=...`, through `client.workerAccessHistory(id, query?)`, requires a current manager. The response is `{ data, total, nextCursor }`; each event has `{ id, workerId, enabled, at, actor: { id, name } }`. `enabled: false` records a disable and `true` records reactivation. IDs are positive sequence numbers, ordered descending independently of tied timestamps. Limits are 1–50, default 20. A cursor must belong to the requested worker; malformed or unavailable cursors return 422 `CURSOR` for unavailable records or the ordinary validation error for malformed input. Unknown and manager targets return 404; ordinary workers receive 403 before lookup. New arrivals appear after a refresh without shifting older cursor pages.
+
+History reads use existing schema-5 events and change no account, session, inspection, or event records. No migration or historical backfill is needed. Controls remain web-only, with the same API/SDK available to other manager clients.
+
 ## Persistence and contributors
 
-Schema 5 adds `worker_access` and `worker_access_events` in one explicit SQLite migration. No access row means enabled; existing and newly invited workers keep working without backfills. Each real access change updates its version, stores manager/time metadata, records a durable event, and, when disabling, deletes the target sessions in the same transaction. A failed audit or session write rolls back the entire change. The UI shows the latest change; the full event history currently has no viewer or API.
+Schema 5 adds `worker_access` and `worker_access_events` in one explicit SQLite migration. No access row means enabled; existing and newly invited workers keep working without backfills. Each real access change updates its version, stores manager/time metadata, records a durable event, and, when disabling, deletes the target sessions in the same transaction. A failed audit or session write rolls back the entire change. The account ledger shows the latest change; the history viewer pages through the retained events.
 
 Back up the database and committed WAL before upgrading, then let the new server apply schema 5. Tests reconstruct schema 4, preserve workspace records, reopen disabled accounts, and inject a migration failure before a clean retry. A full rollback needs the complete pre-upgrade backup and previous server. Older servers do not enforce these new access flags, so do not run one against a database containing disabled accounts. Never delete live migration markers.
 
 - Contracts and transport: `packages/contracts/src/index.ts`, `packages/sdk/src/index.ts`.
 - Access transactions and enforcement: `apps/api/src/workers.ts`, `store.ts`, `app.ts`.
-- Manager UI: `apps/web/src/WorkerAccounts.tsx`, `Resources.tsx`, `Workspace.tsx`.
-- Coverage: `tests/worker-access.test.ts`, `tests/sdk.test.ts`, `tests/e2e/worker-access.spec.ts`, and older schema-upgrade fixtures.
+- Manager UI: `apps/web/src/WorkerAccounts.tsx`, `WorkerAccessHistory.tsx`, `Resources.tsx`, `Workspace.tsx`.
+- Coverage: `tests/worker-access.test.ts`, `tests/worker-access-history.test.ts`, `tests/sdk.test.ts`, both worker-access browser suites, and older schema-upgrade fixtures.
 
-Password reset, manager lifecycle controls, account deletion, full access-history browsing, organization boundaries, physical-device acceptance, and a complete screen-reader audit remain separate work. Native workers use the same API enforcement; manager account controls are web-only.
+Password reset, manager lifecycle controls, account deletion, organization boundaries, physical-device acceptance, and a complete screen-reader audit remain separate work. Native workers use the same API enforcement; manager account controls are web-only.

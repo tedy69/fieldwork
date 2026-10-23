@@ -34,6 +34,25 @@ export const WorkerPageSchema = z.object({
   total: z.number().int().nonnegative(),
   nextCursor: z.string().nullable(),
 });
+export const WorkerAccessEventSchema = z.object({
+  id: z.number().int().positive(),
+  workerId: z.string(),
+  enabled: z.boolean(),
+  at: z.iso.datetime(),
+  actor: UserSchema.pick({ id: true, name: true }),
+});
+export const WorkerAccessHistoryQuerySchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+    cursor: z.coerce.number().int().positive().optional(),
+  })
+  .strict();
+export type WorkerAccessHistoryQuery = Partial<z.infer<typeof WorkerAccessHistoryQuerySchema>>;
+export const WorkerAccessHistoryPageSchema = z.object({
+  data: z.array(WorkerAccessEventSchema),
+  total: z.number().int().nonnegative(),
+  nextCursor: z.number().int().positive().nullable(),
+});
 export const InvitationTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 export const CreateInvitationSchema = z
   .object({

@@ -452,7 +452,7 @@ it('persists links across restart and upgrades schema 3 without altering existin
   manager = await login('manager');
   const before = accountRows();
   fixture.store.db.exec(
-    'DROP TABLE worker_access_events; DROP TABLE worker_access; DROP TABLE invitations; DELETE FROM migrations WHERE version>=4',
+    'DROP TABLE password_resets; DROP TABLE worker_access_events; DROP TABLE worker_access; DROP TABLE invitations; DELETE FROM migrations WHERE version>=4',
   );
   await fixture.app.close();
   fixture = await buildApp({ databasePath: path, rateLimits: false });
@@ -462,7 +462,7 @@ it('persists links across restart and upgrades schema 3 without altering existin
       .prepare('SELECT version FROM migrations ORDER BY version')
       .all()
       .map((row) => row.version),
-  ).toEqual([1, 2, 3, 4, 5]);
+  ).toEqual([1, 2, 3, 4, 5, 6]);
   const created = await issue();
   await fixture.app.close();
   fixture = await buildApp({ databasePath: path, rateLimits: false });
@@ -481,7 +481,7 @@ it('rolls back schema 4 if an index creation fails, then completes a clean retry
   seed(original);
   const before = original.db.prepare('SELECT * FROM users').all();
   original.db.exec(
-    'DROP TABLE worker_access_events; DROP TABLE worker_access; DROP TABLE invitations; DELETE FROM migrations WHERE version>=4; CREATE INDEX invitations_email ON users(email)',
+    'DROP TABLE password_resets; DROP TABLE worker_access_events; DROP TABLE worker_access; DROP TABLE invitations; DELETE FROM migrations WHERE version>=4; CREATE INDEX invitations_email ON users(email)',
   );
   original.db.close();
   try {

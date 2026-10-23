@@ -1,5 +1,7 @@
 # Kokonut UI and shadcn in Fieldwork
 
+Worker password recovery uses shared Button, Input, Label, Badge, and Alert inside the existing Dialog. The shared AccountLink screen handles invitations and password reset with shadcn Card, fields, and explicit password confirmation. Amber focus marks headings and controls; no new primitive, palette, or animation is introduced. Link inputs are masked in documentation screenshots, and password fields are empty.
+
 The worker access-history section uses shared Button, Badge, and Alert inside the existing manager Dialog. The selected worker heading receives amber focus; flat chronological rows show real actor/time metadata. Read errors retain loaded rows, offline controls disable, and narrow actions wrap without a new surface or animation.
 
 Worker accounts reuses shared Dialog, Button, Badge, and Alert primitives, the flat worker ledger, and an inline confirmation. Access state has a text label, headings receive amber focus, and change failures require a fresh read. Loaded rows remain visible offline; controls keep 44px targets and wrap at narrow widths. See [worker access](worker-access.md).

@@ -105,6 +105,29 @@ export const InvitationPreviewSchema = z.object({
 export const InvitationAcceptanceSchema = z.object({
   user: UserSchema.extend({ role: z.literal('worker') }),
 });
+export const CreatePasswordResetSchema = z
+  .object({ expectedAccessVersion: z.number().int().nonnegative() })
+  .strict();
+export type CreatePasswordReset = z.infer<typeof CreatePasswordResetSchema>;
+export const PasswordResetSchema = z.object({
+  id: z.uuid(),
+  workerId: z.string(),
+  createdAt: z.iso.datetime(),
+  expiresAt: z.iso.datetime(),
+  createdBy: UserSchema.pick({ id: true, name: true }),
+  status: z.enum(['pending', 'used', 'revoked', 'expired', 'unavailable']),
+  usedAt: z.iso.datetime().nullable(),
+  revokedAt: z.iso.datetime().nullable(),
+});
+export const PasswordResetReceiptSchema = z.object({
+  reset: PasswordResetSchema,
+  token: InvitationTokenSchema,
+});
+export const PasswordResetCurrentSchema = z.object({ reset: PasswordResetSchema.nullable() });
+export const PasswordResetAccessSchema = InvitationAccessSchema;
+export const CompletePasswordResetSchema = AcceptInvitationSchema;
+export const PasswordResetPreviewSchema = InvitationPreviewSchema;
+export const PasswordResetCompletionSchema = InvitationAcceptanceSchema;
 export const CoordinatesSchema = z
   .object({
     latitude: z.number().min(-90).max(90),

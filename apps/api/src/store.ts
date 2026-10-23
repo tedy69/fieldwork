@@ -248,6 +248,26 @@ export function openStore(path: string) {
           INSERT INTO migrations VALUES(5);
         `);
       });
+    if (!db.prepare('SELECT version FROM migrations WHERE version=6').get())
+      transaction(() => {
+        db.exec(`
+          CREATE TABLE password_resets(
+            sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT NOT NULL UNIQUE,
+            worker_id TEXT NOT NULL REFERENCES users(id),
+            token_hash TEXT NOT NULL UNIQUE CHECK(length(token_hash)=64),
+            access_version INTEGER NOT NULL CHECK(access_version>=0),
+            created_by TEXT NOT NULL REFERENCES users(id),
+            created_at TEXT NOT NULL,
+            expires INTEGER NOT NULL,
+            used_at TEXT,
+            revoked_at TEXT,
+            CHECK(used_at IS NULL OR revoked_at IS NULL)
+          );
+          CREATE INDEX password_resets_worker ON password_resets(worker_id,sequence DESC);
+          INSERT INTO migrations VALUES(6);
+        `);
+      });
   } catch (error) {
     db.close();
     throw error;

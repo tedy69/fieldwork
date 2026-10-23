@@ -4,6 +4,12 @@ import {
   WorkerAccountSchema,
   WorkerAccessHistoryPageSchema,
   type WorkerAccessHistoryQuery,
+  PasswordResetReceiptSchema,
+  PasswordResetCurrentSchema,
+  PasswordResetSchema,
+  PasswordResetPreviewSchema,
+  PasswordResetCompletionSchema,
+  type CreatePasswordReset,
   type WorkerQuery,
   type UpdateWorkerAccess,
   InvitationReceiptSchema,
@@ -117,6 +123,28 @@ export function createClient(
     },
     updateWorkerAccess: (id: string, input: UpdateWorkerAccess) =>
       request(`/workers/${encodeURIComponent(id)}/access`, WorkerAccountSchema, 'PATCH', input),
+    passwordReset: (id: string) =>
+      request(`/workers/${encodeURIComponent(id)}/password-reset`, PasswordResetCurrentSchema),
+    createPasswordReset: (id: string, input: CreatePasswordReset) =>
+      request(
+        `/workers/${encodeURIComponent(id)}/password-reset`,
+        PasswordResetReceiptSchema,
+        'POST',
+        input,
+      ),
+    revokePasswordReset: (id: string, resetId: string) =>
+      request(
+        `/workers/${encodeURIComponent(id)}/password-reset/${encodeURIComponent(resetId)}`,
+        PasswordResetSchema,
+        'DELETE',
+      ),
+    previewPasswordReset: (token: string) =>
+      request('/password-resets/preview', PasswordResetPreviewSchema, 'POST', { token }),
+    completePasswordReset: (token: string, password: string) =>
+      request('/password-resets/complete', PasswordResetCompletionSchema, 'POST', {
+        token,
+        password,
+      }),
     createInvitation: (input: CreateInvitation) =>
       request('/invitations', InvitationReceiptSchema, 'POST', input),
     invitations: (query: InvitationQuery = {}) => {

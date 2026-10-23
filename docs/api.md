@@ -4,6 +4,8 @@ Base path: `/api/v1`. JSON requests use `Content-Type: application/json`. Input/
 
 ## Sessions
 
+[Worker password recovery](password-recovery.md) adds manager-only `GET/POST /workers/:id/password-reset` and `DELETE /workers/:id/password-reset/:resetId`, plus capability-based public `POST /password-resets/preview` and `POST /password-resets/complete`. Completion revokes target sessions and requires normal sign-in without changing account identity or offline work.
+
 `POST /sessions` takes `{ "email": "...", "password": "..." }` and returns `{ user, token }`. The browser receives an HttpOnly cookie and does not persist the token from the response. Native clients put it in SecureStore and send `Authorization: Bearer <token>`.
 
 `GET /me` returns `{ user }`. `DELETE /sessions/current` revokes the current session and returns 204. Cookie-authenticated writes must have an allowed Origin. This protects the web session; native bearer requests do not require a browser Origin.

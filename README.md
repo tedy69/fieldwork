@@ -22,6 +22,7 @@ An open-source field operations platform. Assign an inspection, complete it with
 - Durable checklists, notes, and photo attachments on the worker's device.
 - [Required photo evidence](docs/photo-evidence.md) for checklists, with web/Expo guidance, offline draft validation, and server enforcement.
 - [Worker invitations](docs/worker-invitations.md) with expiring links, manager revocation, and password setup before ordinary web or Expo sign-in.
+- [Worker password recovery](docs/password-recovery.md) with expiring manager-issued links, password confirmation, session revocation, and retained offline work.
 - [Worker access controls](docs/worker-access.md) with manager deactivation/reactivation, revoked sessions, active assignment choices, preserved device notebooks, and paginated access history.
 - A retryable outbox with duplicate protection and visible version conflicts.
 - Manager approval or requests for changes, with an action history.

@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Worker password recovery with manager-issued one-hour links, replacement/revocation, browser confirmation, and revoked sessions. Retains existing account identity and device work, with an additive schema-6 upgrade.
+
 - Manager access-history browsing for worker accounts, with actor/time details, stable cursor pages, read recovery, and temporary offline viewing. Uses existing schema-5 events.
 
 - Manager worker-account deactivation/reactivation with session revocation, active assignment choices, version checks, access events, and preserved offline reports. Includes an additive schema-5 upgrade.

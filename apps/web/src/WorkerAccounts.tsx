@@ -14,6 +14,7 @@ import {
 } from './components/ui/dialog';
 import './invitations.css';
 import WorkerAccessHistory from './WorkerAccessHistory';
+import WorkerPasswordReset from './WorkerPasswordReset';
 
 type Page = Awaited<ReturnType<typeof client.workers>>;
 export default function WorkerAccounts({
@@ -29,6 +30,7 @@ export default function WorkerAccounts({
   const [page, setPage] = useState<Page | null>(null);
   const [selected, setSelected] = useState<WorkerAccount | null>(null);
   const [history, setHistory] = useState<WorkerAccount | null>(null);
+  const [recovery, setRecovery] = useState<WorkerAccount | null>(null);
   const [busy, setBusy] = useState<'loading' | 'saving' | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -53,6 +55,7 @@ export default function WorkerAccounts({
     setPage(null);
     setSelected(null);
     setHistory(null);
+    setRecovery(null);
     setBusy(null);
     setError('');
     setNotice('');
@@ -88,6 +91,7 @@ export default function WorkerAccounts({
       setNeedsReload(false);
       setSelected(null);
       setHistory(null);
+      setRecovery(null);
       setNotice('Worker accounts refreshed.');
     } catch (error) {
       if (current === generation.current) {
@@ -122,6 +126,7 @@ export default function WorkerAccounts({
       onUpdated(updated);
       setSelected(null);
       setHistory(null);
+      setRecovery(null);
       setNotice(
         updated.enabled
           ? `${updated.user.name} can sign in again with their existing password.`
@@ -266,6 +271,34 @@ export default function WorkerAccounts({
             }}
           />
         )}
+        {recovery && (
+          <WorkerPasswordReset
+            key={recovery.user.id}
+            worker={recovery}
+            online={online}
+            onWriting={(active) => {
+              writing.current = active;
+              setBusy(active ? 'saving' : null);
+            }}
+            onAccount={(account) => {
+              setPage((previous) =>
+                previous
+                  ? {
+                      ...previous,
+                      data: previous.data.map((row) =>
+                        row.user.id === account.user.id ? account : row,
+                      ),
+                    }
+                  : previous,
+              );
+              onUpdated(account);
+            }}
+            onClose={() => {
+              setRecovery(null);
+              heading.current?.focus();
+            }}
+          />
+        )}
         {page && (
           <>
             <p className="muted" role="status">
@@ -301,6 +334,7 @@ export default function WorkerAccounts({
                     onClick={() => {
                       setSelected(account);
                       setHistory(null);
+                      setRecovery(null);
                       setNotice('');
                       setError('');
                       requestAnimationFrame(() => confirmation.current?.focus());
@@ -314,6 +348,7 @@ export default function WorkerAccounts({
                     disabled={!online || Boolean(busy)}
                     onClick={() => {
                       setHistory(account);
+                      setRecovery(null);
                       setSelected(null);
                       setNotice('');
                       requestAnimationFrame(() =>
@@ -322,6 +357,22 @@ export default function WorkerAccounts({
                     }}
                   >
                     Access history
+                  </Button>
+                  <Button
+                    className="quiet"
+                    aria-label={`Password recovery for ${account.user.email}`}
+                    disabled={!online || Boolean(busy)}
+                    onClick={() => {
+                      setRecovery(account);
+                      setHistory(null);
+                      setSelected(null);
+                      setNotice('');
+                      requestAnimationFrame(() =>
+                        document.getElementById('worker-password-recovery-title')?.focus(),
+                      );
+                    }}
+                  >
+                    Password recovery
                   </Button>
                 </li>
               ))}

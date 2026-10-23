@@ -2,6 +2,62 @@ import { expect, it, vi } from 'vitest';
 import { createClient } from '@fieldwork/sdk';
 import { randomBytes, randomUUID } from 'node:crypto';
 
+it('validates reset metadata and receipts, encodes manager paths and sends public tokens only in POST bodies', async () => {
+  const reset = {
+    id: randomUUID(),
+    workerId: 'worker/a',
+    createdAt: '2026-10-23T00:00:00Z',
+    expiresAt: '2026-10-23T01:00:00Z',
+    createdBy: { id: 'manager', name: 'Synthetic manager' },
+    status: 'pending',
+    usedAt: null,
+    revokedAt: null,
+  };
+  const token = randomBytes(32).toString('base64url');
+  const preview = {
+    name: 'Synthetic worker',
+    email: 'worker@example.com',
+    expiresAt: reset.expiresAt,
+  };
+  const user = { id: 'worker/a', name: preview.name, email: preview.email, role: 'worker' };
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(new Response(JSON.stringify({ reset: null })))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ reset, token })))
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ ...reset, status: 'revoked', revokedAt: '2026-10-23T00:01:00Z' }),
+      ),
+    )
+    .mockResolvedValueOnce(new Response(JSON.stringify(preview)))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ user })))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ ...preview, expiresAt: 'invalid' })));
+  const client = createClient('https://fieldwork.example', undefined, fetcher);
+  expect((await client.passwordReset('worker/a')).reset).toBeNull();
+  expect(fetcher.mock.calls[0][0]).toBe(
+    'https://fieldwork.example/api/v1/workers/worker%2Fa/password-reset',
+  );
+  expect((await client.createPasswordReset('worker/a', { expectedAccessVersion: 2 })).token).toBe(
+    token,
+  );
+  expect(JSON.parse(fetcher.mock.calls[1][1]?.body as string)).toEqual({
+    expectedAccessVersion: 2,
+  });
+  expect((await client.revokePasswordReset('worker/a', 'reset/b')).status).toBe('revoked');
+  expect(fetcher.mock.calls[2][0]).toBe(
+    'https://fieldwork.example/api/v1/workers/worker%2Fa/password-reset/reset%2Fb',
+  );
+  expect(fetcher.mock.calls[2][1]?.method).toBe('DELETE');
+  expect(await client.previewPasswordReset(token)).toEqual(preview);
+  expect(await client.completePasswordReset(token, 'synthetic-new-password')).toEqual({ user });
+  for (const index of [3, 4]) {
+    expect(fetcher.mock.calls[index][1]?.method).toBe('POST');
+    expect(String(fetcher.mock.calls[index][0])).not.toContain(token);
+    expect(JSON.parse(fetcher.mock.calls[index][1]?.body as string).token).toBe(token);
+  }
+  await expect(client.previewPasswordReset(token)).rejects.toThrow();
+});
+
 it('encodes worker access history requests and validates recorded events', async () => {
   const event = {
     id: 12,

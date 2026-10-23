@@ -12,15 +12,19 @@ import { FieldSet, FieldError } from './components/ui/field';
 import './invitations.css';
 
 type Preview = Awaited<ReturnType<typeof client.previewInvitation>>;
-export default function AcceptInvitation({
+export default function AccountLink({
   token,
+  mode = 'invitation',
   onReturn,
   onSignIn,
 }: {
   token: string;
+  mode?: 'invitation' | 'passwordReset';
   onReturn: () => void;
   onSignIn: (email: string) => Promise<void>;
 }) {
+  const reset = mode === 'passwordReset';
+  const linkName = reset ? 'password reset' : 'invitation';
   const [preview, setPreview] = useState<Preview | null>(null);
   const [knownEmail, setKnownEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -61,11 +65,11 @@ export default function AcceptInvitation({
     if (writing.current) return;
     if (!InvitationTokenSchema.safeParse(token).success) {
       setUnavailable(true);
-      setError('This invitation link is incomplete. Ask your manager for a new link.');
+      setError(`This ${linkName} link is incomplete. Ask your manager for a new link.`);
       return;
     }
     if (!online) {
-      setError('Reconnect to load this invitation.');
+      setError(`Reconnect to load this ${linkName}.`);
       return;
     }
     const current = ++generation.current;
@@ -73,7 +77,9 @@ export default function AcceptInvitation({
     setError('');
     setNeedsReload(true);
     try {
-      const latest = await client.previewInvitation(token);
+      const latest = await (reset
+        ? client.previewPasswordReset(token)
+        : client.previewInvitation(token));
       if (current !== generation.current) return;
       setPreview(latest);
       setKnownEmail(latest.email);
@@ -104,11 +110,13 @@ export default function AcceptInvitation({
     setError('');
     setAttempted(true);
     try {
-      const result = await client.acceptInvitation(token, password);
+      const result = await (reset
+        ? client.completePasswordReset(token, password)
+        : client.acceptInvitation(token, password));
       if (current !== generation.current) return;
       if (result.user.email !== preview.email)
         throw new Error(
-          'The account confirmation did not match this invitation. Try signing in or contact your manager.',
+          `The account confirmation did not match this ${linkName}. Try signing in or contact your manager.`,
         );
       setPassword('');
       setConfirmation('');
@@ -124,7 +132,9 @@ export default function AcceptInvitation({
       else {
         setNeedsReload(true);
         setError(
-          'We could not confirm account setup. The account may already exist. Try signing in or reload this invitation before trying again.',
+          reset
+            ? 'We could not confirm the password change. It may already be saved. Try signing in or reload this link before trying again.'
+            : 'We could not confirm account setup. The account may already exist. Try signing in or reload this invitation before trying again.',
         );
       }
     } finally {
@@ -149,11 +159,17 @@ export default function AcceptInvitation({
   return (
     <main className="login-page">
       <section className="login-intro">
-        <span className="eyebrow">FIELDWORK · WORKER INVITATION</span>
+        <span className="eyebrow">
+          FIELDWORK · {reset ? 'PASSWORD RECOVERY' : 'WORKER INVITATION'}
+        </span>
         <h1 ref={heading} tabIndex={-1}>
-          Join the field team.
+          {reset ? 'Return to your notebook.' : 'Join the field team.'}
         </h1>
-        <p>Review your invitation and choose a password for your field notebook.</p>
+        <p>
+          {reset
+            ? 'Choose a new password for your existing worker account. Saved notebook work stays on its device.'
+            : 'Review your invitation and choose a password for your field notebook.'}
+        </p>
       </section>
       <section className="login-panel">
         <div className="brand">
@@ -163,7 +179,7 @@ export default function AcceptInvitation({
           {done ? (
             <>
               <h2 ref={resultHeading} tabIndex={-1}>
-                Your account is ready
+                {reset ? 'Your password has changed' : 'Your account is ready'}
               </h2>
               <p role="status">Sign in with {knownEmail} and the password you chose.</p>
               <p className="muted">
@@ -173,16 +189,24 @@ export default function AcceptInvitation({
             </>
           ) : (
             <>
-              <h2>{unavailable ? 'Invitation unavailable' : 'Set up your notebook'}</h2>
+              <h2>
+                {unavailable
+                  ? reset
+                    ? 'Password reset unavailable'
+                    : 'Invitation unavailable'
+                  : reset
+                    ? 'Reset your password'
+                    : 'Set up your notebook'}
+              </h2>
               {busy === 'loading' && (
                 <p className="muted" role="status">
-                  Loading invitation…
+                  {reset ? 'Loading password reset…' : 'Loading invitation…'}
                 </p>
               )}
               {preview && !unavailable && (
                 <>
                   <dl className="invitation-identity">
-                    <dt>Invited worker</dt>
+                    <dt>{reset ? 'Worker account' : 'Invited worker'}</dt>
                     <dd>{preview.name}</dd>
                     <dt>Email</dt>
                     <dd>{preview.email}</dd>
@@ -193,6 +217,12 @@ export default function AcceptInvitation({
                       </time>
                     </dd>
                   </dl>
+                  {reset && (
+                    <p className="muted">
+                      Changing your password ends all existing sessions. Sign in again afterward;
+                      saved drafts and queued photos stay on this device.
+                    </p>
+                  )}
                   <form onSubmit={accept}>
                     <FieldSet disabled={Boolean(busy) || needsReload || !online}>
                       <Label>
@@ -235,7 +265,13 @@ export default function AcceptInvitation({
                       className="primary full"
                       disabled={!online || Boolean(busy) || needsReload}
                     >
-                      {busy === 'accepting' ? 'Creating account…' : 'Create worker account'}
+                      {busy === 'accepting'
+                        ? reset
+                          ? 'Changing password…'
+                          : 'Creating account…'
+                        : reset
+                          ? 'Change password'
+                          : 'Create worker account'}
                     </Button>
                   </form>
                 </>
@@ -255,7 +291,7 @@ export default function AcceptInvitation({
               disabled={!online || Boolean(busy)}
               onClick={() => void load()}
             >
-              Reload invitation
+              {reset ? 'Reload reset link' : 'Reload invitation'}
             </Button>
           )}
           {(done || (attempted && knownEmail)) && (

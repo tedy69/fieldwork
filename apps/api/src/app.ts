@@ -8,6 +8,10 @@ import { existsSync } from 'node:fs';
 import { z, ZodError } from 'zod';
 import {
   CreateOrderSchema,
+  CreateOrderSeriesSchema,
+  recurrenceDates,
+  type CreateOrder,
+  type OrderSeriesReceipt,
   ReportInputSchema,
   ReviewSchema,
   RescheduleOrderSchema,
@@ -271,9 +275,7 @@ export async function buildApp(options: AppOptions) {
   app.get<{ Params: { id: string } }>('/api/v1/work-orders/:id', async (request) =>
     accessible(request.params.id, request),
   );
-  app.post('/api/v1/work-orders', async (request, reply) => {
-    manager(request);
-    const input = CreateOrderSchema.parse(request.body);
+  function assignedOrder(input: CreateOrder): WorkOrder {
     const catalog = store.catalog();
     const site = catalog.sites.find((site) => site.id === input.siteId);
     const template = catalog.templates.find((template) => template.id === input.templateId);
@@ -282,7 +284,7 @@ export async function buildApp(options: AppOptions) {
     );
     if (!site || !template || !assignee)
       fail(422, 'INVALID_ASSIGNMENT', 'Choose an existing site, checklist, and field worker.');
-    const order: WorkOrder = {
+    return {
       id: randomUUID(),
       reference: `FW-${randomBytes(3).toString('hex').toUpperCase()}`,
       title: input.title,
@@ -298,11 +300,84 @@ export async function buildApp(options: AppOptions) {
       report: null,
       review: null,
     };
+  }
+  app.post('/api/v1/work-orders', async (request, reply) => {
+    manager(request);
+    const order = assignedOrder(CreateOrderSchema.parse(request.body));
     store.transaction(() => {
       store.writeOrder(order);
       audit(order.id, request.actor!, 'Work order assigned');
     });
     return reply.status(201).send(order);
+  });
+  app.post('/api/v1/work-order-series', async (request, reply) => {
+    manager(request);
+    const input = CreateOrderSeriesSchema.parse(request.body);
+    // Explicit field order makes retries independent of JSON property order.
+    const normalized = {
+      mutationId: input.mutationId,
+      title: input.title,
+      instructions: input.instructions,
+      siteId: input.siteId,
+      assigneeId: input.assigneeId,
+      templateId: input.templateId,
+      dueDate: input.dueDate,
+      priority: input.priority,
+      frequency: input.frequency,
+      occurrences: input.occurrences,
+    };
+    const hash = digest(JSON.stringify(normalized));
+    const result = store.transaction(() => {
+      const saved = store.db
+        .prepare('SELECT hash,receipt FROM order_series WHERE actor_id=? AND mutation_id=?')
+        .get(request.actor!.id, input.mutationId);
+      if (saved) {
+        if (saved.hash !== hash)
+          fail(
+            422,
+            'MUTATION_REUSED',
+            'Retry this series with its original details and mutation ID.',
+          );
+        return {
+          replayed: true,
+          receipt: JSON.parse(saved.receipt as string) as OrderSeriesReceipt,
+        };
+      }
+      const dates = recurrenceDates({
+        dueDate: input.dueDate,
+        frequency: input.frequency,
+        occurrences: input.occurrences,
+      });
+      const receipt: OrderSeriesReceipt = {
+        id: randomUUID(),
+        createdAt: new Date().toISOString(),
+        frequency: input.frequency,
+        orders: dates.map((dueDate) => assignedOrder({ ...input, dueDate })),
+      };
+      store.db
+        .prepare('INSERT INTO order_series VALUES(?,?,?,?,?,?)')
+        .run(
+          receipt.id,
+          request.actor!.id,
+          input.mutationId,
+          hash,
+          JSON.stringify(normalized),
+          JSON.stringify(receipt),
+        );
+      receipt.orders.forEach((order, index) => {
+        store.writeOrder(order);
+        store.db
+          .prepare('INSERT INTO order_series_members VALUES(?,?,?)')
+          .run(receipt.id, order.id, index + 1);
+        audit(
+          order.id,
+          request.actor!,
+          `Recurring assignment ${index + 1} of ${receipt.orders.length} (${input.frequency})`,
+        );
+      });
+      return { replayed: false, receipt };
+    });
+    return reply.status(result.replayed ? 200 : 201).send(result.receipt);
   });
   app.patch<{ Params: { id: string } }>('/api/v1/work-orders/:id/schedule', async (request) => {
     manager(request);

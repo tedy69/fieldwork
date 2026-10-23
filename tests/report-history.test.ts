@@ -250,7 +250,9 @@ describe('schema 2 upgrades', () => {
     fixture.store.writeOrder(fallback);
     const tables = ['users', 'sessions', 'catalog', 'work_orders', 'mutations', 'photos', 'audit'];
     const before = tables.map((table) => fixture.store.db.prepare(`SELECT * FROM ${table}`).all());
-    fixture.store.db.exec('DROP TABLE report_revisions; DELETE FROM migrations WHERE version=2;');
+    fixture.store.db.exec(
+      'DROP TABLE order_series_members; DROP TABLE order_series; DROP TABLE report_revisions; DELETE FROM migrations WHERE version>1;',
+    );
     await fixture.app.close();
     const upgraded = openStore(path);
     try {
@@ -277,7 +279,7 @@ describe('schema 2 upgrades', () => {
           .prepare('SELECT version FROM migrations ORDER BY version')
           .all()
           .map((row) => row.version),
-      ).toEqual([1, 2]);
+      ).toEqual([1, 2, 3]);
     } finally {
       upgraded.db.close();
     }
@@ -309,7 +311,9 @@ describe('schema 2 upgrades', () => {
     const path = join(directory, 'upgrade.sqlite');
     const legacy = openStore(path);
     seed(legacy);
-    legacy.db.exec('DROP TABLE report_revisions; DELETE FROM migrations WHERE version=2;');
+    legacy.db.exec(
+      'DROP TABLE order_series_members; DROP TABLE order_series; DROP TABLE report_revisions; DELETE FROM migrations WHERE version>1;',
+    );
     legacy.db
       .prepare('INSERT INTO mutations VALUES(?,?,?,?)')
       .run('worker', randomUUID(), 'test-hash', '{}');

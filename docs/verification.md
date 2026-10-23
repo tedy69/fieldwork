@@ -1,5 +1,13 @@
 # Verification
 
+## Recurring assignment API and SDK
+
+Validation covers 188 unit/API tests. New cases exercise calendar/year/leap-day boundaries, the 52-order limit through the real SDK transport, manager and cookie-origin permissions, assigned-worker visibility, independent order edits, stable checklist snapshots, concurrent/reordered retries, changed-input rejection, manager-scoped mutation IDs, and original receipt replay after later edits. Failure injection at the series, membership, audit, and second order write proves that partial batches leave no records behind.
+
+Schema 3 upgrade checks preserve schema 2 rows, reopen a saved batch without creating duplicates, verify foreign keys, and force a migration failure before successfully retrying. Existing schema 1 report-history upgrade tests now remove all later schema objects from their legacy fixture and still verify history backfill and malformed-acknowledgment rollback.
+
+Formatting, strict web/mobile types, production web build, Expo compatibility, and Android/iOS JavaScript exports pass locally. No web UI, dependency, offline storage adapter, or native screen changes are included. All 37 existing Chrome browser workflows pass, covering dispatch, permissions, search, planner views, report history, offline drafts, photos, and synchronization. The web dispatch form with a date preview and durable pending-request recovery is the next increment. Vite retains its existing 500 kB chunk-size advisory; native device and full accessibility acceptance remain separate. See [recurring assignments](recurring-assignments.md) for the contract, upgrade, retry behavior, and contributor entry points.
+
 ## Web server search
 
 Validation covers 160 unit/API tests and 37 browser workflows. Three new browser workflows exercise all search filters, 25-row loading and deduplication, failed-page retry with loaded rows retained, cursor restart after a real reassignment, inverted-date validation, genuine empty results, and fresh-order opening. Worker coverage verifies inaccessible results, a fresh authorization failure after reassignment, individual-order caching, and an unsent text/photo draft preserved through browsing, navigation, and offline reload. Held responses prove that changing filters supersedes an older request and dismissing a pending open cancels later navigation.

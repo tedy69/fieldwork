@@ -1,5 +1,7 @@
 import {
   CatalogSchema,
+  OrderSeriesReceiptSchema,
+  type CreateOrderSeries,
   MeSchema,
   OrderPageSchema,
   OrderSearchPageSchema,
@@ -95,6 +97,8 @@ export function createClient(
         `/work-orders/${encodeURIComponent(id)}/history?limit=10${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`,
         ReportHistoryPageSchema,
       ),
+    createOrderSeries: (input: CreateOrderSeries) =>
+      request('/work-order-series', OrderSeriesReceiptSchema, 'POST', input),
     createOrder: (input: CreateOrder) => request('/work-orders', WorkOrderSchema, 'POST', input),
     rescheduleOrder: (id: string, input: RescheduleOrder) =>
       request(`/work-orders/${encodeURIComponent(id)}/schedule`, WorkOrderSchema, 'PATCH', input),

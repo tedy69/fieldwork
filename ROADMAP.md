@@ -19,11 +19,12 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Online manager rescheduling of unfinished assignments, with version checks, action history, and preserved worker drafts.
 - [x] Online manager reassignment of unfinished web orders, with version checks, action history, and preserved local drafts and queued reports.
 - [x] Web report revision history with saved submissions, review feedback, stable pagination, and a tested SQLite upgrade.
+- [x] Monthly web planner with daily workloads, keyboard navigation, filtered exports, offline browsing, and date-preset assignments.
 
 ## Next · Make daily work easier
 
 - Search, server-side filtering, and incremental list loading.
-- Richer calendar views and recurring assignments.
+- Recurring assignments and scheduling rules.
 - Maps with opt-in site coordinates and a documented tile provider.
 - Accessible checklist field types: readings, numbers, text, and required evidence.
 - User invitation and account lifecycle UI.

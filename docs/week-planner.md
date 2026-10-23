@@ -12,6 +12,8 @@ The planner works offline with saved records. Browsing does not change reports, 
 
 Search and status apply to both List and Week planner. The list's custom date range is preserved while the planner uses its own week/day window. Switching back restores the custom range. Opening an order and returning keeps the planner selection; reloading or signing out resets view/filter selections.
 
+The [monthly planner](month-planner.md) shares those search/status filters and date context. Switching calendar views clears the selected day and uses that date to anchor the destination calendar; List retains its independent custom range.
+
 Manager CSV exports follow the current week or selected day, plus search and status. The footer reports the filtered order count; In the field and Ready for review remain workspace summaries. Empty-day and empty-week messages suggest changing the date or filters.
 
 The planner schedules new assignments. Managers can also open unfinished orders and [change their due dates](rescheduling.md); returning to the planner preserves its selected day and reflects the new date. Drag-and-drop, recurring work, and native calendar controls remain roadmap work.

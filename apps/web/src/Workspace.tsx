@@ -24,7 +24,8 @@ import { useLocalDate } from './useLocalDate';
 import ReportExport from './ReportExport';
 import DueDateRange from './DueDateRange';
 import WeekPlanner from './WeekPlanner';
-import { weekDates } from './calendar';
+import MonthPlanner from './MonthPlanner';
+import { monthDates, weekDates } from './calendar';
 import WorkFinder from './WorkFinder';
 export default function Workspace({ user, logout }: { user: User; logout: () => void }) {
   const repo = useMemo(() => repositoryFor(user.id, client), [user.id]);
@@ -37,8 +38,9 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
   const [dueFrom, setDueFrom] = useState('');
   const [dueThrough, setDueThrough] = useState('');
   const today = useLocalDate();
-  const [planner, setPlanner] = useState(false);
-  const [plannerWeek, setPlannerWeek] = useState(today);
+  const [plannerView, setPlannerView] = useState<'list' | 'week' | 'month'>('list');
+  const planner = plannerView !== 'list';
+  const [plannerAnchor, setPlannerAnchor] = useState(today);
   const [plannerDay, setPlannerDay] = useState('');
   const invalidRange = !planner && Boolean(dueFrom && dueThrough && dueFrom > dueThrough);
   const [creating, setCreating] = useState(false);
@@ -116,12 +118,12 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
         .toLowerCase()
         .includes(search.toLowerCase()),
   );
-  const week = weekDates(plannerWeek);
+  const period = plannerView === 'month' ? monthDates(plannerAnchor) : weekDates(plannerAnchor);
   const visible = matching.filter((order) =>
     isInDueRange(
       order.dueDate,
-      planner ? plannerDay || week[0] : dueFrom,
-      planner ? plannerDay || week[6] : dueThrough,
+      planner ? plannerDay || period[0] : dueFrom,
+      planner ? plannerDay || period[period.length - 1] : dueThrough,
     ),
   );
   if (planner)
@@ -385,11 +387,18 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
               <SmoothTab
                 className="work-view-toggle"
                 label="Work order view"
-                value={planner ? 'week' : 'list'}
-                onChange={(value) => setPlanner(value === 'week')}
+                value={plannerView}
+                onChange={(value) => {
+                  if (value !== 'list' && value !== 'week' && value !== 'month') return;
+                  if (value === plannerView) return;
+                  if (plannerDay) setPlannerAnchor(plannerDay);
+                  setPlannerDay('');
+                  setPlannerView(value);
+                }}
                 items={[
                   { id: 'list', title: 'List' },
                   { id: 'week', title: 'Week planner' },
+                  { id: 'month', title: 'Month planner' },
                 ]}
               />
               <div className="list-toolbar">
@@ -424,14 +433,26 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   />
                 </Label>
               </div>
-              {planner ? (
+              {plannerView === 'month' ? (
+                <MonthPlanner
+                  anchor={plannerAnchor}
+                  today={today}
+                  day={plannerDay}
+                  orders={matching}
+                  onMonth={(date) => {
+                    setPlannerAnchor(date);
+                    setPlannerDay('');
+                  }}
+                  onDay={setPlannerDay}
+                />
+              ) : planner ? (
                 <WeekPlanner
-                  anchor={plannerWeek}
+                  anchor={plannerAnchor}
                   today={today}
                   day={plannerDay}
                   orders={matching}
                   onWeek={(date) => {
-                    setPlannerWeek(date);
+                    setPlannerAnchor(date);
                     setPlannerDay('');
                   }}
                   onDay={setPlannerDay}
@@ -492,7 +513,9 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                       : planner
                         ? plannerDay
                           ? 'No work orders for this day'
-                          : 'No work orders this week'
+                          : plannerView === 'month'
+                            ? 'No work orders this month'
+                            : 'No work orders this week'
                         : dueFrom || dueThrough
                           ? 'No work orders in this date range'
                           : filter === 'OVERDUE'
@@ -505,7 +528,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                     !loaded
                       ? 'Checking for saved assignments and recent changes.'
                       : planner
-                        ? 'Choose another day or week, or adjust your search and status filter.'
+                        ? `Choose another day or ${plannerView === 'month' ? 'month' : 'week'}, or adjust your search and status filter.`
                         : dueFrom || dueThrough
                           ? 'Change or clear the dates, or adjust your search and status filter.'
                           : filter === 'OVERDUE'

@@ -1,0 +1,124 @@
+.month-planner {
+  margin-bottom: 24px;
+}
+.month-heading,
+.month-navigation,
+.month-selection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.month-heading,
+.month-selection {
+  justify-content: space-between;
+}
+.month-heading h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.month-planner > p,
+.month-selection p {
+  font-size: 12px;
+  margin: 12px 0;
+}
+.month-weekdays,
+.month-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.month-weekdays {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: left;
+}
+.month-weekdays span {
+  padding: 12px;
+}
+.month-days {
+  gap: 1px;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+.month-offset {
+  background: var(--ink);
+}
+.month-day {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px;
+  min-height: 110px;
+  min-width: 0;
+  background: var(--surface);
+  color: var(--ui-foreground);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.month-date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 14px;
+}
+.month-date small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.month-date-full {
+  display: none;
+}
+.month-workload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+}
+.month-workload strong {
+  font-size: 20px;
+}
+.month-workload small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.month-day[aria-current='date'] .month-date {
+  color: var(--amber);
+}
+.month-day[aria-pressed='true'] {
+  background: #34403f;
+  box-shadow: inset 0 -2px var(--amber);
+}
+.month-day:hover {
+  background: #2d393c;
+}
+.month-day:focus-visible {
+  outline-offset: -4px;
+  position: relative;
+}
+@media (max-width: 700px) {
+  .month-weekdays,
+  .month-offset,
+  .month-date-number {
+    display: none;
+  }
+  .month-date-full {
+    display: inline;
+  }
+  .month-days {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .month-day {
+    min-height: 82px;
+    gap: 8px;
+    padding: 10px;
+  }
+  .month-date {
+    font-size: 12px;
+  }
+  .month-workload strong {
+    font-size: 18px;
+  }
+}

@@ -10,6 +10,7 @@ Reading this as an operations notebook for dispatch managers and field workers, 
 - Lists carry the workload: references, sites, people, dates, and status should be easy to scan.
 - A wider dispatch layout supports comparison; the field layout stacks the same information for one-handed use.
 - The weekly planner compares seven days in columns on desktop and uses daily ledger rows on phones. Its amber selection rule echoes the notebook's margin motif and identifies the active day.
+- The monthly planner uses a Monday-first calendar grid to compare real daily workloads. On phones it becomes a chronological two-column ledger with complete day labels and 44px-plus targets. Charcoal cells and the existing amber selected-day rule connect it to the weekly notebook; the grid represents actual calendar dates rather than decoration. Arrow navigation follows the visible row width without changing the selection until activation. ENERGY 2 / RHYTHM 2 / MOTION 1 remains unchanged.
 - Small corners and flat surfaces keep forms and records distinct. Shadows are reserved for the modal dialog.
 - A narrow rule beside the active navigation item carries the notebook's margin motif. Status shapes communicate state rather than decoration.
 - System fonts work offline. Monospace is limited to record references and code.

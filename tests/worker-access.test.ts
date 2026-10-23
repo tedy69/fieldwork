@@ -359,7 +359,7 @@ it('upgrades schema 4 without changing existing records and persists access, ses
   manager = (await signin('manager@fieldwork.local')).json().token;
   const before = workspace();
   fixture.store.db.exec(
-    'DROP TABLE worker_access_events; DROP TABLE worker_access; DELETE FROM migrations WHERE version=5',
+    'DROP TABLE password_resets; DROP TABLE worker_access_events; DROP TABLE worker_access; DELETE FROM migrations WHERE version>=5',
   );
   await fixture.app.close();
   fixture = await buildApp({ databasePath: path, rateLimits: false });
@@ -370,7 +370,7 @@ it('upgrades schema 4 without changing existing records and persists access, ses
       .prepare('SELECT version FROM migrations ORDER BY version')
       .all()
       .map((r) => r.version),
-  ).toEqual([1, 2, 3, 4, 5]);
+  ).toEqual([1, 2, 3, 4, 5, 6]);
   await change();
   await fixture.app.close();
   fixture = await buildApp({ databasePath: path, rateLimits: false });
@@ -392,7 +392,7 @@ it('rolls back a failed schema 5 and safely retries without touching accounts', 
   seed(original);
   const before = original.db.prepare('SELECT * FROM users').all();
   original.db.exec(
-    'DROP TABLE worker_access_events; DROP TABLE worker_access; DELETE FROM migrations WHERE version=5; CREATE INDEX worker_access_events_worker ON users(email)',
+    'DROP TABLE password_resets; DROP TABLE worker_access_events; DROP TABLE worker_access; DELETE FROM migrations WHERE version>=5; CREATE INDEX worker_access_events_worker ON users(email)',
   );
   original.db.close();
   try {

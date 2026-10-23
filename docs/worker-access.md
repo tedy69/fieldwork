@@ -55,4 +55,4 @@ Back up the database and committed WAL before upgrading, then let the new server
 - Manager UI: `apps/web/src/WorkerAccounts.tsx`, `WorkerAccessHistory.tsx`, `Resources.tsx`, `Workspace.tsx`.
 - Coverage: `tests/worker-access.test.ts`, `tests/worker-access-history.test.ts`, `tests/sdk.test.ts`, both worker-access browser suites, and older schema-upgrade fixtures.
 
-Password reset, manager lifecycle controls, account deletion, organization boundaries, physical-device acceptance, and a complete screen-reader audit remain separate work. Native workers use the same API enforcement; manager account controls are web-only.
+Active workers can use [manager-assisted password recovery](password-recovery.md) without changing their account identity. Manager lifecycle controls, account deletion, organization boundaries, physical-device acceptance, and a complete screen-reader audit remain separate work. Native workers use the same API enforcement; manager account controls are web-only.

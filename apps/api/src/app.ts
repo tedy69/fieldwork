@@ -35,6 +35,7 @@ import { defaultMapProvider } from './map-settings';
 import { Problem, fail } from './problems';
 import { registerInvitationRoutes } from './invitations';
 import { registerWorkerRoutes } from './workers';
+import { registerPasswordResetRoutes } from './password-resets';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -116,9 +117,12 @@ export async function buildApp(options: AppOptions) {
     if (request.method === 'POST' && request.url === '/api/v1/sessions') return;
     if (
       request.method === 'POST' &&
-      ['/api/v1/invitations/preview', '/api/v1/invitations/accept'].includes(
-        request.routeOptions.url ?? '',
-      )
+      [
+        '/api/v1/invitations/preview',
+        '/api/v1/invitations/accept',
+        '/api/v1/password-resets/preview',
+        '/api/v1/password-resets/complete',
+      ].includes(request.routeOptions.url ?? '')
     )
       return;
     const token = request.headers.authorization?.startsWith('Bearer ')
@@ -158,6 +162,7 @@ export async function buildApp(options: AppOptions) {
   }
   registerInvitationRoutes(app, store, manager);
   registerWorkerRoutes(app, store, manager);
+  registerPasswordResetRoutes(app, store, manager);
   function accessible(id: string, request: FastifyRequest) {
     const order = store.getOrder(id);
     if (!order || (request.actor!.role === 'worker' && order.assignee.id !== request.actor!.id))

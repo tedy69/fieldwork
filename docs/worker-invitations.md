@@ -52,7 +52,7 @@ Back up the database and committed WAL before upgrading, then let the new server
 - Contracts and transport: `packages/contracts/src/index.ts`, `packages/sdk/src/index.ts`.
 - Routes, transactions, and shared errors: `apps/api/src/invitations.ts`, `store.ts`, `problems.ts`, `app.ts`.
 - Manager ledger: `apps/web/src/WorkerInvitations.tsx`.
-- Acceptance and routing: `AcceptInvitation.tsx`, `invitation-link.ts`, `App.tsx`, `invitations.css`.
+- Acceptance and routing: the shared `AccountLink.tsx`, `invitation-link.ts`, `App.tsx`, `invitations.css`.
 - Regression coverage: `tests/invitations.test.ts`, `tests/invitation-link.test.ts`, `tests/sdk.test.ts`, `tests/e2e/invitations.spec.ts`, `tests/e2e/worker-invitation-recovery.spec.ts`.
 
-Accepted workers can be disabled or reactivated through [worker access controls](worker-access.md). SMTP delivery, mailbox ownership checks, native invitation deep links, password recovery, invitation retention cleanup, organization boundaries, physical-device acceptance, and a full screen-reader audit remain separate work. Manager bootstrap accounts can still be created with the existing CLI.
+Accepted workers can be disabled or reactivated through [worker access controls](worker-access.md), and managers can issue [password recovery links](password-recovery.md) for active workers. SMTP delivery, mailbox ownership checks, native invitation deep links, invitation retention cleanup, organization boundaries, physical-device acceptance, and a full screen-reader audit remain separate work. Manager bootstrap accounts can still be created with the existing CLI.

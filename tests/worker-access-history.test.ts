@@ -142,7 +142,7 @@ it('retains the event stream through restart without a new schema migration', as
         .prepare('SELECT version FROM migrations ORDER BY version')
         .all()
         .map((row) => row.version),
-    ).toEqual([1, 2, 3, 4, 5]);
+    ).toEqual([1, 2, 3, 4, 5, 6]);
   } finally {
     await fixture.app.close();
     rmSync(dir, { recursive: true, force: true });

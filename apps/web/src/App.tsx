@@ -9,8 +9,12 @@ import { ApiError } from '@fieldwork/sdk';
 import Workspace from './Workspace';
 import { MapSettingsProvider } from './MapSettings';
 import { client, message } from './lib';
-import AcceptInvitation from './AcceptInvitation';
-import { clearInvitationHash, invitationTokenFromHash } from './invitation-link';
+import AccountLink from './AccountLink';
+import {
+  clearInvitationHash,
+  invitationTokenFromHash,
+  passwordResetTokenFromHash,
+} from './invitation-link';
 function initialUser(): User | null {
   try {
     return UserSchema.parse(JSON.parse(localStorage.getItem('fieldwork.user') ?? 'null'));
@@ -19,17 +23,23 @@ function initialUser(): User | null {
   }
 }
 
+function accountLinkFromHash() {
+  const invitation = invitationTokenFromHash(location.hash);
+  if (invitation !== null) return { mode: 'invitation' as const, token: invitation };
+  const reset = passwordResetTokenFromHash(location.hash);
+  return reset === null ? null : { mode: 'passwordReset' as const, token: reset };
+}
 export default function App() {
-  const [token, setToken] = useState(() => invitationTokenFromHash(location.hash));
+  const [link, setLink] = useState(accountLinkFromHash);
   const [initialEmail, setInitialEmail] = useState('');
   useEffect(() => {
-    const changed = () => setToken(invitationTokenFromHash(location.hash));
+    const changed = () => setLink(accountLinkFromHash());
     window.addEventListener('hashchange', changed);
     return () => window.removeEventListener('hashchange', changed);
   }, []);
   function returnToApp() {
     clearInvitationHash();
-    setToken(null);
+    setLink(null);
   }
   async function signIn(email: string) {
     try {
@@ -42,8 +52,14 @@ export default function App() {
     setInitialEmail(email);
     returnToApp();
   }
-  return token !== null ? (
-    <AcceptInvitation key={token} token={token} onReturn={returnToApp} onSignIn={signIn} />
+  return link !== null ? (
+    <AccountLink
+      key={`${link.mode}:${link.token}`}
+      mode={link.mode}
+      token={link.token}
+      onReturn={returnToApp}
+      onSignIn={signIn}
+    />
   ) : (
     <AuthenticatedApp initialEmail={initialEmail} />
   );

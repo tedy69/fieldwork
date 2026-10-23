@@ -135,6 +135,7 @@ export function recurrenceDates(input: Recurrence): string[] {
 }
 export const CreateOrderSeriesSchema = CreateOrderSchema.extend({
   mutationId: z.uuid(),
+  expectedActorId: z.string().min(1).max(100).optional(),
   frequency: z.enum(['daily', 'weekly']),
   occurrences: z.number().int().min(2).max(52),
 }).refine(

@@ -1,6 +1,6 @@
 # Recurring assignments
 
-Managers can create a finite batch of daily or weekly assignments through `POST /api/v1/work-order-series` or `client.createOrderSeries(input)`. Each occurrence becomes an ordinary work order immediately, visible in the existing list, search, planner, and worker sync. This first increment provides the API and SDK; the web dispatch form follows separately.
+Managers can create a finite batch of daily or weekly assignments through `POST /api/v1/work-order-series` or `client.createOrderSeries(input)`. Each occurrence becomes an ordinary work order immediately, visible in the existing list, search, planner, and worker sync. Managers use **Assign recurring work** beside ordinary assignment in the web dispatch desk. A selected planner date becomes the first date. The form previews every occurrence before creating the batch.
 
 ## Contract
 
@@ -24,7 +24,9 @@ Generate one UUID mutation ID before the first request and durably retain the fu
 
 The receipt is an acknowledgment of creation, not a current order feed. If an occurrence was later rescheduled, reassigned, or reported, replay still returns its original creation snapshot. Refresh ordinary authorized order endpoints before opening or editing it. Do not replace a complete offline cache with this partial batch, and never overwrite a worker draft or outbox from a receipt.
 
-Do not generate a new mutation ID merely because a response failed. That can create a second batch. Clients should keep pending dispatch separate from worker report drafts, account-scoped, and recoverable after reload. The web recovery UI is the next increment.
+Do not generate a new mutation ID merely because a response failed. That can create a second batch. Clients should keep pending dispatch separate from worker report drafts, account-scoped, and recoverable after reload. The web app saves the pending input in an account-scoped IndexedDB journal before sending it. **Recover recurring batch** reopens an uncertain batch after closing, reload, offline use, or signing back into the same account. It never sends automatically. The saved request locks editing until confirmed; a definitive 422 validation/assignment rejection offers **Edit declined batch**. Other failures keep the original request for retry. Storage failures block sending, and competing tabs cannot overwrite a pending batch. Receipt cleanup failures also retain it for duplicate-safe confirmation. Unreadable saved data blocks creation and offers a read retry without silently erasing it.
+
+Web requests include optional `expectedActorId`. The API checks this against the authenticated manager before creating or replaying a batch and returns 403 `ACTOR_CHANGED` if another account signed in. This authorization guard does not change the business-input hash, so an existing receipt can be retried with the guard. API/SDK callers may omit it.
 
 ## Persistence and upgrade
 
@@ -40,4 +42,6 @@ There is no background scheduler, infinite series, weekend/holiday policy, month
 - HTTP creation and transaction: `apps/api/src/app.ts`.
 - Migration: `apps/api/src/store.ts`.
 - Transport and response validation: `packages/sdk/src/index.ts`.
+- Web form and recovery: `apps/web/src/RecurringDispatch.tsx`, shared `AssignmentFields.tsx`, and `pending-series.ts`.
+- Browser recovery and cross-tab checks: `tests/e2e/recurring-dispatch.spec.ts`.
 - Permission, retry, rollback, and upgrade regressions: `tests/recurring-orders.test.ts`.

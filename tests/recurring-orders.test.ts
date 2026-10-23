@@ -81,6 +81,17 @@ describe('calendar recurrence', () => {
 });
 
 describe('recurring assignments', () => {
+  it('rejects a changed session account before creating or replaying a batch', async () => {
+    const payload = { ...input(), expectedActorId: 'manager' };
+    expect((await create(payload)).statusCode).toBe(201);
+    fixture.store.db.prepare("UPDATE users SET role='manager' WHERE id='worker-2'").run();
+    const rejected = await create(payload, other);
+    expect(rejected.statusCode).toBe(403);
+    expect(rejected.json().error.code).toBe('ACTOR_CHANGED');
+    expect(counts()).toEqual([6, 3, 1, 3]);
+    expect((await create({ ...payload, expectedActorId: 'another-account' })).statusCode).toBe(403);
+    expect((await create(payload)).statusCode).toBe(200);
+  });
   it('requires a manager before validating the request', async () => {
     expect(
       (await fixture.app.inject({ method: 'POST', url: '/api/v1/work-order-series', payload: {} }))

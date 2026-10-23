@@ -30,7 +30,7 @@ Base path: `/api/v1`. JSON requests use `Content-Type: application/json`. Input/
 
 List limit is 1–100. Offset is a non-negative integer. Status uses the uppercase enum in `packages/contracts`.
 
-`POST /work-order-series` creates 2–52 daily or weekly assignments as one atomic batch. It accepts the ordinary order fields plus `mutationId`, `frequency`, and `occurrences`; the first date is `dueDate`. New batches return 201 and identical retries return 200 with the original `{ id, createdAt, frequency, orders }` receipt. Manager access and cookie-origin checks apply. See [recurring assignments](recurring-assignments.md) before implementing retry behavior.
+`POST /work-order-series` creates 2–52 daily or weekly assignments as one atomic batch. It accepts the ordinary order fields plus `mutationId`, `frequency`, and `occurrences`; the first date is `dueDate`. New batches return 201 and identical retries return 200 with the original `{ id, createdAt, frequency, orders }` receipt. Manager access and cookie-origin checks apply. Optional `expectedActorId` binds a pending dispatch to its originating account; a mismatch returns 403 `ACTOR_CHANGED` before any batch lookup or write. See [recurring assignments](recurring-assignments.md) before implementing retry behavior.
 
 Create an order:
 

@@ -1,17 +1,10 @@
 import { Button } from './components/ui/button';
-import { Input } from './components/ui/input';
-import { Textarea } from './components/ui/textarea';
-import {
-  NativeSelect as Select,
-  NativeSelectOption as Option,
-} from './components/ui/native-select';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from './components/ui/dialog';
-import { Label } from './components/ui/label';
 import { FieldError } from './components/ui/field';
 import { useRef, useState, type FormEvent } from 'react';
 import type { Catalog, WorkOrder } from '@fieldwork/contracts';
 import { client, message } from './lib';
-import { localDate } from './dates';
+import AssignmentFields from './AssignmentFields';
 export default function CreateOrder({
   catalog,
   initialDueDate,
@@ -90,78 +83,7 @@ export default function CreateOrder({
           </div>
           <DialogTitle>Assign a work order</DialogTitle>
           <DialogDescription>Give the field team a clear brief and a checklist.</DialogDescription>
-          <Label>
-            Work order title
-            <Input
-              name="title"
-              autoFocus
-              required
-              minLength={3}
-              maxLength={140}
-              placeholder="e.g. Inspect the north access gate"
-            />
-          </Label>
-          <Label>
-            Site
-            <Select name="siteId" aria-label="Site" required>
-              {catalog.sites.map((site) => (
-                <Option key={site.id} value={site.id}>
-                  {site.name}
-                </Option>
-              ))}
-            </Select>
-          </Label>
-          <div className="form-grid">
-            <Label>
-              Assign to
-              <Select name="assigneeId" aria-label="Assign to" required>
-                {catalog.users
-                  .filter((user) => user.role === 'worker')
-                  .map((user) => (
-                    <Option key={user.id} value={user.id}>
-                      {user.name}
-                    </Option>
-                  ))}
-              </Select>
-            </Label>
-            <Label>
-              Due date
-              <Input
-                name="dueDate"
-                type="date"
-                required
-                defaultValue={initialDueDate ?? localDate()}
-              />
-            </Label>
-          </div>
-          <div className="form-grid">
-            <Label>
-              Checklist
-              <Select name="templateId" aria-label="Checklist" required>
-                {catalog.templates.map((template) => (
-                  <Option key={template.id} value={template.id}>
-                    {template.name}
-                  </Option>
-                ))}
-              </Select>
-            </Label>
-            <Label>
-              Priority
-              <Select name="priority" aria-label="Priority">
-                <Option value="routine">Routine</Option>
-                <Option value="urgent">Urgent</Option>
-              </Select>
-            </Label>
-          </div>
-          <Label>
-            Instructions
-            <Textarea
-              name="instructions"
-              rows={3}
-              maxLength={4000}
-              placeholder="What should the worker check?"
-            />
-          </Label>
+          <AssignmentFields catalog={catalog} initial={{ dueDate: initialDueDate }} />
           {error && <FieldError>{error}</FieldError>}
           <Button className="primary full" disabled={busy}>
             {busy ? 'Assigning…' : 'Assign work order'}

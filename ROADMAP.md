@@ -25,9 +25,10 @@ The first milestone is a reliable inspection loop. A checked item below means im
 
 - [x] Bounded recurring assignment API and SDK with daily/weekly dates, atomic creation, and durable retry receipts.
 
+- [x] Web recurring assignment creation with a date preview, planner date preset, and durable recovery after uncertain writes.
+
 ## Next · Make daily work easier
 
-- Web recurring assignment creation with a date preview and durable recovery after uncertain writes.
 - Scheduling rules beyond finite daily/weekly batches, plus series management.
 - Maps with opt-in site coordinates and a documented tile provider.
 - Accessible checklist field types: readings, numbers, text, and required evidence.

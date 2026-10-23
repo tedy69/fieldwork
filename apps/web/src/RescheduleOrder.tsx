@@ -1,6 +1,6 @@
 import { Button } from './components/ui/button';
 import { Form } from './components/ui/form';
-import { Input } from './components/ui/input';
+import { DatePicker } from './components/ui/date-picker';
 import { Label } from './components/ui/label';
 import { FieldError } from './components/ui/field';
 import { useRef, useState, type FormEvent } from 'react';
@@ -100,13 +100,13 @@ export default function RescheduleOrder({
           </p>
           <Label>
             New due date
-            <Input
-              type="date"
+            <DatePicker
+              calendarLabel="Choose new due date"
               autoFocus
               required
               value={dueDate}
               disabled={Boolean(busy)}
-              onChange={(event) => setDueDate(event.target.value)}
+              onValueChange={setDueDate}
             />
           </Label>
           {error && <FieldError>{error}</FieldError>}

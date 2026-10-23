@@ -1,7 +1,8 @@
 import { Button } from './components/ui/button';
-import { Input } from './components/ui/input';
+import { DatePicker } from './components/ui/date-picker';
 import { Label } from './components/ui/label';
 import { FieldSet, FieldLegend, FieldError } from './components/ui/field';
+import { parseLocalDate } from './dates';
 export default function DueDateRange({
   from,
   through,
@@ -15,27 +16,27 @@ export default function DueDateRange({
   onThrough: (value: string) => void;
   onClear: () => void;
 }) {
-  const invalid = Boolean(from && through && from > through);
+  const invalid = Boolean(parseLocalDate(from) && parseLocalDate(through) && from > through);
   return (
     <FieldSet className="due-range">
       <FieldLegend className="sr-only">Due dates</FieldLegend>
       <div className="due-range-fields">
         <Label>
           Due from
-          <Input
-            type="date"
+          <DatePicker
+            calendarLabel="Choose due from"
             value={from}
-            onChange={(event) => onFrom(event.target.value)}
+            onValueChange={onFrom}
             aria-invalid={invalid || undefined}
             aria-describedby={invalid ? 'due-range-error' : 'due-range-help'}
           />
         </Label>
         <Label>
           Due through
-          <Input
-            type="date"
+          <DatePicker
+            calendarLabel="Choose due through"
             value={through}
-            onChange={(event) => onThrough(event.target.value)}
+            onValueChange={onThrough}
             aria-invalid={invalid || undefined}
             aria-describedby={invalid ? 'due-range-error' : 'due-range-help'}
           />

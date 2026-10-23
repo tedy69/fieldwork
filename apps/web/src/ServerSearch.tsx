@@ -10,7 +10,7 @@ import { client, labels, dateLabel, message } from './lib';
 import { Button } from './components/ui/button';
 import { Form } from './components/ui/form';
 import { SearchField } from './components/ui/search-field';
-import { Input } from './components/ui/input';
+import { DatePicker } from './components/ui/date-picker';
 import { Label } from './components/ui/label';
 import { FieldSet } from './components/ui/field';
 import {
@@ -281,18 +281,18 @@ export default function ServerSearch({
             )}
             <Label>
               Server due from
-              <Input
-                type="date"
+              <DatePicker
+                calendarLabel="Choose server due from"
                 value={filters.dueFrom}
-                onChange={(event) => change({ dueFrom: event.target.value })}
+                onValueChange={(value) => change({ dueFrom: value })}
               />
             </Label>
             <Label>
               Server due through
-              <Input
-                type="date"
+              <DatePicker
+                calendarLabel="Choose server due through"
                 value={filters.dueThrough}
-                onChange={(event) => change({ dueThrough: event.target.value })}
+                onValueChange={(value) => change({ dueThrough: value })}
               />
             </Label>
             <Label>

@@ -1,0 +1,166 @@
+.ui-date-picker {
+  min-width: 0;
+}
+.ui-date-control {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-field);
+}
+.ui-date-control > .ui-input:not([type='file']) {
+  min-width: 0;
+  flex: 1;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  margin: 0;
+}
+.due-range-fields > .ui-field-label {
+  flex: 0 1 260px;
+  min-width: 0;
+}
+.due-range-fields > .ui-field-label > label {
+  flex: none;
+}
+.ui-date-control > .ui-date-trigger.ui-button {
+  flex: 0 0 var(--control-height);
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0 var(--ui-radius) var(--ui-radius) 0;
+  color: var(--muted);
+}
+.ui-date-control:has([aria-invalid='true']) {
+  border-color: var(--amber);
+}
+.ui-date-error {
+  font-size: 0.875rem;
+  margin: 6px 0 0;
+  font-weight: 400;
+}
+.ui-popover {
+  z-index: var(--z-popover);
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--panel-radius);
+  background: var(--surface);
+  color: var(--ui-foreground);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 25%);
+}
+.ui-date-popover {
+  width: min(340px, calc(100vw - 16px));
+  max-height: var(--radix-popover-content-available-height);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px;
+}
+.ui-calendar {
+  position: relative;
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+.ui-calendar .rdp-months,
+.ui-calendar .rdp-month {
+  width: 100%;
+}
+.ui-calendar .rdp-month_caption {
+  height: 44px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  padding-inline: 44px;
+}
+.ui-calendar .rdp-nav {
+  position: absolute;
+  inset: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.ui-calendar .ui-button.rdp-button_previous,
+.ui-calendar .ui-button.rdp-button_next {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ui-foreground);
+  border-radius: var(--ui-radius);
+  pointer-events: auto;
+}
+.ui-calendar svg {
+  width: 18px;
+  height: 18px;
+}
+.ui-calendar .rdp-month_grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.ui-calendar .rdp-weekday {
+  height: 32px;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.75rem;
+}
+.ui-calendar .rdp-day {
+  height: 44px;
+  padding: 0;
+  text-align: center;
+}
+.ui-calendar-day {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius);
+  background: transparent;
+  color: var(--ui-foreground);
+  font: inherit;
+  cursor: pointer;
+}
+.ui-calendar .rdp-outside .ui-calendar-day {
+  color: var(--muted);
+}
+.ui-calendar .rdp-today .ui-calendar-day {
+  border-color: var(--ui-control-border);
+}
+.ui-calendar .ui-calendar-day[data-selected] {
+  background: var(--amber);
+  color: var(--ink);
+  font-weight: 600;
+}
+.ui-calendar-day:hover,
+.ui-calendar .rdp-button_previous:hover,
+.ui-calendar .rdp-button_next:hover {
+  background: var(--surface-hover);
+}
+.ui-calendar .ui-calendar-day[data-selected]:hover {
+  background: var(--amber-hover);
+}
+.ui-calendar .rdp-disabled {
+  opacity: 0.5;
+}
+.ui-calendar .rdp-hidden {
+  visibility: hidden;
+}
+.ui-date-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+  padding-top: 8px;
+}
+@media (max-width: 360px) {
+  .ui-date-popover {
+    padding: 8px;
+  }
+}

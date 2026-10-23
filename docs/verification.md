@@ -1,5 +1,16 @@
 # Verification
 
+## Shared web date picker
+
+All six web date fields now use the same shadcn Calendar/Radix Popover composition. Local checks pass formatting, TypeScript, 435 unit/API tests, the production web build, 89 browser workflows, Expo dependency compatibility and iOS/Android JavaScript exports. The 21 new date cases also pass independently in Los Angeles and Jakarta time zones. Strict premium UI audit and DESIGN.md lint report no errors or warnings.
+
+- Hard gate PASS: assignment creation rejects empty and impossible dates without sending a write; another invalid edit keeps its associated error. Calendar selection submits the exact date, including leap day in recurring dispatch. Due from/through and server-search from/through all select real dates. Rescheduling retains its form when calendar Escape is pressed and saves the chosen date through the SDK. Existing failed-save, conflict and offline draft workflows pass. Calendar bounds fit 1440px, 390px and 320px viewports, including a 480px height. No native HTML date field remains in the web source.
+- Purpose gate PASS: DESIGN.md records a calendar glyph for date selection, carets for month navigation, a bounded shadow for popup elevation and amber for the chosen day. The shared charcoal surfaces, type, control borders and radii remain unchanged. No decorative assets, gradients, badges or animation were added.
+- Liveliness PASS: ENERGY 2 / RHYTHM 2 / MOTION 1 is retained. The form or filtered work ledger remains the main task; the popup groups month navigation, day selection and Today/Clear date actions. Amber identifies selection and the existing notebook margin continues across the workspace.
+- Craftsmanship PASS: Enter opens on the selected day, arrows and Page Down move focus, Enter commits, and Escape restores the trigger while leaving a surrounding dialog or inline form open. Month navigation retains its keyboard focus. Today and Clear date update the field; invalid filters show recovery guidance without a misleading empty result. Picker interactions work offline. Real labels remain separate from action buttons. Calendar days are 44px high and compress in width on narrow phones to fit seven columns. Existing foreground/muted/amber contrast pairs are retained. Inspected [desktop](images/date-picker-desktop.png) and [phone](images/date-picker-phone.png) screenshots contain synthetic demo records.
+
+Repeat the date workflow with `npm exec -- playwright test tests/e2e/date-picker.spec.ts`. Set `UPDATE_DATE_PICKER_IMAGES=1` to refresh its documentation captures after building. README assignment/work-list captures are refreshed through the existing redesign walkthrough. Local browser checks use Chromium on macOS; physical-device and full screen-reader acceptance remain separate from these checks.
+
 ## Expo notebook redesign (2026-10-23)
 
 The native worker app now follows the web notebook's charcoal/amber roles through one native theme and component set. Sign-in, assignment rows, inspection questions, report reading, notices and actions share typography, spacing and control shapes. Safe-area handling uses the SDK-compatible react-native-safe-area-context package; no API, schema, SecureStore key or SQLite format changed.

@@ -21,6 +21,8 @@ These are current web screens using synthetic demo people, sites, and inspection
 
 ![Assigning a work order with shared notebook controls](docs/images/notebook-dispatch-dialog.png)
 
+![Shared date picker in the offline work-order filters](docs/images/date-picker-desktop.png)
+
 <img src="docs/images/notebook-work-orders-phone.png" alt="Demo work orders and filters on a phone" width="300" />
 
 <img src="docs/images/notebook-inspection-phone.png" alt="A demo inspection checklist on a 390-pixel phone viewport" width="300" />

@@ -4,7 +4,7 @@
   "locale": "en",
   "canonicalMap": "UX-CONTRACT.md",
   "requiredCapabilities": ["Select/Listbox", "Date", "Form", "Scrollbar", "Toast", "CRUD"],
-  "ownership": { "Select/Listbox": "native", "Date": "native" },
+  "ownership": { "Select/Listbox": "native", "Date": "authored" },
   "requiredCommands": ["unit", "e2e"],
   "commands": { "unit": "npm run check", "e2e": "npm run test:e2e" },
   "evidence": {

@@ -1,5 +1,7 @@
 # Kokonut UI and shadcn in Fieldwork
 
+The [web server-search dialog](server-search.md#web-search) uses the shared Dialog, Button, Input, Native Select, Label, FieldSet, Badge, Alert, and Empty foundation. Screen composition groups actual filters and temporary server results; opening a result uses the existing local cache adapter.
+
 The [monthly planner](month-planner.md) uses the shared Kokonut selection strip and Button foundation. Its calendar and phone date ledger are screen composition around those controls, with existing theme tokens and no new library dependency.
 
 The [report history viewer](report-history.md) also uses the shared shadcn Dialog, Button, Badge, Alert, Empty, and Table. Its version ledger is screen composition around these primitives; charcoal/amber tokens and Phosphor icons remain unchanged.

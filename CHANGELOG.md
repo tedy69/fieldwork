@@ -2,6 +2,8 @@
 
 ## Unreleased · 0.1 foundation
 
+- Web server search with combined filters, paged results, retry/restart actions, and a fresh permission check when opening an order. Browsing preserves saved work and drafts.
+
 - Read-only server work-order search with combined filters, literal Unicode text matching, and cursor pagination. The original offset-based sync endpoint remains compatible.
 
 - Monthly web planner with daily workloads, keyboard date selection, filtered exports, and offline browsing. Managers can assign work for a selected date, including leap days.

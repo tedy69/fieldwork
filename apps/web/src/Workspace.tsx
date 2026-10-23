@@ -27,6 +27,7 @@ import WeekPlanner from './WeekPlanner';
 import MonthPlanner from './MonthPlanner';
 import { monthDates, weekDates } from './calendar';
 import WorkFinder from './WorkFinder';
+import ServerSearch from './ServerSearch';
 export default function Workspace({ user, logout }: { user: User; logout: () => void }) {
   const repo = useMemo(() => repositoryFor(user.id, client), [user.id]);
   const [state, setState] = useState<State>(emptyState);
@@ -232,6 +233,20 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
               setSelected(null);
             }}
             onOrder={(id) => {
+              setView('orders');
+              setSelected(id);
+            }}
+          />
+          <ServerSearch
+            user={user}
+            workers={catalog.users}
+            online={online}
+            today={today}
+            onCache={async (order) => {
+              await repo.cacheOrder(order);
+              setState(await repo.read());
+            }}
+            onOpened={(id) => {
               setView('orders');
               setSelected(id);
             }}

@@ -21,10 +21,10 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Web report revision history with saved submissions, review feedback, stable pagination, and a tested SQLite upgrade.
 - [x] Monthly web planner with daily workloads, keyboard navigation, filtered exports, offline browsing, and date-preset assignments.
 - [x] Read-only server search API and SDK with text, status, worker, priority, date filters, and cursor pagination.
+- [x] Web server search with combined filters, incremental result loading, fresh authorization on opening, and preserved offline drafts.
 
 ## Next · Make daily work easier
 
-- Web server-search interface with incremental result loading.
 - Recurring assignments and scheduling rules.
 - Maps with opt-in site coordinates and a documented tile provider.
 - Accessible checklist field types: readings, numbers, text, and required evidence.
@@ -40,5 +40,6 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - Email and push notifications with user preferences.
 - Webhooks, integration examples, and a versioned extension contract.
 - Background synchronization with explicit OS and battery constraints.
+- Indexed text search and a scalable incremental full-sync protocol.
 
 Discuss substantial changes before implementation. Roadmap entries are directions, not delivery promises. Independent modules should grow from real workflows and public design discussions.

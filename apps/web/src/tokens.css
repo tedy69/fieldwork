@@ -17,8 +17,8 @@
   --ui-radius: 6px;
   --panel-radius: 10px;
   --space-page: clamp(18px, 2.5vw, 36px);
-  --space-section: 24px;
-  --space-control: 12px;
+  --space-section: 20px;
+  --space-control: 8px;
   --control-height: 44px;
   --dialog-inset: 16px;
   --scroll-thumb: #7f918d;
@@ -26,6 +26,7 @@
   --scroll-hover: #adbbb6;
   --scroll-active: #f5c66d;
   --z-backdrop: 70;
+  --z-navigation: 60;
   --z-dialog: 71;
   --z-popover: 72;
 }

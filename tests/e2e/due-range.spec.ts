@@ -65,6 +65,7 @@ for (const [role, timezoneId] of [
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     const search = page.getByLabel('Search work orders');
     const from = page.getByLabel('Due from', { exact: true });
+    await page.getByRole('button', { name: 'Date range', exact: true }).click();
     const through = page.getByLabel('Due through', { exact: true });
     const clear = page.getByRole('button', { name: 'Clear dates', exact: true });
     const rows = page.locator('.order-row');
@@ -138,6 +139,7 @@ for (const [role, timezoneId] of [
     await page.reload();
     await expect(page.getByText('Working offline', { exact: true })).toBeVisible();
     await search.fill(prefix);
+    await page.getByRole('button', { name: 'Date range', exact: true }).click();
     await from.fill('2026-10-21');
     await through.fill('2026-10-23');
     await expect(rows).toHaveCount(3);

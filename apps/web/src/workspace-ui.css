@@ -4,14 +4,14 @@
   justify-content: center;
   gap: 8px;
   min-height: var(--control-height);
-  padding: 10px 15px;
+  padding: 9px 14px;
   border: 1px solid var(--line);
   border-radius: var(--ui-radius);
   color: var(--ui-foreground);
   background: var(--surface);
   font-size: 14px;
-  font-weight: 600;
-  line-height: 1.5;
+  font-weight: 500;
+  line-height: 1.4;
   text-align: center;
   transition:
     background-color 120ms,
@@ -29,6 +29,7 @@
   color: var(--ink);
   border-color: var(--amber);
   background: var(--amber);
+  font-weight: 600;
 }
 .ui-button.primary:hover:not(:disabled),
 .ui-button.ui-button-default:hover:not(:disabled) {
@@ -85,7 +86,8 @@
   background: var(--ui-field);
   color: var(--ui-foreground);
   font-size: 16px;
-  padding: 11px 12px;
+  padding: 9px 12px;
+  line-height: 1.5;
 }
 .ui-input::placeholder,
 .ui-textarea::placeholder {
@@ -172,13 +174,13 @@ form > .ui-field-label {
 .kokonut-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
-  padding: 3px;
+  gap: 4px;
+  padding: 0;
   width: fit-content;
   max-width: 100%;
-  border: 1px solid var(--line);
-  border-radius: var(--ui-radius);
-  background: var(--sidebar);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 .kokonut-tab {
   display: inline-flex;
@@ -186,13 +188,13 @@ form > .ui-field-label {
   justify-content: center;
   gap: 7px;
   min-height: 44px;
-  padding: 9px 12px;
-  border: 1px solid transparent;
-  border-radius: 4px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--ui-radius);
   background: transparent;
   color: var(--muted);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
 }
 .kokonut-tab:hover {
   background: var(--surface);
@@ -200,25 +202,52 @@ form > .ui-field-label {
 }
 .kokonut-tab.is-selected {
   background: var(--surface-raised);
-  border-color: var(--line);
   color: var(--ui-foreground);
-  box-shadow: inset 0 -2px var(--amber);
+  box-shadow: none;
 }
 .work-view-toggle.kokonut-tabs {
   margin: 0;
+}
+.work-view-toggle .kokonut-tab {
+  border-radius: 0;
+  padding-inline: 4px;
+  margin-right: 16px;
+}
+.work-view-toggle .kokonut-tab.is-selected {
+  background: transparent;
+  box-shadow: inset 0 -2px var(--amber);
+  font-weight: 600;
+}
+.assignment-actions .ui-button:not(.primary),
+.topbar-tools .ui-button,
+.connection .ui-button {
+  background: transparent;
+  border-color: transparent;
+}
+.assignment-actions .primary {
+  margin-right: 4px;
 }
 .sidebar nav .ui-button {
   justify-content: flex-start;
   gap: 10px;
   border-radius: var(--ui-radius);
 }
-.sidebar nav .ui-button > span {
+.sidebar nav .ui-button .nav-count {
   margin-left: auto;
 }
+.sidebar nav .nav-label {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+  align-items: center;
+  color: inherit;
+  font-size: inherit;
+}
 .sidebar nav .ui-button.nav-active {
-  border: 1px solid #516065;
+  border-color: transparent;
   box-shadow: inset 2px 0 var(--amber);
-  background: #293231;
+  background: var(--surface);
   color: var(--amber);
 }
 .sidebar nav .ui-button svg {
@@ -226,34 +255,34 @@ form > .ui-field-label {
   height: 18px;
 }
 .ledger-summary {
-  gap: 24px;
-  align-items: stretch;
+  gap: 20px;
+  align-items: center;
   border-top: 0;
-  border-bottom: 1px solid var(--line);
-  padding: 0 0 20px;
-  margin: 24px 0;
+  border-bottom: 0;
+  padding: 0;
+  margin: 20px 0;
 }
 .ledger-summary > .ui-card {
   padding: 0;
   flex: 0 1 auto;
-  gap: 16px;
+  gap: 10px;
   background: transparent;
   border: 0;
   border-radius: 0;
 }
 .ledger-summary > .ui-card + .ui-card {
   border-left: 1px solid var(--line);
-  padding-left: 28px;
+  padding-left: 20px;
 }
 .ledger-summary > .last-sync {
-  flex: 0 1 190px;
+  flex: 0 1 auto;
   border: 0;
   background: transparent;
   align-self: center;
   padding-right: 0;
 }
 .ledger-summary .summary-number {
-  font-size: 28px;
+  font-size: 24px;
   font-family: var(--font-heading);
   font-variant-numeric: tabular-nums;
 }
@@ -280,7 +309,7 @@ form > .ui-field-label {
   padding: 22px;
 }
 .empty.ui-empty {
-  background: var(--surface);
+  background: transparent;
   border: 0;
   border-radius: var(--panel-radius);
 }
@@ -304,7 +333,7 @@ form > .ui-field-label {
 .kokonut-command.ui-button {
   height: auto;
   min-height: 44px;
-  padding: 8px 12px;
+  padding: 8px;
 }
 .kokonut-command kbd {
   border: 1px solid #516065;
@@ -359,8 +388,7 @@ form > .ui-field-label {
     flex-wrap: wrap;
   }
   .ledger-summary > .last-sync {
-    flex: 1 0 100%;
-    padding: 6px 0;
+    display: none;
   }
 }
 @media (max-width: 600px) {
@@ -392,12 +420,20 @@ form > .ui-field-label {
   }
   .ledger-summary {
     gap: 16px;
+    margin-block: 16px;
+  }
+  .ledger-summary .summary-help {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .ledger-summary > .last-sync {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+    display: none;
   }
   .resource-grid > .ui-card,
   .detail > .report.ui-card,
@@ -405,7 +441,7 @@ form > .ui-field-label {
     padding: 16px;
   }
   .kokonut-tabs {
-    width: 100%;
+    width: fit-content;
   }
   .kokonut-tab {
     flex: 1 1 auto;
@@ -419,11 +455,6 @@ form > .ui-field-label {
   }
   .login-panel > .ui-card {
     padding: 20px;
-  }
-}
-@media (max-width: 380px) {
-  .sidebar nav .ui-button svg {
-    display: none;
   }
 }
 .kokonut-command,
@@ -448,7 +479,7 @@ form > .ui-field-label {
   max-width: calc(100vw - var(--dialog-inset) * 2);
   max-height: calc(100dvh - var(--dialog-inset) * 2);
   overflow: auto;
-  padding: 28px;
+  padding: 24px;
   border: 1px solid var(--ui-control-border);
   border-radius: var(--panel-radius);
   background: var(--surface);
@@ -469,8 +500,8 @@ form > .ui-field-label {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 20px;
-  padding-bottom: 20px;
+  gap: 16px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--line);
   margin-bottom: 20px;
 }
@@ -483,7 +514,7 @@ form > .ui-field-label {
 }
 .ui-dialog .ui-dialog-title {
   margin: 0;
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.25;
 }
 .ui-dialog-header [data-slot='dialog-description'] {
@@ -582,7 +613,7 @@ form > .ui-field-label {
 }
 .panel-header h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
 }
 .panel-header p {
   margin: 8px 0 0;
@@ -614,14 +645,16 @@ form > .ui-field-label {
   margin-left: auto;
 }
 .work-board.ui-card {
-  padding: 20px;
+  padding: 0 20px;
 }
 .board-heading {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
 }
 .board-heading .search {
   margin: 0;
@@ -631,22 +664,28 @@ form > .ui-field-label {
   border: 0;
   background: transparent;
 }
+.status-scroll-hint {
+  display: none;
+}
 .status-filters .kokonut-tab.is-selected {
   box-shadow: none;
   color: var(--ui-foreground);
   border-color: transparent;
 }
 .work-board .list-footer {
-  padding-bottom: 16px;
+  padding-block: 16px;
 }
 .work-board .report-export {
   margin: 0;
+  padding-block: 14px;
+  border: 0;
+  border-top: 1px solid var(--line);
 }
 .catalog-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: start;
-  gap: 28px;
+  gap: 24px;
 }
 .catalog-columns > * {
   min-width: 0;
@@ -724,6 +763,8 @@ form > .ui-field-label {
 .order-tools > .history-launcher {
   width: 100%;
   justify-content: flex-start;
+  background: transparent;
+  border-color: transparent;
 }
 .order-tools .report-print-action {
   gap: 8px;
@@ -731,36 +772,6 @@ form > .ui-field-label {
 .inspection-context > .site-location {
   margin-top: 20px;
   padding: 20px;
-}
-.notebook-steps {
-  list-style: none;
-  margin: 28px 0 36px;
-  padding: 0;
-  counter-reset: stage;
-}
-.notebook-steps li {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: 4px 12px;
-  padding: 16px 0;
-  border-top: 1px solid var(--line);
-  counter-increment: stage;
-}
-.notebook-steps li::before {
-  content: counter(stage);
-  grid-row: 1/3;
-  color: var(--muted);
-  font-size: 13px;
-  padding-top: 2px;
-}
-.notebook-steps strong {
-  font-size: 15px;
-  font-weight: 600;
-}
-.notebook-steps span {
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.6;
 }
 @media (max-width: 1100px) {
   .inspection-layout {
@@ -787,24 +798,133 @@ form > .ui-field-label {
 }
 @media (max-width: 600px) {
   .topbar-tools {
-    margin-left: 0;
-    flex: 1 1 100%;
+    margin-left: auto;
   }
   .topbar-tools > * {
+    flex: 0 1 auto;
+  }
+  .topbar {
+    gap: 4px 8px;
+    padding: 6px 18px;
+  }
+  .workspace-context {
+    display: none;
+  }
+  .topbar .ui-button {
+    padding-inline: 8px;
+    font-size: 13px;
+  }
+  .connection {
+    gap: 6px;
+  }
+  .connection .sync-action {
+    margin-left: 0;
+    width: 44px;
+  }
+  .sync-action > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .sidebar {
+    padding: 12px 18px;
+    align-items: center;
+    min-width: 0;
+  }
+  .sidebar .brand {
+    font-size: 21px;
+  }
+  .sidebar .identity {
+    min-width: 0;
+    gap: 0 8px;
+  }
+  .sidebar .identity strong {
+    overflow-wrap: anywhere;
+  }
+  .sidebar nav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: var(--z-navigation);
+    display: flex;
+    gap: 4px;
+    padding: 4px 8px calc(4px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    background: var(--sidebar);
+  }
+  .sidebar nav .ui-button {
     flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 64px;
+    gap: 5px;
+    padding: 6px 4px;
+    font-size: 12px;
+    text-align: center;
+  }
+  .sidebar nav .ui-button.nav-active {
+    box-shadow: inset 0 2px var(--amber);
+  }
+  .sidebar nav .nav-label {
+    flex: 0;
+    justify-content: center;
+    align-items: baseline;
+    gap: 5px;
+    line-height: 1.25;
+  }
+  .sidebar nav .ui-button .nav-count {
+    margin-left: 0;
+    font-size: 10px;
+  }
+  main#main {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom));
   }
   .panel-header {
     flex-direction: column;
     gap: 16px;
   }
   .work-board.ui-card {
-    padding: 14px;
+    padding: 0 14px;
   }
   .board-heading {
-    gap: 14px;
+    gap: 10px;
   }
-  .board-heading > * {
+  .board-heading .search {
     width: 100%;
+  }
+  .work-view-toggle .kokonut-tab {
+    margin-right: 12px;
+    padding-inline: 2px;
+  }
+  .status-filters.kokonut-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .status-filters .kokonut-tab {
+    flex: 0 0 auto;
+  }
+  .list-toolbar {
+    gap: 4px;
+  }
+  .status-scroll-hint {
+    display: block;
+    width: 100%;
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .assignment-actions {
+    gap: 4px 8px;
+    width: 100%;
+  }
+  .assignment-actions > .primary {
+    width: 100%;
+    margin: 0;
   }
   .work-board .order-row {
     padding: 18px 0;
@@ -835,9 +955,6 @@ form > .ui-field-label {
   }
   .ui-dialog .ui-dialog-title {
     font-size: 22px;
-  }
-  .notebook-steps {
-    display: none;
   }
   .login-intro h1 {
     max-width: 17ch;

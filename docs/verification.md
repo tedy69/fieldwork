@@ -1,5 +1,18 @@
 # Verification
 
+## Clean web workspace (2026-10-27)
+
+The workspace keeps its charcoal/amber palette with a slimmer shell, quieter secondary controls, shared field/dialog spacing, an optional date-range disclosure, and labeled phone bottom navigation. Sign-in has one product introduction beside its form. The README gallery is refreshed from synthetic fixtures; phone captures now use the viewport so fixed navigation appears in its actual screen position.
+
+Local checks pass a clean lockfile installation, formatting, strict root/mobile types, 435 unit/API tests, the production web build, 92 Chromium workflows, Expo compatibility and iOS/Android JavaScript exports. The strict UI audit and DESIGN.md lint have zero errors/warnings. An existing rescheduling test now derives its next due date from its fixture, avoiding a no-op when the clock reaches its previously hard-coded date. Expo 58.0.19 and SQLite 58.0.14 are the same-SDK patches required by the current compatibility check; native device acceptance was not rerun for this web change.
+
+- Hard gate PASS: sign-in validates and reveals passwords on request; work views and statuses change actual lists; assignment, recurring work, search and eight dialog families retain their real workflows. Date range opens by Enter, collapses without clearing its filter, retains its expanded state after opening an order, and keeps errors visible when closed. Clear dates works offline, retains search/status and restores the trigger. Existing report, photo, permission, conflict and draft-retention workflows pass. No page overflow is observed from 320px through 1440px.
+- Purpose gate PASS: DESIGN.md records the notebook margin/underline motif, compact hierarchy and the reason for optional dates and phone status scrolling. Phosphor calendar/caret/refresh symbols identify implemented actions. Shared colors, radii and system type are reused; no illustration, gradient, decorative card layer or new motion is introduced.
+- Liveliness PASS: ENERGY 2 / RHYTHM 2 / MOTION 1 remains explicit. The work ledger is primary, amber marks the current selection and main action, and spacing separates task controls from records. Phone navigation stays visible while the document remains scrollable.
+- Craftsmanship PASS: the new manager/worker tests preserve collapsed filters and show actionable invalid-date feedback. Phone navigation has targets of at least 44px in both dimensions; content reserves the bottom bar and safe area. Final setup actions remain clickable above navigation, failed form submission focuses its field, Home/End reach status choices, and the first work-order title is visible above navigation at 390px. Modal focus/dismissal and offline photo drafts remain covered by the existing suite. Measured contrast is 7.77:1 for muted surface text, 10.73:1 for amber on ink and 5.11:1 for field boundaries. Inspected [desktop](images/dispatch-desk.png), [phone](images/notebook-work-orders-phone.png), [sign-in](images/notebook-sign-in.png) and [setup](images/notebook-resources.png) captures use synthetic data.
+
+Run `npm run check` before `npm run test:e2e` so the browser fixture serves a completed build. Full screen-reader and physical-device acceptance remain separate from these automated web checks.
+
 ## Shared web date picker
 
 All six web date fields now use the same shadcn Calendar/Radix Popover composition. Local checks pass formatting, TypeScript, 435 unit/API tests, the production web build, 89 browser workflows, Expo dependency compatibility and iOS/Android JavaScript exports. The 21 new date cases also pass independently in Los Angeles and Jakarta time zones. Strict premium UI audit and DESIGN.md lint report no errors or warnings.

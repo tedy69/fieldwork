@@ -120,32 +120,18 @@ function AuthenticatedApp({ initialEmail }: { initialEmail: string }) {
     return (
       <main className="login-page">
         <section className="login-intro">
+          <div className="brand">
+            Fieldwork<span className="version">v0.1</span>
+          </div>
           <h1>
             Work on site.
             <br />
             Keep a clear record.
           </h1>
           <p>One place for the assignment, the inspection, and the report.</p>
-          <ol className="notebook-steps">
-            <li>
-              <strong>Assign the work</strong>
-              <span>Give your team a site, a checklist, and a clear brief.</span>
-            </li>
-            <li>
-              <strong>Inspect on site</strong>
-              <span>Keep notes and photos on your device, even offline.</span>
-            </li>
-            <li>
-              <strong>Review the report</strong>
-              <span>Sync when connected, then approve or request changes.</span>
-            </li>
-          </ol>
           <a href="https://github.com/tedy69/fieldwork">View the project on GitHub</a>
         </section>
         <section className="login-panel">
-          <div className="brand">
-            Fieldwork<span className="version">v0.1</span>
-          </div>
           <Card>
             <h2>Open your notebook</h2>
             <p className="muted">Sign in to your team's workspace.</p>

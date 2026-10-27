@@ -85,6 +85,7 @@ test('all date filters use a bounded calendar, including the nested server-searc
 }) => {
   await login(page);
   const from = page.getByLabel('Due from', { exact: true });
+  await page.getByRole('button', { name: 'Date range', exact: true }).click();
   const through = page.getByLabel('Due through', { exact: true });
   await from.fill('2026-10-22');
   await page.getByRole('button', { name: 'Choose due from', exact: true }).click();

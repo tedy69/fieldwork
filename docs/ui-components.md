@@ -2,6 +2,10 @@
 
 ## Notebook redesign
 
+The 2026-10-27 clean-up keeps the same palette and component owners while reducing repeated chrome. Page headings, summaries and secondary actions are more compact. The work-view strip uses an amber underline, status choices are quiet controls, and phone filters scroll inside their strip. Shared fields, panels and modal headers carry the same spacing through the workspace. Sign-in uses a single product introduction beside the form.
+
+`Collapsible` and its shared Button trigger wrap Radix's disclosure behavior for optional date filters. `DueDateRange` owns the applied summary, range errors and clear/focus behavior; Workspace retains its expanded state alongside filter values. The labeled phone bottom navigation has 64px targets and safe-area padding, with room reserved below page content. The phone sync icon keeps an accessible Sync now name. These changes do not alter storage, API permissions or the Expo UI.
+
 The web workspace now uses `tokens.css` as its runtime theme source, documented in [DESIGN.md](../DESIGN.md). Page headings, compact workload summaries, record rows, question fieldsets, workspace setup and dialogs share the charcoal/amber direction. Exports follow the work list instead of interrupting its filters. The [UX contract](../UX-CONTRACT.md) names shared behavior and its domain sources.
 
 The work board groups views, search, status filters, dates and records in one panel. Inspection content sits beside order tools on wide screens. Setup pairs each saved catalog with its form. These layouts use 10px panels, 6px controls, shared section spacing and the same sentence-case hierarchy. Expo retains its platform-native interface.

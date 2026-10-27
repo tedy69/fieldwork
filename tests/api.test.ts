@@ -564,9 +564,12 @@ describe('assignment rescheduling', () => {
       payload: { baseVersion: 2, decision: 'CHANGES_REQUESTED', note: 'Recheck the latch.' },
     });
     const before = store.getOrder('demo-1')!;
-    const response = await schedule({ baseVersion: before.version, dueDate: '2026-10-27' });
+    const nextDay = new Date(`${before.dueDate}T12:00:00Z`);
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+    const dueDate = nextDay.toISOString().slice(0, 10);
+    const response = await schedule({ baseVersion: before.version, dueDate });
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ ...before, dueDate: '2026-10-27', version: 4 });
+    expect(response.json()).toEqual({ ...before, dueDate, version: 4 });
   });
 
   it.each(['SUBMITTED', 'APPROVED'] as const)('does not reschedule %s work', async (status) => {

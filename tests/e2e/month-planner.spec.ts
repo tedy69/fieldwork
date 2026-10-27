@@ -92,6 +92,7 @@ for (const [role, timezoneId, time] of [
       await expect(page.getByAltText('Site attachment 1')).toBeVisible();
       await page.getByRole('button', { name: '← Work orders', exact: true }).click();
     }
+    await page.getByRole('button', { name: 'Date range', exact: true }).click();
     await page.getByLabel('Due from', { exact: true }).fill('2026-11-01');
     await expect(rows).toHaveCount(1);
     const month = page.getByRole('button', { name: 'Month planner', exact: true });

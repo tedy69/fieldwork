@@ -14,7 +14,7 @@ typography:
     lineHeight: 1.5
   heading:
     fontFamily: "'Avenir Next', 'Segoe UI', sans-serif"
-    fontSize: 34px
+    fontSize: 30px
     lineHeight: 1.25
   reference:
     fontFamily: 'ui-monospace, SFMono-Regular, Consolas, monospace'
@@ -24,8 +24,8 @@ rounded:
   control: 6px
   panel: 10px
 spacing:
-  field: 12px
-  section: 24px
+  field: 8px
+  section: 20px
   page: 36px
 omitted:
   - section: components
@@ -54,7 +54,7 @@ Reading this as an operations notebook for dispatch managers and field workers, 
 - Kokonut UI and its shared shadcn foundation are used across the web workspace. Buttons, fields, cards, notices, status badges, selection strips, the finder, and photo attachment share the existing charcoal/amber palette. Workload counts form a compact summary. Cards group the work board, catalog sections, and reports; small corners distinguish controls without adding pill shapes or broad shadows.
 - The finder keeps visible shortcut keycaps. Selection strips show the active filter with the existing amber rule, and photo attachment names its local-draft destination. Demo charts, sample navigation/accounts, artificial progress, and motion effects are excluded from the product.
 - Phosphor regular icons provide consistent action and state symbols on the web. Compact 16px icons inherit the text color, retain visible labels, and identify search, nested navigation, links, or progress rather than adding decoration.
-- Clipboard, tray, and buildings identify work orders, the report outbox, and workspace resources. The upload glyph identifies photo attachment to a local draft. Labels remain visible; navigation glyphs are omitted at the narrowest phone width to keep the destinations readable.
+- Clipboard, tray, and buildings identify work orders, the report outbox, and workspace resources. The upload glyph identifies photo attachment to a local draft. Navigation glyphs and labels remain visible on phones in a compact bottom bar.
 - Rescheduling expands in the order tools alongside the inspection, with current metadata above both columns. The amber margin rule identifies the active edit; existing date inputs, buttons, and typography keep the operation part of the notebook rather than a separate calendar screen.
 - Worker reassignment uses the same order tools group, with a native worker selector and a handover note explaining where reports and device drafts stay. Shared Kokonut controls keep the charcoal/amber palette, 44px targets, system type, and compact spacing; the amber rule marks the active edit without extra decoration or animation.
 - Report history uses a shadcn dialog to compare saved submissions without leaving a correction draft. A compact version ledger sits beside the selected read-only report, then stacks above it on phones. Amber identifies the selected version; flat charcoal surfaces, checklist rows, and grouped metadata keep the report primary. Phosphor's counterclockwise clock identifies the real history action. No animation or new palette is introduced.
@@ -84,7 +84,7 @@ The 2026-10-23 redesign retains the user's charcoal and amber palette. `apps/web
 
 ## Typography
 
-System body fonts stay readable without a download. Avenir Next gives headings the open, readable shapes of printed inspection sheets; it falls back to Segoe UI or sans-serif. Monospace remains confined to record references. The 15px body, 16px fields, 14px actions, 12px metadata and 28–34px page titles give records a clear hierarchy. The inspection title can reach 36px, and the public sign-in introduction 52px. Sentence-case headings identify the task without repeated category labels. Dense information does not require tiny labels.
+System body fonts stay readable without a download. Avenir Next gives headings the open, readable shapes of printed inspection sheets; it falls back to Segoe UI or sans-serif. Monospace remains confined to record references. The 15px body, 16px fields, 14px actions, 12px metadata and 26–30px page titles give records a clear hierarchy. The inspection title can reach 36px, and the public sign-in introduction 40px. Sentence-case headings identify the task without repeated category labels. Dense information does not require tiny labels.
 
 ## Layout
 
@@ -92,7 +92,7 @@ Keep the inspection ledger as the focal point. The signature is a notebook margi
 
 Inspection questions use separate fieldsets because each requires an independent answer and optional note. Metadata leads the inspection; its content sits beside a narrower tools/location column on wide screens. Narrow screens stack these groups without hiding information. Resources place saved sites and checklists beside their respective forms; phones follow the same records-then-form reading order. Field workers use the same section header and action group. Empty and failed states explain the next available action.
 
-PanelHeader and ActionGroup own section hierarchy and wrapping actions. DialogHeader and DialogContent own all eight modal families, with form, directory, comparison and finder widths. Each uses one title/description/action alignment, border, inset and scroll boundary. Feature stylesheets own only their internal content. The sign-in introduction explains the three real steps of work instead of using decorative notebook lines.
+PanelHeader and ActionGroup own section hierarchy and wrapping actions. DialogHeader and DialogContent own all eight modal families, with form, directory, comparison and finder widths. Each uses one title/description/action alignment, border, inset and scroll boundary. Feature stylesheets own only their internal content. Sign-in keeps one product introduction beside the form, with local-demo instructions below it.
 
 ## Elevation & Depth
 
@@ -118,6 +118,14 @@ Shared panels use a 10px radius, controls 6px, statuses 4px, and rule-separated 
 Shared Form owns validation, Input owns password reveal, SearchField owns clear/focus, and Textarea owns bounded growth. Behavior is documented in [UX-CONTRACT.md](UX-CONTRACT.md). Existing Phosphor eyes and close glyphs identify reveal/clear actions; no new logo, avatar or illustration is needed. MOTION 1 means brief color feedback only, disabled under reduced motion.
 
 DatePicker owns every web date field, with a shadcn Calendar and Radix Popover above an editable YYYY-MM-DD input. Phosphor's calendar glyph opens date selection; its carets move months. The chosen date uses amber, today has a thin boundary, and adjacent-month dates use muted text. This keeps the calendar legible without making every day an accent. A 44px day height supports touch; seven columns compress in width at 320px so the complete week fits without horizontal scrolling. The popup uses the shared 10px surface radius, 6px controls and `--z-popover` above dialogs, and scrolls within short viewports. ENERGY 2 / RHYTHM 2 / MOTION 1 stays unchanged.
+
+## Clean workspace direction (2026-10-27)
+
+The work ledger is the focal point. Keep the user-selected charcoal and amber palette, system typography and Phosphor icons. Retain ENERGY 2 / RHYTHM 2 / MOTION 1. Use the notebook's amber margin and selected-view underline as the identity motif; no new illustration, font, gradient or animation is needed.
+
+Reduce the time spent scanning chrome: a compact workspace header, quiet secondary actions, one readable work board and an optional date-range disclosure. Closed date filters still state the applied range. Search and status remain directly available. The summary reports actual unfinished/review counts without separate card decoration. Give record titles more weight than metadata, use sentence-case statuses, and group supporting order tools below a shared section heading.
+
+Shared buttons, 44px fields, selection strips, dialogs and panels own the same spacing across sign-in, work orders, inspections, setup and the outbox. On phones, the labeled bottom navigation keeps destinations one tap away while content reserves its height and safe area. The status strip scrolls within its boundary, so its six options do not push work off screen; arrow/Home/End navigation brings the focused choice into view. Summaries stay compact and optional controls expand in place. Empty, loading, failed and offline states remain visible. Collapsing a date filter retains its values, errors, expanded state across order navigation and effect on results; clearing restores focus to its trigger. The Phosphor refresh glyph identifies the compact phone sync action, with a persistent accessible Sync now name.
 
 ## Do's and Don'ts
 

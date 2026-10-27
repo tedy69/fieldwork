@@ -226,7 +226,7 @@ test('documentation walkthrough shows real dispatch, planning, setup and field s
       path: process.env.UPDATE_README_IMAGES
         ? resolve('docs/images', name)
         : test.info().outputPath(name),
-      fullPage,
+      fullPage: fullPage && page.viewportSize()!.width > 600,
     });
   };
   await page.goto('/');

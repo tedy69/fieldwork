@@ -23,6 +23,35 @@
 .due-range-fields > .ui-field-label > label {
   flex: none;
 }
+.date-filter {
+  margin: 0 0 12px;
+}
+.date-filter-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.date-filter-trigger.ui-button {
+  padding-inline: 8px;
+  margin-left: -8px;
+  color: var(--muted);
+}
+.date-filter-summary {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 12px;
+}
+.date-filter-trigger[aria-expanded='true'] .date-filter-caret {
+  transform: rotate(180deg);
+}
+.date-filter .due-range {
+  padding: 12px 0;
+}
+.date-filter .due-range-fields {
+  gap: 12px;
+}
 .ui-date-control > .ui-date-trigger.ui-button {
   flex: 0 0 var(--control-height);
   padding: 0;

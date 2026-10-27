@@ -6,6 +6,7 @@ import SmoothTab from './components/kokonutui/smooth-tab';
 import { ClipboardTextIcon } from '@phosphor-icons/react/dist/csr/ClipboardText';
 import { TrayIcon } from '@phosphor-icons/react/dist/csr/Tray';
 import { BuildingsIcon } from '@phosphor-icons/react/dist/csr/Buildings';
+import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
 import { SearchField } from './components/ui/search-field';
 import { Label } from './components/ui/label';
 import { Avatar, AvatarFallback } from './components/ui/avatar';
@@ -40,6 +41,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
   const [search, setSearch] = useState('');
   const [dueFrom, setDueFrom] = useState('');
   const [dueThrough, setDueThrough] = useState('');
+  const [datesOpen, setDatesOpen] = useState(false);
   const today = useLocalDate();
   const [plannerView, setPlannerView] = useState<'list' | 'week' | 'month'>('list');
   const planner = plannerView !== 'list';
@@ -170,7 +172,10 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
               setSelected(null);
             }}
           >
-            <ClipboardTextIcon aria-hidden="true" /> Work orders <span>{state.orders.length}</span>
+            <ClipboardTextIcon aria-hidden="true" />
+            <span className="nav-label">
+              Work orders <span className="nav-count">{state.orders.length}</span>
+            </span>
           </Button>
           <Button
             variant="ghost"
@@ -181,7 +186,10 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
               setSelected(null);
             }}
           >
-            <TrayIcon aria-hidden="true" /> Sync outbox <span>{state.outbox.length}</span>
+            <TrayIcon aria-hidden="true" />
+            <span className="nav-label">
+              Sync outbox <span className="nav-count">{state.outbox.length}</span>
+            </span>
           </Button>
           {user.role === 'manager' && (
             <Button
@@ -193,18 +201,14 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                 setSelected(null);
               }}
             >
-              <BuildingsIcon aria-hidden="true" /> Sites &amp; checklists
+              <BuildingsIcon aria-hidden="true" />{' '}
+              <span className="nav-label">Sites &amp; checklists</span>
             </Button>
           )}
         </nav>
         <div className="sidebar-note">
-          <strong>Built for the field.</strong>
-          <p>
-            Open an assigned order while connected. Checklists, notes, and photos stay on this
-            device until they sync.
-          </p>
           <a href="https://github.com/tedy69/fieldwork/blob/main/CONTRIBUTING.md">
-            Contribute to Fieldwork ↗
+            Contribute to Fieldwork
           </a>
         </div>
         <Card className="identity">
@@ -238,8 +242,15 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           <div className="connection">
             <span className={online ? 'signal' : 'signal offline'} />
             <span role="status">{online ? 'Connected' : 'Working offline'}</span>
-            <Button className="quiet" onClick={() => void refresh()} disabled={busy || !online}>
-              {busy ? 'Syncing…' : 'Sync now'}
+            <Button
+              className="quiet sync-action"
+              aria-label={busy ? 'Syncing…' : 'Sync now'}
+              title={busy ? 'Syncing…' : 'Sync now'}
+              onClick={() => void refresh()}
+              disabled={busy || !online}
+            >
+              <ArrowClockwiseIcon aria-hidden="true" />
+              <span>{busy ? 'Syncing…' : 'Sync now'}</span>
             </Button>
           </div>
           <div className="topbar-tools">
@@ -382,16 +393,21 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           ) : (
             <>
               <div className="heading-row">
-                <PageHeading
-                  title={user.role === 'manager' ? 'Work orders' : 'My assignments'}
-                  description={
-                    user.role === 'manager'
-                      ? 'Plan the work. Keep the field connected.'
-                      : 'Your instructions, inspections, and reports. Available on site.'
-                  }
-                />
+                <PageHeading title={user.role === 'manager' ? 'Work orders' : 'My assignments'} />
                 {user.role === 'manager' && (
                   <ActionGroup className="assignment-actions">
+                    <Button
+                      className="primary"
+                      onClick={() => setCreating(true)}
+                      disabled={
+                        !online ||
+                        catalog.sites.length === 0 ||
+                        catalog.templates.length === 0 ||
+                        !catalog.users.some((user) => user.role === 'worker')
+                      }
+                    >
+                      {planner && plannerDay ? '+ Assign for selected day' : '+ Assign work order'}
+                    </Button>
                     <SeriesOverview
                       online={online}
                       onCache={async (order) => {
@@ -411,18 +427,6 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                         setNotice(`${receipt.orders.length} recurring work orders confirmed.`);
                       }}
                     />
-                    <Button
-                      className="primary"
-                      onClick={() => setCreating(true)}
-                      disabled={
-                        !online ||
-                        catalog.sites.length === 0 ||
-                        catalog.templates.length === 0 ||
-                        !catalog.users.some((user) => user.role === 'worker')
-                      }
-                    >
-                      {planner && plannerDay ? '+ Assign for selected day' : '+ Assign work order'}
-                    </Button>
                   </ActionGroup>
                 )}
               </div>
@@ -431,14 +435,14 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   <span className="summary-number">{assignedCount}</span>
                   <div>
                     <strong>In the field</strong>
-                    <small>Assigned &amp; changes requested</small>
+                    <small className="summary-help">Assigned &amp; changes requested</small>
                   </div>
                 </Card>
                 <Card>
                   <span className="summary-number amber">{reviewCount}</span>
                   <div>
                     <strong>Ready for review</strong>
-                    <small>Submitted inspection reports</small>
+                    <small className="summary-help">Submitted inspection reports</small>
                   </div>
                 </Card>
                 <div className="last-sync">
@@ -505,6 +509,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                             : labels[status],
                     }))}
                   />
+                  <p className="status-scroll-hint">Scroll for more statuses</p>
                 </div>
                 {plannerView === 'month' ? (
                   <MonthPlanner
@@ -532,6 +537,8 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   />
                 ) : (
                   <DueDateRange
+                    open={datesOpen}
+                    onOpenChange={setDatesOpen}
                     from={dueFrom}
                     through={dueThrough}
                     onFrom={setDueFrom}

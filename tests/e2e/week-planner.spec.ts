@@ -65,6 +65,7 @@ for (const [role, timezoneId, time] of [
     const rows = page.locator('.order-row');
     const planner = page.getByRole('button', { name: 'Week planner', exact: true });
     await search.fill(prefix);
+    await page.getByRole('button', { name: 'Date range', exact: true }).click();
     await page.getByLabel('Due from', { exact: true }).fill('2026-10-26');
     await expect(rows).toHaveCount(1);
     await planner.focus();

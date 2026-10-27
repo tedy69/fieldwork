@@ -58,11 +58,11 @@ Loading, empty, no-results, stale, unavailable and blocked states retain actiona
 
 ## Navigation and responsive behavior
 
-The three existing workspace destinations remain Work orders, Sync outbox, and manager-only Sites & checklists. Desktop uses a sidebar; narrow screens show the same labeled navigation in normal document flow. No hidden icon-only destinations or invented navigation are introduced.
+The three existing workspace destinations remain Work orders, Sync outbox, and manager-only Sites & checklists. Desktop uses a sidebar, intermediate widths use a header navigation, and phones use the same labeled destinations in a fixed bottom bar. Page padding reserves its height and safe area, so the final field/action can scroll above it. Dialogs and date popovers layer above navigation. No hidden icon-only destinations or invented navigation are introduced.
 
 Document titles use `Page · Fieldwork`; inspection titles use their reference, never credentials or link tokens. Public setup and sign-in own their titles. Permission and server failures remain actionable inline and leave navigation available; API access rules remain authoritative.
 
-Work rows stack on phones while keeping reference, site, worker, due date and status. Week/month planners retain their established keyboard date selection and narrow ledger layouts. The document owns page/form scrolling; only dialogs, maps, and bounded ledgers own internal overflow. Focus must remain visible at narrow/short heights.
+Work rows stack on phones while keeping reference, site, worker, due date and status. Week/month planners retain their established keyboard date selection and narrow ledger layouts. The document owns page/form scrolling; dialogs, maps, bounded ledgers and the phone status-selection strip own internal overflow. Focus must remain visible at narrow/short heights. Date range is an explicitly labeled Collapsible: values and expanded state survive order navigation, the collapsed summary identifies applied dates, and invalid ranges retain visible recovery text. Clearing dates preserves search/status and restores trigger focus.
 
 The work board keeps view selection, search, filters, dates and exports with their records. Inspection metadata precedes the content and tools columns; narrow layouts stack the tools after the inspection. Setup sections show saved records before their creation form in document order, with columns on wide screens. These compositions reuse the same headings, panel radius, action spacing and field controls.
 

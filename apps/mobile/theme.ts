@@ -18,15 +18,21 @@ export const colors = {
   approved: '#a6cdb8',
 } as const;
 
-export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, section: 24, page: 32 } as const;
+export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, section: 20, page: 32 } as const;
 export const radius = { badge: 4, control: 6, panel: 10 } as const;
-export const size = { control: 48, content: 720, photo: 220, summary: 120 } as const;
+export const size = {
+  control: Platform.OS === 'ios' ? 44 : 48,
+  content: 720,
+  photo: 220,
+  summary: 120,
+} as const;
 export const typography = {
-  brand: { fontSize: 26, lineHeight: 32, fontWeight: '700', letterSpacing: -0.8 },
-  title: { fontSize: 30, lineHeight: 37, fontWeight: '700', letterSpacing: -0.6 },
-  heading: { fontSize: 20, lineHeight: 27, fontWeight: '600' },
+  brand: { fontSize: 22, lineHeight: 28, fontWeight: '700', letterSpacing: -0.6 },
+  title: { fontSize: 26, lineHeight: 32, fontWeight: '600', letterSpacing: -0.5 },
+  heading: { fontSize: 18, lineHeight: 25, fontWeight: '600' },
+  record: { fontSize: 16, lineHeight: 23, fontWeight: '600' },
   body: { fontSize: 16, lineHeight: 24 },
-  label: { fontSize: 15, lineHeight: 22, fontWeight: '600' },
+  label: { fontSize: 15, lineHeight: 22, fontWeight: '500' },
   caption: { fontSize: 13, lineHeight: 20 },
   reference: {
     fontSize: 12,

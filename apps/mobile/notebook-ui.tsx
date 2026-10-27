@@ -10,6 +10,8 @@ import {
   type TextInputProps,
   type TextProps,
   type ViewProps,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import type { WorkOrder } from '@fieldwork/contracts';
 import { colors, radius, size, spacing, typography } from './theme';
@@ -44,20 +46,24 @@ export function Button({
   title,
   onPress,
   disabled = false,
-  quiet = false,
+  variant = 'primary',
+  expanded,
+  style,
   testID,
 }: {
   title: string;
   onPress: () => void;
   disabled?: boolean;
-  quiet?: boolean;
+  variant?: 'primary' | 'outline' | 'ghost';
+  expanded?: boolean;
+  style?: StyleProp<ViewStyle>;
   testID?: string;
 }) {
   const [focused, setFocused] = useState(false);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled, expanded }}
       disabled={disabled}
       testID={testID}
       onPress={onPress}
@@ -65,16 +71,18 @@ export function Button({
       onBlur={() => setFocused(false)}
       style={({ pressed }) => [
         ui.button,
-        quiet && ui.secondary,
+        variant === 'outline' && ui.secondary,
+        variant === 'ghost' && ui.ghost,
         pressed && ui.pressed,
         focused && ui.focused,
         disabled && ui.disabled,
+        style,
       ]}
     >
       <Text
         style={[
           typography.label,
-          { textAlign: 'center', color: quiet ? colors.foreground : colors.ink },
+          { textAlign: 'center', color: variant === 'primary' ? colors.ink : colors.foreground },
         ]}
       >
         {title}
@@ -99,6 +107,7 @@ export function Field({
 }) {
   const [focused, setFocused] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [revealFocused, setRevealFocused] = useState(false);
   return (
     <View style={ui.field}>
       {(!hideLabel || focused) && (
@@ -106,39 +115,43 @@ export function Field({
           <Copy variant="label" style={ui.fieldLabel}>
             {hideLabel ? 'Note (optional)' : label}
           </Copy>
-          {focused && <Button title="Done editing" quiet onPress={Keyboard.dismiss} />}
+          {focused && <Button title="Done editing" variant="ghost" onPress={Keyboard.dismiss} />}
         </View>
       )}
-      <TextInput
-        ref={inputRef}
-        {...props}
-        accessibilityLabel={label}
-        placeholderTextColor={colors.muted}
-        selectionColor={colors.amber}
-        secureTextEntry={secureTextEntry && !revealed}
-        onFocus={(event) => {
-          setFocused(true);
-          props.onFocus?.(event);
-        }}
-        onBlur={(event) => {
-          setFocused(false);
-          props.onBlur?.(event);
-        }}
-        style={[ui.input, focused && ui.inputFocused, props.multiline && ui.multiline, style]}
-      />
-      {secureTextEntry && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={revealed ? 'Hide password' : 'Show password'}
-          accessibilityState={{ selected: revealed }}
-          onPress={() => setRevealed(!revealed)}
-          style={({ pressed }) => [ui.reveal, pressed && ui.pressed]}
-        >
-          <Text style={[typography.caption, { color: colors.amber }]}>
-            {revealed ? 'Hide password' : 'Show password'}
-          </Text>
-        </Pressable>
-      )}
+      <View style={[ui.inputFrame, (focused || revealFocused) && ui.inputFocused]}>
+        <TextInput
+          ref={inputRef}
+          {...props}
+          accessibilityLabel={label}
+          placeholderTextColor={colors.muted}
+          selectionColor={colors.amber}
+          secureTextEntry={secureTextEntry && !revealed}
+          onFocus={(event) => {
+            setFocused(true);
+            props.onFocus?.(event);
+          }}
+          onBlur={(event) => {
+            setFocused(false);
+            props.onBlur?.(event);
+          }}
+          style={[ui.input, props.multiline && ui.multiline, style]}
+        />
+        {secureTextEntry && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={revealed ? 'Hide password' : 'Show password'}
+            accessibilityState={{ selected: revealed }}
+            onPress={() => setRevealed(!revealed)}
+            onFocus={() => setRevealFocused(true)}
+            onBlur={() => setRevealFocused(false)}
+            style={({ pressed }) => [ui.reveal, pressed && ui.pressed]}
+          >
+            <Text style={[typography.caption, { color: colors.amber }]}>
+              {revealed ? 'Hide' : 'Show'}
+            </Text>
+          </Pressable>
+        )}
+      </View>
       {hint && (
         <Copy variant="caption" muted>
           {hint}
@@ -148,8 +161,12 @@ export function Field({
   );
 }
 
-export function Panel({ style, ...props }: ViewProps) {
-  return <View {...props} style={[ui.panel, style]} />;
+export function Panel({
+  variant = 'default',
+  style,
+  ...props
+}: ViewProps & { variant?: 'default' | 'plain' }) {
+  return <View {...props} style={[ui.panel, variant === 'plain' && ui.plain, style]} />;
 }
 
 export function SectionHeading({ title, detail }: { title: string; detail?: string }) {
@@ -276,25 +293,36 @@ const ui = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.control,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     minHeight: size.control,
     alignItems: 'center',
     justifyContent: 'center',
   },
   secondary: { backgroundColor: 'transparent', borderColor: colors.controlBorder },
+  ghost: {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    paddingHorizontal: spacing.sm,
+  },
   pressed: { opacity: 0.75 },
   focused: { outlineColor: colors.amber, outlineWidth: 2, outlineOffset: 3 },
   disabled: { opacity: 0.5 },
   field: { gap: spacing.sm },
-  input: {
-    ...typography.body,
+  inputFrame: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.field,
-    color: colors.foreground,
     borderWidth: 1,
     borderColor: colors.controlBorder,
     borderRadius: radius.control,
+  },
+  input: {
+    ...typography.body,
+    color: colors.foreground,
+    flex: 1,
+    minWidth: 0,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     minHeight: size.control,
   },
   inputFocused: {
@@ -305,8 +333,8 @@ const ui = StyleSheet.create({
   },
   multiline: { minHeight: size.summary, textAlignVertical: 'top' },
   reveal: {
-    alignSelf: 'flex-end',
     minHeight: size.control,
+    minWidth: size.control,
     justifyContent: 'center',
     paddingHorizontal: spacing.sm,
   },
@@ -316,9 +344,10 @@ const ui = StyleSheet.create({
     borderColor: colors.line,
     borderRadius: radius.panel,
     borderCurve: 'continuous',
-    padding: spacing.xl,
+    padding: spacing.lg,
     gap: spacing.lg,
   },
+  plain: { backgroundColor: 'transparent', borderWidth: 0, padding: 0, gap: spacing.md },
   sectionHeading: { gap: spacing.xs },
   notice: {
     backgroundColor: colors.raised,
@@ -345,7 +374,7 @@ const ui = StyleSheet.create({
     gap: spacing.sm,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.md,
+    padding: spacing.sm,
     borderWidth: 1,
     borderColor: colors.controlBorder,
     borderRadius: radius.control,

@@ -60,6 +60,7 @@ export default function App() {
   );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [serverExpanded, setServerExpanded] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -118,26 +119,26 @@ export default function App() {
               <Brand />
               <View style={styles.introduction}>
                 <Copy accessibilityRole="header" variant="title">
-                  Open your notebook
+                  Sign in to Fieldwork
                 </Copy>
-                <Copy muted>
-                  Sign in while connected. Keep the inspection with you on site, even offline.
-                </Copy>
+                <Copy muted>Your assignments and inspections, ready for the field.</Copy>
               </View>
               <Panel>
-                <Field
-                  label="Server address"
-                  value={baseUrl}
-                  onChangeText={setBaseUrl}
-                  autoCapitalize="none"
-                  keyboardType="url"
-                  clearButtonMode="while-editing"
-                  returnKeyType="next"
-                  submitBehavior="submit"
-                  onSubmitEditing={() => emailInput.current?.focus()}
-                  autoCorrect={false}
-                  hint="On a physical device, use your server's LAN address or HTTPS URL."
-                />
+                {serverExpanded && (
+                  <Field
+                    label="Server address"
+                    value={baseUrl}
+                    onChangeText={setBaseUrl}
+                    autoCapitalize="none"
+                    keyboardType="url"
+                    clearButtonMode="while-editing"
+                    returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => emailInput.current?.focus()}
+                    autoCorrect={false}
+                    hint="On a physical device, use your server's LAN address or HTTPS URL."
+                  />
+                )}
                 <Field
                   label="Email"
                   testID="login-email"
@@ -178,6 +179,22 @@ export default function App() {
                   disabled={busy || !ready || !email || !password}
                 />
               </Panel>
+              <View style={styles.introduction}>
+                <View style={styles.row}>
+                  <Copy variant="caption" muted>
+                    Server
+                  </Copy>
+                  <Button
+                    title={serverExpanded ? 'Hide server settings' : 'Change server'}
+                    variant="ghost"
+                    expanded={serverExpanded}
+                    onPress={() => setServerExpanded(!serverExpanded)}
+                  />
+                </View>
+                <Copy variant="caption" muted>
+                  {baseUrl}
+                </Copy>
+              </View>
               <Copy variant="caption" muted>
                 Running the local demo? Use worker@fieldwork.local with password fieldwork-demo
                 after seeding the server.
@@ -190,6 +207,7 @@ export default function App() {
   );
 }
 function Notebook({ session, logout }: { session: Session; logout: () => Promise<void> }) {
+  const notebookScroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const { fontScale } = useWindowDimensions();
   const client = useMemo(() => createClient(session.baseUrl, () => session.token), [session]);
   const repo = useMemo(
@@ -209,6 +227,9 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
   );
   const [state, setState] = useState<State>(emptyState);
   const [selected, setSelected] = useState<string | null>(null);
+  useEffect(() => {
+    notebookScroll.current?.scrollTo({ y: 0, animated: false });
+  }, [selected]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(true);
   useEffect(() => {
@@ -257,6 +278,7 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
   const order = state.orders.find((order) => order.id === selected);
   return (
     <ScrollView
+      ref={notebookScroll}
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="interactive"
@@ -272,7 +294,7 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
           title={busy ? 'Syncing…' : 'Sync now'}
           onPress={() => void sync()}
           disabled={busy}
-          quiet
+          variant="ghost"
         />
       </View>
       <View style={styles.content}>
@@ -298,23 +320,17 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
               <Copy accessibilityRole="header" variant="title">
                 My assignments
               </Copy>
-              <Copy muted>Open a work order. Keep the inspection with you.</Copy>
             </View>
             <View style={styles.summary}>
-              <View style={styles.metric}>
-                <Copy variant="heading">{state.orders.length}</Copy>
-                <Copy muted variant="caption">
-                  Saved assignments
-                </Copy>
-              </View>
-              <View style={styles.metric}>
-                <Copy variant="heading" style={{ color: colors.amber }}>
+              <Copy muted variant="caption">
+                <Copy variant="record">{state.orders.length}</Copy> saved assignments
+              </Copy>
+              <Copy muted variant="caption">
+                <Copy variant="record" style={{ color: colors.amber }}>
                   {state.outbox.length}
-                </Copy>
-                <Copy muted variant="caption">
-                  Waiting to sync
-                </Copy>
-              </View>
+                </Copy>{' '}
+                waiting to sync
+              </Copy>
             </View>
             {state.outbox
               .filter((item) => item.state === 'blocked')
@@ -322,7 +338,7 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
                 <Notice title="Report needs attention" key={item.input.mutationId}>
                   <Copy muted>{item.error}</Copy>
                   <Button
-                    quiet
+                    variant="outline"
                     title="Keep draft and open latest"
                     onPress={async () => {
                       await repo.discard(item.orderId);
@@ -358,8 +374,10 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
                         </Copy>
                       )}
                     </View>
-                    <Copy variant="label">{order.title}</Copy>
-                    <Copy muted>{order.site.name}</Copy>
+                    <Copy variant="record">{order.title}</Copy>
+                    <Copy variant="caption" muted>
+                      {order.site.name}
+                    </Copy>
                     <View style={styles.row}>
                       <Copy muted variant="caption">
                         Due {order.dueDate}
@@ -375,7 +393,12 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
                 ? `Last synced ${new Date(state.lastSynced).toLocaleString()}`
                 : 'Not yet synced'}
             </Copy>
-            <Button quiet title="Sign out" onPress={() => void logout()} />
+            <Button
+              variant="ghost"
+              title="Sign out"
+              onPress={() => void logout()}
+              style={styles.leadingAction}
+            />
             <Copy muted variant="caption">
               Unsent drafts stay on this device and return when you sign in with the same account.
             </Copy>
@@ -484,7 +507,12 @@ function Inspection({
   }
   return (
     <>
-      <Button title="Back to assignments" quiet onPress={back} />
+      <Button
+        title="Back to assignments"
+        variant="ghost"
+        onPress={back}
+        style={styles.leadingAction}
+      />
       <View style={styles.introduction}>
         <Copy variant="reference" muted>
           {order.reference}
@@ -521,7 +549,7 @@ function Inspection({
           </View>
         </View>
       </View>
-      <Panel>
+      <Panel variant="plain">
         <SectionHeading title="Field brief" />
         <Copy>{order.instructions || 'Complete the checklist and describe your findings.'}</Copy>
       </Panel>
@@ -548,55 +576,57 @@ function Inspection({
             title="Inspection checklist"
             detail={saving ? 'Saving locally…' : 'Draft saved on this device'}
           />
-          {order.template.items.map((item, index) => {
-            const answer = draft.answers.find((answer) => answer.itemId === item.id)!;
-            return (
-              <Panel key={item.id}>
-                <View style={styles.questionHeading}>
-                  <Copy variant="reference" muted>
-                    {index + 1}
-                  </Copy>
-                  <Copy variant="label" style={styles.flex}>
-                    {item.label}
-                  </Copy>
+          <Panel style={styles.ledger}>
+            {order.template.items.map((item, index) => {
+              const answer = draft.answers.find((answer) => answer.itemId === item.id)!;
+              return (
+                <View key={item.id} style={[styles.question, index > 0 && styles.questionDivider]}>
+                  <View style={styles.questionHeading}>
+                    <Copy variant="reference" muted>
+                      {index + 1}
+                    </Copy>
+                    <Copy variant="record" style={styles.flex}>
+                      {item.label}
+                    </Copy>
+                  </View>
+                  <View style={styles.answers}>
+                    {(['pass', 'fail', 'na'] as const).map((value) => (
+                      <AnswerChoice
+                        selected={answer.value === value}
+                        name={`${item.label}: ${value}`}
+                        label={value === 'pass' ? 'Pass' : value === 'fail' ? 'Issue' : 'N/A'}
+                        key={value}
+                        onPress={() =>
+                          void save({
+                            ...draft,
+                            answers: draft.answers.map((entry) =>
+                              entry.itemId === item.id ? { ...entry, value } : entry,
+                            ),
+                          })
+                        }
+                      />
+                    ))}
+                  </View>
+                  <Field
+                    label={`Note: ${item.label}`}
+                    testID={`inspection-note-${item.id}`}
+                    hideLabel
+                    placeholder="Add a note (optional)"
+                    value={answer.note}
+                    maxLength={1000}
+                    onChangeText={(note) =>
+                      void save({
+                        ...draft,
+                        answers: draft.answers.map((entry) =>
+                          entry.itemId === item.id ? { ...entry, note } : entry,
+                        ),
+                      })
+                    }
+                  />
                 </View>
-                <View style={styles.answers}>
-                  {(['pass', 'fail', 'na'] as const).map((value) => (
-                    <AnswerChoice
-                      selected={answer.value === value}
-                      name={`${item.label}: ${value}`}
-                      label={value === 'pass' ? 'Pass' : value === 'fail' ? 'Issue found' : 'N/A'}
-                      key={value}
-                      onPress={() =>
-                        void save({
-                          ...draft,
-                          answers: draft.answers.map((entry) =>
-                            entry.itemId === item.id ? { ...entry, value } : entry,
-                          ),
-                        })
-                      }
-                    />
-                  ))}
-                </View>
-                <Field
-                  label={`Note: ${item.label}`}
-                  testID={`inspection-note-${item.id}`}
-                  hideLabel
-                  placeholder="Add a note (optional)"
-                  value={answer.note}
-                  maxLength={1000}
-                  onChangeText={(note) =>
-                    void save({
-                      ...draft,
-                      answers: draft.answers.map((entry) =>
-                        entry.itemId === item.id ? { ...entry, note } : entry,
-                      ),
-                    })
-                  }
-                />
-              </Panel>
-            );
-          })}
+              );
+            })}
+          </Panel>
           <Field
             label="Inspection summary"
             testID="inspection-summary"
@@ -606,7 +636,7 @@ function Inspection({
             maxLength={4000}
             onChangeText={(summary) => void save({ ...draft, summary })}
           />
-          <Panel>
+          <Panel variant="plain">
             <SectionHeading title="Site photos" detail={`${draft.photos.length} of 3 attached`} />
             {order.template.requiresPhoto && (
               <Copy muted variant="caption">
@@ -622,7 +652,7 @@ function Inspection({
                 />
                 <Button
                   title={`Remove photo ${index + 1}`}
-                  quiet
+                  variant="ghost"
                   onPress={() =>
                     void save({
                       ...draft,
@@ -636,7 +666,7 @@ function Inspection({
               <View style={styles.photoAction}>
                 <Button
                   title="Take photo"
-                  quiet
+                  variant="outline"
                   disabled={busy || draft.photos.length >= 3}
                   onPress={() => void attach(true)}
                 />
@@ -644,7 +674,7 @@ function Inspection({
               <View style={styles.photoAction}>
                 <Button
                   title="Choose photo"
-                  quiet
+                  variant="outline"
                   disabled={busy || draft.photos.length >= 3}
                   onPress={() => void attach(false)}
                 />
@@ -735,7 +765,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   introduction: { gap: spacing.sm },
-  headerIdentity: { flexGrow: 1, flexShrink: 1, minWidth: 200, gap: spacing.xs },
+  headerIdentity: { flexGrow: 1, flexShrink: 1, minWidth: 0, gap: spacing.xs },
+  leadingAction: { alignSelf: 'flex-start' },
   headerLarge: { flexDirection: 'column', alignItems: 'stretch' },
   header: {
     paddingHorizontal: spacing.xl,
@@ -757,11 +788,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: colors.line,
   },
-  metric: { flex: 1, minWidth: 120, gap: spacing.xs },
   ledger: { padding: 0, gap: 0, overflow: 'hidden' },
   order: {
-    padding: spacing.xl,
-    gap: spacing.sm,
+    padding: spacing.lg,
+    gap: spacing.xs,
     borderBottomColor: colors.line,
     borderBottomWidth: 1,
   },
@@ -771,10 +801,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: colors.line,
-    paddingVertical: spacing.xl,
-    gap: spacing.xl,
+    paddingVertical: spacing.lg,
+    gap: spacing.lg,
   },
   questionHeading: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
+  question: { padding: spacing.lg, gap: spacing.md },
+  questionDivider: { borderTopWidth: 1, borderColor: colors.line },
   answers: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, alignItems: 'stretch' },
   flex: { flex: 1 },
   row: {

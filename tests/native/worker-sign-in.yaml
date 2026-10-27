@@ -1,0 +1,52 @@
+appId: host.exp.Exponent
+name: Worker sign-in and error recovery
+---
+# Start signed out on a dedicated seeded fixture. METRO_URL comes from the runner.
+- launchApp
+- openLink: ${METRO_URL}
+- runFlow:
+    when:
+      visible: Continue
+    commands:
+      - tapOn: Continue
+      - tapOn:
+          id: xmark
+- extendedWaitUntil:
+    visible: Sign in to Fieldwork
+    timeout: 15000
+- tapOn: Change server
+- assertVisible: Server address
+- tapOn: Hide server settings
+- tapOn:
+    id: login-email
+- eraseText
+- inputText: worker@fieldwork.local
+- tapOn: Done editing
+- tapOn:
+    id: login-password
+- inputText: wrong-demo-password
+- tapOn: Done editing
+- tapOn: Show password
+- assertVisible:
+    id: login-password
+    text: wrong-demo-password
+- tapOn: Hide password
+- tapOn: Sign in
+- extendedWaitUntil:
+    visible: Could not open the notebook
+    timeout: 10000
+- assertVisible:
+    id: login-email
+    text: worker@fieldwork.local
+- tapOn:
+    id: login-password
+- eraseText
+- inputText: fieldwork-demo
+- tapOn: Done editing
+- tapOn: Sign in
+- tapOn:
+    text: Not Now
+    optional: true
+- extendedWaitUntil:
+    visible: My assignments
+    timeout: 15000

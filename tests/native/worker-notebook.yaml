@@ -1,7 +1,6 @@
 appId: host.exp.Exponent
 name: Worker notebook draft retention
 env:
-  METRO_URL: exp://localhost:8082
   ORDER_REFERENCE: FW-003
 ---
 # Use a dedicated seeded fixture and sign in before running. Never clear app data.
@@ -18,21 +17,43 @@ env:
     element: 'Access route is clear and secure: pass'
     centerElement: true
 - tapOn: 'Access route is clear and secure: pass'
+# iOS exposes radio state as an accessibility value, not Maestro's checked flag.
+- assertVisible:
+    text: 'radio button, checked'
+    below: Access route is clear and secure
+    above: 'Note: Access route is clear and secure'
+    leftOf: 'Access route is clear and secure: fail'
 - scrollUntilVisible:
     element: 'Equipment has no visible damage or leaks: pass'
 - tapOn: 'Equipment has no visible damage or leaks: pass'
+- assertVisible:
+    text: 'radio button, checked'
+    below: Equipment has no visible damage or leaks
+    above: 'Note: Equipment has no visible damage or leaks'
+    leftOf: 'Equipment has no visible damage or leaks: fail'
 - scrollUntilVisible:
     element: 'Safety signage is present and readable: pass'
 - tapOn: 'Safety signage is present and readable: pass'
+- assertVisible:
+    text: 'radio button, checked'
+    below: Safety signage is present and readable
+    above: 'Note: Safety signage is present and readable'
+    leftOf: 'Safety signage is present and readable: fail'
 - scrollUntilVisible:
     element: 'Work area is clean and free of hazards: pass'
 - tapOn: 'Work area is clean and free of hazards: pass'
+- assertVisible:
+    text: 'radio button, checked'
+    below: Work area is clean and free of hazards
+    above: 'Note: Work area is clean and free of hazards'
+    leftOf: 'Work area is clean and free of hazards: fail'
 - scrollUntilVisible:
     element:
       id: inspection-summary
     centerElement: true
 - tapOn:
     id: inspection-summary
+- eraseText
 - inputText: Synthetic native draft retained after restart.
 - tapOn: Done editing
 - scrollUntilVisible:
@@ -54,3 +75,12 @@ env:
 - assertVisible:
     id: inspection-summary
     text: Synthetic native draft retained after restart.
+- scrollUntilVisible:
+    element: 'Access route is clear and secure: pass'
+    direction: UP
+    centerElement: true
+- assertVisible:
+    text: 'radio button, checked'
+    below: Access route is clear and secure
+    above: 'Note: Access route is clear and secure'
+    leftOf: 'Access route is clear and secure: fail'

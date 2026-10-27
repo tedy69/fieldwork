@@ -37,7 +37,7 @@ These are current web screens using synthetic demo people, sites, and inspection
 
 </details>
 
-The Expo worker app uses the same notebook style with native controls. These are iOS simulator captures of synthetic demo assignments:
+The Expo worker app matches the clean web UI with a compact assignment ledger, grouped checklist and native controls. These are iOS simulator captures of synthetic demo assignments:
 
 <img src="docs/images/native-assignments.png" alt="Expo worker assignment ledger" width="280" />
 <img src="docs/images/native-inspection.png" alt="Expo inspection checklist with shared native controls" width="280" />

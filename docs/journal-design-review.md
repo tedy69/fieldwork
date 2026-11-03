@@ -4,7 +4,9 @@
 
 ## Evidence
 
-`npm run check` passes formatting, strict web/mobile types, 435 unit/API tests and the production web build. All 94 Chromium workflows pass, including real invitation acceptance and password recovery, permissions, offline drafts/photos, retries/conflicts, review, planners, catalog management and account access. Focused journal/date-picker checks pass after the final invalid-field styles; map recovery checks pass after marker token alignment. Expo dependency compatibility and iOS/Android Hermes exports pass.
+`npm run check` passes formatting, strict web/mobile types, 435 unit/API tests and the production web build. All 95 Chromium workflows pass, including real invitation acceptance and password recovery, permissions, offline drafts/photos, retries/conflicts, review, planners, catalog management and account access. Focused recurring recovery checks pass after the compact-action follow-up. Expo dependency compatibility and iOS/Android Hermes exports pass.
+
+The icon refinement reduces repeated toolbar labels and introductory copy. A dedicated workflow verifies accessible names, actual SVG glyphs, 44px targets, keyboard tooltips, Escape, dialogs and return focus at 320, 390, 768 and 1440px. Pending-batch recovery keeps a visible label on the same DOM button, so lost-response recovery restores focus. Native uses twelve licensed Phosphor paths with a bundled SVG renderer. Navigation, photo-source actions, submission, reviews, warnings and state messages retain text.
 
 The journal browser checks exercise 320, 390, 768, 1024 and 1440px widths, OS dark preference, one sign-in heading, keyboard disclosure, destination navigation, finder focus restoration and offline checklist progress. The existing responsive suite additionally exercises intermediate widths, bottom navigation clearance and modal/form recovery. Documentation captures come from the actual synthetic fixture walkthrough.
 
@@ -21,23 +23,23 @@ Android native execution and its platform limits are recorded in [verification](
 - R-23 PASS: the owner requested all components/pages and mobile redesign; existing destinations were rearranged, and synthetic screenshots document the implementation. No artwork or logo was created.
 - R-24 PASS: navigation opens real Work orders, Sync outbox and manager Resources; native destinations render actual assignments and queued reports.
 - R-25 PASS: calculated text contrast across canvas, sheet, raised and selected surfaces is at least 5.40:1; field boundaries are 3.08:1 against fields.
-- R-26 PASS: the 94 browser workflows exercise real forms, filters, dialogs and record operations; native browsing exercises actual search and inspection editing.
+- R-26 PASS: the 95 browser workflows exercise real forms, filters, dialogs and record operations; native browsing exercises actual search and inspection editing.
 - R-27 PASS: loading, empty search/outbox, failed sign-in, offline, invalid-field and conflict states retain actionable guidance.
 - R-28 PASS: no FAQ was introduced.
-- R-32 PASS: disclosure, finder, filters, calendar, dialogs, focus restoration and form errors retain keyboard coverage and visible focus.
+- R-32 PASS: disclosure, finder, filters, calendar, dialogs, focus restoration and form errors retain keyboard coverage and visible focus. Icon tooltips appear on focus and dismiss on Escape.
 - R-33 PASS: source changes use direct patches; no external source-rewriting script was used.
 - R-34 PASS: the selected light theme remains legible under OS dark preference; there is no theme toggle.
 - R-35 PASS: production build, browser interaction suite and native Android flows run against synthetic records; their results and limits are recorded separately.
 - R-36 PASS: no invented customer, performance, security or compliance claim was introduced.
 - R-37 PASS: the owner selected Light field journal before implementation; DESIGN.md records the Design Read and dials.
 - R-38 PASS: demo fixtures remain explicitly synthetic; no product capabilities or people were invented for the design.
-- R-39 PASS: shared native/web controls retain labels, roles, selected/checked/disabled states and focus treatment. Native scalable text remains enabled; no new animation or zoom restriction was added.
+- R-39 PASS: shared native/web controls retain labels, roles, selected/checked/disabled states and focus treatment. Glyphs are decorative within named buttons; navigation and consequential actions retain text. Native scalable text remains enabled; no new animation or zoom restriction was added.
 - R-40 PASS: existing report media retain bounded dimensions; no new runtime media download, blocking script or unmeasured performance score was introduced.
 
 ### Purpose gate
 
 - R-01 PASS: flat semantic surfaces establish the reading order; no gradient or glow was added.
-- R-04 PASS: existing search, calendar, tray and resource symbols identify implemented actions; no decorative icon set was added.
+- R-04 PASS: regular Phosphor search, globe, refresh, sign-out, back, calendar, print, history, camera, image and trash glyphs identify real actions. Names, hints and the written icon map in DESIGN.md establish their meaning.
 - R-06 PASS: offline system type supports field use; monospace is limited to record references, as documented in DESIGN.md.
 - R-07 PASS: the notebook motif uses selection margins and rules rather than a decorative background pattern.
 - R-08 PASS: action labels use plain verbs without ornamental arrows.

@@ -107,7 +107,7 @@ test('redesigned screens retain readable layouts, modal focus and shared tokens'
     () => getComputedStyle(document.documentElement).scrollbarColor,
   );
   expect(scrollbar).not.toBe('auto');
-  await page.getByRole('button', { name: '+ Assign work order', exact: true }).click();
+  await page.getByRole('button', { name: 'Assign work order', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByLabel('Work order title', { exact: true })).toBeFocused();
   await dialog.getByRole('button', { name: 'Assign work order', exact: true }).click();
@@ -120,9 +120,7 @@ test('redesigned screens retain readable layouts, modal focus and shared tokens'
     expect(bounds!.height).toBeLessThanOrEqual(600);
   }
   await page.keyboard.press('Escape');
-  await expect(
-    page.getByRole('button', { name: '+ Assign work order', exact: true }),
-  ).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Assign work order', exact: true })).toBeFocused();
 });
 
 test('every workspace dialog keeps its title, close action and keyboard focus usable', async ({
@@ -132,7 +130,7 @@ test('every workspace dialog keeps its title, close action and keyboard focus us
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 700 });
     for (const [destination, trigger, close] of [
-      ['orders', '+ Assign work order', 'Cancel'],
+      ['orders', 'Assign work order', 'Cancel'],
       ['orders', 'Assign recurring work', 'Close'],
       ['orders', 'Recurring batches', 'Close dialog'],
       ['orders', 'Search server', 'Close dialog'],
@@ -235,7 +233,7 @@ test('documentation walkthrough shows real dispatch, planning, setup and field s
   await page.getByLabel('Search work orders', { exact: true }).fill('Demo work:');
   await expect(page.locator('.order-row')).toHaveCount(3);
   await save('dispatch-desk.png');
-  await page.getByRole('button', { name: '+ Assign work order', exact: true }).click();
+  await page.getByRole('button', { name: 'Assign work order', exact: true }).click();
   await save('notebook-dispatch-dialog.png', false);
   await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 390, height: 844 });

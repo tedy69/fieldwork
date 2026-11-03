@@ -1,4 +1,7 @@
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
+import { CaretLeftIcon } from '@phosphor-icons/react/dist/csr/CaretLeft';
+import { CaretRightIcon } from '@phosphor-icons/react/dist/csr/CaretRight';
 import type { WorkOrder } from '@fieldwork/contracts';
 import { addDays, calendarLabel, weekDates } from './calendar';
 
@@ -25,15 +28,23 @@ export default function WeekPlanner({
           Week of {calendarLabel(dates[0], true)}
         </h2>
         <div className="week-navigation" role="group" aria-label="Choose week">
-          <Button className="quiet" onClick={() => onWeek(addDays(dates[0], -7))}>
-            Previous week
-          </Button>
+          <IconButton
+            label="Previous week"
+            className="quiet"
+            onClick={() => onWeek(addDays(dates[0], -7))}
+          >
+            <CaretLeftIcon aria-hidden="true" />
+          </IconButton>
           <Button className="quiet" onClick={() => onWeek(today)}>
             This week
           </Button>
-          <Button className="quiet" onClick={() => onWeek(addDays(dates[0], 7))}>
-            Next week
-          </Button>
+          <IconButton
+            label="Next week"
+            className="quiet"
+            onClick={() => onWeek(addDays(dates[0], 7))}
+          >
+            <CaretRightIcon aria-hidden="true" />
+          </IconButton>
         </div>
       </div>
       <p className="muted">

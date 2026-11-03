@@ -1,4 +1,6 @@
 import { Button } from './components/ui/button';
+import { ActionTooltip } from './components/ui/icon-button';
+import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass';
 import CommandButton from './components/kokonutui/command-button';
 import {
   Dialog,
@@ -95,15 +97,18 @@ export default function WorkFinder({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <CommandButton
-        className="quiet command-launcher"
-        shortcut="mod+k"
-        onClick={show}
-        aria-keyshortcuts="Meta+K Control+K"
-        title="Find work (Cmd+K or Ctrl+K)"
-      >
-        Find work
-      </CommandButton>
+      <ActionTooltip label="Find work (Cmd+K or Ctrl+K)">
+        <CommandButton
+          className="quiet command-launcher ui-icon-button"
+          compact
+          aria-label="Find work"
+          shortcut="mod+k"
+          onClick={show}
+          aria-keyshortcuts="Meta+K Control+K"
+        >
+          <MagnifyingGlassIcon aria-hidden="true" />
+        </CommandButton>
+      </ActionTooltip>
       <DialogContent
         size="finder"
         aria-modal="true"

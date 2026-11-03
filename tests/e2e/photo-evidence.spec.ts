@@ -102,7 +102,7 @@ test('manager creates a required-photo checklist and the assignment selector ide
     page.getByText('At least one site photo required per submission.', { exact: true }).first(),
   ).toBeVisible();
   await page.getByRole('button', { name: /^Work orders/ }).click();
-  await page.getByRole('button', { name: '+ Assign work order', exact: true }).click();
+  await page.getByRole('button', { name: 'Assign work order', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Assign a work order', exact: true });
   const selector = dialog.getByRole('combobox', { name: 'Checklist', exact: true });
   await expect(selector.locator(`option[value="${template.id}"]`)).toHaveText(

@@ -1,4 +1,5 @@
-import React, { useState, type ReactNode } from 'react';
+import React, { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Keyboard as KeyboardIcon, Eye, EyeSlash, type Icon } from './notebook-icons';
 import {
   Pressable,
   Keyboard,
@@ -51,6 +52,8 @@ export function Button({
   selected,
   style,
   testID,
+  icon: Glyph,
+  iconOnly = false,
 }: {
   title: string;
   onPress: () => void;
@@ -60,15 +63,41 @@ export function Button({
   selected?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  icon?: Icon;
+  iconOnly?: boolean;
 }) {
   const [focused, setFocused] = useState(false);
+  const [hintVisible, setHintVisible] = useState(false);
+  const [hintSide, setHintSide] = useState<'left' | 'right'>('right');
+  const button = useRef<React.ComponentRef<typeof Pressable>>(null);
+  const { width } = useWindowDimensions();
+  const hintTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(hintTimer.current), []);
+  const color = variant === 'primary' ? colors.ink : selected ? colors.amber : colors.foreground;
   return (
     <Pressable
+      ref={button}
       accessibilityRole="button"
+      accessibilityLabel={title}
       accessibilityState={{ disabled, expanded, selected }}
       disabled={disabled}
       testID={testID}
-      onPress={onPress}
+      onPress={() => {
+        setHintVisible(false);
+        onPress();
+      }}
+      onLongPress={
+        iconOnly
+          ? () => {
+              clearTimeout(hintTimer.current);
+              button.current?.measureInWindow((x) => {
+                setHintSide(x > width / 2 ? 'right' : 'left');
+                setHintVisible(true);
+                hintTimer.current = setTimeout(() => setHintVisible(false), 4000);
+              });
+            }
+          : undefined
+      }
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
       style={({ pressed }) => [
@@ -76,23 +105,42 @@ export function Button({
         variant === 'outline' && ui.secondary,
         variant === 'ghost' && ui.ghost,
         selected && ui.selectedButton,
+        iconOnly && ui.iconOnly,
         pressed && ui.pressed,
         focused && ui.focused,
         disabled && ui.disabled,
         style,
       ]}
     >
-      <Text
-        style={[
-          typography.label,
-          {
-            textAlign: 'center',
-            color: variant === 'primary' ? colors.ink : selected ? colors.amber : colors.foreground,
-          },
-        ]}
-      >
-        {title}
-      </Text>
+      {Glyph && (
+        <View accessible={false} importantForAccessibility="no-hide-descendants">
+          <Glyph size={22} color={color} />
+        </View>
+      )}
+      {!iconOnly && (
+        <Text
+          style={[
+            typography.label,
+            {
+              textAlign: 'center',
+              color,
+              flexShrink: 1,
+            },
+          ]}
+        >
+          {title}
+        </Text>
+      )}
+      {hintVisible && (
+        <View
+          pointerEvents="none"
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+          style={[ui.iconHint, hintSide === 'right' ? { right: 0 } : { left: 0 }]}
+        >
+          <Text style={[typography.caption, { color: colors.foreground }]}>{title}</Text>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -121,7 +169,15 @@ export function Field({
           <Copy variant="label" style={ui.fieldLabel}>
             {hideLabel ? 'Note (optional)' : label}
           </Copy>
-          {focused && <Button title="Done editing" variant="ghost" onPress={Keyboard.dismiss} />}
+          {focused && (
+            <Button
+              title="Done editing"
+              icon={KeyboardIcon}
+              iconOnly
+              variant="ghost"
+              onPress={Keyboard.dismiss}
+            />
+          )}
         </View>
       )}
       <View style={[ui.inputFrame, (focused || revealFocused) && ui.inputFocused]}>
@@ -152,9 +208,13 @@ export function Field({
             onBlur={() => setRevealFocused(false)}
             style={({ pressed }) => [ui.reveal, pressed && ui.pressed]}
           >
-            <Text style={[typography.caption, { color: colors.amber }]}>
-              {revealed ? 'Hide' : 'Show'}
-            </Text>
+            <View accessible={false} importantForAccessibility="no-hide-descendants">
+              {revealed ? (
+                <EyeSlash size={22} color={colors.amber} />
+              ) : (
+                <Eye size={22} color={colors.amber} />
+              )}
+            </View>
           </Pressable>
         )}
       </View>
@@ -291,7 +351,13 @@ export function AnswerChoice({
 }
 
 const ui = StyleSheet.create({
-  fieldHeading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
+  fieldHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flexWrap: 'wrap',
+    zIndex: 2,
+  },
   fieldLabel: { flex: 1, minWidth: 100 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flexWrap: 'wrap' },
   version: {
@@ -301,6 +367,8 @@ const ui = StyleSheet.create({
     borderRadius: radius.badge,
   },
   button: {
+    flexDirection: 'row',
+    gap: spacing.sm,
     backgroundColor: colors.amber,
     borderColor: colors.amber,
     borderWidth: 1,
@@ -310,6 +378,19 @@ const ui = StyleSheet.create({
     minHeight: size.control,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  iconOnly: { width: size.control, minWidth: size.control, paddingHorizontal: 0, zIndex: 1 },
+  iconHint: {
+    position: 'absolute',
+    top: '100%',
+    minWidth: 110,
+    maxWidth: 240,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.controlBorder,
+    borderRadius: radius.control,
+    backgroundColor: colors.surface,
+    zIndex: 10,
   },
   secondary: { backgroundColor: 'transparent', borderColor: colors.controlBorder },
   selectedButton: { backgroundColor: colors.selected, borderColor: colors.amber },

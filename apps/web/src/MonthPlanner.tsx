@@ -1,6 +1,9 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import type { WorkOrder } from '@fieldwork/contracts';
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
+import { CaretLeftIcon } from '@phosphor-icons/react/dist/csr/CaretLeft';
+import { CaretRightIcon } from '@phosphor-icons/react/dist/csr/CaretRight';
 import { calendarLabel, monthDates, monthLabel, shiftMonth, weekDates } from './calendar';
 import './month-planner.css';
 
@@ -54,23 +57,25 @@ export default function MonthPlanner({
           {monthLabel(anchor)}
         </h2>
         <div className="month-navigation" role="group" aria-label="Choose month">
-          <Button
+          <IconButton
+            label="Previous month"
             className="quiet"
             disabled={anchor.slice(0, 7) <= '0001-01'}
             onClick={() => onMonth(shiftMonth(anchor, -1))}
           >
-            Previous month
-          </Button>
+            <CaretLeftIcon aria-hidden="true" />
+          </IconButton>
           <Button className="quiet" onClick={() => onMonth(today)}>
             This month
           </Button>
-          <Button
+          <IconButton
+            label="Next month"
             className="quiet"
             disabled={anchor.slice(0, 7) >= '9999-12'}
             onClick={() => onMonth(shiftMonth(anchor, 1))}
           >
-            Next month
-          </Button>
+            <CaretRightIcon aria-hidden="true" />
+          </IconButton>
         </div>
       </div>
       <p className="muted">

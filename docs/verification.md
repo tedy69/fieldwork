@@ -1,5 +1,17 @@
 # Verification
 
+## Compact icon actions (2026-11-03)
+
+The light field journal now uses named Phosphor icon controls for familiar utility actions across web and native. Toolbar search, sync, sign-out, planner arrows, back, print, history and photo removal use compact controls; navigation, assignment, submission, review, photo-source and saved-batch recovery actions keep short visible labels. Repeated introductory copy is reduced. Web tooltips support hover/focus and Escape; native utility buttons show their name on touch and hold. Targets remain 44px on web and 48 points on native. API, permissions, mutation IDs, draft formats and outbox behavior are unchanged.
+
+`npm run check` passes formatting, root/native types, 435 unit/API tests and the production web build. All 95 Chromium workflows pass. The new icon workflow exercises names, glyphs, target dimensions, keyboard tooltip dismissal, actual dialog opening and return focus at 320, 390, 768 and 1440px. Five recurring-dispatch cases pass after preserving the same trigger DOM node when its saved-recovery label appears; this retains focus after an uncertain creation response. Expo compatibility and iOS/Android Hermes exports pass. All twelve native SVG paths were checked against the installed web Phosphor definitions and retain their MIT notice; no icon font or full runtime catalogue is shipped.
+
+Android sign-in exercises icon server disclosure, password reveal, keyboard dismissal, failed credentials with retained email and successful correction. The separate icon flow covers sync, assignment/outbox navigation, inspection return, a saved answer, summary editing, photo attachment/removal and sign-out. Refreshed screenshots use the isolated synthetic fixture; Expo Go's development Tools bubble is separate from product controls and is moved aside for taps.
+
+Final native acceptance passes on a dedicated Pixel 7 / Android 15 (API 35) emulator with Expo Go 58.0.5 and the in-memory API. Maestro's bulk typing timed out on the API 36 setup, matching its [reported Android typing issue](https://github.com/mobile-dev-inc/Maestro/issues/2718); system logs also recorded Settings ANRs. The final runner keeps UI actions/assertions in Maestro and uses standard ADB keyboard input for the synthetic summary. It verifies the entered text, named keyboard-dismiss control, actual picker attachment/removal, touch-and-hold label and sign-out. Existing emulator data was preserved throughout. Inspected [native hint](images/native-icon-hint.png) and [photo actions](images/native-photo-actions.png) captures record the final implementation.
+
+The [per-rule antislop review](journal-design-review.md) covers the refined controls. iOS runtime execution, physical-camera capture and full screen-reader traversal were not rerun for this follow-up. Native exports are distinct from device execution.
+
 ## Light field journal redesign (2026-11-03)
 
 The owner selected a complete light field-journal redesign for web and native. Sign-in, invited account setup and password recovery share one web entry shell. Dispatch, planners, reports, inspections, setup, dialogs and shared controls use warm paper, white sheets, dark text and restrained amber. Desktop destinations move into a compact top bar; phones keep labeled bottom navigation. Native adds searchable virtualized assignments, an actual outbox page and retained browsing context. API, permission, storage and mutation contracts are unchanged.

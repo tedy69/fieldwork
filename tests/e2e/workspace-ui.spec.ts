@@ -71,7 +71,7 @@ test('Kokonut workspace keeps the palette and supports keyboard filters across d
     );
   }
   await page.getByRole('button', { name: /^Work orders/ }).click();
-  await page.getByRole('button', { name: '+ Assign work order', exact: true }).click();
+  await page.getByRole('button', { name: 'Assign work order', exact: true }).click();
   await expect(
     page.getByRole('dialog', { name: 'Assign a work order', exact: true }),
   ).toBeVisible();

@@ -8,6 +8,8 @@ import {
 import { ApiError } from '@fieldwork/sdk';
 import { client, labels, dateLabel, message } from './lib';
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
+import { GlobeIcon } from '@phosphor-icons/react/dist/csr/Globe';
 import { Form } from './components/ui/form';
 import { SearchField } from './components/ui/search-field';
 import { DatePicker } from './components/ui/date-picker';
@@ -186,18 +188,19 @@ export default function ServerSearch({
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>
-        <Button
+        <IconButton
+          label="Search server"
           ref={trigger}
           className="quiet server-search-launcher"
           disabled={!online}
-          title={
+          tooltip={
             !online
               ? 'Connect to search the server. Saved work is available in Find work.'
-              : undefined
+              : 'Search server'
           }
         >
-          Search server
-        </Button>
+          <GlobeIcon aria-hidden="true" />
+        </IconButton>
       </DialogTrigger>
       <DialogContent
         size="compare"

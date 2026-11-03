@@ -102,7 +102,7 @@ test('manager finds real work and pages with Kokonut keyboard navigation and mod
   await page.keyboard.press('Control+k');
   await input.fill('Work orders');
   await dialog.getByRole('option', { name: 'Work orders', exact: true }).click();
-  await page.getByRole('button', { name: '+ Assign work order', exact: true }).click();
+  await page.getByRole('button', { name: 'Assign work order', exact: true }).click();
   await page.keyboard.press('Control+k');
   await expect(dialog).toHaveCount(0);
   await expect(

@@ -1,0 +1,37 @@
+appId: host.exp.exponent
+name: Android icon editing, photos and sign-out
+tags:
+  - android
+  - journal
+---
+# Run through icon-actions.android.sh, after its ADB text entry.
+- tapOn: Done editing
+- assertVisible:
+    id: inspection-summary
+    text: '.*Synthetic icon-control regression draft\..*'
+- takeScreenshot: icon-native-photo-actions
+- addMedia:
+    - ../../docs/images/notebook-sign-in.png
+- scrollUntilVisible:
+    element: Choose photo
+    centerElement: true
+- tapOn: Choose photo
+- tapOn:
+    text: 'Photo taken on.*'
+    index: 0
+- assertVisible: Site photo 1
+- tapOn: Remove photo 1
+- assertNotVisible: Site photo 1
+- scrollUntilVisible:
+    element: Back to assignments
+    direction: UP
+- tapOn: Back to assignments
+- scrollUntilVisible:
+    element: Sign out
+    centerElement: true
+- tapOn: Sign out
+- extendedWaitUntil:
+    visible:
+      id: login-email
+    timeout: 10000
+- takeScreenshot: icon-native-sign-in

@@ -4,6 +4,7 @@ import type { User, WorkOrder } from '@fieldwork/contracts';
 import type { State } from '@fieldwork/offline';
 import { Brand, Button, Copy, Field, Notice, Panel, StatusBadge } from './notebook-ui';
 import { colors, radius, spacing } from './theme';
+import { ArrowClockwise, ClipboardText, Tray, SignOut } from './notebook-icons';
 
 type QueueItem = State['outbox'][number];
 type Entry = { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: QueueItem };
@@ -73,6 +74,8 @@ export default function WorkspacePage({
             <Brand />
             <Button
               title={busy ? 'Syncing…' : 'Sync now'}
+              icon={ArrowClockwise}
+              iconOnly
               variant="ghost"
               disabled={busy}
               onPress={onSync}
@@ -85,15 +88,12 @@ export default function WorkspacePage({
             <Copy accessibilityRole="header" variant="title">
               {view === 'assignments' ? 'My assignments' : 'Sync outbox'}
             </Copy>
-            <Copy muted>
-              {view === 'assignments'
-                ? 'The brief, the inspection, and everything you need on site.'
-                : 'Reports stay on this device until the server confirms them.'}
-            </Copy>
+            {view === 'outbox' && <Copy muted>Saved here until the server confirms receipt.</Copy>}
           </View>
           <View style={styles.tabs}>
             <Button
               title={`Assignments (${state.orders.length})`}
+              icon={ClipboardText}
               variant="ghost"
               selected={view === 'assignments'}
               style={styles.tab}
@@ -101,6 +101,7 @@ export default function WorkspacePage({
             />
             <Button
               title={`Outbox (${state.outbox.length})`}
+              icon={Tray}
               variant="ghost"
               selected={view === 'outbox'}
               style={styles.tab}
@@ -244,9 +245,16 @@ export default function WorkspacePage({
               : 'Not yet synced'}
           </Copy>
           <Copy muted variant="caption">
-            Unsent drafts stay here when you sign out and return with the same account.
+            Drafts stay on this device.
           </Copy>
-          <Button title="Sign out" variant="ghost" onPress={onLogout} style={styles.signOut} />
+          <Button
+            title="Sign out"
+            icon={SignOut}
+            iconOnly
+            variant="ghost"
+            onPress={onLogout}
+            style={styles.signOut}
+          />
         </View>
       }
     />
@@ -263,6 +271,7 @@ const styles = StyleSheet.create({
   },
   heading: { gap: spacing.section, marginBottom: spacing.section },
   utility: {
+    zIndex: 2,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

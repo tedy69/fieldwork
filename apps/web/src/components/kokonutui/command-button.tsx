@@ -15,7 +15,14 @@
  * its key goes down and clicks the button when the combination matches.
  */
 
-import { type ComponentProps, type ReactNode, useEffect, useRef, useState } from 'react';
+import {
+  type ComponentProps,
+  type ReactNode,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -28,6 +35,7 @@ interface ParsedShortcut {
 
 interface CommandButtonProps extends ComponentProps<'button'> {
   children?: ReactNode;
+  compact?: boolean;
   /**
    * The shortcut, as `+`-joined parts: `mod` (⌘ on Mac, Ctrl elsewhere),
    * `ctrl`, `alt`, `shift` and one key, e.g. `"mod+k"`, `"shift+n"`, `"c"`.
@@ -159,11 +167,14 @@ function Keycap({ label, pressed }: { label: string; pressed: boolean }) {
 export default function CommandButton({
   className,
   children,
+  compact = false,
+  ref,
   shortcut = '',
   global = false,
   ...props
 }: CommandButtonProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
+  useImperativeHandle(ref, () => buttonRef.current!, []);
   const [isMac, setIsMac] = useState(true);
   const [platformKnown, setPlatformKnown] = useState(false);
   const [held, setHeld] = useState<{ modifiers: Modifier[]; key: boolean }>({
@@ -246,7 +257,7 @@ export default function CommandButton({
       onClick={props.onClick}
     >
       {children}
-      {shortcut && (
+      {shortcut && !compact && (
         <span
           aria-hidden="true"
           className={cn(

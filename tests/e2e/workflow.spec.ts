@@ -78,7 +78,7 @@ test('worker completes an inspection offline, survives reload, syncs photos, and
   await desk.getByLabel('Review note', { exact: true }).fill('Reviewed at the dispatch desk.');
   await desk.getByRole('button', { name: 'Approve inspection', exact: true }).click();
   await expect(desk.getByText('Approved by Alex Morgan', { exact: true })).toBeVisible();
-  await desk.getByRole('button', { name: '← Work orders', exact: true }).click();
+  await desk.getByRole('button', { name: 'Back to work orders', exact: true }).click();
   await desk.screenshot({ path: test.info().outputPath('dispatch-desk.png'), fullPage: true });
   await field.getByRole('button', { name: /^Work orders/ }).click();
   await field.getByRole('button', { name: /Sync now/ }).click();
@@ -111,11 +111,11 @@ test('manager configures sites and checklists and assigns work through the keybo
   await checklist.getByRole('button', { name: 'Add checklist', exact: true }).click();
   await expect(page.getByText('Checklist added.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /^Work orders/ }).click();
-  await page.getByRole('button', { name: '+ Assign work order', exact: true }).click();
+  await page.getByRole('button', { name: 'Assign work order', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.getByRole('button', { name: '+ Assign work order', exact: true }).click();
+  await page.getByRole('button', { name: 'Assign work order', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Work order title', { exact: true }).fill('Inspect east gate');
   await dialog.getByLabel('Site', { exact: true }).selectOption({ label: 'East access gate' });

@@ -92,7 +92,7 @@ test('weekday preview rejects weekend starts and creates the exact dates shown i
   await expect(dialog(page)).toHaveCount(0);
   expect(receipt.frequency).toBe('weekdays');
   expect(receipt.orders.map((order) => order.dueDate)).toEqual(planned);
-  await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+  await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
   await page.getByRole('button', { name: 'Recurring batches', exact: true }).click();
   const overview = page.getByRole('dialog', { name: 'Recurring batches', exact: true });
   const entry = overview.getByRole('button', {

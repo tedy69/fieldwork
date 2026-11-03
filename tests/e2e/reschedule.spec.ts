@@ -100,7 +100,7 @@ test('manager reschedules from the planner with keyboard, retry, conflict, and o
   await expect(page.locator('.order-meta')).toContainText('Oct 25');
   await expect(form).toHaveCount(0);
   await expect(page.getByRole('main')).toBeFocused();
-  await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+  await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'No work orders for this day', exact: true }),
   ).toBeVisible();

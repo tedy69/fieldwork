@@ -82,7 +82,9 @@ Web tokens in `apps/web/src/tokens.css` own color, spacing, radii, type and laye
 
 Control corners are 8px, panels 14px and statuses 4–5px. List rows remain rectangular. Shadows are reserved for temporary dialogs and date popovers, where elevation explains the interaction layer. Motion is limited to short color feedback and is disabled under reduced-motion settings.
 
-Phosphor icons remain regular-weight, compact and paired with visible labels. Clipboard, tray and buildings identify existing destinations; search, calendar, refresh, history and password symbols identify their actions. Color and icons never replace a state label.
+Phosphor icons use regular weight, 20px web utility glyphs and 22-point native glyphs. Familiar utility actions use compact icon buttons: search, server lookup, sync, sign-out, back, planner arrows, print, history and photo removal. Web actions have an accessible name and a tooltip on hover or keyboard focus; native actions retain an accessibility label and show their name on touch and hold. Hit areas remain 44px on web and 48 points on native. Calendar-plus identifies recurring dispatch; a stack identifies saved batches. Each opens a labeled form or ledger before a write.
+
+Navigation keeps short visible labels, as do assignment, submission, review and photo-source actions. List/Week/Month views pair icons with concise text. State and error messages keep words: a glyph or color cannot replace an offline warning, queued state, permission explanation or submission outcome. Repeated introductory copy is removed where the task title and controls already explain the screen. Native uses the same Phosphor family through bundled SVG paths, so icons do not depend on a network font download.
 
 ## Native field journal
 

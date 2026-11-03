@@ -1,4 +1,7 @@
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
+import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
+import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
 import { Form } from './components/ui/form';
 import { Card } from './components/ui/card';
 import { Badge } from './components/ui/badge';
@@ -138,9 +141,9 @@ export default function OrderDetail({
   }
   return (
     <article className="detail">
-      <Button className="text-button back" onClick={onBack}>
-        ← Work orders
-      </Button>
+      <IconButton className="quiet back" label="Back to work orders" onClick={onBack}>
+        <ArrowLeftIcon aria-hidden="true" />
+      </IconButton>
       <div className="detail-heading">
         <div>
           <div className="detail-identity">
@@ -296,9 +299,9 @@ export default function OrderDetail({
                         alt={`Site attachment ${index + 1}`}
                         src={`data:${photo.mimeType};base64,${photo.data}`}
                       />
-                      <Button
-                        type="button"
-                        className="text-button"
+                      <IconButton
+                        label={`Remove photo ${index + 1}`}
+                        variant="ghost"
                         onClick={() =>
                           void save({
                             ...draft,
@@ -306,8 +309,8 @@ export default function OrderDetail({
                           })
                         }
                       >
-                        Remove photo {index + 1}
-                      </Button>
+                        <TrashIcon aria-hidden="true" />
+                      </IconButton>
                     </div>
                   ))}
                 </div>

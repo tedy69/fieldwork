@@ -1,4 +1,5 @@
 import { Button } from './components/ui/button';
+import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple';
 import { FieldError } from './components/ui/field';
 import { useState } from 'react';
 import type { WorkOrder } from '@fieldwork/contracts';
@@ -47,8 +48,13 @@ export default function ReportExport({
           ? 'Latest reports in this view. Photos are not included.'
           : 'No reports in this view to export.'}
       </p>
-      <Button className="quiet" onClick={download} disabled={count === 0}>
-        Export reports ({count})
+      <Button
+        className="quiet"
+        aria-label={`Export reports (${count})`}
+        onClick={download}
+        disabled={count === 0}
+      >
+        <DownloadSimpleIcon aria-hidden="true" /> Export ({count})
       </Button>
       {error && <FieldError>{error}</FieldError>}
     </section>

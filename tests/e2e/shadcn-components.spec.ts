@@ -11,7 +11,7 @@ test('shadcn assignment dialog traps focus, restores it, and stays open during a
   await page.getByLabel('Email', { exact: true }).fill('manager@fieldwork.local');
   await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  const trigger = page.getByRole('button', { name: '+ Assign work order', exact: true });
+  const trigger = page.getByRole('button', { name: 'Assign work order', exact: true });
   await expect(trigger).toBeVisible();
   await expect(trigger).toBeEnabled();
   page.on('console', (entry) => {

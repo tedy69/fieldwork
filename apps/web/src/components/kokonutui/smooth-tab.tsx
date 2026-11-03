@@ -3,7 +3,7 @@ import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
-export type SelectionItem = { id: string; title: string; icon?: ReactNode };
+export type SelectionItem = { id: string; title: string; label?: string; icon?: ReactNode };
 
 /** Controlled selection strip. Filters share one result list, so they are toggle buttons rather than separate tab panels. */
 export default function SmoothTab({
@@ -48,6 +48,7 @@ export default function SmoothTab({
           }}
           className={cn('kokonut-tab', value === item.id && 'is-selected')}
           aria-pressed={value === item.id}
+          aria-label={item.label}
           onClick={() => onChange(item.id)}
           onKeyDown={(event) => navigate(event, index)}
         >

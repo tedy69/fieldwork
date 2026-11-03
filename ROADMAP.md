@@ -10,6 +10,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Expo worker notebook with local SQLite drafts and secure session storage.
 - [x] Notes, photo attachments, durable outbox, and idempotent submissions.
 - [x] Private local draft JSON exports in the web notebook/outbox, including offline photos and blocked submissions without changing the queue.
+- [x] Indonesian contributor quick-start guide for local setup, demo accounts, offline production builds and checks.
 - [x] Version conflicts, approval, requests for changes, and action history.
 - [x] API and sync tests, browser workflow checks, Docker setup, contributor documentation.
 - [x] Overdue filter with search and offline support in the web notebook and dispatch desk.
@@ -42,7 +43,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - Broader scheduling rules, holiday calendars, and editing or retiring future series work.
 - Accessible checklist field types: readings, numbers, text, and per-item evidence.
 - Automated native flows on Android and iOS.
-- Translations, beginning with English and Indonesian.
+- Application translations, beginning with English and Indonesian.
 
 ## Later · Teams and extensibility
 

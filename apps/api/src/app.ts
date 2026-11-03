@@ -405,6 +405,7 @@ export async function buildApp(options: AppOptions) {
       priority: input.priority,
       frequency: input.frequency,
       occurrences: input.occurrences,
+      ...(input.skipDates?.length ? { skipDates: [...input.skipDates].sort() } : {}),
     };
     const hash = digest(JSON.stringify(normalized));
     const result = store.transaction(() => {
@@ -427,11 +428,13 @@ export async function buildApp(options: AppOptions) {
         dueDate: input.dueDate,
         frequency: input.frequency,
         occurrences: input.occurrences,
+        skipDates: input.skipDates,
       });
       const receipt: OrderSeriesReceipt = {
         id: randomUUID(),
         createdAt: new Date().toISOString(),
         frequency: input.frequency,
+        ...(normalized.skipDates ? { skipDates: normalized.skipDates } : {}),
         orders: dates.map((dueDate) => assignedOrder({ ...input, dueDate })),
       };
       store.db

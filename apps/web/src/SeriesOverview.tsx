@@ -6,6 +6,7 @@ import { ApiError } from '@fieldwork/sdk';
 import { client, labels, message } from './lib';
 import { calendarLabel } from './calendar';
 import { recurrenceLabels } from './recurrence-labels';
+import { SkippedDates } from './RecurrenceExceptions';
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
 import { Alert } from './components/ui/alert';
@@ -284,6 +285,7 @@ export default function SeriesOverview({
             {detail && (
               <>
                 <h3>{detail.title}</h3>
+                <SkippedDates dates={detail.skipDates} />
                 <p className="muted">
                   Created by {detail.createdBy.name} on{' '}
                   {new Date(detail.createdAt).toLocaleString()}. Original worker:{' '}

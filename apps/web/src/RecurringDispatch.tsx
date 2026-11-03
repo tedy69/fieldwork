@@ -15,6 +15,7 @@ import { client, message } from './lib';
 import { localDate } from './dates';
 import { recurrenceLabels } from './recurrence-labels';
 import AssignmentFields from './AssignmentFields';
+import RecurrenceExceptions, { SkippedDates } from './RecurrenceExceptions';
 import { Button } from './components/ui/button';
 import { Form } from './components/ui/form';
 import { Input } from './components/ui/input';
@@ -33,9 +34,14 @@ import {
   DialogHeader,
 } from './components/ui/dialog';
 
-function datesFor(dueDate: string, frequency: Recurrence['frequency'], occurrences: number) {
+function datesFor(
+  dueDate: string,
+  frequency: Recurrence['frequency'],
+  occurrences: number,
+  skipDates?: string[],
+) {
   try {
-    return recurrenceDates({ dueDate, frequency, occurrences });
+    return recurrenceDates({ dueDate, frequency, occurrences, skipDates });
   } catch {
     return [];
   }
@@ -215,6 +221,8 @@ function RecurringDialog({
     pending?.frequency ?? 'weekly',
   );
   const [occurrences, setOccurrences] = useState(pending?.occurrences ?? 4);
+  const [skipDates, setSkipDates] = useState(pending?.skipDates ?? []);
+  const [skipDate, setSkipDate] = useState('');
   const draft = useRef<CreateOrderSeries | null>(pending);
   const dialog = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -225,8 +233,8 @@ function RecurringDialog({
     if (error && pending && !busy) retry.current?.focus();
   }, [error, pending, busy]);
   const activeDates = pending
-    ? datesFor(pending.dueDate, pending.frequency, pending.occurrences)
-    : datesFor(dueDate, frequency, occurrences);
+    ? datesFor(pending.dueDate, pending.frequency, pending.occurrences, pending.skipDates)
+    : datesFor(dueDate, frequency, occurrences, skipDates);
   async function send(input: CreateOrderSeries, reserve: boolean) {
     setBusy(true);
     setError('');
@@ -250,6 +258,10 @@ function RecurringDialog({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    if (skipDate) {
+      setError('Add the skipped date or clear it before assigning.');
+      return;
+    }
     const parsed = CreateOrderSeriesSchema.safeParse({
       mutationId: crypto.randomUUID(),
       title: String(data.get('title')),
@@ -261,6 +273,7 @@ function RecurringDialog({
       priority: data.get('priority'),
       frequency,
       occurrences,
+      ...(skipDates.length ? { skipDates } : {}),
     });
     if (!parsed.success) {
       setError('Check the assignment fields and choose 2–52 valid dates.');
@@ -334,6 +347,7 @@ function RecurringDialog({
               {recurrenceLabels[pending.frequency]} · {pending.occurrences} work orders
             </p>
             <DatePreview dates={activeDates} />
+            <SkippedDates dates={pending.skipDates} />
             {error && <FieldError>{error}</FieldError>}
             {!online && (
               <Alert className="notice">
@@ -359,6 +373,8 @@ function RecurringDialog({
                     setDueDate(pending.dueDate);
                     setFrequency(pending.frequency);
                     setOccurrences(pending.occurrences);
+                    setSkipDates(pending.skipDates ?? []);
+                    setSkipDate('');
                     await onClear(pending.mutationId);
                     setError('');
                     setEditable(false);
@@ -415,20 +431,37 @@ function RecurringDialog({
                   />
                 </Label>
               </div>
+              <RecurrenceExceptions
+                dates={skipDates}
+                candidate={skipDate}
+                dueDate={dueDate}
+                disabled={busy}
+                onCandidate={setSkipDate}
+                onChange={setSkipDates}
+              />
             </FieldSet>
             {frequency === 'weekdays' && (
               <p className="muted">
-                Choose a Monday–Friday first date. Weekday repeats skip weekends and include
-                holidays.
+                Choose a Monday–Friday first date. Holidays stay scheduled unless you add them to
+                Skip dates.
               </p>
             )}
             <DatePreview dates={activeDates} />
+            {skipDates.some((date) => date <= dueDate) && (
+              <FieldError>
+                Skipped dates must be after the first due date. Remove them or change the first
+                date.
+              </FieldError>
+            )}
             <p className="muted">
               The due date is the first occurrence. All orders are assigned now.
             </p>
             {error && <FieldError>{error}</FieldError>}
             {!online && <Alert className="notice">Reconnect before assigning this batch.</Alert>}
-            <Button className="primary full" disabled={busy || !online || activeDates.length === 0}>
+            <Button
+              className="primary full"
+              disabled={busy || !online || activeDates.length === 0 || Boolean(skipDate)}
+            >
               {busy ? 'Saving batch…' : `Assign ${activeDates.length || ''} work orders`}
             </Button>
           </Form>

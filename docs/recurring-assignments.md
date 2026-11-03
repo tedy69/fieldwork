@@ -22,9 +22,21 @@ Weekday schedules include public holidays. They are a Monday–Friday calendar r
 
 Counts must be integers from 2 through 52, including the first occurrence. Dates use UTC calendar arithmetic without a time-of-day or daylight-saving adjustment. Every generated date, including monthly advances and weekend skips, must fit a four-digit year. Past dates are allowed, as with ordinary assignments. The exported `recurrenceDates` helper validates the same schedule for a client preview; `RecurrenceFrequencySchema` defines all four supported values consistently across requests, receipts, and batch summaries. Existing daily/weekly/weekday calculations, stored inputs, hashes and receipts remain unchanged.
 
-The web selector, recovered request and batch ledger use **Weekdays (Mon–Fri)** and **Monthly** for these rules. Lost-response recovery retains and replays the original frequency, payload and mutation ID. No recurrence edits, background scheduling, holiday configuration, new dependency or database migration are introduced. Update the server and web bundle together when enabling a new frequency; older clients cannot parse batch metadata for frequencies absent from their schema. Native workers continue to receive ordinary materialized orders without recurrence metadata.
+The web selector, recovered request and batch ledger use **Weekdays (Mon–Fri)** and **Monthly** for these rules. Lost-response recovery retains and replays the original frequency, payload and mutation ID. No recurrence edits, background scheduling, shared holiday calendar, new dependency or database migration are introduced. Update the server and web bundle together when enabling a new frequency; older clients cannot parse batch metadata for frequencies absent from their schema. Native workers continue to receive ordinary materialized orders without recurrence metadata.
 
 A new batch returns 201 with `{ id, createdAt, frequency, orders }`. Each order has its own ID, reference, version 1, ASSIGNED status, and site/worker/checklist snapshots. The series definition, original receipt, all orders, membership, and assignment events commit together. Invalid catalog choices return 422 `INVALID_ASSIGNMENT`; malformed recurrence returns 422 `VALIDATION`. Missing sessions and worker accounts cannot create batches.
+
+## Skip holidays or site closures
+
+Open **Skip dates (optional)** in the assignment form. Choose a date, then use **Add date**. Remove a date with its named trash button. A date left in the input must be added or cleared before assigning. The preview shows the actual order dates before the write. The recovery view and saved batch details retain the selected exclusions.
+
+API/SDK callers may supply `skipDates`, an optional array of up to 52 distinct `YYYY-MM-DD` dates. Every skipped date must be after `dueDate`; change the first due date rather than skipping it. `occurrences` remains the number of orders created (2–52), so skipped occurrences extend the schedule. Daily and weekly rules advance to the next candidate; weekday rules still skip weekends; monthly rules retain the original day even when a month is excluded. For example, three monthly orders starting Jan 31, 2027 with Feb 28 excluded fall on Jan 31, Mar 31 and Apr 30. A date not reached by the chosen recurrence has no effect. Dates generated after exclusions must still fit a four-digit year.
+
+This is a per-batch list, entered by a manager. No national holiday feed or automatic holiday calendar is loaded. Without exclusions, the existing daily/weekly/weekday/monthly rules above stay unchanged and still include public holidays. No previously created batch or order is edited by this list.
+
+Nonempty exclusions are sorted and stored with the original input, creation receipt, batch summary and details. Retries with the same set in a different order replay the original receipt; changing that set under the same mutation ID returns 422 `MUTATION_REUSED`. Omitted and empty lists use the legacy business hash and omit the extra receipt/summary field. Saved requests keep their full list and mutation ID through offline reload, account changes and response loss. Editing a definitively declined request retains the list and creates a new intent ID on submission.
+
+There is no database or device-notebook migration. Deploy the new server and web bundle together before using exclusions: older servers reject the new request field, and older web bundles cannot recover saved requests containing it. Older clients can continue creating ordinary batches without the field. Worker apps receive ordinary materialized assignments. Importing a holiday calendar, sharing exclusion lists and modifying future series remain separate work.
 
 ## Retry and recovery
 
@@ -57,7 +69,7 @@ Lists sort newest first by creation timestamp, then batch ID. The cursor anchors
 
 ## Boundaries and contributor entry points
 
-There is no background scheduler, infinite series, weekend/holiday policy, configurable day-of-month, bulk editing or series cancellation. Each materialized order can be rescheduled, reassigned, submitted and reviewed independently through the existing versioned workflow. Template changes do not rewrite its saved checklist. Future scheduling rules and series management need their own contract and migration discussion.
+There is no background scheduler, infinite series, shared holiday calendar, configurable day-of-month, bulk editing or series cancellation. Each materialized order can be rescheduled, reassigned, submitted and reviewed independently through the existing versioned workflow. Template changes do not rewrite its saved checklist. Future scheduling rules and series management need their own contract and migration discussion.
 
 - Contracts and date generation: `packages/contracts/src/index.ts`.
 - HTTP creation and transaction: `apps/api/src/app.ts`.

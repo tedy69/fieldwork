@@ -49,7 +49,7 @@ test('weekday preview rejects weekend starts and creates the exact dates shown i
   await fill(page, 'Weekday calendar QA');
   await expect(
     dialog(page).getByText(
-      'Choose a Monday–Friday first date. Weekday repeats skip weekends and include holidays.',
+      'Choose a Monday–Friday first date. Holidays stay scheduled unless you add them to Skip dates.',
       { exact: true },
     ),
   ).toBeVisible();

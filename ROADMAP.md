@@ -30,6 +30,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Manager coordinate editing for existing sites, with conflict recovery, explicit clearing, and unchanged inspection snapshots.
 - [x] Weekday-only recurring batches with Monday–Friday previews, saved-request recovery, and batch browsing.
 - [x] Monthly recurring batches with original-day anchoring, shorter-month handling, date previews, saved-request recovery, and batch browsing.
+- [x] Per-batch dates to skip for holidays/site closures, with extended previews, preserved order counts and duplicate-safe recovery.
 - [x] Checklist-wide photo requirements, web/Expo guidance, offline draft protection, and server enforcement.
 - [x] Worker invitations with one-time expiring links, a paginated manager ledger, revocation, browser password setup, and preserved device notebooks.
 - [x] Worker deactivation and reactivation with manager confirmations, session revocation, active assignment choices, version conflicts, and preserved offline reports.

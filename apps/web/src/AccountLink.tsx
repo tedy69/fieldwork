@@ -11,6 +11,7 @@ import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { FieldSet, FieldError } from './components/ui/field';
 import './invitations.css';
+import AuthLayout from './AuthLayout';
 
 type Preview = Awaited<ReturnType<typeof client.previewInvitation>>;
 export default function AccountLink({
@@ -161,8 +162,8 @@ export default function AccountLink({
     }
   }
   return (
-    <main className="login-page">
-      <section className="login-intro">
+    <AuthLayout recovery>
+      <div className="account-introduction">
         <h1 ref={heading} tabIndex={-1}>
           {reset ? 'Return to your notebook.' : 'Join the field team.'}
         </h1>
@@ -171,158 +172,153 @@ export default function AccountLink({
             ? 'Choose a new password for your existing worker account. Saved notebook work stays on its device.'
             : 'Review your invitation and choose a password for your field notebook.'}
         </p>
-      </section>
-      <section className="login-panel">
-        <div className="brand">
-          Fieldwork<span className="version">v0.1</span>
-        </div>
-        <Card className="invitation-card">
-          {done ? (
-            <>
-              <h2 ref={resultHeading} tabIndex={-1}>
-                {reset ? 'Your password has changed' : 'Your account is ready'}
-              </h2>
-              <p role="status">Sign in with {knownEmail} and the password you chose.</p>
-              <p className="muted">
-                Continuing signs out any account open in this browser. Saved notebooks stay on this
-                device.
+      </div>
+      <Card className="invitation-card">
+        {done ? (
+          <>
+            <h2 ref={resultHeading} tabIndex={-1}>
+              {reset ? 'Your password has changed' : 'Your account is ready'}
+            </h2>
+            <p role="status">Sign in with {knownEmail} and the password you chose.</p>
+            <p className="muted">
+              Continuing signs out any account open in this browser. Saved notebooks stay on this
+              device.
+            </p>
+          </>
+        ) : (
+          <>
+            <h2>
+              {unavailable
+                ? reset
+                  ? 'Password reset unavailable'
+                  : 'Invitation unavailable'
+                : reset
+                  ? 'Reset your password'
+                  : 'Set up your notebook'}
+            </h2>
+            {busy === 'loading' && (
+              <p className="muted" role="status">
+                {reset ? 'Loading password reset…' : 'Loading invitation…'}
               </p>
-            </>
-          ) : (
-            <>
-              <h2>
-                {unavailable
-                  ? reset
-                    ? 'Password reset unavailable'
-                    : 'Invitation unavailable'
-                  : reset
-                    ? 'Reset your password'
-                    : 'Set up your notebook'}
-              </h2>
-              {busy === 'loading' && (
-                <p className="muted" role="status">
-                  {reset ? 'Loading password reset…' : 'Loading invitation…'}
-                </p>
-              )}
-              {preview && !unavailable && (
-                <>
-                  <dl className="invitation-identity">
-                    <dt>{reset ? 'Worker account' : 'Invited worker'}</dt>
-                    <dd>{preview.name}</dd>
-                    <dt>Email</dt>
-                    <dd>{preview.email}</dd>
-                    <dt>Link expires</dt>
-                    <dd>
-                      <time dateTime={preview.expiresAt}>
-                        {new Date(preview.expiresAt).toLocaleString()}
-                      </time>
-                    </dd>
-                  </dl>
-                  {reset && (
-                    <p className="muted">
-                      Changing your password ends all existing sessions. Sign in again afterward;
-                      saved drafts and queued photos stay on this device.
+            )}
+            {preview && !unavailable && (
+              <>
+                <dl className="invitation-identity">
+                  <dt>{reset ? 'Worker account' : 'Invited worker'}</dt>
+                  <dd>{preview.name}</dd>
+                  <dt>Email</dt>
+                  <dd>{preview.email}</dd>
+                  <dt>Link expires</dt>
+                  <dd>
+                    <time dateTime={preview.expiresAt}>
+                      {new Date(preview.expiresAt).toLocaleString()}
+                    </time>
+                  </dd>
+                </dl>
+                {reset && (
+                  <p className="muted">
+                    Changing your password ends all existing sessions. Sign in again afterward;
+                    saved drafts and queued photos stay on this device.
+                  </p>
+                )}
+                <Form noValidate onSubmit={accept}>
+                  <FieldSet disabled={Boolean(busy) || needsReload || !online}>
+                    <Label>
+                      Password
+                      <Input
+                        type="password"
+                        aria-label="Password"
+                        autoComplete="new-password"
+                        required
+                        minLength={12}
+                        maxLength={256}
+                        aria-describedby={hint}
+                        value={password}
+                        onChange={(event) => {
+                          setPassword(event.target.value);
+                          setError('');
+                        }}
+                      />
+                    </Label>
+                    <p id={hint} className="muted">
+                      Use 12–256 characters.
                     </p>
-                  )}
-                  <Form noValidate onSubmit={accept}>
-                    <FieldSet disabled={Boolean(busy) || needsReload || !online}>
-                      <Label>
-                        Password
-                        <Input
-                          type="password"
-                          aria-label="Password"
-                          autoComplete="new-password"
-                          required
-                          minLength={12}
-                          maxLength={256}
-                          aria-describedby={hint}
-                          value={password}
-                          onChange={(event) => {
-                            setPassword(event.target.value);
-                            setError('');
-                          }}
-                        />
-                      </Label>
-                      <p id={hint} className="muted">
-                        Use 12–256 characters.
-                      </p>
-                      <Label>
-                        Confirm password
-                        <Input
-                          ref={confirmInput}
-                          aria-label="Confirm password"
-                          type="password"
-                          autoComplete="new-password"
-                          required
-                          minLength={12}
-                          maxLength={256}
-                          value={confirmation}
-                          onChange={(event) => {
-                            setConfirmation(event.target.value);
-                            setError('');
-                          }}
-                        />
-                      </Label>
-                    </FieldSet>
-                    <Button
-                      className="primary full"
-                      disabled={!online || Boolean(busy) || needsReload}
-                    >
-                      {busy === 'accepting'
-                        ? reset
-                          ? 'Changing password…'
-                          : 'Creating account…'
-                        : reset
-                          ? 'Change password'
-                          : 'Create worker account'}
-                    </Button>
-                  </Form>
-                </>
-              )}
-            </>
-          )}
-          {!online && (
-            <Alert className="notice" role="status">
-              Your entries stay here while this page is open. Reconnect to continue.
-            </Alert>
-          )}
-          {error && <FieldError>{error}</FieldError>}
-          {!done && !unavailable && needsReload && (
-            <Button
-              type="button"
-              className="quiet full"
-              disabled={!online || Boolean(busy)}
-              onClick={() => void load()}
-            >
-              {reset ? 'Reload reset link' : 'Reload invitation'}
-            </Button>
-          )}
-          {(done || (attempted && knownEmail)) && (
-            <Button
-              type="button"
-              className="primary full"
-              disabled={!online || Boolean(busy)}
-              onClick={() => void signIn()}
-            >
-              {busy === 'leaving'
-                ? 'Opening sign-in…'
-                : done
-                  ? 'Continue to sign in'
-                  : 'Try signing in'}
-            </Button>
-          )}
-          {!done && (
-            <Button
-              type="button"
-              className="quiet full"
-              disabled={busy === 'accepting' || busy === 'leaving'}
-              onClick={onReturn}
-            >
-              Return to Fieldwork
-            </Button>
-          )}
-        </Card>
-      </section>
-    </main>
+                    <Label>
+                      Confirm password
+                      <Input
+                        ref={confirmInput}
+                        aria-label="Confirm password"
+                        type="password"
+                        autoComplete="new-password"
+                        required
+                        minLength={12}
+                        maxLength={256}
+                        value={confirmation}
+                        onChange={(event) => {
+                          setConfirmation(event.target.value);
+                          setError('');
+                        }}
+                      />
+                    </Label>
+                  </FieldSet>
+                  <Button
+                    className="primary full"
+                    disabled={!online || Boolean(busy) || needsReload}
+                  >
+                    {busy === 'accepting'
+                      ? reset
+                        ? 'Changing password…'
+                        : 'Creating account…'
+                      : reset
+                        ? 'Change password'
+                        : 'Create worker account'}
+                  </Button>
+                </Form>
+              </>
+            )}
+          </>
+        )}
+        {!online && (
+          <Alert className="notice" role="status">
+            Your entries stay here while this page is open. Reconnect to continue.
+          </Alert>
+        )}
+        {error && <FieldError>{error}</FieldError>}
+        {!done && !unavailable && needsReload && (
+          <Button
+            type="button"
+            className="quiet full"
+            disabled={!online || Boolean(busy)}
+            onClick={() => void load()}
+          >
+            {reset ? 'Reload reset link' : 'Reload invitation'}
+          </Button>
+        )}
+        {(done || (attempted && knownEmail)) && (
+          <Button
+            type="button"
+            className="primary full"
+            disabled={!online || Boolean(busy)}
+            onClick={() => void signIn()}
+          >
+            {busy === 'leaving'
+              ? 'Opening sign-in…'
+              : done
+                ? 'Continue to sign in'
+                : 'Try signing in'}
+          </Button>
+        )}
+        {!done && (
+          <Button
+            type="button"
+            className="quiet full"
+            disabled={busy === 'accepting' || busy === 'leaving'}
+            onClick={onReturn}
+          >
+            Return to Fieldwork
+          </Button>
+        )}
+      </Card>
+    </AuthLayout>
   );
 }

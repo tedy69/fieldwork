@@ -88,11 +88,11 @@
   color: var(--amber);
 }
 .month-day[aria-pressed='true'] {
-  background: #34403f;
+  background: var(--accent-soft);
   box-shadow: inset 0 -2px var(--amber);
 }
 .month-day:hover {
-  background: #2d393c;
+  background: var(--surface-hover);
 }
 .month-day:focus-visible {
   outline-offset: -4px;

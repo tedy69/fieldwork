@@ -62,8 +62,8 @@ test('manager adds, changes and clears coordinates without rewriting assignment 
   await page.keyboard.press('Enter');
   const fields = form(page, site.name);
   await expect(fields.getByLabel('Latitude', { exact: true })).toBeFocused();
-  await expect(fields).toHaveCSS('border-left-color', 'rgb(245, 198, 109)');
-  await expect(fields).toHaveCSS('background-color', 'rgb(21, 29, 32)');
+  await expect(fields).toHaveCSS('border-left-color', 'rgb(145, 80, 20)');
+  await expect(fields).toHaveCSS('background-color', 'rgb(245, 244, 239)');
   await fields.getByLabel('Latitude', { exact: true }).fill('0');
   await fields.getByRole('button', { name: 'Save coordinates', exact: true }).click();
   await expect(fields.getByRole('alert')).toContainText('Enter both latitude and longitude');

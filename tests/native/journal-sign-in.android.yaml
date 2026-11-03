@@ -1,0 +1,52 @@
+appId: host.exp.exponent
+name: Android field journal sign-in and recovery
+tags:
+  - android
+  - journal
+---
+# Dedicated synthetic fixture. Never clear app data or keychain.
+- launchApp
+- extendedWaitUntil:
+    visible: Development servers
+    timeout: 15000
+- openLink: ${METRO_URL}
+- extendedWaitUntil:
+    visible:
+      id: login-email
+    timeout: 30000
+- tapOn: Change server
+- assertVisible: Server address
+- tapOn: Hide server settings
+- tapOn:
+    id: login-email
+- eraseText
+- inputText: worker@fieldwork.local
+- tapOn: Done editing
+- tapOn:
+    id: login-password
+- eraseText
+- inputText: wrong-demo-password
+- tapOn: Done editing
+- tapOn: Show password
+- assertVisible:
+    id: login-password
+    text: wrong-demo-password
+- tapOn: Hide password
+- tapOn: Sign in
+- extendedWaitUntil:
+    visible: Could not open the notebook
+    timeout: 10000
+- assertVisible:
+    id: login-email
+    text: worker@fieldwork.local
+- tapOn:
+    id: login-password
+- eraseText
+- inputText: fieldwork-demo
+- tapOn: Done editing
+- scrollUntilVisible:
+    element: Sign in
+- tapOn: Sign in
+- extendedWaitUntil:
+    visible: My assignments
+    timeout: 15000

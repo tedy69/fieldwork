@@ -175,7 +175,7 @@ test('worker opts into map tiles, uses keyboard controls, and retains a photo dr
     await location(page)
       .locator('.site-map-frame')
       .evaluate((node) => getComputedStyle(node).outlineColor),
-  ).toBe('rgb(245, 198, 109)');
+  ).toBe('rgb(145, 80, 20)');
   await page.keyboard.press('+');
   await expect(location(page).getByText('Zoom 16', { exact: true })).toBeVisible();
   const beforePan = await canvas.locator('.leaflet-map-pane').getAttribute('style');

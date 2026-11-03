@@ -22,7 +22,7 @@
 .invitation-card > .ui-button {
   margin-top: 14px;
 }
-.login-intro h1[tabindex]:focus,
+.account-introduction h1[tabindex]:focus,
 .invitation-card h2[tabindex]:focus,
 .invitation-dialog h2[tabindex]:focus {
   outline: 2px solid var(--amber);

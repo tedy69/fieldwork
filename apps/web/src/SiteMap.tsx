@@ -76,11 +76,12 @@ export default function SiteMap({
           }
         });
         layer.addTo(instance);
+        const palette = getComputedStyle(container.current);
         L.circleMarker([coordinates.latitude, coordinates.longitude], {
           radius: 8,
-          color: '#151d20',
+          color: palette.getPropertyValue('--ui-foreground').trim(),
           weight: 3,
-          fillColor: '#f5c66d',
+          fillColor: palette.getPropertyValue('--amber').trim(),
           fillOpacity: 1,
           interactive: false,
         }).addTo(instance);

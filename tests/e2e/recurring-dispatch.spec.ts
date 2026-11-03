@@ -377,7 +377,7 @@ test('planner dates seed recurring work, long previews scroll by keyboard, and u
   await page.keyboard.press('End');
   await expect.poll(() => list.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
   const outline = await list.evaluate((node) => getComputedStyle(node).outlineColor);
-  expect(outline).toBe('rgb(245, 198, 109)');
+  expect(outline).toBe('rgb(145, 80, 20)');
   await page.context().setOffline(true);
   await expect(
     dialogFor(page).getByRole('button', { name: 'Assign 52 work orders', exact: true }),

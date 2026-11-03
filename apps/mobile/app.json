@@ -5,7 +5,7 @@
     "slug": "fieldwork",
     "version": "0.1.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "ios": { "supportsTablet": true },
     "plugins": [
       "expo-secure-store",

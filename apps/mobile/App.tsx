@@ -5,8 +5,8 @@ import {
   BackHandler,
   Image,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -46,6 +46,7 @@ import {
   statusLabels,
 } from './notebook-ui';
 import { colors, radius, size, spacing } from './theme';
+import WorkspacePage from './workspace-page';
 
 type Session = { user: User; token: string; baseUrl: string };
 const errorText = (error: unknown) =>
@@ -102,7 +103,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.screen}>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <KeyboardAvoidingView
           style={styles.screen}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -121,7 +122,9 @@ export default function App() {
                 <Copy accessibilityRole="header" variant="title">
                   Sign in to Fieldwork
                 </Copy>
-                <Copy muted>Your assignments and inspections, ready for the field.</Copy>
+                <Copy muted>
+                  A clear brief. A useful record. All of your site work in one place.
+                </Copy>
               </View>
               <Panel>
                 {serverExpanded && (
@@ -196,8 +199,8 @@ export default function App() {
                 </Copy>
               </View>
               <Copy variant="caption" muted>
-                Running the local demo? Use worker@fieldwork.local with password fieldwork-demo
-                after seeding the server.
+                New to the team or need a new password? Open the invitation or reset link from your
+                manager in a browser, then return here to sign in.
               </Copy>
             </ScrollView>
           )}
@@ -227,6 +230,9 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
   );
   const [state, setState] = useState<State>(emptyState);
   const [selected, setSelected] = useState<string | null>(null);
+  const [notebookView, setNotebookView] = useState<'assignments' | 'outbox'>('assignments');
+  const [search, setSearch] = useState('');
+  const listOffset = useRef(0);
   useEffect(() => {
     notebookScroll.current?.scrollTo({ y: 0, animated: false });
   }, [selected]);
@@ -276,6 +282,45 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
     };
   }, [repo]);
   const order = state.orders.find((order) => order.id === selected);
+  if (!order)
+    return (
+      <WorkspacePage
+        state={state}
+        user={session.user}
+        busy={busy}
+        error={error}
+        onSync={() => void sync()}
+        onOpen={(id) => {
+          Keyboard.dismiss();
+          setSelected(id);
+        }}
+        onLogout={() => void logout()}
+        view={notebookView}
+        onViewChange={(view) => {
+          listOffset.current = 0;
+          setNotebookView(view);
+        }}
+        search={search}
+        onSearchChange={(search) => {
+          listOffset.current = 0;
+          setSearch(search);
+        }}
+        scrollPosition={listOffset}
+        onResolve={async (orderId) => {
+          setBusy(true);
+          setError('');
+          try {
+            await repo.discard(orderId);
+            await sync();
+            setSelected(orderId);
+          } catch (error) {
+            setError(errorText(error));
+          } finally {
+            setBusy(false);
+          }
+        }}
+      />
+    );
   return (
     <ScrollView
       ref={notebookScroll}
@@ -303,107 +348,16 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
             {error}
           </Notice>
         ) : null}
-        {order ? (
-          <Inspection
-            key={`${order.id}:${order.version}`}
-            order={order}
-            state={state}
-            repo={repo}
-            sync={sync}
-            back={() => setSelected(null)}
-            baseUrl={session.baseUrl}
-            token={session.token}
-          />
-        ) : (
-          <>
-            <View style={styles.introduction}>
-              <Copy accessibilityRole="header" variant="title">
-                My assignments
-              </Copy>
-            </View>
-            <View style={styles.summary}>
-              <Copy muted variant="caption">
-                <Copy variant="record">{state.orders.length}</Copy> saved assignments
-              </Copy>
-              <Copy muted variant="caption">
-                <Copy variant="record" style={{ color: colors.amber }}>
-                  {state.outbox.length}
-                </Copy>{' '}
-                waiting to sync
-              </Copy>
-            </View>
-            {state.outbox
-              .filter((item) => item.state === 'blocked')
-              .map((item) => (
-                <Notice title="Report needs attention" key={item.input.mutationId}>
-                  <Copy muted>{item.error}</Copy>
-                  <Button
-                    variant="outline"
-                    title="Keep draft and open latest"
-                    onPress={async () => {
-                      await repo.discard(item.orderId);
-                      await sync();
-                      setSelected(item.orderId);
-                    }}
-                  />
-                </Notice>
-              ))}
-            {state.orders.length === 0 ? (
-              <Notice title={busy ? 'Loading assignments…' : 'No saved assignments yet'}>
-                {busy
-                  ? 'Opening your saved notebook and checking the server.'
-                  : 'Connect and sync after your manager assigns work.'}
-              </Notice>
-            ) : (
-              <Panel style={styles.ledger}>
-                {state.orders.map((order) => (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${order.reference}: ${order.title}`}
-                    key={order.id}
-                    onPress={() => setSelected(order.id)}
-                    style={({ pressed }) => [styles.order, pressed && styles.orderPressed]}
-                  >
-                    <View style={styles.referenceRow}>
-                      <Copy variant="reference" muted>
-                        {order.reference}
-                      </Copy>
-                      {order.priority === 'urgent' && (
-                        <Copy variant="caption" style={{ color: colors.amber }}>
-                          Urgent
-                        </Copy>
-                      )}
-                    </View>
-                    <Copy variant="record">{order.title}</Copy>
-                    <Copy variant="caption" muted>
-                      {order.site.name}
-                    </Copy>
-                    <View style={styles.row}>
-                      <Copy muted variant="caption">
-                        Due {order.dueDate}
-                      </Copy>
-                      <StatusBadge status={order.status} />
-                    </View>
-                  </Pressable>
-                ))}
-              </Panel>
-            )}
-            <Copy muted variant="caption">
-              {state.lastSynced
-                ? `Last synced ${new Date(state.lastSynced).toLocaleString()}`
-                : 'Not yet synced'}
-            </Copy>
-            <Button
-              variant="ghost"
-              title="Sign out"
-              onPress={() => void logout()}
-              style={styles.leadingAction}
-            />
-            <Copy muted variant="caption">
-              Unsent drafts stay on this device and return when you sign in with the same account.
-            </Copy>
-          </>
-        )}
+        <Inspection
+          key={`${order.id}:${order.version}`}
+          order={order}
+          state={state}
+          repo={repo}
+          sync={sync}
+          back={() => setSelected(null)}
+          baseUrl={session.baseUrl}
+          token={session.token}
+        />
       </View>
     </ScrollView>
   );
@@ -574,7 +528,7 @@ function Inspection({
         <>
           <SectionHeading
             title="Inspection checklist"
-            detail={saving ? 'Saving locally…' : 'Draft saved on this device'}
+            detail={`${draft.answers.filter((answer) => answer.value).length} of ${order.template.items.length} checks recorded · ${saving ? 'Saving locally…' : 'Draft saved on this device'}`}
           />
           <Panel style={styles.ledger}>
             {order.template.items.map((item, index) => {
@@ -780,28 +734,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  summary: {
-    flexDirection: 'row',
-    gap: spacing.section,
-    flexWrap: 'wrap',
-    paddingBottom: spacing.xl,
-    borderBottomWidth: 1,
-    borderColor: colors.line,
-  },
   ledger: { padding: 0, gap: 0, overflow: 'hidden' },
-  order: {
-    padding: spacing.lg,
-    gap: spacing.xs,
-    borderBottomColor: colors.line,
-    borderBottomWidth: 1,
-  },
-  orderPressed: { backgroundColor: colors.raised },
-  referenceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   metadata: {
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
+    borderWidth: 1,
+    borderRadius: radius.panel,
     borderColor: colors.line,
-    paddingVertical: spacing.lg,
+    padding: spacing.xl,
+    backgroundColor: colors.surface,
     gap: spacing.lg,
   },
   questionHeading: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },

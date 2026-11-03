@@ -171,7 +171,7 @@ test('manager creates and copies a one-time link, recipient activates a worker, 
   await field.setViewportSize({ width: 1440, height: 1100 });
   await expect(field.getByRole('heading', { name: 'Join the field team.', exact: true })).toHaveCSS(
     'outline-color',
-    'rgb(245, 198, 109)',
+    'rgb(145, 80, 20)',
   );
   await field.screenshot({ path: test.info().outputPath('accept-invitation-desktop.png') });
   for (const width of [390, 320]) {

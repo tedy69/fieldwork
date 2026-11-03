@@ -16,16 +16,16 @@
   font-size: 12px;
 }
 .kokonut-search {
-  --color-white: #edf1ee;
-  --color-zinc-950: #151d20;
-  --color-zinc-900: #1c2629;
-  --color-zinc-800: #344145;
-  --color-zinc-700: #465559;
-  --color-zinc-500: #adbbb6;
-  --color-zinc-400: #adbbb6;
-  --color-zinc-300: #edf1ee;
-  --color-zinc-200: #edf1ee;
-  --color-zinc-100: #edf1ee;
+  --color-white: var(--ui-foreground);
+  --color-zinc-950: var(--ui-field);
+  --color-zinc-900: var(--surface);
+  --color-zinc-800: var(--surface-hover);
+  --color-zinc-700: var(--ui-control-border);
+  --color-zinc-500: var(--muted);
+  --color-zinc-400: var(--muted);
+  --color-zinc-300: var(--ui-foreground);
+  --color-zinc-200: var(--ui-foreground);
+  --color-zinc-100: var(--ui-foreground);
   height: auto;
   max-width: none;
 }
@@ -33,7 +33,7 @@
   position: relative;
   border-radius: 4px;
   border-style: solid;
-  border-color: #7f918d;
+  border-color: var(--ui-control-border);
   box-shadow: none;
 }
 .kokonut-search:focus-within > div {
@@ -52,10 +52,10 @@
   border-radius: 0;
   font-size: 16px;
   background: transparent;
-  color: #edf1ee;
+  color: var(--ui-foreground);
 }
 .kokonut-search input::placeholder {
-  color: #adbbb6;
+  color: var(--muted);
 }
 .kokonut-search [role='option'] {
   min-height: 44px;

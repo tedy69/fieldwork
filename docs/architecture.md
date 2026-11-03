@@ -30,7 +30,7 @@ flowchart LR
 
 Sites and checklist templates live in the workspace catalog. Every assigned order embeds a snapshot of its site, assignee, and checklist. Creating a new template does not change old inspections.
 
-Optional item `responseType` metadata defaults to `check`; `text` questions retain partial local input but require a nonblank response before submission. The shared contracts own completion, answer formatting and snapshot/type matching. API enforcement is independent of web/Expo validation. Existing JSON snapshot storage needs no migration; see [checklist fields](checklist-fields.md) for release compatibility.
+Optional item `responseType` metadata defaults to `check`; `text` questions retain partial local input but require a nonblank response before submission. Numeric questions use `number`, preserving a raw string in the draft and converting valid decimal input to a finite number at the submission boundary. The shared contracts own completion, conversion, answer formatting and snapshot/type matching. API enforcement is independent of web/Expo validation. Existing JSON snapshot storage needs no migration; see [checklist fields](checklist-fields.md) for release compatibility.
 
 An optional checklist `requiresPhoto` policy travels with those snapshots. New web/Expo submissions are checked against cached assignment metadata before queueing, while the API independently enforces at least one valid attachment for each submission and correction. Missing evidence preserves drafts and leaves server records unchanged. Older assignments without the flag remain optional. See [photo evidence](photo-evidence.md) for compatibility, policy scope, and verification.
 

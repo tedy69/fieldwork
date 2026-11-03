@@ -150,8 +150,10 @@ export function createOfflineRepository(
         const order = state.orders.find((order) => order.id === orderId);
         if (
           order &&
-          (order.template.items.some((item) => item.responseType === 'text') ||
-            input.answers.some((answer) => answer.value === 'text')) &&
+          (order.template.items.some(
+            (item) => item.responseType === 'text' || item.responseType === 'number',
+          ) ||
+            input.answers.some((answer) => answer.value === 'text' || answer.value === 'number')) &&
           (!ReportInputSchema.safeParse(input).success ||
             !answersMatchTemplate(order.template, input.answers))
         )

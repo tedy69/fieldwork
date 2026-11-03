@@ -1,10 +1,18 @@
 # Verification
 
+## Numeric checklist readings (2026-11-03)
+
+Twenty new unit/API cases exercise zero, signed decimals, incomplete/unsupported input, nonfinite/wrong-kind wire values, mixed snapshots, permissions, raw draft versus numeric queue representations, lost acknowledgements, exact retries, changed readings under the same mutation ID, newer-version conflicts, unchanged drafts, SQLite restart and correction revisions. Three browser workflows cover numeric template creation and 320/390/1440px access, keyboard focus, partial-input offline reload, zero, invalid-input guidance, JSON draft export, stale-version recovery with the original raw reading, actual numeric submission, history and print output. Existing text workflows also pass.
+
+`npm run check` passes formatting, web/mobile types, 517 unit/API tests and the production web build. All 107 Chromium workflows pass. Expo compatibility and iOS/Android Hermes exports also succeed. The [design review](journal-design-review.md) records the scoped gate.
+
+On Android 15/API 35 with Expo Go, Maestro and ADB keyboard input, an incomplete minus sign survived stopping/relaunching the app. The worker completed `-12.50` and `0`, queued during an API 503 and restarted again with Outbox (1) intact. Reconnect and two sync actions yielded one saved revision at version 2. The native saved report was visually inspected and API readback confirmed numeric `-12.5` and `0`. App data was preserved. iOS runtime, physical devices and full screen-reader traversal remain unrun; bundle exports are separate evidence.
+
 ## Text-response checklist fields (2026-11-03)
 
 Shared contracts, API/SDK, local queue, web and Expo support text questions alongside legacy checks. Eleven new unit/API regressions cover mixed snapshots, nonblank/length/type validation, permissions, lost responses with exact mutation retries, changed-payload rejection, newer-version conflicts, unchanged drafts, correction history, SQLite restart and CSV escaping. Three browser workflows cover manager creation, keyboard access, 320/390/1440px layouts, offline reload with text and photo bytes, private JSON export, submission, saved history and print rendering. The field has an explicit accessible name that stays stable after restoring saved text.
 
-`npm run check` passes with 497 unit/API tests, strict web/mobile types, formatting and the production build. Expo dependencies are compatible and iOS/Android Hermes exports succeed.
+`npm run check` passes with 497 unit/API tests, strict web/mobile types, formatting and the production build. All 104 Chromium workflows pass. Expo dependencies are compatible and iOS/Android Hermes exports succeed.
 
 On the dedicated Android 15/API 35 emulator with Expo Go, Maestro and ordinary ADB keyboard input exercised a mixed assignment. The serial response and summary survived stopping/relaunching the app. A synthetic API 503 kept the report in Outbox (1); reconnecting and syncing twice cleared the outbox, displayed the actual response and left exactly one saved revision at order version 2. App data was preserved. iOS runtime, physical devices and full screen-reader traversal remain unrun. Native JavaScript exports are a separate CI check.
 

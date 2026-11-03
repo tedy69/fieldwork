@@ -25,6 +25,7 @@ import {
   ReportInputSchema,
   answerComplete,
   answerLabel,
+  reportAnswers,
   type Draft,
   type User,
   type WorkOrder,
@@ -446,6 +447,7 @@ function Inspection({
     try {
       const input = ReportInputSchema.parse({
         ...draft,
+        answers: reportAnswers(draft.answers),
         mutationId: Crypto.randomUUID(),
         baseVersion: order.version,
       });
@@ -564,6 +566,31 @@ function Inspection({
                         })
                       }
                     />
+                  ) : item.responseType === 'number' ? (
+                    <>
+                      <Field
+                        label={`Reading: ${item.label}`}
+                        value={answer.reading ?? ''}
+                        maxLength={100}
+                        autoCorrect={false}
+                        autoCapitalize="none"
+                        keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
+                        testID={`inspection-reading-${item.id}`}
+                        onChangeText={(reading) =>
+                          void save({
+                            ...draft,
+                            answers: draft.answers.map((entry) =>
+                              entry.itemId === item.id
+                                ? { ...entry, value: 'number', reading }
+                                : entry,
+                            ),
+                          })
+                        }
+                      />
+                      {answer.reading && !answerComplete(answer) ? (
+                        <Copy>Enter a number, such as 12.5 or -3.</Copy>
+                      ) : null}
+                    </>
                   ) : (
                     <View style={styles.answers}>
                       {(['pass', 'fail', 'na'] as const).map((value) => (

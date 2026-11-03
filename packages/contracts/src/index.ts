@@ -193,7 +193,7 @@ export const MapProviderSchema = z
   .strict();
 export type MapProvider = z.infer<typeof MapProviderSchema>;
 export const MapSettingsSchema = z.object({ provider: MapProviderSchema.nullable() });
-export const ResponseTypeSchema = z.enum(['check', 'text']);
+export const ResponseTypeSchema = z.enum(['check', 'text', 'number']);
 export const ItemSchema = z.object({
   id: z.string(),
   label: z.string(),
@@ -227,9 +227,10 @@ export const PhotoSchema = z.object({
 export type Photo = z.infer<typeof PhotoSchema>;
 const AnswerFieldsSchema = z.object({
   itemId: z.string().max(100),
-  value: z.enum(['pass', 'fail', 'na', 'text']),
+  value: z.enum(['pass', 'fail', 'na', 'text', 'number']),
   note: z.string().max(1000),
   text: z.string().max(1000).optional(),
+  reading: z.number().optional(),
 });
 export const AnswerSchema = AnswerFieldsSchema.superRefine((answer, context) => {
   if (answer.value === 'text' && !answer.text?.trim())
@@ -240,9 +241,18 @@ export const AnswerSchema = AnswerFieldsSchema.superRefine((answer, context) => 
       path: ['text'],
       message: 'Text belongs only to a text response.',
     });
+  if (answer.value === 'number' && answer.reading === undefined)
+    context.addIssue({ code: 'custom', path: ['reading'], message: 'Enter a numeric reading.' });
+  if (answer.value !== 'number' && answer.reading !== undefined)
+    context.addIssue({
+      code: 'custom',
+      path: ['reading'],
+      message: 'Readings belong only to a numeric response.',
+    });
 });
 export function answerLabel(answer: z.infer<typeof AnswerSchema>): string {
   if (answer.value === 'text') return answer.text!;
+  if (answer.value === 'number') return String(answer.reading);
   return answer.value === 'pass' ? 'Pass' : answer.value === 'fail' ? 'Issue found' : 'N/A';
 }
 export function answersMatchTemplate(
@@ -257,9 +267,9 @@ export function answersMatchTemplate(
       const answer = answers.find((entry) => entry.itemId === item.id);
       return (
         answer &&
-        ((item.responseType ?? 'check') === 'text'
-          ? answer.value === 'text'
-          : answer.value !== 'text')
+        (item.responseType === 'text' || item.responseType === 'number'
+          ? answer.value === item.responseType
+          : ['pass', 'fail', 'na'].includes(answer.value))
       );
     })
   );
@@ -548,14 +558,37 @@ export const SessionSchema = z.object({ user: UserSchema, token: z.string() });
 export const MeSchema = z.object({ user: UserSchema });
 export const DraftSchema = z.object({
   answers: z
-    .array(AnswerFieldsSchema.extend({ value: z.enum(['', 'pass', 'fail', 'na', 'text']) }))
+    .array(
+      AnswerFieldsSchema.extend({
+        value: z.enum(['', 'pass', 'fail', 'na', 'text', 'number']),
+        reading: z.string().max(100).optional(),
+      }),
+    )
     .max(50),
   summary: z.string().max(4000),
   photos: z.array(PhotoSchema).max(3),
 });
 export type Draft = z.infer<typeof DraftSchema>;
+export function parseReading(value: string | undefined): number | null {
+  const text = value?.trim() ?? '';
+  if (text.length > 100 || !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(text)) return null;
+  const reading = Number(text);
+  return Number.isFinite(reading) ? reading : null;
+}
 export function answerComplete(answer: Draft['answers'][number]): boolean {
+  if (answer.value === 'number') return parseReading(answer.reading) !== null;
   return answer.value === 'text' ? Boolean(answer.text?.trim()) : Boolean(answer.value);
+}
+export function reportAnswers(answers: Draft['answers']): ReportInput['answers'] {
+  return z
+    .array(AnswerSchema)
+    .parse(
+      answers.map((answer) =>
+        answer.value === 'number'
+          ? { ...answer, reading: parseReading(answer.reading) ?? undefined }
+          : answer,
+      ),
+    );
 }
 export const LocalReportExportSchema = z
   .object({
@@ -592,7 +625,9 @@ export function blankDraft(order: WorkOrder): Draft {
     answers: order.template.items.map((item) =>
       item.responseType === 'text'
         ? { itemId: item.id, value: 'text', text: '', note: '' }
-        : { itemId: item.id, value: '', note: '' },
+        : item.responseType === 'number'
+          ? { itemId: item.id, value: 'number', reading: '', note: '' }
+          : { itemId: item.id, value: '', note: '' },
     ),
     summary: '',
     photos: [],

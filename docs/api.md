@@ -26,7 +26,7 @@ Site creation accepts optional `coordinates: { latitude, longitude }` through `c
 | POST   | `/sites`                                               | Manager                    | New site from `{ name, address }`                               |
 | GET    | `/sites/:id`                                           | Signed in                  | Current catalog site                                            |
 | PATCH  | `/sites/:id/location`                                  | Manager                    | Compare and update coordinates; null clears them                |
-| POST   | `/templates`                                           | Manager                    | New template from `{ name, items: string[] }`                   |
+| POST   | `/templates`                                           | Manager                    | New template with string or typed items                         |
 | GET    | `/work-orders?limit=100&offset=0&status=ASSIGNED`      | Signed in                  | `{ data, total, limit, offset }`; workers see their assignments |
 | GET    | `/work-orders/:id`                                     | Assigned worker or manager | Work order                                                      |
 | POST   | `/work-orders`                                         | Manager                    | Created order, status 201                                       |
@@ -76,7 +76,7 @@ Submit a report:
 }
 ```
 
-Answer every checklist item once with its snapshot's response type. Check values are `pass`, `fail`, or `na`; text items use `value: 'text'` and a nonblank `text` string of at most 1,000 characters. Template creation also accepts typed items alongside strings; see [checklist fields](checklist-fields.md) for mixed examples and coordinated upgrade requirements. Photos have a UUID `id`, supported `mimeType`, and base64 `data` without a data-URL prefix; at most 3 photos of 2 MB each. Report retries must reuse their mutation ID and body. See [offline sync](offline-sync.md).
+Answer every checklist item once with its snapshot's response type. Check values are `pass`, `fail`, or `na`; text items use `value: 'text'` and a nonblank `text` string of at most 1,000 characters. Numeric items use `value: 'number'` and a finite numeric `reading`, including zero and negative decimals. Template creation also accepts typed items alongside strings; see [checklist fields](checklist-fields.md) for mixed examples, draft/submission representations and coordinated upgrade requirements. Photos have a UUID `id`, supported `mimeType`, and base64 `data` without a data-URL prefix; at most 3 photos of 2 MB each. Report retries must reuse their mutation ID and body. See [offline sync](offline-sync.md).
 
 Reviews take `{ baseVersion, decision, note }`. Decision is `APPROVED` or `CHANGES_REQUESTED`; requesting changes requires a nonempty note. Review writes use optimistic concurrency. After an uncertain review outcome, fetch the latest order before deciding whether to retry.
 

@@ -18,6 +18,7 @@ import {
   answerComplete,
   answerLabel,
   blankDraft,
+  reportAnswers,
   type Draft,
   type Photo,
   type User,
@@ -116,6 +117,7 @@ export default function OrderDetail({
     try {
       const input = ReportInputSchema.parse({
         ...draft,
+        answers: reportAnswers(draft.answers),
         mutationId: crypto.randomUUID(),
         baseVersion: order.version,
       });
@@ -253,6 +255,39 @@ export default function OrderDetail({
                           }
                         />
                       </Label>
+                    ) : item.responseType === 'number' ? (
+                      <>
+                        <Label>
+                          <span className="sr-only">Reading: {item.label}</span>
+                          <Input
+                            aria-label={`Reading: ${item.label}`}
+                            required
+                            maxLength={100}
+                            value={answer.reading ?? ''}
+                            aria-invalid={Boolean(answer.reading && !answerComplete(answer))}
+                            aria-describedby={
+                              !answerComplete(answer) && answer.reading
+                                ? `reading-help-${item.id}`
+                                : undefined
+                            }
+                            onChange={(event) =>
+                              void save({
+                                ...draft,
+                                answers: draft.answers.map((entry) =>
+                                  entry.itemId === item.id
+                                    ? { ...entry, value: 'number', reading: event.target.value }
+                                    : entry,
+                                ),
+                              })
+                            }
+                          />
+                        </Label>
+                        {answer.reading && !answerComplete(answer) && (
+                          <FieldError id={`reading-help-${item.id}`}>
+                            Enter a number, such as 12.5 or -3.
+                          </FieldError>
+                        )}
+                      </>
                     ) : (
                       <RadioGroup
                         className="answers"

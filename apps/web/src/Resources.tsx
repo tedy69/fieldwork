@@ -71,8 +71,8 @@ export default function Resources({
             .map((item) => item.trim())
             .filter(Boolean)
             .map((label) =>
-              data.get('responseType') === 'text'
-                ? { label, responseType: 'text' as const }
+              data.get('responseType') === 'text' || data.get('responseType') === 'number'
+                ? { label, responseType: data.get('responseType') as 'text' | 'number' }
                 : label,
             ),
           data.get('requiresPhoto') === 'required',
@@ -183,6 +183,9 @@ export default function Resources({
                         {item.responseType === 'text' && (
                           <span className="muted"> · Text response</span>
                         )}
+                        {item.responseType === 'number' && (
+                          <span className="muted"> · Numeric reading</span>
+                        )}
                       </li>
                     ))}
                   </ol>
@@ -214,6 +217,7 @@ export default function Resources({
                 <NativeSelect name="responseType" aria-label="Response type" defaultValue="">
                   <NativeSelectOption value="">Pass / issue / N/A</NativeSelectOption>
                   <NativeSelectOption value="text">Text response</NativeSelectOption>
+                  <NativeSelectOption value="number">Numeric reading</NativeSelectOption>
                 </NativeSelect>
               </Label>
               <p className="muted">The response type applies to each item in this checklist.</p>

@@ -7,7 +7,7 @@ import {
   type State,
   type StorageAdapter,
 } from '@fieldwork/offline';
-import type { WorkOrder, ReportInput } from '@fieldwork/contracts';
+import { DraftSchema, type WorkOrder, type ReportInput } from '@fieldwork/contracts';
 const input = (): ReportInput => ({
   mutationId: randomUUID(),
   baseVersion: 1,
@@ -161,7 +161,7 @@ describe('durable outbox', () => {
     const storage = memory();
     const original = order('legacy-evidence');
     const payload = input();
-    const draft = { answers: payload.answers, summary: payload.summary, photos: payload.photos };
+    const draft = DraftSchema.parse(payload);
     await storage.write({
       ...emptyState(),
       orders: [original],
@@ -210,7 +210,7 @@ describe('durable outbox', () => {
     };
     await repo.cacheOrders([required]);
     const payload = { ...input(), baseVersion: required.version };
-    const draft = { answers: payload.answers, summary: payload.summary, photos: payload.photos };
+    const draft = DraftSchema.parse(payload);
     await repo.saveDraft(required.id, draft);
     await expect(repo.enqueue(required.id, payload)).rejects.toThrow(
       'Attach at least one site photo before submitting this checklist.',
@@ -244,7 +244,7 @@ describe('durable outbox', () => {
       ...input(),
       photos: [{ id: randomUUID(), mimeType: 'image/png' as const, data: 'photo-bytes' }],
     };
-    const draft = { answers: payload.answers, summary: payload.summary, photos: payload.photos };
+    const draft = DraftSchema.parse(payload);
     await repo.cacheOrders([order('one'), order('two')]);
     await repo.saveDraft('one', draft);
     await repo.saveDraft('two', { ...draft, summary: 'Still on this device, never queued.' });

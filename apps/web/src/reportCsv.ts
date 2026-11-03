@@ -51,7 +51,7 @@ export function reportCsv(orders: WorkOrder[]) {
         order.review?.reviewedAt ?? '',
         order.review?.reviewedBy ?? '',
         items.get(answer.itemId) ?? answer.itemId,
-        answer.value === 'text' ? answerLabel(answer) : answer.value,
+        answer.value === 'text' || answer.value === 'number' ? answerLabel(answer) : answer.value,
         answer.note,
         report.photos.length,
       ]);

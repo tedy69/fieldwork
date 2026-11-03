@@ -107,7 +107,7 @@ describe('text checklist fields', () => {
     expect(draft.answers.filter(answerComplete)).toHaveLength(0);
     expect(DraftSchema.parse(draft)).toEqual(draft);
     expect(ReportInputSchema.parse(input).answers[0]).not.toHaveProperty('text');
-    expect(answerComplete(input.answers[1])).toBe(true);
+    expect(answerComplete(DraftSchema.parse(input).answers[1])).toBe(true);
     expect(answerComplete({ ...draft.answers[1], text: '  \n ' })).toBe(false);
     fixture.store.db
       .prepare('UPDATE catalog SET data=? WHERE id=1')
@@ -177,7 +177,7 @@ describe('text checklist fields', () => {
       .mockImplementation((id, report) => worker.submitReport(id, report));
     const repo = createOfflineRepository(storage, send);
     await repo.cacheOrder(order);
-    await repo.saveDraft(order.id, { answers: input.answers, summary: input.summary, photos: [] });
+    await repo.saveDraft(order.id, DraftSchema.parse(input));
     await repo.enqueue(order.id, input);
     await repo.flush();
     const pending = await repo.read();
@@ -203,7 +203,7 @@ describe('text checklist fields', () => {
     const { order, input } = await assignment();
     const repo = createOfflineRepository(memory(), (id, report) => worker.submitReport(id, report));
     await repo.cacheOrder(order);
-    await repo.saveDraft(order.id, { answers: input.answers, summary: input.summary, photos: [] });
+    await repo.saveDraft(order.id, DraftSchema.parse(input));
     const before = await repo.read();
     await expect(
       repo.enqueue(order.id, {

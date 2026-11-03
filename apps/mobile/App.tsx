@@ -23,6 +23,8 @@ import { ArrowClockwise, ArrowLeft, Camera, ImageSquare, Trash, GearSix } from '
 import {
   blankDraft,
   ReportInputSchema,
+  answerComplete,
+  answerLabel,
   type Draft,
   type User,
   type WorkOrder,
@@ -531,7 +533,7 @@ function Inspection({
         <>
           <SectionHeading
             title="Inspection checklist"
-            detail={`${draft.answers.filter((answer) => answer.value).length} of ${order.template.items.length} checks recorded · ${saving ? 'Saving locally…' : 'Draft saved on this device'}`}
+            detail={`${draft.answers.filter(answerComplete).length} of ${order.template.items.length} checks recorded · ${saving ? 'Saving locally…' : 'Draft saved on this device'}`}
           />
           <Panel style={styles.ledger}>
             {order.template.items.map((item, index) => {
@@ -546,24 +548,42 @@ function Inspection({
                       {item.label}
                     </Copy>
                   </View>
-                  <View style={styles.answers}>
-                    {(['pass', 'fail', 'na'] as const).map((value) => (
-                      <AnswerChoice
-                        selected={answer.value === value}
-                        name={`${item.label}: ${value}`}
-                        label={value === 'pass' ? 'Pass' : value === 'fail' ? 'Issue' : 'N/A'}
-                        key={value}
-                        onPress={() =>
-                          void save({
-                            ...draft,
-                            answers: draft.answers.map((entry) =>
-                              entry.itemId === item.id ? { ...entry, value } : entry,
-                            ),
-                          })
-                        }
-                      />
-                    ))}
-                  </View>
+                  {item.responseType === 'text' ? (
+                    <Field
+                      label={`Response: ${item.label}`}
+                      value={answer.text ?? ''}
+                      multiline
+                      maxLength={1000}
+                      testID={`inspection-response-${item.id}`}
+                      onChangeText={(text) =>
+                        void save({
+                          ...draft,
+                          answers: draft.answers.map((entry) =>
+                            entry.itemId === item.id ? { ...entry, value: 'text', text } : entry,
+                          ),
+                        })
+                      }
+                    />
+                  ) : (
+                    <View style={styles.answers}>
+                      {(['pass', 'fail', 'na'] as const).map((value) => (
+                        <AnswerChoice
+                          selected={answer.value === value}
+                          name={`${item.label}: ${value}`}
+                          label={value === 'pass' ? 'Pass' : value === 'fail' ? 'Issue' : 'N/A'}
+                          key={value}
+                          onPress={() =>
+                            void save({
+                              ...draft,
+                              answers: draft.answers.map((entry) =>
+                                entry.itemId === item.id ? { ...entry, value } : entry,
+                              ),
+                            })
+                          }
+                        />
+                      ))}
+                    </View>
+                  )}
                   <Field
                     label={`Note: ${item.label}`}
                     testID={`inspection-note-${item.id}`}
@@ -666,7 +686,7 @@ function Inspection({
                 busy ||
                 saving ||
                 !draft.summary.trim() ||
-                draft.answers.some((answer) => !answer.value)
+                draft.answers.some((answer) => !answerComplete(answer))
               }
               onPress={() => void submit()}
             />
@@ -684,7 +704,7 @@ function Inspection({
                 {order.template.items.find((item) => item.id === answer.itemId)?.label}
               </Copy>
               <Copy style={answer.value === 'fail' ? { color: colors.amber } : undefined}>
-                {answer.value === 'fail' ? 'Issue found' : answer.value === 'pass' ? 'Pass' : 'N/A'}
+                {answerLabel(answer)}
               </Copy>
               {answer.note ? <Copy muted>{answer.note}</Copy> : null}
             </View>

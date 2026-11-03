@@ -1,5 +1,10 @@
 import type { Draft, ReportInput, WorkOrder } from '@fieldwork/contracts';
-import { LocalReportExportSchema, PHOTO_REQUIRED_MESSAGE } from '@fieldwork/contracts';
+import {
+  LocalReportExportSchema,
+  PHOTO_REQUIRED_MESSAGE,
+  answersMatchTemplate,
+  ReportInputSchema,
+} from '@fieldwork/contracts';
 
 export interface StorageAdapter {
   read(): Promise<State | null>;
@@ -143,6 +148,16 @@ export function createOfflineRepository(
             'This order already has a queued report. Resolve it before submitting another.',
           );
         const order = state.orders.find((order) => order.id === orderId);
+        if (
+          order &&
+          (order.template.items.some((item) => item.responseType === 'text') ||
+            input.answers.some((answer) => answer.value === 'text')) &&
+          (!ReportInputSchema.safeParse(input).success ||
+            !answersMatchTemplate(order.template, input.answers))
+        )
+          throw new Error(
+            'Complete each checklist item with its required response type before queueing.',
+          );
         if (order?.template.requiresPhoto && input.photos.length === 0)
           throw new Error(PHOTO_REQUIRED_MESSAGE);
         return {

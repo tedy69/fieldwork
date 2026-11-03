@@ -15,6 +15,8 @@ import { RadioGroup, RadioGroupItem } from './components/ui/radio-group';
 import { useRef, useState, type FormEvent } from 'react';
 import {
   ReportInputSchema,
+  answerComplete,
+  answerLabel,
   blankDraft,
   type Draft,
   type Photo,
@@ -106,6 +108,10 @@ export default function OrderDetail({
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError('');
+    if (draft.answers.some((answer) => !answerComplete(answer))) {
+      setError('Complete every checklist item before submitting.');
+      return;
+    }
     setBusy(true);
     try {
       const input = ReportInputSchema.parse({
@@ -215,7 +221,7 @@ export default function OrderDetail({
                 </span>
               </div>
               <p className="inspection-progress" role="status">
-                <strong>{draft.answers.filter((answer) => answer.value).length}</strong> of{' '}
+                <strong>{draft.answers.filter(answerComplete).length}</strong> of{' '}
                 {order.template.items.length} checks recorded
               </p>
               {order.template.items.map((item, index) => {
@@ -226,33 +232,56 @@ export default function OrderDetail({
                       <span>{String(index + 1).padStart(2, '0')}</span>
                       {item.label}
                     </FieldLegend>
-                    <RadioGroup
-                      className="answers"
-                      aria-labelledby={`item-${item.id}`}
-                      required
-                      name={item.id}
-                      value={answer.value}
-                      onValueChange={(value) => {
-                        if (value !== 'pass' && value !== 'fail' && value !== 'na') return;
-                        void save({
-                          ...draft,
-                          answers: draft.answers.map((entry) =>
-                            entry.itemId === item.id ? { ...entry, value } : entry,
-                          ),
-                        });
-                      }}
-                    >
-                      {(['pass', 'fail', 'na'] as const).map((value) => (
-                        <Label
-                          key={value}
-                          htmlFor={`answer-${item.id}-${value}`}
-                          className={answer.value === value ? 'answer selected' : 'answer'}
-                        >
-                          <RadioGroupItem id={`answer-${item.id}-${value}`} value={value} />
-                          {value === 'pass' ? 'Pass' : value === 'fail' ? 'Issue found' : 'N/A'}
-                        </Label>
-                      ))}
-                    </RadioGroup>
+                    {item.responseType === 'text' ? (
+                      <Label>
+                        <span className="sr-only">Response: {item.label}</span>
+                        <Textarea
+                          aria-label={`Response: ${item.label}`}
+                          required
+                          maxLength={1000}
+                          rows={3}
+                          value={answer.text ?? ''}
+                          onChange={(event) =>
+                            void save({
+                              ...draft,
+                              answers: draft.answers.map((entry) =>
+                                entry.itemId === item.id
+                                  ? { ...entry, value: 'text', text: event.target.value }
+                                  : entry,
+                              ),
+                            })
+                          }
+                        />
+                      </Label>
+                    ) : (
+                      <RadioGroup
+                        className="answers"
+                        aria-labelledby={`item-${item.id}`}
+                        required
+                        name={item.id}
+                        value={answer.value}
+                        onValueChange={(value) => {
+                          if (value !== 'pass' && value !== 'fail' && value !== 'na') return;
+                          void save({
+                            ...draft,
+                            answers: draft.answers.map((entry) =>
+                              entry.itemId === item.id ? { ...entry, value } : entry,
+                            ),
+                          });
+                        }}
+                      >
+                        {(['pass', 'fail', 'na'] as const).map((value) => (
+                          <Label
+                            key={value}
+                            htmlFor={`answer-${item.id}-${value}`}
+                            className={answer.value === value ? 'answer selected' : 'answer'}
+                          >
+                            <RadioGroupItem id={`answer-${item.id}-${value}`} value={value} />
+                            {value === 'pass' ? 'Pass' : value === 'fail' ? 'Issue found' : 'N/A'}
+                          </Label>
+                        ))}
+                      </RadioGroup>
+                    )}
                     <Label className="item-note">
                       <span className="sr-only">Notes: {item.label}</span>
                       <Input
@@ -351,12 +380,10 @@ export default function OrderDetail({
                     <strong>
                       {order.template.items.find((item) => item.id === answer.itemId)?.label}
                     </strong>
-                    <span className={answer.value === 'fail' ? 'amber' : 'muted'}>
-                      {answer.value === 'fail'
-                        ? 'Issue found'
-                        : answer.value === 'pass'
-                          ? 'Pass'
-                          : 'N/A'}
+                    <span
+                      className={`preserve-lines ${answer.value === 'fail' ? 'amber' : 'muted'}`}
+                    >
+                      {answerLabel(answer)}
                     </span>
                     {answer.note && <p>{answer.note}</p>}
                   </li>

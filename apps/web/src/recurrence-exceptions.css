@@ -1,0 +1,28 @@
+.recurrence-exceptions {
+  margin-block: 16px;
+}
+.recurrence-exceptions summary {
+  cursor: pointer;
+  min-height: 44px;
+  align-content: center;
+  font-weight: 650;
+}
+.recurrence-exceptions > .ui-button {
+  margin-top: 12px;
+}
+.recurrence-exceptions > section {
+  margin-top: 16px;
+}
+.recurrence-skip-list {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.recurrence-skip-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}

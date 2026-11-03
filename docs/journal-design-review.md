@@ -4,11 +4,13 @@
 
 ## Evidence
 
+Skipped-date follow-up: the existing per-rule report also covers the recurring form's optional native disclosure, shared date picker and named Plus/Trash actions. The disclosure keeps the primary form brief; exclusions use real dates and the existing spacing/type/tokens. Calendar Escape leaves the parent dialog open, removing a date restores input focus, and an unadded/duplicate/first-date choice blocks assignment with visible guidance. Phone/desktop cases verify real previews, declined-request editing, lost-response recovery, offline reload and the saved batch list. No new asset, navigation, native screen or motion is introduced. The full R-01 through R-40, craft and supplement findings below remain PASS within this scope, backed by these recorded controls and the baseline workflow suite.
+
 Monthly recurrence follow-up: the per-rule PASS findings below remain applicable within the existing assignment dialog and batch viewer. Monthly adds one labeled selector option, a short original-day explanation and real dates in the shared preview; its recovered request uses the same controls. No new layout, surface, icon, motion, media asset or native UI is introduced. Calendar/SDK/API tests cover the rule and persistence; phone/desktop browser workflows cover keyboard entry, invalid schedules, lost responses, offline recovery and planned/current dates. This is the scoped R-01 through R-40, liveliness/craftsmanship and UI/mobile supplement review for the addition.
 
 Local draft export follow-up: the existing per-rule review below also applies to this small web addition. A regular Phosphor download glyph and visible “Export draft” label use the existing quiet button and report-export layout. Private-file guidance sits beside the action. Real downloads, keyboard activation, incomplete answers, photo bytes, offline pending/blocked reports, failed-download recovery and unchanged local data are covered at 390 and 1440px. No new surface, navigation, motion, media asset, theme or native UI is introduced. Source edits use direct patches. This preserves the PASS outcomes for R-01 through R-40, liveliness/craftsmanship and both supplements within this scope; native runtime evidence below belongs to the prior UI changes.
 
-`npm run check` passes formatting, strict web/mobile types, 462 unit/API tests and the production web build. All 99 Chromium workflows pass, including local draft export, monthly recurrence, invitation acceptance and password recovery, permissions, offline drafts/photos, retries/conflicts, review, planners, catalog management and account access. Expo dependency compatibility and iOS/Android Hermes exports are also checked in PR CI; native device evidence below belongs to the earlier UI changes.
+`npm run check` passes formatting, strict web/mobile types, 486 unit/API tests and the production web build. All 101 Chromium workflows pass, including skipped dates, local draft export, monthly recurrence, invitation acceptance and password recovery, permissions, offline drafts/photos, retries/conflicts, review, planners, catalog management and account access. Expo dependency compatibility and iOS/Android Hermes exports are also checked in PR CI; native device evidence below belongs to the earlier UI changes.
 
 Follow-up click-through: Export draft prepares an offline JSON download with photo bytes; an injected download failure displays a retry message and leaves the blocked queue intact after reload. Repeat → Monthly previews Jan 31, Feb 28, Mar 31 and Apr 30; a year-overflow schedule disables assignment. Assign 4 work orders creates four real records even when its response is lost. Retry saved batch stays disabled offline, then confirms the same mutation after reconnect. Recurring batches opens the saved ledger; selecting the monthly batch compares planned and independently rescheduled dates. Open order fetches and displays the current assignment. These cases pass by keyboard and at 390/1440px, without uncaught page errors in the monthly flow.
 
@@ -29,7 +31,7 @@ Android native execution and its platform limits are recorded in [verification](
 - R-23 PASS: the owner requested all components/pages and mobile redesign; existing destinations were rearranged, and synthetic screenshots document the implementation. No artwork or logo was created.
 - R-24 PASS: navigation opens real Work orders, Sync outbox and manager Resources; native destinations render actual assignments and queued reports.
 - R-25 PASS: calculated text contrast across canvas, sheet, raised and selected surfaces is at least 5.40:1; field boundaries are 3.08:1 against fields.
-- R-26 PASS: the 99 browser workflows exercise real forms, filters, dialogs and record operations, including the recorded export/monthly click-through above; native browsing exercises actual search and inspection editing.
+- R-26 PASS: the 101 browser workflows exercise real forms, filters, dialogs and record operations, including the recorded skipped-date/export/monthly click-through above; native browsing exercises actual search and inspection editing.
 - R-27 PASS: loading, empty search/outbox, failed sign-in, offline, invalid-field and conflict states retain actionable guidance.
 - R-28 PASS: no FAQ was introduced.
 - R-32 PASS: disclosure, finder, filters, calendar, dialogs, focus restoration and form errors retain keyboard coverage and visible focus. Icon tooltips appear on focus and dismiss on Escape.
@@ -45,7 +47,7 @@ Android native execution and its platform limits are recorded in [verification](
 ### Purpose gate
 
 - R-01 PASS: flat semantic surfaces establish the reading order; no gradient or glow was added.
-- R-04 PASS: regular Phosphor search, globe, refresh, sign-out, back, calendar, print, history, download, camera, image and trash glyphs identify real actions. Download identifies the private local file action; names, hints and the written icon map in DESIGN.md establish their meaning.
+- R-04 PASS: regular Phosphor utility glyphs identify real actions. Plus adds a selected skipped date; named Trash removes one, and Download prepares a private local file. Names, hints and the written icon map in DESIGN.md establish their meaning.
 - R-06 PASS: offline system type supports field use; monospace is limited to record references, as documented in DESIGN.md.
 - R-07 PASS: the notebook motif uses selection margins and rules rather than a decorative background pattern.
 - R-08 PASS: action labels use plain verbs without ornamental arrows.

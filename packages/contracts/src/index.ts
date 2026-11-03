@@ -319,27 +319,59 @@ function advanceRecurrence(
   if (frequency === 'weekdays')
     while (date.getUTCDay() === 0 || date.getUTCDay() === 6) date.setUTCDate(date.getUTCDate() + 1);
 }
+export const SkippedDatesSchema = z
+  .array(z.iso.date())
+  .max(52)
+  .refine((dates) => new Set(dates).size === dates.length, {
+    message: 'Choose each skipped date only once.',
+  });
+function scheduledDates(input: {
+  dueDate: string;
+  frequency: z.infer<typeof RecurrenceFrequencySchema>;
+  occurrences: number;
+  skipDates?: string[];
+}): string[] | null {
+  const date = new Date(`${input.dueDate}T12:00:00Z`);
+  const originalDay = date.getUTCDate();
+  const skipped = new Set(input.skipDates);
+  const dates: string[] = [];
+  // A bounded set of exclusions adds at most that many candidate dates.
+  for (let index = 0; index < input.occurrences + skipped.size; index++) {
+    if (!Number.isFinite(date.getTime()) || date.getUTCFullYear() > 9999) return null;
+    const value = date.toISOString().slice(0, 10);
+    if (!skipped.has(value)) dates.push(value);
+    if (dates.length === input.occurrences) return dates;
+    advanceRecurrence(date, input.frequency, originalDay);
+  }
+  return null;
+}
 export const RecurrenceSchema = z
   .object({
     dueDate: z.iso.date(),
     frequency: RecurrenceFrequencySchema,
     occurrences: z.number().int().min(2).max(52),
+    skipDates: SkippedDatesSchema.optional(),
   })
   .strict()
   .superRefine((input, context) => {
     if (!Number.isInteger(input.occurrences) || input.occurrences < 2 || input.occurrences > 52)
       return;
     const last = new Date(`${input.dueDate}T12:00:00Z`);
-    const originalDay = last.getUTCDate();
+    if (input.skipDates && input.skipDates.length > 52) return;
+    if (input.skipDates?.some((date) => date <= input.dueDate))
+      context.addIssue({
+        code: 'custom',
+        message:
+          'Skipped dates must be after the first due date. Change the first date to skip it.',
+        path: ['skipDates'],
+      });
     if (input.frequency === 'weekdays' && (last.getUTCDay() === 0 || last.getUTCDay() === 6))
       context.addIssue({
         code: 'custom',
         message: 'Choose a Monday–Friday first date for weekday repeats.',
         path: ['dueDate'],
       });
-    for (let index = 1; index < input.occurrences; index++)
-      advanceRecurrence(last, input.frequency, originalDay);
-    if (!Number.isFinite(last.getTime()) || last.getUTCFullYear() > 9999)
+    if (!scheduledDates(input))
       context.addIssue({
         code: 'custom',
         message: 'All occurrences must fall within a four-digit calendar year.',
@@ -349,24 +381,21 @@ export const RecurrenceSchema = z
 export type Recurrence = z.infer<typeof RecurrenceSchema>;
 export function recurrenceDates(input: Recurrence): string[] {
   const schedule = RecurrenceSchema.parse(input);
-  const date = new Date(`${schedule.dueDate}T12:00:00Z`);
-  const originalDay = date.getUTCDate();
-  return Array.from({ length: schedule.occurrences }, (_, index) => {
-    if (index) advanceRecurrence(date, schedule.frequency, originalDay);
-    return date.toISOString().slice(0, 10);
-  });
+  return scheduledDates(schedule)!;
 }
 export const CreateOrderSeriesSchema = CreateOrderSchema.extend({
   mutationId: z.uuid(),
   expectedActorId: z.string().min(1).max(100).optional(),
   frequency: RecurrenceFrequencySchema,
   occurrences: z.number().int().min(2).max(52),
+  skipDates: SkippedDatesSchema.optional(),
 }).refine(
   (input) =>
     RecurrenceSchema.safeParse({
       dueDate: input.dueDate,
       frequency: input.frequency,
       occurrences: input.occurrences,
+      skipDates: input.skipDates,
     }).success,
   { message: 'Choose a valid recurrence within a four-digit calendar year.', path: ['dueDate'] },
 );
@@ -375,6 +404,7 @@ export const OrderSeriesReceiptSchema = z.object({
   id: z.uuid(),
   createdAt: z.iso.datetime(),
   frequency: RecurrenceFrequencySchema,
+  skipDates: SkippedDatesSchema.optional(),
   orders: z.array(WorkOrderSchema).min(2).max(52),
 });
 export type OrderSeriesReceipt = z.infer<typeof OrderSeriesReceiptSchema>;
@@ -391,6 +421,7 @@ export const OrderSeriesSummarySchema = z.object({
   createdBy: UserSchema.pick({ id: true, name: true }),
   title: z.string(),
   frequency: RecurrenceFrequencySchema,
+  skipDates: SkippedDatesSchema.optional(),
   occurrences: z.number().int().min(2).max(52),
   firstDueDate: z.iso.date(),
   lastDueDate: z.iso.date(),

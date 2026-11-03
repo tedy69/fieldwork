@@ -1,5 +1,11 @@
 # Verification
 
+## Recurring dates to skip (2026-11-03)
+
+Managers can explicitly exclude up to 52 future dates from a new recurring batch. Preview and API generation preserve the chosen order count, first date and monthly anchor. Nonempty sorted lists participate in the retry hash and saved batch metadata; omitted/empty lists retain legacy shapes and hashes. Stored orders, report versions and device notebooks are not rewritten. Server and web releases must be coordinated before using the new field.
+
+`npm run check` passes with 486 unit/API tests, strict web/mobile types and the production build. All 101 Chromium workflows pass. Calendar regressions cover daily/weekly/weekday/monthly exclusions, unused dates, 52 closures with 52 orders, invalid/duplicate/first dates and four-digit-year overflow. API/SDK and local journal regressions cover permissions, canonical retries, changed-set rejection, old receipts, newer report versions, SQLite restart and account-scoped reload. Browser cases at 390 and 1440px exercise keyboard disclosure, calendar dismissal, adding/removing dates, invalid inputs, declined requests, lost responses, offline recovery and saved batch details. A collapsed disclosure identifies an unadded date rather than leaving an unexplained disabled assignment. No new native device execution or native scheduling UI is claimed. The [design review](journal-design-review.md) records the scoped gate.
+
 ## Monthly recurring assignments (2026-11-03)
 
 Monthly batches use the first due date's original day, falling back to the last day in shorter months and restoring that day afterward. Validation and preview share UTC arithmetic. Existing daily, weekly and weekday requests keep their representation and calculation; receipts, ordinary order snapshots, offline notebooks and database schema stay compatible. Server and web versions must be updated together before using monthly batch metadata.

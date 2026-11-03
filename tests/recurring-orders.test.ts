@@ -81,6 +81,114 @@ describe('calendar recurrence', () => {
 });
 
 describe('recurring assignments', () => {
+  it('creates and browses excluded dates through the SDK, replaying their set without duplicate work', async () => {
+    const { createClient } = await import('@fieldwork/sdk');
+    const fetcher: typeof fetch = async (url, init) => {
+      const response = await fixture.app.inject({
+        method: init?.method === 'POST' ? 'POST' : 'GET',
+        url: new URL(String(url)).pathname,
+        headers: init?.headers as Record<string, string>,
+        payload: init?.body as string | undefined,
+      });
+      return new Response(response.body, { status: response.statusCode });
+    };
+    const client = createClient('https://fieldwork.example', () => manager, fetcher);
+    const skipDates = ['2027-01-01', '2026-12-30', '2026-12-29'];
+    const payload = { ...input(), frequency: 'daily' as const, occurrences: 4, skipDates };
+    const receipt = await client.createOrderSeries(payload);
+    expect(receipt.orders.map((order) => order.dueDate)).toEqual([
+      '2026-12-28',
+      '2026-12-31',
+      '2027-01-02',
+      '2027-01-03',
+    ]);
+    expect(receipt.skipDates).toEqual([...skipDates].sort());
+    expect(
+      await client.createOrderSeries({ ...payload, skipDates: [...skipDates].reverse() }),
+    ).toEqual(receipt);
+    expect((await client.orderSeries()).data[0].skipDates).toEqual(receipt.skipDates);
+    const detail = await client.orderSeriesDetail(receipt.id);
+    expect(detail.skipDates).toEqual(receipt.skipDates);
+    expect(detail.lastDueDate).toBe('2027-01-03');
+    const changed = await create({ ...payload, skipDates: ['2026-12-29'] });
+    expect(changed.statusCode).toBe(422);
+    expect(changed.json().error.code).toBe('MUTATION_REUSED');
+    const first = receipt.orders[0];
+    fixture.store.writeOrder({ ...first, dueDate: '2026-12-29', version: 2 });
+    expect(await client.createOrderSeries(payload)).toEqual(receipt);
+    const updated = await client.orderSeriesDetail(receipt.id);
+    expect(updated.orders[0]).toMatchObject({
+      plannedDueDate: '2026-12-28',
+      order: { version: 2, dueDate: '2026-12-29' },
+    });
+    const stale = await fixture.app.inject({
+      method: 'POST',
+      url: `/api/v1/work-orders/${first.id}/reports`,
+      headers: bearer(worker),
+      payload: {
+        mutationId: randomUUID(),
+        baseVersion: 1,
+        summary: 'Stale synthetic report',
+        photos: [],
+        answers: first.template.items.map((item) => ({ itemId: item.id, value: 'pass', note: '' })),
+      },
+    });
+    expect(stale.statusCode).toBe(409);
+    expect(stale.json().error.code).toBe('VERSION_CONFLICT');
+    expect(counts()).toEqual([7, 4, 1, 4]);
+    expect((await create({ ...payload, mutationId: randomUUID() }, worker)).statusCode).toBe(403);
+    expect(
+      (await fixture.app.inject({ method: 'POST', url: '/api/v1/work-order-series', payload }))
+        .statusCode,
+    ).toBe(401);
+    expect(counts()).toEqual([7, 4, 1, 4]);
+  });
+
+  it('keeps legacy receipt hashes and shapes when exclusions are omitted or empty', async () => {
+    const payload = input();
+    const receipt = (await create(payload)).json();
+    expect(receipt).not.toHaveProperty('skipDates');
+    const before = fixture.store.db.prepare('SELECT hash,input FROM order_series').get();
+    expect((await create({ ...payload, skipDates: [] })).json()).toEqual(receipt);
+    expect(fixture.store.db.prepare('SELECT hash,input FROM order_series').get()).toEqual(before);
+  });
+
+  it.each([
+    ['2026-12-28'],
+    ['2026-12-27'],
+    ['invalid'],
+    ['2027-02-29'],
+    ['2026-12-29', '2026-12-29'],
+    Array.from({ length: 53 }, () => '2027-01-01'),
+  ])('rejects invalid skipped dates %j without partial writes', async (...skipDates) => {
+    expect((await create({ ...input(), skipDates })).statusCode).toBe(422);
+    expect(counts()).toEqual([3, 0, 0, 0]);
+  });
+
+  it('retains skipped dates and their original receipt after SQLite restart', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'fieldwork-skipped-dates-'));
+    await fixture.app.close();
+    fixture = await buildApp({ databasePath: join(directory, 'test.sqlite'), rateLimits: false });
+    seed(fixture.store);
+    manager = await login('manager');
+    const payload = { ...input(), skipDates: ['2027-01-04'] };
+    const receipt = (await create(payload)).json();
+    await fixture.app.close();
+    fixture = await buildApp({ databasePath: join(directory, 'test.sqlite'), rateLimits: false });
+    try {
+      expect((await create(payload)).json()).toEqual(receipt);
+      const detail = await fixture.app.inject({
+        url: `/api/v1/work-order-series/${receipt.id}`,
+        headers: bearer(manager),
+      });
+      expect(detail.json().skipDates).toEqual(payload.skipDates);
+      expect(counts()).toEqual([6, 3, 1, 3]);
+    } finally {
+      await fixture.app.close();
+      rmSync(directory, { recursive: true, force: true });
+      fixture = await buildApp({ databasePath: ':memory:', rateLimits: false });
+    }
+  });
   it.each([
     [
       'weekdays',

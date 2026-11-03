@@ -57,6 +57,18 @@ it('retains a validated pending batch through a new journal instance and isolate
   expect(await journal.clear(input.mutationId)).toBeNull();
   expect(await journal.read()).toBeNull();
 });
+it('keeps exclusions and the same mutation through reload and rejects a competing changed schedule', async () => {
+  const { storage } = fixture();
+  const original = { ...input, skipDates: ['2027-01-04'] };
+  await pendingSeriesFor('manager', storage).reserve(original);
+  const reloaded = pendingSeriesFor('manager', storage);
+  expect(await reloaded.read()).toEqual(original);
+  await expect(reloaded.reserve({ ...original, skipDates: ['2027-01-11'] })).rejects.toBeInstanceOf(
+    PendingDispatchError,
+  );
+  expect(await reloaded.read()).toEqual(original);
+  expect(await pendingSeriesFor('worker', storage).read()).toBeNull();
+});
 it('serializes competing tabs and keeps the winning batch instead of overwriting it', async () => {
   const { storage } = fixture();
   const first = pendingSeriesFor('manager', storage);

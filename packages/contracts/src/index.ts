@@ -458,11 +458,42 @@ export const OrderSearchPageSchema = z.object({
 });
 export const SessionSchema = z.object({ user: UserSchema, token: z.string() });
 export const MeSchema = z.object({ user: UserSchema });
-export type Draft = {
-  answers: { itemId: string; value: '' | 'pass' | 'fail' | 'na'; note: string }[];
-  summary: string;
-  photos: Photo[];
-};
+export const DraftSchema = z.object({
+  answers: z.array(AnswerSchema.extend({ value: z.enum(['', 'pass', 'fail', 'na']) })).max(50),
+  summary: z.string().max(4000),
+  photos: z.array(PhotoSchema).max(3),
+});
+export type Draft = z.infer<typeof DraftSchema>;
+export const LocalReportExportSchema = z
+  .object({
+    format: z.literal('fieldwork-local-report'),
+    formatVersion: z.literal(1),
+    exportedAt: z.iso.datetime(),
+    orderId: z.string(),
+    assignment: WorkOrderSchema.pick({
+      id: true,
+      reference: true,
+      title: true,
+      instructions: true,
+      site: true,
+      template: true,
+      dueDate: true,
+      priority: true,
+      version: true,
+    }).nullable(),
+    draft: DraftSchema.nullable(),
+    queuedReport: z
+      .object({
+        input: ReportInputSchema,
+        createdAt: z.string(),
+        state: z.enum(['pending', 'blocked']),
+      })
+      .nullable(),
+  })
+  .refine((file) => file.draft !== null || file.queuedReport !== null, {
+    message: 'No local draft or queued report is saved for this assignment.',
+  });
+export type LocalReportExport = z.infer<typeof LocalReportExportSchema>;
 export function blankDraft(order: WorkOrder): Draft {
   return {
     answers: order.template.items.map((item) => ({ itemId: item.id, value: '', note: '' })),

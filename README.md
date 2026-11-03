@@ -63,6 +63,7 @@ See [mobile development](docs/mobile.md) for the component system and repeatable
 - [Worker password recovery](docs/password-recovery.md) with expiring manager-issued links, password confirmation, session revocation, and retained offline work.
 - [Worker access controls](docs/worker-access.md) with manager deactivation/reactivation, revoked sessions, active assignment choices, preserved device notebooks, and paginated access history.
 - A retryable outbox with duplicate protection and visible version conflicts.
+- [Local draft JSON export](docs/offline-sync.md#local-draft-files) from the web notebook/outbox, including offline photos and blocked reports.
 - Manager approval or requests for changes, with an action history.
 - [Report revision history](docs/report-history.md) in the web app, with saved checklist answers, photos, assignment snapshots, and review feedback.
 - [CSV report exports](docs/report-export.md) for the manager's filtered work-order list, including offline exports from saved data.

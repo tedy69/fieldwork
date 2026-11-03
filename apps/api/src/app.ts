@@ -7,6 +7,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { z, ZodError } from 'zod';
 import {
+  answersMatchTemplate,
   CreateOrderSchema,
   CreateSiteSchema,
   CreateTemplateSchema,
@@ -281,7 +282,10 @@ export async function buildApp(options: AppOptions) {
     const template = {
       id: randomUUID(),
       name: input.name,
-      items: input.items.map((label) => ({ id: randomUUID(), label })),
+      items: input.items.map((item) => ({
+        id: randomUUID(),
+        ...(typeof item === 'string' ? { label: item } : item),
+      })),
       ...(input.requiresPhoto === undefined ? {} : { requiresPhoto: input.requiresPhoto }),
     };
     store.transaction(() => {
@@ -529,13 +533,12 @@ export async function buildApp(options: AppOptions) {
         );
       if (!['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status))
         fail(409, 'INVALID_STATE', 'This report has already been submitted.');
-      const ids = new Set(input.answers.map((answer) => answer.itemId));
-      if (
-        ids.size !== order.template.items.length ||
-        input.answers.length !== ids.size ||
-        order.template.items.some((item) => !ids.has(item.id))
-      )
-        fail(422, 'CHECKLIST', 'Answer every checklist item exactly once.');
+      if (!answersMatchTemplate(order.template, input.answers))
+        fail(
+          422,
+          'CHECKLIST',
+          'Answer every checklist item exactly once with its required response type.',
+        );
       if (order.template.requiresPhoto && input.photos.length === 0)
         fail(422, 'PHOTO_REQUIRED', PHOTO_REQUIRED_MESSAGE);
       for (const photo of input.photos) {

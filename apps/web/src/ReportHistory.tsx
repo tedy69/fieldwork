@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ReportRevision } from '@fieldwork/contracts';
+import { type ReportRevision, answerLabel } from '@fieldwork/contracts';
 import { ClockCounterClockwiseIcon } from '@phosphor-icons/react/dist/csr/ClockCounterClockwise';
 import { client, dateLabel, labels, message } from './lib';
 import { Button } from './components/ui/button';
@@ -250,12 +250,10 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
                           </strong>
                           {answer.note && <p className="preserve-lines">{answer.note}</p>}
                         </TableCell>
-                        <TableCell className={answer.value === 'fail' ? 'amber' : 'muted'}>
-                          {answer.value === 'fail'
-                            ? 'Issue found'
-                            : answer.value === 'pass'
-                              ? 'Pass'
-                              : 'N/A'}
+                        <TableCell
+                          className={`preserve-lines ${answer.value === 'fail' ? 'amber' : 'muted'}`}
+                        >
+                          {answerLabel(answer)}
                         </TableCell>
                       </TableRow>
                     ))}

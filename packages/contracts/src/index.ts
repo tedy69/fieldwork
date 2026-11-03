@@ -193,17 +193,27 @@ export const MapProviderSchema = z
   .strict();
 export type MapProvider = z.infer<typeof MapProviderSchema>;
 export const MapSettingsSchema = z.object({ provider: MapProviderSchema.nullable() });
-export const ItemSchema = z.object({ id: z.string(), label: z.string() });
+export const ResponseTypeSchema = z.enum(['check', 'text']);
+export const ItemSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  responseType: ResponseTypeSchema.optional(),
+});
+export const CreateItemSchema = z.union([
+  z.string().trim().min(2).max(250),
+  z.object({ label: z.string().trim().min(2).max(250), responseType: ResponseTypeSchema }).strict(),
+]);
 export const TemplateSchema = z.object({
   id: z.string(),
   name: z.string(),
   items: z.array(ItemSchema),
   requiresPhoto: z.boolean().optional(),
 });
+export type CreateItem = z.infer<typeof CreateItemSchema>;
 export const CreateTemplateSchema = z
   .object({
     name: z.string().trim().min(2).max(120),
-    items: z.array(z.string().trim().min(2).max(250)).min(1).max(50),
+    items: z.array(CreateItemSchema).min(1).max(50),
     requiresPhoto: z.boolean().optional(),
   })
   .strict();
@@ -215,11 +225,45 @@ export const PhotoSchema = z.object({
   data: z.string().min(1).max(2_800_000),
 });
 export type Photo = z.infer<typeof PhotoSchema>;
-export const AnswerSchema = z.object({
+const AnswerFieldsSchema = z.object({
   itemId: z.string().max(100),
-  value: z.enum(['pass', 'fail', 'na']),
+  value: z.enum(['pass', 'fail', 'na', 'text']),
   note: z.string().max(1000),
+  text: z.string().max(1000).optional(),
 });
+export const AnswerSchema = AnswerFieldsSchema.superRefine((answer, context) => {
+  if (answer.value === 'text' && !answer.text?.trim())
+    context.addIssue({ code: 'custom', path: ['text'], message: 'Enter a text response.' });
+  if (answer.value !== 'text' && answer.text !== undefined)
+    context.addIssue({
+      code: 'custom',
+      path: ['text'],
+      message: 'Text belongs only to a text response.',
+    });
+});
+export function answerLabel(answer: z.infer<typeof AnswerSchema>): string {
+  if (answer.value === 'text') return answer.text!;
+  return answer.value === 'pass' ? 'Pass' : answer.value === 'fail' ? 'Issue found' : 'N/A';
+}
+export function answersMatchTemplate(
+  template: z.infer<typeof TemplateSchema>,
+  answers: z.infer<typeof AnswerSchema>[],
+): boolean {
+  const ids = new Set(answers.map((answer) => answer.itemId));
+  return (
+    answers.length === template.items.length &&
+    ids.size === answers.length &&
+    template.items.every((item) => {
+      const answer = answers.find((entry) => entry.itemId === item.id);
+      return (
+        answer &&
+        ((item.responseType ?? 'check') === 'text'
+          ? answer.value === 'text'
+          : answer.value !== 'text')
+      );
+    })
+  );
+}
 export const ReportInputSchema = z
   .object({
     mutationId: z.uuid(),
@@ -503,11 +547,16 @@ export const OrderSearchPageSchema = z.object({
 export const SessionSchema = z.object({ user: UserSchema, token: z.string() });
 export const MeSchema = z.object({ user: UserSchema });
 export const DraftSchema = z.object({
-  answers: z.array(AnswerSchema.extend({ value: z.enum(['', 'pass', 'fail', 'na']) })).max(50),
+  answers: z
+    .array(AnswerFieldsSchema.extend({ value: z.enum(['', 'pass', 'fail', 'na', 'text']) }))
+    .max(50),
   summary: z.string().max(4000),
   photos: z.array(PhotoSchema).max(3),
 });
 export type Draft = z.infer<typeof DraftSchema>;
+export function answerComplete(answer: Draft['answers'][number]): boolean {
+  return answer.value === 'text' ? Boolean(answer.text?.trim()) : Boolean(answer.value);
+}
 export const LocalReportExportSchema = z
   .object({
     format: z.literal('fieldwork-local-report'),
@@ -540,7 +589,11 @@ export const LocalReportExportSchema = z
 export type LocalReportExport = z.infer<typeof LocalReportExportSchema>;
 export function blankDraft(order: WorkOrder): Draft {
   return {
-    answers: order.template.items.map((item) => ({ itemId: item.id, value: '', note: '' })),
+    answers: order.template.items.map((item) =>
+      item.responseType === 'text'
+        ? { itemId: item.id, value: 'text', text: '', note: '' }
+        : { itemId: item.id, value: '', note: '' },
+    ),
     summary: '',
     photos: [],
   };

@@ -69,7 +69,12 @@ export default function Resources({
           String(data.get('items'))
             .split('\n')
             .map((item) => item.trim())
-            .filter(Boolean),
+            .filter(Boolean)
+            .map((label) =>
+              data.get('responseType') === 'text'
+                ? { label, responseType: 'text' as const }
+                : label,
+            ),
           data.get('requiresPhoto') === 'required',
         );
       await refresh();
@@ -173,7 +178,12 @@ export default function Resources({
                   )}
                   <ol>
                     {template.items.map((item) => (
-                      <li key={item.id}>{item.label}</li>
+                      <li key={item.id}>
+                        {item.label}
+                        {item.responseType === 'text' && (
+                          <span className="muted"> · Text response</span>
+                        )}
+                      </li>
                     ))}
                   </ol>
                 </li>
@@ -199,6 +209,14 @@ export default function Resources({
                   placeholder={'Check access route\nCheck equipment condition'}
                 />
               </Label>
+              <Label>
+                Response type
+                <NativeSelect name="responseType" aria-label="Response type" defaultValue="">
+                  <NativeSelectOption value="">Pass / issue / N/A</NativeSelectOption>
+                  <NativeSelectOption value="text">Text response</NativeSelectOption>
+                </NativeSelect>
+              </Label>
+              <p className="muted">The response type applies to each item in this checklist.</p>
               <Label>
                 Photo evidence
                 <NativeSelect name="requiresPhoto" aria-label="Photo evidence" defaultValue="">

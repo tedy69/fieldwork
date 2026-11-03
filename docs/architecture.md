@@ -30,6 +30,8 @@ flowchart LR
 
 Sites and checklist templates live in the workspace catalog. Every assigned order embeds a snapshot of its site, assignee, and checklist. Creating a new template does not change old inspections.
 
+Optional item `responseType` metadata defaults to `check`; `text` questions retain partial local input but require a nonblank response before submission. The shared contracts own completion, answer formatting and snapshot/type matching. API enforcement is independent of web/Expo validation. Existing JSON snapshot storage needs no migration; see [checklist fields](checklist-fields.md) for release compatibility.
+
 An optional checklist `requiresPhoto` policy travels with those snapshots. New web/Expo submissions are checked against cached assignment metadata before queueing, while the API independently enforces at least one valid attachment for each submission and correction. Missing evidence preserves drafts and leaves server records unchanged. Older assignments without the flag remain optional. See [photo evidence](photo-evidence.md) for compatibility, policy scope, and verification.
 
 Site snapshots may include an optional latitude/longitude pair. Older catalog, assignment, report, and offline records remain valid without it; no table migration or historical rewrite is needed. The web viewer reads account-scoped provider settings and starts external tiles only on an explicit load action. Coordinate display is independent of map availability and does not request device GPS. See [site maps](site-maps.md) for catalog permissions, snapshots, provider configuration, and test boundaries.

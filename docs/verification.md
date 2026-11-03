@@ -1,5 +1,13 @@
 # Verification
 
+## Text-response checklist fields (2026-11-03)
+
+Shared contracts, API/SDK, local queue, web and Expo support text questions alongside legacy checks. Eleven new unit/API regressions cover mixed snapshots, nonblank/length/type validation, permissions, lost responses with exact mutation retries, changed-payload rejection, newer-version conflicts, unchanged drafts, correction history, SQLite restart and CSV escaping. Three browser workflows cover manager creation, keyboard access, 320/390/1440px layouts, offline reload with text and photo bytes, private JSON export, submission, saved history and print rendering. The field has an explicit accessible name that stays stable after restoring saved text.
+
+`npm run check` passes with 497 unit/API tests, strict web/mobile types, formatting and the production build. Expo dependencies are compatible and iOS/Android Hermes exports succeed.
+
+On the dedicated Android 15/API 35 emulator with Expo Go, Maestro and ordinary ADB keyboard input exercised a mixed assignment. The serial response and summary survived stopping/relaunching the app. A synthetic API 503 kept the report in Outbox (1); reconnecting and syncing twice cleared the outbox, displayed the actual response and left exactly one saved revision at order version 2. App data was preserved. iOS runtime, physical devices and full screen-reader traversal remain unrun. Native JavaScript exports are a separate CI check.
+
 ## Indonesian quick-start guide (2026-11-03)
 
 Issue #3 adds `quickstart.id.md` and a README entry for Indonesian-speaking contributors. It covers Node 24, installation, seed/demo accounts, web/API development, production offline reloads and checks. Application translation remains a separate roadmap item.

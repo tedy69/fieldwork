@@ -76,7 +76,7 @@ Submit a report:
 }
 ```
 
-Answer every checklist item once. Values are `pass`, `fail`, or `na`. Photos have a UUID `id`, supported `mimeType`, and base64 `data` without a data-URL prefix; at most 3 photos of 2 MB each. Report retries must reuse their mutation ID and body. See [offline sync](offline-sync.md).
+Answer every checklist item once with its snapshot's response type. Check values are `pass`, `fail`, or `na`; text items use `value: 'text'` and a nonblank `text` string of at most 1,000 characters. Template creation also accepts typed items alongside strings; see [checklist fields](checklist-fields.md) for mixed examples and coordinated upgrade requirements. Photos have a UUID `id`, supported `mimeType`, and base64 `data` without a data-URL prefix; at most 3 photos of 2 MB each. Report retries must reuse their mutation ID and body. See [offline sync](offline-sync.md).
 
 Reviews take `{ baseVersion, decision, note }`. Decision is `APPROVED` or `CHANGES_REQUESTED`; requesting changes requires a nonempty note. Review writes use optimistic concurrency. After an uncertain review outcome, fetch the latest order before deciding whether to retry.
 

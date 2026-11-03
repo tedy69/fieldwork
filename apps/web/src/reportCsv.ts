@@ -1,4 +1,4 @@
-import type { WorkOrder } from '@fieldwork/contracts';
+import { type WorkOrder, answerLabel } from '@fieldwork/contracts';
 
 function cell(value: string | number) {
   const text = String(value);
@@ -51,7 +51,7 @@ export function reportCsv(orders: WorkOrder[]) {
         order.review?.reviewedAt ?? '',
         order.review?.reviewedBy ?? '',
         items.get(answer.itemId) ?? answer.itemId,
-        answer.value,
+        answer.value === 'text' ? answerLabel(answer) : answer.value,
         answer.note,
         report.photos.length,
       ]);

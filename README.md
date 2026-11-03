@@ -37,7 +37,7 @@ These are current web screens using synthetic demo people, sites, and inspection
 
 </details>
 
-The Expo worker app matches the clean web UI with a compact assignment ledger, grouped checklist and native controls. These are iOS simulator captures of synthetic demo assignments:
+The Expo worker app shares the light field journal with searchable assignments, a report outbox, grouped inspections and native controls. Native screenshots use synthetic demo assignments; platform and execution evidence are recorded in [verification](docs/verification.md).
 
 <img src="docs/images/native-assignments.png" alt="Expo worker assignment ledger" width="280" />
 <img src="docs/images/native-inspection.png" alt="Expo inspection checklist with shared native controls" width="280" />
@@ -55,7 +55,7 @@ See [mobile development](docs/mobile.md) for the component system and repeatable
 - [Due-date rescheduling](docs/rescheduling.md) for unfinished assignments, with manager permissions, conflict checks, and preserved worker drafts.
 - [Worker reassignment](docs/reassignment.md) for unfinished web assignments, with version checks and preserved reports and local drafts.
 - A [Kokonut UI work finder](docs/ui-components.md) for searching saved orders and opening workspace pages with Cmd+K or Ctrl+K, including offline.
-- Shared Kokonut UI/shadcn components throughout the web workspace, including dialogs, checklist radios, form fields, status filters, cards, report tables, and draft photo attachments, with Fieldwork's charcoal-and-amber colors.
+- Shared Kokonut UI/shadcn components throughout the web workspace, including dialogs, checklist radios, form fields, status filters, cards, report tables, and draft photo attachments, with Fieldwork's warm paper, dark text and restrained amber palette.
 - An offline web notebook and a native Expo worker app.
 - Durable checklists, notes, and photo attachments on the worker's device.
 - [Required photo evidence](docs/photo-evidence.md) for checklists, with web/Expo guidance, offline draft validation, and server enforcement.

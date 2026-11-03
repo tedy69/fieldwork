@@ -28,7 +28,7 @@
   height: 320px;
   width: 100%;
   background: var(--ink);
-  color: #151d20;
+  color: var(--ui-foreground);
 }
 .site-map-canvas:focus-visible {
   outline: 3px solid var(--amber);

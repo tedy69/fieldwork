@@ -1,0 +1,26 @@
+appId: host.exp.exponent
+name: Android journal reconnect and repeated sync
+tags:
+  - android
+  - journal
+---
+# Restore the isolated API after the outbox flow; do not clear the local queue.
+- scrollUntilVisible:
+    element: Sync now
+    direction: UP
+# Expo Go's development bubble can overlap the trailing edge of this action.
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- extendedWaitUntil:
+    visible: 'Outbox \(0\)'
+    timeout: 15000
+- assertVisible: Everything is up to date
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- assertVisible: Everything is up to date
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- assertVisible: Everything is up to date

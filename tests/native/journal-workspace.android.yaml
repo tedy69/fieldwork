@@ -1,0 +1,57 @@
+appId: host.exp.exponent
+name: Android journal browsing and retained context
+tags:
+  - android
+  - journal
+---
+- launchApp
+- extendedWaitUntil:
+    visible: Development servers
+    timeout: 15000
+- openLink: ${METRO_URL}
+- extendedWaitUntil:
+    visible: My assignments
+    timeout: 15000
+- tapOn: 'Outbox \(0\)'
+- assertVisible: Everything is up to date
+- tapOn: 'Assignments \(3\)'
+- tapOn:
+    id: assignment-search
+- inputText: no matching fixture
+- tapOn: Done editing
+- assertVisible: No matching assignments
+- tapOn:
+    id: assignment-search
+- eraseText
+- inputText: FW-003
+- tapOn: Done editing
+- assertVisible: 'Open FW-003: Weekly equipment inspection'
+- assertNotVisible: 'Open FW-001: Morning safety walkthrough'
+- tapOn: 'Open FW-003: Weekly equipment inspection'
+- assertVisible: Back to assignments
+- tapOn: Back to assignments
+- assertVisible:
+    id: assignment-search
+    text: FW-003
+- assertVisible: 'Open FW-003: Weekly equipment inspection'
+- assertNotVisible: 'Open FW-001: Morning safety walkthrough'
+- tapOn: 'Open FW-003: Weekly equipment inspection'
+- scrollUntilVisible:
+    element: 'Access route is clear and secure: pass'
+    centerElement: true
+- tapOn: 'Access route is clear and secure: pass'
+- assertVisible:
+    text: 'Access route is clear and secure: pass'
+    checked: true
+- scrollUntilVisible:
+    element:
+      id: inspection-summary
+    centerElement: true
+- tapOn:
+    id: inspection-summary
+- eraseText
+- inputText: Synthetic Android journal draft retained after restart.
+- tapOn: Done editing
+- scrollUntilVisible:
+    element: Inspection checklist
+    direction: UP

@@ -22,12 +22,12 @@ test('Kokonut workspace keeps the palette and supports keyboard filters across d
   await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeEnabled();
   expect(
     await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor),
-  ).toBe('rgb(21, 29, 32)');
+  ).toBe('rgb(245, 244, 239)');
   expect(
     await page
       .getByRole('button', { name: 'Sign in', exact: true })
       .evaluate((el) => getComputedStyle(el).backgroundColor),
-  ).toBe('rgb(245, 198, 109)');
+  ).toBe('rgb(145, 80, 20)');
   await page.screenshot({ path: test.info().outputPath('kokonut-sign-in.png'), fullPage: true });
   await login(page, 'manager');
   await expect(page.getByRole('button', { name: /^Open FW-001:/ })).toBeVisible();
@@ -192,7 +192,7 @@ test('Kokonut photo attachment accepts real drops and keyboard selection without
     await page
       .locator('.detail-heading .status-submitted')
       .evaluate((el) => getComputedStyle(el).color),
-  ).toBe('rgb(245, 198, 109)');
+  ).toBe('rgb(145, 80, 20)');
   expect((await manager.order(order.id)).report?.photos).toHaveLength(3);
   expect(errors).toEqual([]);
 });

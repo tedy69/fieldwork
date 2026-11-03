@@ -91,6 +91,7 @@ export function DatePicker({
           </PopoverTrigger>
           <PopoverContent
             className="ui-date-popover"
+            collisionPadding={4}
             role="dialog"
             aria-label={calendarLabel}
             onOpenAutoFocus={(event) => {

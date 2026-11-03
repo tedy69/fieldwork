@@ -48,6 +48,7 @@ export function Button({
   disabled = false,
   variant = 'primary',
   expanded,
+  selected,
   style,
   testID,
 }: {
@@ -56,6 +57,7 @@ export function Button({
   disabled?: boolean;
   variant?: 'primary' | 'outline' | 'ghost';
   expanded?: boolean;
+  selected?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }) {
@@ -63,7 +65,7 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ disabled, expanded }}
+      accessibilityState={{ disabled, expanded, selected }}
       disabled={disabled}
       testID={testID}
       onPress={onPress}
@@ -73,6 +75,7 @@ export function Button({
         ui.button,
         variant === 'outline' && ui.secondary,
         variant === 'ghost' && ui.ghost,
+        selected && ui.selectedButton,
         pressed && ui.pressed,
         focused && ui.focused,
         disabled && ui.disabled,
@@ -82,7 +85,10 @@ export function Button({
       <Text
         style={[
           typography.label,
-          { textAlign: 'center', color: variant === 'primary' ? colors.ink : colors.foreground },
+          {
+            textAlign: 'center',
+            color: variant === 'primary' ? colors.ink : selected ? colors.amber : colors.foreground,
+          },
         ]}
       >
         {title}
@@ -215,7 +221,14 @@ export const statusLabels = {
 };
 export function StatusBadge({ status }: { status: WorkOrder['status'] }) {
   return (
-    <View style={ui.badge}>
+    <View
+      style={[
+        ui.badge,
+        status !== 'ASSIGNED' && {
+          backgroundColor: status === 'APPROVED' ? colors.approvedSurface : colors.selected,
+        },
+      ]}
+    >
       <Copy
         variant="caption"
         style={{
@@ -299,6 +312,7 @@ const ui = StyleSheet.create({
     justifyContent: 'center',
   },
   secondary: { backgroundColor: 'transparent', borderColor: colors.controlBorder },
+  selectedButton: { backgroundColor: colors.selected, borderColor: colors.amber },
   ghost: {
     backgroundColor: 'transparent',
     borderColor: 'transparent',
@@ -359,8 +373,7 @@ const ui = StyleSheet.create({
   },
   errorNotice: { backgroundColor: colors.errorSurface, borderLeftColor: colors.error },
   badge: {
-    borderColor: colors.line,
-    borderWidth: 1,
+    backgroundColor: colors.raised,
     borderRadius: radius.badge,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,

@@ -157,7 +157,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
       <a className="skip-link" href="#main">
         Skip to work orders
       </a>
-      <aside className="sidebar">
+      <header className="sidebar">
         <div className="brand">
           Fieldwork<span className="version">v0.1</span>
         </div>
@@ -206,11 +206,6 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
             </Button>
           )}
         </nav>
-        <div className="sidebar-note">
-          <a href="https://github.com/tedy69/fieldwork/blob/main/CONTRIBUTING.md">
-            Contribute to Fieldwork
-          </a>
-        </div>
         <Card className="identity">
           <Avatar className="avatar" aria-hidden="true">
             <AvatarFallback>
@@ -233,9 +228,9 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
             Sign out
           </Button>
         </Card>
-      </aside>
+      </header>
       <div className="main-column">
-        <header className="topbar">
+        <div className="topbar">
           <span className="workspace-context">
             {user.role === 'manager' ? 'Dispatch desk' : 'Field notebook'}
           </span>
@@ -281,7 +276,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
               }}
             />
           </div>
-        </header>
+        </div>
         <main id="main" tabIndex={-1}>
           {error && <Alert className="banner error">{error}</Alert>}
           {notice && (
@@ -393,7 +388,14 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           ) : (
             <>
               <div className="heading-row">
-                <PageHeading title={user.role === 'manager' ? 'Work orders' : 'My assignments'} />
+                <PageHeading
+                  title={user.role === 'manager' ? 'Work orders' : 'My assignments'}
+                  description={
+                    user.role === 'manager'
+                      ? 'Assign work, follow progress, and review the findings.'
+                      : 'Your work and instructions, saved for the field.'
+                  }
+                />
                 {user.role === 'manager' && (
                   <ActionGroup className="assignment-actions">
                     <Button
@@ -658,6 +660,9 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
             />
           )}
         </main>
+        <footer className="workspace-footer">
+          <a href="https://github.com/tedy69/fieldwork">Project &amp; documentation</a>
+        </footer>
       </div>
     </div>
   );

@@ -207,6 +207,10 @@ export default function OrderDetail({
                   {saving ? 'Saving locally…' : 'Draft saved on this device'}
                 </span>
               </div>
+              <p className="inspection-progress" role="status">
+                <strong>{draft.answers.filter((answer) => answer.value).length}</strong> of{' '}
+                {order.template.items.length} checks recorded
+              </p>
               {order.template.items.map((item, index) => {
                 const answer = draft.answers.find((answer) => answer.itemId === item.id)!;
                 return (

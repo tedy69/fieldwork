@@ -11,6 +11,7 @@ import Workspace from './Workspace';
 import { MapSettingsProvider } from './MapSettings';
 import { client, message } from './lib';
 import AccountLink from './AccountLink';
+import AuthLayout from './AuthLayout';
 import {
   clearInvitationHash,
   invitationTokenFromHash,
@@ -118,60 +119,51 @@ function AuthenticatedApp({ initialEmail }: { initialEmail: string }) {
   }
   if (!user)
     return (
-      <main className="login-page">
-        <section className="login-intro">
-          <div className="brand">
-            Fieldwork<span className="version">v0.1</span>
-          </div>
-          <h1>
-            Work on site.
-            <br />
-            Keep a clear record.
-          </h1>
-          <p>One place for the assignment, the inspection, and the report.</p>
-          <a href="https://github.com/tedy69/fieldwork">View the project on GitHub</a>
-        </section>
-        <section className="login-panel">
-          <Card>
-            <h2>Open your notebook</h2>
-            <p className="muted">Sign in to your team's workspace.</p>
-            <Form noValidate onSubmit={login}>
-              <Label>
-                Email
-                <Input
-                  name="email"
-                  type="email"
-                  autoComplete="username"
-                  required
-                  placeholder="you@your-team.com"
-                  defaultValue={initialEmail}
-                />
-              </Label>
-              <Label>
-                Password
-                <Input
-                  name="password"
-                  type="password"
-                  aria-label="Password"
-                  autoComplete="current-password"
-                  required
-                />
-              </Label>
-              {error && <Alert className="error">{error}</Alert>}
-              <Button className="primary full" disabled={checking}>
-                {checking ? 'Connecting…' : 'Sign in'}
-              </Button>
-            </Form>
-          </Card>
-          <aside className="demo-note">
-            <strong>Running the local demo?</strong>
-            <p>
-              Use manager@fieldwork.local or worker@fieldwork.local with password{' '}
-              <code>fieldwork-demo</code>. These accounts exist only after seeding the demo.
-            </p>
-          </aside>
-        </section>
-      </main>
+      <AuthLayout>
+        <Card>
+          <p className="auth-caption">Welcome back</p>
+          <h1>Open your notebook</h1>
+          <p className="muted">Sign in to see the work that needs you.</p>
+          <Form noValidate onSubmit={login}>
+            <Label>
+              Email
+              <Input
+                name="email"
+                type="email"
+                autoComplete="username"
+                required
+                placeholder="you@your-team.com"
+                defaultValue={initialEmail}
+              />
+            </Label>
+            <Label>
+              Password
+              <Input
+                name="password"
+                type="password"
+                aria-label="Password"
+                autoComplete="current-password"
+                required
+              />
+            </Label>
+            {error && <Alert className="error">{error}</Alert>}
+            <Button className="primary full" disabled={checking}>
+              {checking ? 'Connecting…' : 'Sign in'}
+            </Button>
+          </Form>
+        </Card>
+        <p className="account-help">
+          New to the team or need a new password? Ask your manager for an invitation or a
+          password-reset link.
+        </p>
+        <details className="demo-note">
+          <summary>Running the local demo?</summary>
+          <p>
+            Use manager@fieldwork.local or worker@fieldwork.local with password{' '}
+            <code>fieldwork-demo</code>. These accounts exist only after seeding the demo.
+          </p>
+        </details>
+      </AuthLayout>
     );
   return (
     <MapSettingsProvider key={user.id}>

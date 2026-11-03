@@ -1,0 +1,19 @@
+appId: host.exp.exponent
+name: Android journal at enlarged system text
+tags:
+  - android
+  - journal
+---
+# Run after sync with the dedicated emulator's system font_scale set to 1.5.
+- tapOn: 'Assignments \(3\)'
+- scrollUntilVisible:
+    element: 'Open FW-001: Morning safety walkthrough'
+    centerElement: true
+- tapOn: 'Open FW-001: Morning safety walkthrough'
+- scrollUntilVisible:
+    element: 'Access route is clear and secure: pass'
+    centerElement: true
+- tapOn: 'Access route is clear and secure: pass'
+- assertVisible:
+    text: 'Access route is clear and secure: pass'
+    checked: true

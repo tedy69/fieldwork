@@ -4,15 +4,17 @@
 
 ## Notebook UI
 
-The app matches the web notebook's charcoal/amber palette, heading hierarchy, status wording and panel/control shapes. `apps/mobile/theme.ts` is the native token owner. `notebook-ui.tsx` provides shared Copy, Brand, Button, Field, Panel, SectionHeading, Notice, StatusBadge and AnswerChoice components. Screens arrange these components rather than defining another button or field theme. Use React Native controls here; Kokonut/shadcn DOM components belong in the web app.
+The app matches the web light field journal: warm paper canvas, white records, dark text, restrained amber actions, readable headings and consistent status wording. `apps/mobile/theme.ts` is the native token owner. `notebook-ui.tsx` provides shared Copy, Brand, Button, Field, Panel, SectionHeading, Notice, StatusBadge and AnswerChoice components. Screens arrange these components rather than defining another button or field theme. Use React Native controls here; Kokonut/shadcn DOM components belong in the web app.
 
-Fields have visible labels, amber focus, inline password reveal and a Done editing action while focused. Email advances to Password; the password key signs in. The current server remains visible; Change server opens its editable field. Button variants (`primary`, `outline`, `ghost`) distinguish submission, photo actions and quieter navigation. Panels group the assignment ledger and ruled checklist; brief and evidence sections use the plain variant. The 26-point task title and 20-point section spacing match the clean web UI.
+`workspace-page.tsx` renders a virtualized assignment list and the actual report outbox. Search matches saved references, titles and sites without a network request. Search and Assignments/Outbox selection stay in the notebook controller while an inspection is open, so Back returns to the same context. Outbox records show their saved summary, photo count, local timestamp and confirmation/conflict state. Pull to refresh invokes the existing sync operation; its errors remain alongside saved work.
 
-Actions have minimum targets of 44 points on iOS and 48 on Android. SafeAreaProvider/SafeAreaView from the SDK-compatible safe-area package own screen insets. KeyboardAvoidingView and scrollable forms keep editing and actions reachable. Opening an assignment or returning to the list resets the notebook to the top. Its header scrolls with content, stacks at larger font scales, and answer choices become full-width rows. Dynamic Type remains enabled.
+Fields have visible labels, amber focus, inline password reveal and a Done editing action while focused. Email advances to Password; the password key signs in. The current server remains visible; Change server opens its editable field. Button variants (`primary`, `outline`, `ghost`) distinguish submission, photo actions and quieter navigation; selected list destinations expose their selected state. White assignment records, a grouped metadata sheet and ruled checklist establish the reading order. The 30-point task title and 24-point section spacing match the web journal.
 
-These iOS simulator screenshots use seeded synthetic records:
+Actions have minimum targets of 48 points on both platforms. SafeAreaProvider/SafeAreaView from the SDK-compatible safe-area package own screen insets. KeyboardAvoidingView and scrollable forms keep editing and actions reachable. Opening an assignment starts the inspection at the top; returning restores list search and destination state. Its header scrolls with content, stacks at larger font scales, and answer choices become full-width rows. Dynamic Type remains enabled.
 
-<img src="images/native-sign-in.png" alt="Clean native sign-in on a compact iPhone" width="280" />
+These Android emulator screenshots use seeded synthetic records:
+
+<img src="images/native-sign-in.png" alt="Light journal sign-in on Android" width="280" />
 <img src="images/native-assignments.png" alt="Expo worker assignments using synthetic demo data" width="280" />
 <img src="images/native-inspection.png" alt="Shared native checklist answers and notes" width="280" />
 
@@ -37,6 +39,10 @@ Start signed out for the sign-in flow. It checks server disclosure, password rev
 The server script binds only to loopback, never opens a development database, and is never imported by production code. Its `/__design-test__/network` POST accepts `{ "available": false }` or `{ "available": true }` to simulate an API outage; `/__design-test__/state` reports synthetic FW-001 and its revision count for manual queue/retry checks. These endpoints do not exist in the production API. The test changes demo data, so use a dedicated simulator and fixture.
 
 Android emulators use the host alias `10.0.2.2` instead of loopback; native acceptance below still applies to each target platform. Simulator smoke testing does not certify physical-camera behavior or store readiness.
+
+For the Android journal flows, start Metro with `EXPO_PUBLIC_API_URL=http://10.0.2.2:4180`, run `adb -s <emulator-id> reverse tcp:8082 tcp:8082`, and use `METRO_URL=exp://127.0.0.1:8082`. Run `journal-sign-in.android.yaml` while signed out, then `journal-workspace.android.yaml` and `journal-retention.android.yaml` in that order against a fresh synthetic fixture. These flows wait for Expo Go's Development servers screen before opening the project, avoiding a cold-launch race. They preserve app data and verify actual selected radio state, search context and SQLite draft recovery.
+
+Continue with `journal-photo.android.yaml` to attach/remove/reattach its synthetic documentation image. Disable only the fixture API via its network endpoint, then run `journal-outbox.android.yaml` to queue the completed report and verify recovery after restart. Restore the API, set the dedicated emulator's `font_scale` to `1.5`, and run `journal-reconnect-large-text.android.yaml` to exercise acknowledgement, repeated sync, the report, larger text and Android back. Restore `font_scale` to `1.0` afterward. This final flow signs out while retaining local drafts. `journal-sync.android.yaml` uses a [relative tap within Sync now](https://docs.maestro.dev/reference/commands-available/tapon) to avoid Expo Go's floating development bubble. Emulator captures include that development overlay; it is not a product control.
 
 ## Start
 

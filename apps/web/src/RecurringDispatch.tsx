@@ -308,13 +308,18 @@ function RecurringDialog({
               Assign recurring work
             </DialogTitle>
             <DialogDescription>
-              Schedule daily, weekly, or weekday work. Each date becomes an independent work order.
+              Preview a repeat schedule. Each date becomes an independent work order.
             </DialogDescription>
           </div>
           <Button className="quiet" onClick={onClose} disabled={busy}>
             Close
           </Button>
         </DialogHeader>
+        {(pending?.frequency ?? frequency) === 'monthly' && (
+          <p className="muted">
+            Repeats on the original day of the month. Shorter months use their last day.
+          </p>
+        )}
         {pending ? (
           <>
             <Alert className="recurrence-recovery">
@@ -394,6 +399,7 @@ function RecurringDialog({
                     <Option value="daily">Daily</Option>
                     <Option value="weekly">Weekly</Option>
                     <Option value="weekdays">Weekdays (Mon–Fri)</Option>
+                    <Option value="monthly">Monthly</Option>
                   </Select>
                 </Label>
                 <Label>

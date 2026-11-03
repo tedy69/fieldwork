@@ -81,64 +81,84 @@ describe('calendar recurrence', () => {
 });
 
 describe('recurring assignments', () => {
-  it('creates weekday batches with stable receipts, browsing, worker visibility, and unchanged old schedules', async () => {
-    const legacy = { ...input(), dueDate: '2026-12-25', frequency: 'daily' as const };
-    const oldReceipt = (await create(legacy)).json();
-    const payload = {
-      ...input(),
-      dueDate: '2026-12-25',
-      frequency: 'weekdays' as const,
-      occurrences: 7,
-    };
-    const response = await create(payload);
-    expect(response.statusCode).toBe(201);
-    const receipt = OrderSeriesReceiptSchema.parse(response.json());
-    expect(receipt.frequency).toBe('weekdays');
-    expect(receipt.orders.map((order) => order.dueDate)).toEqual([
-      '2026-12-25',
-      '2026-12-28',
-      '2026-12-29',
-      '2026-12-30',
-      '2026-12-31',
-      '2027-01-01',
-      '2027-01-04',
-    ]);
-    expect((await create(payload)).json()).toEqual(receipt);
-    const changed = await create({ ...payload, frequency: 'daily' });
-    expect(changed.statusCode).toBe(422);
-    expect(changed.json().error.code).toBe('MUTATION_REUSED');
-    const detail = await fixture.app.inject({
-      url: `/api/v1/work-order-series/${receipt.id}`,
-      headers: bearer(manager),
-    });
-    expect(detail.statusCode).toBe(200);
-    expect(detail.json().frequency).toBe('weekdays');
-    expect(
-      detail.json().orders.map((order: { plannedDueDate: string }) => order.plannedDueDate),
-    ).toEqual(receipt.orders.map((order) => order.dueDate));
-    const list = await fixture.app.inject({
-      url: '/api/v1/work-order-series',
-      headers: bearer(manager),
-    });
-    expect(
-      list.json().data.find((batch: { id: string }) => batch.id === receipt.id).frequency,
-    ).toBe('weekdays');
-    for (const order of receipt.orders)
+  it.each([
+    [
+      'weekdays',
+      [
+        '2026-12-25',
+        '2026-12-28',
+        '2026-12-29',
+        '2026-12-30',
+        '2026-12-31',
+        '2027-01-01',
+        '2027-01-04',
+      ],
+    ],
+    [
+      'monthly',
+      [
+        '2026-12-31',
+        '2027-01-31',
+        '2027-02-28',
+        '2027-03-31',
+        '2027-04-30',
+        '2027-05-31',
+        '2027-06-30',
+      ],
+    ],
+  ] as const)(
+    'creates %s batches with stable receipts, browsing, worker visibility, and unchanged old schedules',
+    async (frequency, expectedDates) => {
+      const legacy = { ...input(), dueDate: '2026-12-25', frequency: 'daily' as const };
+      const oldReceipt = (await create(legacy)).json();
+      const payload = {
+        ...input(),
+        dueDate: expectedDates[0],
+        frequency,
+        occurrences: 7,
+      };
+      const response = await create(payload);
+      expect(response.statusCode).toBe(201);
+      const receipt = OrderSeriesReceiptSchema.parse(response.json());
+      expect(receipt.frequency).toBe(frequency);
+      expect(receipt.orders.map((order) => order.dueDate)).toEqual(expectedDates);
+      expect((await create(payload)).json()).toEqual(receipt);
+      const changed = await create({ ...payload, frequency: 'daily' });
+      expect(changed.statusCode).toBe(422);
+      expect(changed.json().error.code).toBe('MUTATION_REUSED');
+      const detail = await fixture.app.inject({
+        url: `/api/v1/work-order-series/${receipt.id}`,
+        headers: bearer(manager),
+      });
+      expect(detail.statusCode).toBe(200);
+      expect(detail.json().frequency).toBe(frequency);
       expect(
-        (
-          await fixture.app.inject({
-            url: `/api/v1/work-orders/${order.id}`,
-            headers: bearer(worker),
-          })
-        ).statusCode,
-      ).toBe(200);
-    expect((await create(legacy)).json()).toEqual(oldReceipt);
-    expect(oldReceipt.orders.map((order: { dueDate: string }) => order.dueDate)).toEqual([
-      '2026-12-25',
-      '2026-12-26',
-      '2026-12-27',
-    ]);
-  });
+        detail.json().orders.map((order: { plannedDueDate: string }) => order.plannedDueDate),
+      ).toEqual(receipt.orders.map((order) => order.dueDate));
+      const list = await fixture.app.inject({
+        url: '/api/v1/work-order-series',
+        headers: bearer(manager),
+      });
+      expect(
+        list.json().data.find((batch: { id: string }) => batch.id === receipt.id).frequency,
+      ).toBe(frequency);
+      for (const order of receipt.orders)
+        expect(
+          (
+            await fixture.app.inject({
+              url: `/api/v1/work-orders/${order.id}`,
+              headers: bearer(worker),
+            })
+          ).statusCode,
+        ).toBe(200);
+      expect((await create(legacy)).json()).toEqual(oldReceipt);
+      expect(oldReceipt.orders.map((order: { dueDate: string }) => order.dueDate)).toEqual([
+        '2026-12-25',
+        '2026-12-26',
+        '2026-12-27',
+      ]);
+    },
+  );
   it.each(['2026-12-26', '2026-12-27', '9999-12-31'])(
     'rejects unsupported weekday start %s atomically',
     async (dueDate) => {
@@ -194,6 +214,7 @@ describe('recurring assignments', () => {
   it.each([
     ['daily', '2027-02-17'],
     ['weekdays', '2027-03-09'],
+    ['monthly', '2031-03-28'],
   ] as const)(
     'accepts the maximum %s batch through the SDK and replays its validated receipt',
     async (frequency, lastDate) => {
@@ -296,7 +317,8 @@ describe('recurring assignments', () => {
   });
 
   it.each([
-    { frequency: 'monthly' },
+    { frequency: 'quarterly' },
+    { frequency: 'monthly', dueDate: '9999-12-01' },
     { occurrences: 0 },
     { occurrences: 1 },
     { occurrences: 53 },
@@ -330,43 +352,48 @@ describe('recurring assignments', () => {
     },
   );
 
-  it('retains idempotency receipts through restart and upgrades schema 2 without changing existing data', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'fieldwork-series-'));
-    const path = join(directory, 'upgrade.sqlite');
-    await fixture.app.close();
-    fixture = await buildApp({ databasePath: path, rateLimits: false });
-    seed(fixture.store);
-    const tables = ['users', 'catalog', 'work_orders', 'mutations', 'report_revisions', 'audit'];
-    const before = tables.map((table) => fixture.store.db.prepare(`SELECT * FROM ${table}`).all());
-    fixture.store.db.exec(
-      'DROP TABLE password_resets; DROP TABLE worker_access_events; DROP TABLE worker_access; DROP TABLE invitations; DROP TABLE order_series_members; DROP TABLE order_series; DELETE FROM migrations WHERE version>=3;',
-    );
-    await fixture.app.close();
-    fixture = await buildApp({ databasePath: path, rateLimits: false });
-    expect(tables.map((table) => fixture.store.db.prepare(`SELECT * FROM ${table}`).all())).toEqual(
-      before,
-    );
-    expect(
-      fixture.store.db
-        .prepare('SELECT version FROM migrations ORDER BY version')
-        .all()
-        .map((row) => row.version),
-    ).toEqual([1, 2, 3, 4, 5, 6]);
-    manager = await login('manager');
-    const payload = input();
-    const receipt = (await create(payload)).json();
-    await fixture.app.close();
-    fixture = await buildApp({ databasePath: path, rateLimits: false });
-    try {
-      expect((await create(payload)).json()).toEqual(receipt);
-      expect(counts()).toEqual([6, 3, 1, 3]);
-      expect(fixture.store.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
-    } finally {
+  it.each(['weekly', 'monthly'] as const)(
+    'retains %s receipts through restart and upgrades schema 2 without changing existing data',
+    async (frequency) => {
+      const directory = mkdtempSync(join(tmpdir(), 'fieldwork-series-'));
+      const path = join(directory, 'upgrade.sqlite');
       await fixture.app.close();
-      rmSync(directory, { recursive: true, force: true });
-      fixture = await buildApp({ databasePath: ':memory:', rateLimits: false });
-    }
-  });
+      fixture = await buildApp({ databasePath: path, rateLimits: false });
+      seed(fixture.store);
+      const tables = ['users', 'catalog', 'work_orders', 'mutations', 'report_revisions', 'audit'];
+      const before = tables.map((table) =>
+        fixture.store.db.prepare(`SELECT * FROM ${table}`).all(),
+      );
+      fixture.store.db.exec(
+        'DROP TABLE password_resets; DROP TABLE worker_access_events; DROP TABLE worker_access; DROP TABLE invitations; DROP TABLE order_series_members; DROP TABLE order_series; DELETE FROM migrations WHERE version>=3;',
+      );
+      await fixture.app.close();
+      fixture = await buildApp({ databasePath: path, rateLimits: false });
+      expect(
+        tables.map((table) => fixture.store.db.prepare(`SELECT * FROM ${table}`).all()),
+      ).toEqual(before);
+      expect(
+        fixture.store.db
+          .prepare('SELECT version FROM migrations ORDER BY version')
+          .all()
+          .map((row) => row.version),
+      ).toEqual([1, 2, 3, 4, 5, 6]);
+      manager = await login('manager');
+      const payload = { ...input(), frequency };
+      const receipt = (await create(payload)).json();
+      await fixture.app.close();
+      fixture = await buildApp({ databasePath: path, rateLimits: false });
+      try {
+        expect((await create(payload)).json()).toEqual(receipt);
+        expect(counts()).toEqual([6, 3, 1, 3]);
+        expect(fixture.store.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+      } finally {
+        await fixture.app.close();
+        rmSync(directory, { recursive: true, force: true });
+        fixture = await buildApp({ databasePath: ':memory:', rateLimits: false });
+      }
+    },
+  );
 
   it('rolls back an interrupted migration and can retry it on the next open', () => {
     const directory = mkdtempSync(join(tmpdir(), 'fieldwork-series-failure-'));

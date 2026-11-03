@@ -1,6 +1,6 @@
 # Recurring assignments
 
-Managers can create a finite batch of daily, weekly, or weekday assignments through `POST /api/v1/work-order-series` or `client.createOrderSeries(input)`. Each occurrence becomes an ordinary work order immediately, visible in the existing list, search, planner, and worker sync. Managers use **Assign recurring work** beside ordinary assignment in the web dispatch desk. A selected planner date becomes the first date. The form previews every occurrence before creating the batch.
+Managers can create a finite batch of daily, weekly, weekday or monthly assignments through `POST /api/v1/work-order-series` or `client.createOrderSeries(input)`. Each occurrence becomes an ordinary work order immediately, visible in the existing list, search, planner, and worker sync. Managers use **Assign recurring work** beside ordinary assignment in the web dispatch desk. A selected planner date becomes the first date. The form previews every occurrence before creating the batch.
 
 ## Contract
 
@@ -18,9 +18,11 @@ Use the ordinary assignment fields (`title`, `instructions`, `siteId`, `template
 
 Weekday schedules include public holidays. They are a Monday–Friday calendar rule, not a locale-specific business-day or holiday calendar. For example, a seven-occurrence batch starting Friday 2026-12-25 produces Dec 25, 28, 29, 30, 31, Jan 1, and Jan 4. Those dates are synthetic planning examples.
 
-Counts must be integers from 2 through 52, including the first occurrence. Dates use UTC calendar arithmetic without a time-of-day or daylight-saving adjustment. Every generated date, including weekend skips, must fit a four-digit year. Past dates are allowed, as with ordinary assignments. The exported `recurrenceDates` helper validates the same schedule for a client preview; `RecurrenceFrequencySchema` defines all three supported values consistently across requests, receipts, and batch summaries. Existing daily/weekly calculations and receipts remain unchanged.
+`monthly` repeats on the original day of each month. If that day is unavailable, the occurrence uses that month's last day. For example, Jan 31, 2027 produces Jan 31, Feb 28, Mar 31, Apr 30. Jan 30 produces Jan 30, Feb 28, Mar 30. Starting Feb 28 repeats on the 28th; this is an original-day rule rather than an end-of-month mode. Weekend and holiday dates remain included. The selector explains the shorter-month behavior before assignment, and recovered batches retain the same rule and preview.
 
-The web selector, recovered request, and batch ledger use **Weekdays (Mon–Fri)** for the new rule. Lost-response recovery retains and replays the original `weekdays` payload and mutation ID. No recurrence edits, background scheduling, holiday configuration, new dependency, or database migration are introduced. Update the server and web bundle together when enabling the new frequency; older clients with a two-value frequency schema cannot parse weekday batch metadata.
+Counts must be integers from 2 through 52, including the first occurrence. Dates use UTC calendar arithmetic without a time-of-day or daylight-saving adjustment. Every generated date, including monthly advances and weekend skips, must fit a four-digit year. Past dates are allowed, as with ordinary assignments. The exported `recurrenceDates` helper validates the same schedule for a client preview; `RecurrenceFrequencySchema` defines all four supported values consistently across requests, receipts, and batch summaries. Existing daily/weekly/weekday calculations, stored inputs, hashes and receipts remain unchanged.
+
+The web selector, recovered request and batch ledger use **Weekdays (Mon–Fri)** and **Monthly** for these rules. Lost-response recovery retains and replays the original frequency, payload and mutation ID. No recurrence edits, background scheduling, holiday configuration, new dependency or database migration are introduced. Update the server and web bundle together when enabling a new frequency; older clients cannot parse batch metadata for frequencies absent from their schema. Native workers continue to receive ordinary materialized orders without recurrence metadata.
 
 A new batch returns 201 with `{ id, createdAt, frequency, orders }`. Each order has its own ID, reference, version 1, ASSIGNED status, and site/worker/checklist snapshots. The series definition, original receipt, all orders, membership, and assignment events commit together. Invalid catalog choices return 422 `INVALID_ASSIGNMENT`; malformed recurrence returns 422 `VALIDATION`. Missing sessions and worker accounts cannot create batches.
 
@@ -55,7 +57,7 @@ Lists sort newest first by creation timestamp, then batch ID. The cursor anchors
 
 ## Boundaries and contributor entry points
 
-There is no background scheduler, infinite series, weekend/holiday policy, monthly rule, bulk editing, or series cancellation. Each materialized order can be rescheduled, reassigned, submitted, and reviewed independently through the existing versioned workflow. Template changes do not rewrite its saved checklist. Future scheduling rules and series management need their own contract and migration discussion.
+There is no background scheduler, infinite series, weekend/holiday policy, configurable day-of-month, bulk editing or series cancellation. Each materialized order can be rescheduled, reassigned, submitted and reviewed independently through the existing versioned workflow. Template changes do not rewrite its saved checklist. Future scheduling rules and series management need their own contract and migration discussion.
 
 - Contracts and date generation: `packages/contracts/src/index.ts`.
 - HTTP creation and transaction: `apps/api/src/app.ts`.

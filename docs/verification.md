@@ -1,5 +1,11 @@
 # Verification
 
+## Indonesian quick-start guide (2026-11-03)
+
+Issue #3 adds `quickstart.id.md` and a README entry for Indonesian-speaking contributors. It covers Node 24, installation, seed/demo accounts, web/API development, production offline reloads and checks. Application translation remains a separate roadmap item.
+
+Verification uses a fresh remote clone on macOS with Node 24.22.1 and a separate synthetic SQLite demo. `npm ci`, `npm run db:seed`, `npm run dev`, `npm run build`, `npm start`, `npm run check`, `npx playwright install chromium` and `npm run test:e2e` succeed. The baseline has 486 unit/API tests and all 101 Chromium workflows pass. Both demo accounts sign in through the development server; API health responds; production browsing retains a photo draft across offline reload, queues it and acknowledges it after reconnect. Repeating seed refuses to overwrite the existing demo and leaves the submitted synthetic report intact. Local guide links resolve and final Markdown formatting passes. No new native device acceptance is claimed for this documentation change.
+
 ## Recurring dates to skip (2026-11-03)
 
 Managers can explicitly exclude up to 52 future dates from a new recurring batch. Preview and API generation preserve the chosen order count, first date and monthly anchor. Nonempty sorted lists participate in the retry hash and saved batch metadata; omitted/empty lists retain legacy shapes and hashes. Stored orders, report versions and device notebooks are not rewritten. Server and web releases must be coordinated before using the new field.

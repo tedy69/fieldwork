@@ -2,6 +2,8 @@
 
 An open-source field operations platform. Assign an inspection, complete it without a connection, and review the synced report from the dispatch desk.
 
+Bahasa Indonesia: [panduan mulai menggunakan Fieldwork](docs/quickstart.id.md).
+
 **v0.1 is an early foundation for a single team.** The core inspection workflow works across the web app and Expo worker app. We are building this in public and welcome contributors.
 
 ![Fieldwork dispatch desk with synthetic demo work orders](docs/images/dispatch-desk.png)

@@ -198,14 +198,14 @@ test('worker opens a fresh authorized result without replacing saved orders or a
   });
   await expect(result).toBeVisible();
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+  await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
   await page.getByLabel('Search work orders', { exact: true }).fill(fresh.title);
   await expect(page.locator('.order-row')).toHaveCount(0);
   await trigger.click();
   await search(page, fresh.title);
   await result.click();
   await expect(page.getByRole('heading', { name: fresh.title, exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+  await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
   await page.getByLabel('Search work orders', { exact: true }).fill(original.title);
   await page
     .getByRole('button', { name: `Open ${original.reference}: ${original.title}`, exact: true })
@@ -240,7 +240,7 @@ test('worker opens a fresh authorized result without replacing saved orders or a
   await expect(dialog).toHaveCount(0);
   await expect(page.getByRole('heading', { name: fresh.title, exact: true })).toBeVisible();
   await expect(page.getByRole('main')).toBeFocused();
-  await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+  await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
   await page.getByLabel('Search work orders', { exact: true }).fill(original.title);
   await page
     .getByRole('button', { name: `Open ${original.reference}: ${original.title}`, exact: true })

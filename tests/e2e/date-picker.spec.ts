@@ -32,7 +32,7 @@ test('assignment calendars validate typed dates, navigate with keys, and submit 
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await login(page);
-  await page.getByRole('button', { name: '+ Assign work order', exact: true }).click();
+  await page.getByRole('button', { name: 'Assign work order', exact: true }).click();
   const form = page.getByRole('dialog', { name: 'Assign a work order', exact: true });
   await form.getByLabel('Work order title', { exact: true }).fill('Date picker assignment QA');
   const input = form.getByLabel('Due date', { exact: true });

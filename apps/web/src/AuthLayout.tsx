@@ -24,10 +24,6 @@ export default function AuthLayout({
             <br />
             Keep the whole story.
           </p>
-          <p>
-            Give every assignment a clear brief, every inspection a record, and every report a
-            review.
-          </p>
           <div className="auth-field-note">
             <strong>
               {recovery ? 'Your work stays with you.' : 'A notebook that goes with the work.'}
@@ -37,7 +33,6 @@ export default function AuthLayout({
               until the server confirms them.
             </p>
           </div>
-          <p className="auth-footnote">One workspace. The desk and the field, working together.</p>
         </aside>
         <section className="login-panel">{children}</section>
       </main>

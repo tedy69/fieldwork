@@ -1,6 +1,8 @@
 import { useRef, useState, type FormEvent } from 'react';
 import type { User, WorkOrder } from '@fieldwork/contracts';
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
+import { UserSwitchIcon } from '@phosphor-icons/react/dist/csr/UserSwitch';
 import { Form } from './components/ui/form';
 import {
   NativeSelect as Select,
@@ -78,7 +80,8 @@ export default function ReassignOrder({
   }
   return (
     <section className="schedule" aria-label="Assignment worker">
-      <Button
+      <IconButton
+        label="Change worker"
         ref={trigger}
         className="quiet"
         aria-expanded={editing}
@@ -86,8 +89,8 @@ export default function ReassignOrder({
         disabled={!online || Boolean(busy) || !hasReplacement}
         onClick={() => (editing ? cancel() : setEditing(true))}
       >
-        Change worker
-      </Button>
+        <UserSwitchIcon aria-hidden="true" />
+      </IconButton>
       {!online ? (
         <p className="muted">Connect to change the worker.</p>
       ) : !hasReplacement ? (

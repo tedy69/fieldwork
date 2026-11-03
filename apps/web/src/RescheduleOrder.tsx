@@ -1,4 +1,6 @@
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
+import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
 import { Form } from './components/ui/form';
 import { DatePicker } from './components/ui/date-picker';
 import { Label } from './components/ui/label';
@@ -71,7 +73,8 @@ export default function RescheduleOrder({
   }
   return (
     <section className="schedule" aria-label="Assignment schedule">
-      <Button
+      <IconButton
+        label="Change due date"
         ref={trigger}
         className="quiet"
         aria-expanded={editing}
@@ -79,8 +82,8 @@ export default function RescheduleOrder({
         disabled={!online || Boolean(busy)}
         onClick={() => (editing ? cancel() : setEditing(true))}
       >
-        Change due date
-      </Button>
+        <CalendarBlankIcon aria-hidden="true" />
+      </IconButton>
       {!online && <p className="muted">Connect to change the due date.</p>}
       {editing && (
         <Form

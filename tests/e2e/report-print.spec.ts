@@ -161,7 +161,7 @@ test('manager prints only the selected saved report, offline and with useful err
   await expect(
     page.getByRole('alert').filter({ hasText: 'Could not open the print dialog.' }),
   ).toHaveCount(0);
-  await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+  await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
   await expect(print).toHaveCount(0);
   await page.emulateMedia({ media: 'print' });
   await expect(page.locator('#root')).toBeVisible();
@@ -176,7 +176,7 @@ test('worker printing excludes unsent corrections and is unavailable before subm
   await page.getByRole('button', { name: /^Open FW-003:/ }).click();
   await expect(page.getByRole('button', { name: 'Print report', exact: true })).toHaveCount(0);
   await expect(page.locator('.print-report')).toHaveCount(0);
-  await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+  await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
   await page
     .getByRole('button', { name: `Open ${order.reference}: ${order.title}`, exact: true })
     .click();

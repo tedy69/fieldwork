@@ -99,7 +99,7 @@ for (const [role, timezoneId] of [
       for (const name of ['Before', 'After']) expect(csv).not.toContain(`${prefix} ${name}`);
     }
     await rows.filter({ hasText: `${prefix} Start` }).click();
-    await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+    await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
     await expect(from).toHaveValue('2026-10-21');
     await expect(through).toHaveValue('2026-10-23');
     await expect(rows).toHaveCount(3);

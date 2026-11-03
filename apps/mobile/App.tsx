@@ -19,6 +19,7 @@ import * as Crypto from 'expo-crypto';
 import Storage from 'expo-sqlite/kv-store';
 import * as ImagePicker from 'expo-image-picker';
 import { StatusBar } from 'expo-status-bar';
+import { ArrowClockwise, ArrowLeft, Camera, ImageSquare, Trash, GearSix } from './notebook-icons';
 import {
   blankDraft,
   ReportInputSchema,
@@ -122,9 +123,6 @@ export default function App() {
                 <Copy accessibilityRole="header" variant="title">
                   Sign in to Fieldwork
                 </Copy>
-                <Copy muted>
-                  A clear brief. A useful record. All of your site work in one place.
-                </Copy>
               </View>
               <Panel>
                 {serverExpanded && (
@@ -189,6 +187,8 @@ export default function App() {
                   </Copy>
                   <Button
                     title={serverExpanded ? 'Hide server settings' : 'Change server'}
+                    icon={GearSix}
+                    iconOnly
                     variant="ghost"
                     expanded={serverExpanded}
                     onPress={() => setServerExpanded(!serverExpanded)}
@@ -199,8 +199,7 @@ export default function App() {
                 </Copy>
               </View>
               <Copy variant="caption" muted>
-                New to the team or need a new password? Open the invitation or reset link from your
-                manager in a browser, then return here to sign in.
+                Open your manager's invitation or reset link in a browser, then sign in here.
               </Copy>
             </ScrollView>
           )}
@@ -337,6 +336,8 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
         </View>
         <Button
           title={busy ? 'Syncing…' : 'Sync now'}
+          icon={ArrowClockwise}
+          iconOnly
           onPress={() => void sync()}
           disabled={busy}
           variant="ghost"
@@ -463,6 +464,8 @@ function Inspection({
     <>
       <Button
         title="Back to assignments"
+        icon={ArrowLeft}
+        iconOnly
         variant="ghost"
         onPress={back}
         style={styles.leadingAction}
@@ -606,6 +609,8 @@ function Inspection({
                 />
                 <Button
                   title={`Remove photo ${index + 1}`}
+                  icon={Trash}
+                  iconOnly
                   variant="ghost"
                   onPress={() =>
                     void save({
@@ -620,6 +625,7 @@ function Inspection({
               <View style={styles.photoAction}>
                 <Button
                   title="Take photo"
+                  icon={Camera}
                   variant="outline"
                   disabled={busy || draft.photos.length >= 3}
                   onPress={() => void attach(true)}
@@ -628,6 +634,7 @@ function Inspection({
               <View style={styles.photoAction}>
                 <Button
                   title="Choose photo"
+                  icon={ImageSquare}
                   variant="outline"
                   disabled={busy || draft.photos.length >= 3}
                   onPress={() => void attach(false)}
@@ -723,6 +730,7 @@ const styles = StyleSheet.create({
   leadingAction: { alignSelf: 'flex-start' },
   headerLarge: { flexDirection: 'column', alignItems: 'stretch' },
   header: {
+    zIndex: 2,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,

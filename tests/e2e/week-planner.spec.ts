@@ -109,7 +109,7 @@ for (const [role, timezoneId, time] of [
     await expect(rows).toHaveCount(1);
     await expect(rows).toContainText(`${prefix} Today`);
     await rows.click();
-    await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+    await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
     await expect(today).toHaveAttribute('aria-pressed', 'true');
     await page.screenshot({ path: test.info().outputPath('planner-desktop.png'), fullPage: true });
     await days.getByRole('button', { name: 'Wed, Oct 21 0 work orders', exact: true }).click();
@@ -117,7 +117,7 @@ for (const [role, timezoneId, time] of [
       page.getByRole('heading', { name: 'No work orders for this day', exact: true }),
     ).toBeVisible();
     if (role === 'manager') {
-      await page.getByRole('button', { name: '+ Assign for selected day', exact: true }).click();
+      await page.getByRole('button', { name: 'Assign for selected day', exact: true }).click();
       const dialog = page.getByRole('dialog');
       await expect(dialog.getByLabel('Due date', { exact: true })).toHaveValue('2026-10-21');
       await dialog.getByLabel('Work order title', { exact: true }).fill(`${prefix} Scheduled`);
@@ -142,7 +142,7 @@ for (const [role, timezoneId, time] of [
       await expect(
         page.getByRole('heading', { name: `${prefix} Scheduled`, exact: true }),
       ).toBeVisible();
-      await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+      await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
       await expect(rows).toHaveCount(1);
       await expect(rows).toContainText(`${prefix} Scheduled`);
     } else {
@@ -181,7 +181,7 @@ for (const [role, timezoneId, time] of [
     await expect(rows).toHaveCount(1);
     if (role === 'manager')
       await expect(
-        page.getByRole('button', { name: '+ Assign for selected day', exact: true }),
+        page.getByRole('button', { name: 'Assign for selected day', exact: true }),
       ).toBeDisabled();
     await page.setViewportSize({ width: 390, height: 844 });
     await days.scrollIntoViewIfNeeded();
@@ -225,7 +225,7 @@ test('new list assignments default to the local calendar date', async ({ browser
   await page.getByLabel('Email', { exact: true }).fill('manager@fieldwork.local');
   await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await page.getByRole('button', { name: '+ Assign work order', exact: true }).click();
+  await page.getByRole('button', { name: 'Assign work order', exact: true }).click();
   await expect(page.getByRole('dialog').getByLabel('Due date', { exact: true })).toHaveValue(
     '2026-10-22',
   );

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { IconButton } from './components/ui/icon-button';
+import { CalendarPlusIcon } from '@phosphor-icons/react/dist/csr/CalendarPlus';
 import {
   CreateOrderSeriesSchema,
   recurrenceDates,
@@ -118,17 +120,21 @@ export default function RecurringDispatch({
     catalog.users.some((user) => user.role === 'worker');
   return (
     <div className="recurring-dispatch">
-      <Button
+      <IconButton
+        label={
+          loading
+            ? 'Checking saved dispatch…'
+            : pending
+              ? 'Recover recurring batch'
+              : 'Assign recurring work'
+        }
+        showLabel={Boolean(pending)}
         className="quiet"
         disabled={loading || (!pending && (!online || !hasCatalog)) || Boolean(loadError)}
         onClick={() => setOpen(true)}
       >
-        {loading
-          ? 'Checking saved dispatch…'
-          : pending
-            ? 'Recover recurring batch'
-            : 'Assign recurring work'}
-      </Button>
+        <CalendarPlusIcon aria-hidden="true" />
+      </IconButton>
       {loadError && (
         <Alert className="error">
           <p>{loadError}</p>

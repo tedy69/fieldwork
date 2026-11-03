@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { IconButton } from './components/ui/icon-button';
+import { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
 import type { OrderSeriesDetail, WorkOrder } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { client, labels, message } from './lib';
@@ -150,9 +152,9 @@ export default function SeriesOverview({
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>
-        <Button ref={trigger} className="quiet" disabled={!online}>
-          Recurring batches
-        </Button>
+        <IconButton label="Recurring batches" ref={trigger} className="quiet" disabled={!online}>
+          <StackIcon aria-hidden="true" />
+        </IconButton>
       </DialogTrigger>
       <DialogContent
         size="compare"

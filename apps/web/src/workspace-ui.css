@@ -65,6 +65,32 @@
 .ui-button svg {
   flex-shrink: 0;
 }
+.ui-button.ui-icon-button {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+  flex-shrink: 0;
+  justify-content: center;
+  text-decoration: none;
+}
+.ui-button.ui-icon-button svg {
+  width: 20px;
+  height: 20px;
+}
+.action-tooltip {
+  z-index: calc(var(--z-popover) + 1);
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 8px 12px;
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--ui-radius);
+  background: var(--surface);
+  color: var(--ui-foreground);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  box-shadow: var(--dialog-shadow);
+}
 .ui-button:disabled {
   pointer-events: auto;
   cursor: not-allowed;
@@ -952,7 +978,8 @@ form > .ui-field-label {
     margin-top: 0;
   }
   .assignment-actions > .primary {
-    width: 100%;
+    flex: 1;
+    min-width: 160px;
     margin: 0;
   }
   .work-board .order-row {

@@ -1,4 +1,5 @@
-import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
+import { PrinterIcon } from '@phosphor-icons/react/dist/csr/Printer';
 import { FieldError } from './components/ui/field';
 import {
   Table,
@@ -33,9 +34,9 @@ export default function ReportPrint({
   return (
     <>
       <section className="report-print-action" aria-label="Print saved report">
-        <Button className="quiet" onClick={print}>
-          Print report
-        </Button>
+        <IconButton label="Print report" className="quiet" onClick={print}>
+          <PrinterIcon aria-hidden="true" />
+        </IconButton>
         <p className="muted">Print or save as PDF. Unsent edits and photo files are excluded.</p>
         {error && <FieldError>{error}</FieldError>}
       </section>

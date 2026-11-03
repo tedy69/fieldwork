@@ -47,7 +47,7 @@ for (const role of ['manager', 'worker']) {
     await trigger.click();
     await expect(page.getByText('2026-10-27 to 2026-10-27', { exact: true })).toBeVisible();
     await rows.first().click();
-    await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+    await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect(rows).toHaveCount(1);
     await trigger.click();

@@ -3,6 +3,7 @@ import type { ReportRevision } from '@fieldwork/contracts';
 import { ClockCounterClockwiseIcon } from '@phosphor-icons/react/dist/csr/ClockCounterClockwise';
 import { client, dateLabel, labels, message } from './lib';
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
 import { Badge } from './components/ui/badge';
 import { Alert } from './components/ui/alert';
 import {
@@ -88,9 +89,9 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
     <section className="history-launcher" aria-label="Saved submission history">
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button ref={trigger} className="quiet" disabled={!online}>
-            <ClockCounterClockwiseIcon aria-hidden="true" /> Report history
-          </Button>
+          <IconButton label="Report history" ref={trigger} className="quiet" disabled={!online}>
+            <ClockCounterClockwiseIcon aria-hidden="true" />
+          </IconButton>
         </DialogTrigger>
         <DialogContent
           size="compare"

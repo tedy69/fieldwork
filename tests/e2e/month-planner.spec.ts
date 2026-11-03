@@ -90,7 +90,7 @@ for (const [role, timezoneId, time] of [
         buffer: Buffer.from(png, 'base64'),
       });
       await expect(page.getByAltText('Site attachment 1')).toBeVisible();
-      await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+      await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
     }
     await page.getByRole('button', { name: 'Date range', exact: true }).click();
     await page.getByLabel('Due from', { exact: true }).fill('2026-11-01');
@@ -179,7 +179,7 @@ for (const [role, timezoneId, time] of [
     await expect(today).toHaveAttribute('aria-pressed', 'true');
     await expect(rows).toHaveCount(1);
     await rows.click();
-    await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+    await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
     await expect(today).toHaveAttribute('aria-pressed', 'true');
     await planner.screenshot({ path: test.info().outputPath(`month-${role}-desktop.png`) });
     await page.getByRole('button', { name: 'Whole month', exact: true }).click();
@@ -193,7 +193,7 @@ for (const [role, timezoneId, time] of [
       page.getByRole('heading', { name: 'No work orders for this day', exact: true }),
     ).toBeVisible();
     if (role === 'manager') {
-      await page.getByRole('button', { name: '+ Assign for selected day', exact: true }).click();
+      await page.getByRole('button', { name: 'Assign for selected day', exact: true }).click();
       const form = page.getByRole('dialog');
       await expect(form.getByLabel('Due date', { exact: true })).toHaveValue('2026-10-20');
       await form.getByLabel('Work order title', { exact: true }).fill(`${prefix} Scheduled`);
@@ -212,7 +212,7 @@ for (const [role, timezoneId, time] of [
       await expect(
         page.getByRole('heading', { name: `${prefix} Scheduled`, exact: true }),
       ).toBeVisible();
-      await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+      await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
       await expect(rows).toHaveCount(1);
       await expect(rows).toContainText(`${prefix} Scheduled`);
     } else
@@ -258,7 +258,7 @@ for (const [role, timezoneId, time] of [
     await expect(rows).toHaveCount(1);
     if (role === 'manager')
       await expect(
-        page.getByRole('button', { name: '+ Assign for selected day', exact: true }),
+        page.getByRole('button', { name: 'Assign for selected day', exact: true }),
       ).toBeDisabled();
     await page.setViewportSize({ width: 390, height: 844 });
     await planner.evaluate((element) => element.scrollIntoView({ block: 'start' }));
@@ -333,7 +333,7 @@ test('month navigation crosses short months, leap days and year boundaries witho
   await days
     .getByRole('button', { name: 'Choose Feb 29, 2028: 0 work orders', exact: true })
     .click();
-  await page.getByRole('button', { name: '+ Assign for selected day', exact: true }).click();
+  await page.getByRole('button', { name: 'Assign for selected day', exact: true }).click();
   await expect(page.getByRole('dialog').getByLabel('Due date', { exact: true })).toHaveValue(
     '2028-02-29',
   );

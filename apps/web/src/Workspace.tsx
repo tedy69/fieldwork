@@ -7,6 +7,13 @@ import { ClipboardTextIcon } from '@phosphor-icons/react/dist/csr/ClipboardText'
 import { TrayIcon } from '@phosphor-icons/react/dist/csr/Tray';
 import { BuildingsIcon } from '@phosphor-icons/react/dist/csr/Buildings';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
+import { SignOutIcon } from '@phosphor-icons/react/dist/csr/SignOut';
+import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus';
+import { ListDashesIcon } from '@phosphor-icons/react/dist/csr/ListDashes';
+import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
+import { CalendarDotsIcon } from '@phosphor-icons/react/dist/csr/CalendarDots';
+import { XIcon } from '@phosphor-icons/react/dist/csr/X';
+import { IconButton } from './components/ui/icon-button';
 import { SearchField } from './components/ui/search-field';
 import { Label } from './components/ui/label';
 import { Avatar, AvatarFallback } from './components/ui/avatar';
@@ -220,13 +227,14 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
             <strong>{user.name}</strong>
             <small>{user.role === 'manager' ? 'Dispatch manager' : 'Field worker'}</small>
           </div>
-          <Button
-            className="text-button"
+          <IconButton
+            className="quiet"
+            label="Sign out"
             onClick={logout}
-            title="Drafts stay on this device for your next sign-in"
+            tooltip="Sign out. Drafts stay on this device."
           >
-            Sign out
-          </Button>
+            <SignOutIcon aria-hidden="true" />
+          </IconButton>
         </Card>
       </header>
       <div className="main-column">
@@ -237,16 +245,14 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           <div className="connection">
             <span className={online ? 'signal' : 'signal offline'} />
             <span role="status">{online ? 'Connected' : 'Working offline'}</span>
-            <Button
+            <IconButton
               className="quiet sync-action"
-              aria-label={busy ? 'Syncing…' : 'Sync now'}
-              title={busy ? 'Syncing…' : 'Sync now'}
+              label={busy ? 'Syncing…' : 'Sync now'}
               onClick={() => void refresh()}
               disabled={busy || !online}
             >
               <ArrowClockwiseIcon aria-hidden="true" />
-              <span>{busy ? 'Syncing…' : 'Sync now'}</span>
-            </Button>
+            </IconButton>
           </div>
           <div className="topbar-tools">
             <WorkFinder
@@ -282,9 +288,9 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           {notice && (
             <Alert role="status" className="banner notice">
               {notice}
-              <Button className="text-button" onClick={() => setNotice('')}>
-                Dismiss
-              </Button>
+              <IconButton label="Dismiss" variant="ghost" onClick={() => setNotice('')}>
+                <XIcon aria-hidden="true" />
+              </IconButton>
             </Alert>
           )}
           {view === 'resources' ? (
@@ -388,18 +394,14 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           ) : (
             <>
               <div className="heading-row">
-                <PageHeading
-                  title={user.role === 'manager' ? 'Work orders' : 'My assignments'}
-                  description={
-                    user.role === 'manager'
-                      ? 'Assign work, follow progress, and review the findings.'
-                      : 'Your work and instructions, saved for the field.'
-                  }
-                />
+                <PageHeading title={user.role === 'manager' ? 'Work orders' : 'My assignments'} />
                 {user.role === 'manager' && (
                   <ActionGroup className="assignment-actions">
                     <Button
                       className="primary"
+                      aria-label={
+                        planner && plannerDay ? 'Assign for selected day' : 'Assign work order'
+                      }
                       onClick={() => setCreating(true)}
                       disabled={
                         !online ||
@@ -408,7 +410,8 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                         !catalog.users.some((user) => user.role === 'worker')
                       }
                     >
-                      {planner && plannerDay ? '+ Assign for selected day' : '+ Assign work order'}
+                      <PlusIcon aria-hidden="true" />
+                      {planner && plannerDay ? 'Assign for selected day' : 'Assign work'}
                     </Button>
                     <SeriesOverview
                       online={online}
@@ -475,9 +478,19 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                       setPlannerView(value);
                     }}
                     items={[
-                      { id: 'list', title: 'List' },
-                      { id: 'week', title: 'Week planner' },
-                      { id: 'month', title: 'Month planner' },
+                      { id: 'list', title: 'List', icon: <ListDashesIcon aria-hidden="true" /> },
+                      {
+                        id: 'week',
+                        title: 'Week',
+                        label: 'Week planner',
+                        icon: <CalendarBlankIcon aria-hidden="true" />,
+                      },
+                      {
+                        id: 'month',
+                        title: 'Month',
+                        label: 'Month planner',
+                        icon: <CalendarDotsIcon aria-hidden="true" />,
+                      },
                     ]}
                   />
                   <Label className="search">

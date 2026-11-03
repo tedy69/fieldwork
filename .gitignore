@@ -10,6 +10,7 @@ data/
 coverage/
 playwright-report/
 test-results/
+/icon-native-*.png
 *.log
 .DS_Store
 apps/mobile/ios/

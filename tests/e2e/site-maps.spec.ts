@@ -322,7 +322,7 @@ test('map settings, tile errors, disabled providers, and unsupported latitudes h
   await expect(
     location(page).getByRole('link', { name: provider.attributionText, exact: true }),
   ).toHaveAttribute('href', provider.attributionUrl);
-  await page.getByRole('button', { name: '← Work orders', exact: true }).click();
+  await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
   await page
     .getByRole('button', { name: `Open ${polar.reference}: ${polar.title}`, exact: true })
     .click();

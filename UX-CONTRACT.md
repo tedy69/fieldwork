@@ -29,7 +29,7 @@ Native selects deliberately retain the operating system's geometry, language and
 
 ## Controls and validation
 
-- Shared Kokonut UI/shadcn buttons, cards, fields, dialogs, selection strips and tables remain canonical. Actions keep their visible label, keyboard behavior and 44px target. Phosphor icons identify actual actions.
+- Shared Kokonut UI/shadcn buttons, cards, fields, dialogs, selection strips and tables remain canonical. Familiar utility actions use named Phosphor icon buttons, keyboard/hover tooltips and 44px targets. Navigation, submission, review and other consequential actions keep short visible labels. Native icon actions retain 48-point targets, accessibility names and touch-and-hold labels.
 - PanelHeader and ActionGroup in components.tsx own section headings and wrapping action groups. DialogHeader and DialogContent in components/ui/dialog.tsx own modal frames; form, directory, compare and finder are the only size variants. Feature CSS must not duplicate dialog geometry or colors.
 - Form disables browser validation bubbles, checks native constraint metadata, associates text recovery guidance with invalid fields, and focuses the first invalid field. Domain validation remains in shared contracts and the API. A failed save retains entered values.
 - Password fields are masked initially, allow paste/autofill, and have a keyboard-accessible reveal toggle. Account setup remains separate from normal sign-in and cached notebooks.

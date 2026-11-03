@@ -1,0 +1,20 @@
+appId: host.exp.exponent
+name: Android journal photo library
+tags:
+  - android
+  - journal
+---
+- assertVisible: '4 of 4 checks recorded.*Draft saved on this device'
+- addMedia:
+    - ../../docs/images/notebook-sign-in.png
+- scrollUntilVisible:
+    element: Choose photo
+    centerElement: true
+- tapOn: Choose photo
+- tapOn: 'Photo taken on.*'
+- assertVisible: Site photo 1
+- tapOn: Remove photo 1
+- assertNotVisible: Site photo 1
+- tapOn: Choose photo
+- tapOn: 'Photo taken on.*'
+- assertVisible: Site photo 1

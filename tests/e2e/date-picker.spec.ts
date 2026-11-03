@@ -143,6 +143,9 @@ test('all date filters use a bounded calendar, including the nested server-searc
     await page.setViewportSize(viewport);
     await page.getByRole('button', { name: 'Choose due from', exact: true }).click();
     await fits(page, calendar);
+    const dayTarget = await calendar.locator('.ui-calendar-day').first().boundingBox();
+    expect(dayTarget!.width).toBeGreaterThanOrEqual(44);
+    expect(dayTarget!.height).toBeGreaterThanOrEqual(44);
     const nextMonth = calendar.getByRole('button', { name: 'Go to the Next Month', exact: true });
     await nextMonth.focus();
     await page.keyboard.press('Enter');

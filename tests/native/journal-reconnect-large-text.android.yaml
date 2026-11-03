@@ -1,0 +1,52 @@
+appId: host.exp.exponent
+name: Android reconnect, large text and back navigation
+tags:
+  - android
+  - journal
+---
+# Run after the queued-report flow with the API restored and font_scale=1.5.
+- launchApp
+- extendedWaitUntil:
+    visible: Development servers
+    timeout: 15000
+- openLink: ${METRO_URL}
+- extendedWaitUntil:
+    visible: My assignments
+    timeout: 15000
+- tapOn: 'Outbox \(0\)'
+- runFlow: journal-sync.android.yaml
+- tapOn: 'Assignments \(3\)'
+- scrollUntilVisible:
+    element: 'Open FW-003: Weekly equipment inspection'
+    centerElement: true
+- tapOn: 'Open FW-003: Weekly equipment inspection'
+- scrollUntilVisible:
+    element: Inspection report
+    centerElement: true
+- scrollUntilVisible:
+    element: Synthetic Android journal draft retained after restart.
+    centerElement: true
+- assertVisible: Synthetic Android journal draft retained after restart.
+- takeScreenshot: journal-native-report
+- back
+- scrollUntilVisible:
+    element: 'Assignments \(3\)'
+    direction: UP
+- runFlow: journal-large-text.android.yaml
+- takeScreenshot: journal-native-large-text
+- scrollUntilVisible:
+    element: Save and sync inspection
+    centerElement: true
+- assertVisible: Save and sync inspection
+- back
+- scrollUntilVisible:
+    element: My assignments
+    direction: UP
+- assertVisible: My assignments
+- scrollUntilVisible:
+    element: Sign out
+    centerElement: true
+- tapOn: Sign out
+- scrollUntilVisible:
+    element: Sign in
+- assertVisible: Sign in

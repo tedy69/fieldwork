@@ -12,9 +12,9 @@ Fields have visible labels, amber focus, inline password reveal and a Done editi
 
 Actions have minimum targets of 48 points on both platforms. SafeAreaProvider/SafeAreaView from the SDK-compatible safe-area package own screen insets. KeyboardAvoidingView and scrollable forms keep editing and actions reachable. Opening an assignment starts the inspection at the top; returning restores list search and destination state. Its header scrolls with content, stacks at larger font scales, and answer choices become full-width rows. Dynamic Type remains enabled.
 
-These iOS simulator screenshots use seeded synthetic records:
+These Android emulator screenshots use seeded synthetic records:
 
-<img src="images/native-sign-in.png" alt="Clean native sign-in on a compact iPhone" width="280" />
+<img src="images/native-sign-in.png" alt="Light journal sign-in on Android" width="280" />
 <img src="images/native-assignments.png" alt="Expo worker assignments using synthetic demo data" width="280" />
 <img src="images/native-inspection.png" alt="Shared native checklist answers and notes" width="280" />
 
@@ -39,6 +39,10 @@ Start signed out for the sign-in flow. It checks server disclosure, password rev
 The server script binds only to loopback, never opens a development database, and is never imported by production code. Its `/__design-test__/network` POST accepts `{ "available": false }` or `{ "available": true }` to simulate an API outage; `/__design-test__/state` reports synthetic FW-001 and its revision count for manual queue/retry checks. These endpoints do not exist in the production API. The test changes demo data, so use a dedicated simulator and fixture.
 
 Android emulators use the host alias `10.0.2.2` instead of loopback; native acceptance below still applies to each target platform. Simulator smoke testing does not certify physical-camera behavior or store readiness.
+
+For the Android journal flows, start Metro with `EXPO_PUBLIC_API_URL=http://10.0.2.2:4180`, run `adb -s <emulator-id> reverse tcp:8082 tcp:8082`, and use `METRO_URL=exp://127.0.0.1:8082`. Run `journal-sign-in.android.yaml` while signed out, then `journal-workspace.android.yaml` and `journal-retention.android.yaml` in that order against a fresh synthetic fixture. These flows wait for Expo Go's Development servers screen before opening the project, avoiding a cold-launch race. They preserve app data and verify actual selected radio state, search context and SQLite draft recovery.
+
+Continue with `journal-photo.android.yaml` to attach/remove/reattach its synthetic documentation image. Disable only the fixture API via its network endpoint, then run `journal-outbox.android.yaml` to queue the completed report and verify recovery after restart. Restore the API, set the dedicated emulator's `font_scale` to `1.5`, and run `journal-reconnect-large-text.android.yaml` to exercise acknowledgement, repeated sync, the report, larger text and Android back. Restore `font_scale` to `1.0` afterward. This final flow signs out while retaining local drafts. `journal-sync.android.yaml` uses a [relative tap within Sync now](https://docs.maestro.dev/reference/commands-available/tapon) to avoid Expo Go's floating development bubble. Emulator captures include that development overlay; it is not a product control.
 
 ## Start
 

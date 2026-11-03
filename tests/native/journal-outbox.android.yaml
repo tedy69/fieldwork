@@ -1,0 +1,41 @@
+appId: host.exp.exponent
+name: Android queued inspection survives restart
+tags:
+  - android
+  - journal
+---
+# Run after the photo flow with only the isolated fixture API unavailable.
+- scrollUntilVisible:
+    element: Save and sync inspection
+    centerElement: true
+- tapOn: Save and sync inspection
+- extendedWaitUntil:
+    visible: Report saved
+    timeout: 15000
+- tapOn: OK
+- scrollUntilVisible:
+    element: Back to assignments
+    direction: UP
+- tapOn: Back to assignments
+- tapOn: 'Outbox \(1\)'
+- scrollUntilVisible:
+    element: Waiting for confirmation
+    centerElement: true
+- assertVisible: Waiting for confirmation
+- assertVisible: Synthetic Android journal draft retained after restart.
+- assertVisible: '1 photos.*'
+- launchApp
+- extendedWaitUntil:
+    visible: Development servers
+    timeout: 15000
+- openLink: ${METRO_URL}
+- extendedWaitUntil:
+    visible: My assignments
+    timeout: 15000
+- tapOn: 'Outbox \(1\)'
+- scrollUntilVisible:
+    element: Waiting for confirmation
+    centerElement: true
+- assertVisible: Waiting for confirmation
+- assertVisible: Synthetic Android journal draft retained after restart.
+- assertVisible: '1 photos.*'

@@ -439,7 +439,9 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   </div>
                 </Card>
                 <Card>
-                  <span className="summary-number amber">{reviewCount}</span>
+                  <span className={`summary-number${reviewCount > 0 ? ' amber' : ''}`}>
+                    {reviewCount}
+                  </span>
                   <div>
                     <strong>Ready for review</strong>
                     <small className="summary-help">Submitted inspection reports</small>
@@ -486,30 +488,46 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                     />
                   </Label>
                 </div>
-                <div className="list-toolbar">
-                  <SmoothTab
-                    className="status-filters"
-                    label="Filter work orders"
-                    value={filter}
-                    onChange={setFilter}
-                    items={[
-                      'ALL',
-                      'OVERDUE',
-                      'ASSIGNED',
-                      'SUBMITTED',
-                      'APPROVED',
-                      'CHANGES_REQUESTED',
-                    ].map((status) => ({
-                      id: status,
-                      title:
-                        status === 'ALL'
-                          ? 'All orders'
-                          : status === 'OVERDUE'
-                            ? 'Overdue'
-                            : labels[status],
-                    }))}
-                  />
-                  <p className="status-scroll-hint">Scroll for more statuses</p>
+                <div className="board-filters">
+                  <div className="list-toolbar">
+                    <SmoothTab
+                      className="status-filters"
+                      label="Filter work orders"
+                      value={filter}
+                      onChange={setFilter}
+                      items={[
+                        'ALL',
+                        'OVERDUE',
+                        'ASSIGNED',
+                        'SUBMITTED',
+                        'APPROVED',
+                        'CHANGES_REQUESTED',
+                      ].map((status) => ({
+                        id: status,
+                        title:
+                          status === 'ALL'
+                            ? 'All orders'
+                            : status === 'OVERDUE'
+                              ? 'Overdue'
+                              : labels[status],
+                      }))}
+                    />
+                    <p className="status-scroll-hint">Scroll for more statuses</p>
+                  </div>
+                  {!planner && (
+                    <DueDateRange
+                      open={datesOpen}
+                      onOpenChange={setDatesOpen}
+                      from={dueFrom}
+                      through={dueThrough}
+                      onFrom={setDueFrom}
+                      onThrough={setDueThrough}
+                      onClear={() => {
+                        setDueFrom('');
+                        setDueThrough('');
+                      }}
+                    />
+                  )}
                 </div>
                 {plannerView === 'month' ? (
                   <MonthPlanner
@@ -535,20 +553,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                     }}
                     onDay={setPlannerDay}
                   />
-                ) : (
-                  <DueDateRange
-                    open={datesOpen}
-                    onOpenChange={setDatesOpen}
-                    from={dueFrom}
-                    through={dueThrough}
-                    onFrom={setDueFrom}
-                    onThrough={setDueThrough}
-                    onClear={() => {
-                      setDueFrom('');
-                      setDueThrough('');
-                    }}
-                  />
-                )}
+                ) : null}
                 <div className="list-header" aria-hidden="true">
                   <span>Work order / site</span>
                   <span>Assigned to</span>
@@ -575,8 +580,19 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                           <strong className="order-title">{order.title}</strong>
                           <span className="muted site-name">{order.site.name}</span>
                         </div>
-                        <span className="assignee">{order.assignee.name}</span>
-                        <span className="due">{dateLabel(order.dueDate)}</span>
+                        <span className="assignee">
+                          <span className="row-label">Assigned to </span>
+                          {order.assignee.name}
+                        </span>
+                        <span className={`due${isOverdue(order, today) ? ' is-overdue' : ''}`}>
+                          <span>
+                            <span className="row-label">Due </span>
+                            <time dateTime={order.dueDate}>{dateLabel(order.dueDate)}</time>
+                          </span>
+                          {isOverdue(order, today) && (
+                            <span className="overdue-label">Overdue</span>
+                          )}
+                        </span>
                         <Badge className={`status status-${order.status.toLowerCase()}`}>
                           {labels[order.status]}
                         </Badge>

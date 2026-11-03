@@ -1,5 +1,11 @@
 # Verification
 
+## Monthly recurring assignments (2026-11-03)
+
+Monthly batches use the first due date's original day, falling back to the last day in shorter months and restoring that day afterward. Validation and preview share UTC arithmetic. Existing daily, weekly and weekday requests keep their representation and calculation; receipts, ordinary order snapshots, offline notebooks and database schema stay compatible. Server and web versions must be updated together before using monthly batch metadata.
+
+`npm run check` passes formatting, shared web/mobile types, 462 unit/API tests and the production build. All 99 Chromium workflows pass. Calendar regressions cover common/leap Februaries, century and four-digit-year boundaries, daylight-saving dates, month-end anchoring and the 52-occurrence bound. API/SDK tests cover creation, browsing, worker visibility, exact retry receipts, changed-payload rejection, overflow without writes and SQLite restart recovery. Browser workflows at 390 and 1440px cover keyboard previews, invalid dates, lost creation responses, offline reload/recovery with the same mutation ID, and original planned dates after independent rescheduling. No native UI or device acceptance is claimed for this manager web feature. The [design review](journal-design-review.md) records its scoped antislop gate.
+
 ## Local draft export (2026-11-03)
 
 Workers can prepare a private JSON file from a saved web draft or an outbox report while offline. The selected account's draft and exact pending/blocked payload are projected into a versioned schema, with cached assignment context when available. No server request, acknowledgement or local write is part of export. Account/session fields, unrelated work and server report/review history are excluded.

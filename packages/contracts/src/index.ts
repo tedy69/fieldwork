@@ -302,8 +302,19 @@ export const CreateOrderSchema = z
   })
   .strict();
 export type CreateOrder = z.infer<typeof CreateOrderSchema>;
-export const RecurrenceFrequencySchema = z.enum(['daily', 'weekly', 'weekdays']);
-function advanceRecurrence(date: Date, frequency: z.infer<typeof RecurrenceFrequencySchema>) {
+export const RecurrenceFrequencySchema = z.enum(['daily', 'weekly', 'weekdays', 'monthly']);
+function advanceRecurrence(
+  date: Date,
+  frequency: z.infer<typeof RecurrenceFrequencySchema>,
+  originalDay: number,
+) {
+  if (frequency === 'monthly') {
+    date.setUTCMonth(date.getUTCMonth() + 1, 1);
+    const end = new Date(date);
+    end.setUTCMonth(end.getUTCMonth() + 1, 0);
+    date.setUTCDate(Math.min(originalDay, end.getUTCDate()));
+    return;
+  }
   date.setUTCDate(date.getUTCDate() + (frequency === 'weekly' ? 7 : 1));
   if (frequency === 'weekdays')
     while (date.getUTCDay() === 0 || date.getUTCDay() === 6) date.setUTCDate(date.getUTCDate() + 1);
@@ -319,6 +330,7 @@ export const RecurrenceSchema = z
     if (!Number.isInteger(input.occurrences) || input.occurrences < 2 || input.occurrences > 52)
       return;
     const last = new Date(`${input.dueDate}T12:00:00Z`);
+    const originalDay = last.getUTCDate();
     if (input.frequency === 'weekdays' && (last.getUTCDay() === 0 || last.getUTCDay() === 6))
       context.addIssue({
         code: 'custom',
@@ -326,7 +338,7 @@ export const RecurrenceSchema = z
         path: ['dueDate'],
       });
     for (let index = 1; index < input.occurrences; index++)
-      advanceRecurrence(last, input.frequency);
+      advanceRecurrence(last, input.frequency, originalDay);
     if (!Number.isFinite(last.getTime()) || last.getUTCFullYear() > 9999)
       context.addIssue({
         code: 'custom',
@@ -338,8 +350,9 @@ export type Recurrence = z.infer<typeof RecurrenceSchema>;
 export function recurrenceDates(input: Recurrence): string[] {
   const schedule = RecurrenceSchema.parse(input);
   const date = new Date(`${schedule.dueDate}T12:00:00Z`);
+  const originalDay = date.getUTCDate();
   return Array.from({ length: schedule.occurrences }, (_, index) => {
-    if (index) advanceRecurrence(date, schedule.frequency);
+    if (index) advanceRecurrence(date, schedule.frequency, originalDay);
     return date.toISOString().slice(0, 10);
   });
 }

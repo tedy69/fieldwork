@@ -67,6 +67,17 @@ for (const scenario of [
     await search.fill(prefix);
     const rows = page.locator('.order-row');
     await expect(rows).toHaveCount(6);
+    for (const name of ['Yesterday', 'Submitted', 'Changes']) {
+      const row = rows.filter({ hasText: `${prefix} ${name}` });
+      await expect(row.locator('.due')).toHaveClass(/is-overdue/);
+      await expect(row.getByText('Overdue', { exact: true })).toBeVisible();
+      await expect(row.locator('time')).toHaveAttribute('datetime', '2026-10-21');
+    }
+    for (const name of ['Today', 'Tomorrow', 'Approved']) {
+      const row = rows.filter({ hasText: `${prefix} ${name}` });
+      await expect(row.locator('.due')).not.toHaveClass(/is-overdue/);
+      await expect(row.getByText('Overdue', { exact: true })).toHaveCount(0);
+    }
     const overdue = page.getByRole('button', { name: 'Overdue', exact: true });
     await overdue.focus();
     await page.keyboard.press('Enter');
@@ -98,9 +109,14 @@ for (const scenario of [
     await page.clock.fastForward('10:01');
     await expect(rows).toHaveCount(4);
     await expect(rows.filter({ hasText: `${prefix} Today` })).toHaveCount(1);
+    await expect(
+      rows.filter({ hasText: `${prefix} Today` }).getByText('Overdue', { exact: true }),
+    ).toBeVisible();
     await expect(rows.filter({ hasText: `${prefix} Tomorrow` })).toHaveCount(0);
     await expect(rows.filter({ hasText: `${prefix} Approved` })).toHaveCount(0);
     await page.setViewportSize({ width: 390, height: 844 });
+    await expect(rows.first().getByText('Assigned to', { exact: true })).toBeVisible();
+    await expect(rows.first().getByText('Due', { exact: true })).toBeVisible();
     await overdue.focus();
     await page.keyboard.press('Space');
     await expect(overdue).toBeInViewport();

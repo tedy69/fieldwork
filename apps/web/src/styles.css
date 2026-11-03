@@ -53,7 +53,13 @@ select,
 textarea {
   -webkit-tap-highlight-color: transparent;
 }
-button {
+button,
+a[href],
+summary,
+select,
+label[for],
+input[type='checkbox'],
+input[type='radio'] {
   cursor: pointer;
 }
 button:disabled {
@@ -449,7 +455,7 @@ main#main {
 .list-header,
 .order-row {
   display: grid;
-  grid-template-columns: minmax(200px, 2.5fr) minmax(100px, 1fr) 76px 132px;
+  grid-template-columns: minmax(200px, 2.5fr) minmax(100px, 1fr) 86px 132px;
   gap: 16px;
   align-items: center;
 }
@@ -654,6 +660,24 @@ main#main {
 .due {
   font-size: 13px;
   color: #cbd6d0;
+}
+.order-row > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.row-label {
+  display: none;
+}
+.due {
+  display: grid;
+  gap: 3px;
+}
+.due.is-overdue {
+  color: var(--amber);
+}
+.overdue-label {
+  font-size: 11px;
+  font-weight: 600;
 }
 .status {
   font-size: 11px;

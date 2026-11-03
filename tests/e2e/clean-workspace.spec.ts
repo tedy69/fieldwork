@@ -111,6 +111,13 @@ test('phone navigation leaves controls reachable, filters scroll by keyboard, an
       const title = await page.locator('.order-title').first().boundingBox();
       expect(title!.y + title!.height).toBeLessThan(navRect!.y);
     }
+    const row = page.locator('.order-row').first();
+    await expect(row.locator('time')).toHaveAttribute('datetime', /^\d{4}-\d{2}-\d{2}$/);
+    for (const label of ['Assigned to', 'Due']) {
+      const metadata = row.getByText(label, { exact: true });
+      if (width <= 600) await expect(metadata).toBeVisible();
+      else await expect(metadata).toBeHidden();
+    }
     const filters = page.getByRole('group', { name: 'Filter work orders', exact: true });
     await filters.getByRole('button', { name: 'All orders', exact: true }).focus();
     await page.keyboard.press('End');

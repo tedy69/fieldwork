@@ -659,6 +659,26 @@ form > .ui-field-label {
 .board-heading .search {
   margin: 0;
 }
+.board-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 20px;
+  padding-block: 12px;
+}
+.board-filters .list-toolbar {
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+}
+.board-filters .date-filter {
+  margin: 0;
+  max-width: 100%;
+}
+.board-filters .date-filter:has([data-state='open']) {
+  flex-basis: 100%;
+}
 .status-filters.kokonut-tabs {
   padding: 0;
   border: 0;
@@ -921,13 +941,47 @@ form > .ui-field-label {
   .assignment-actions {
     gap: 4px 8px;
     width: 100%;
+    margin-top: 0;
   }
   .assignment-actions > .primary {
     width: 100%;
     margin: 0;
   }
   .work-board .order-row {
-    padding: 18px 0;
+    padding: 16px 0;
+    gap: 8px;
+  }
+  .heading-row {
+    gap: 10px;
+  }
+  .ledger-summary {
+    padding-block: 8px;
+  }
+  .board-heading {
+    padding-block: 10px;
+  }
+  .board-filters {
+    gap: 4px;
+    padding-block: 8px;
+  }
+  .board-filters .list-toolbar,
+  .board-filters .date-filter {
+    width: 100%;
+  }
+  .work-board .order-row .row-label {
+    display: inline;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 400;
+  }
+  .work-board .order-row .due {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    align-items: baseline;
+  }
+  .work-board .order-row .order-title {
+    margin-block: 5px;
   }
   .work-board .order-list {
     border: 0;

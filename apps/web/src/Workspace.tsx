@@ -1,4 +1,5 @@
 import { Button } from './components/ui/button';
+import DraftExport from './DraftExport';
 import { Card } from './components/ui/card';
 import { Alert } from './components/ui/alert';
 import { Badge } from './components/ui/badge';
@@ -343,6 +344,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                         {item.input.photos.length} photos · Saved{' '}
                         {new Date(item.createdAt).toLocaleString()}
                       </p>
+                      <DraftExport orderId={item.orderId} repo={repo} />
                       {item.state === 'blocked' && (
                         <Button
                           className="quiet"

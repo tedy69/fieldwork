@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import {
   createOfflineRepository,
   emptyState,
+  localReportExport,
   type State,
   type StorageAdapter,
 } from '@fieldwork/offline';
@@ -40,6 +41,121 @@ function memory() {
   };
   return storage;
 }
+describe('local report export', () => {
+  it('exports only the selected incomplete draft and strips account and report metadata', () => {
+    const selected = order('selected');
+    selected.report = {
+      id: 'server-report',
+      submittedAt: '',
+      submittedBy: 'Another person',
+      answers: [],
+      summary: 'Private server report',
+      photos: [],
+    };
+    const state = {
+      ...emptyState(),
+      orders: [selected, order('unrelated')],
+      drafts: {
+        selected: {
+          answers: [{ itemId: 'check', value: '' as const, note: 'Gate needs checking.' }],
+          summary: '',
+          photos: [{ id: randomUUID(), mimeType: 'image/png' as const, data: 'photo-data' }],
+          token: 'never-export-this',
+        },
+        unrelated: { answers: [], summary: 'Unrelated data', photos: [] },
+      },
+      token: 'session-secret',
+    };
+    const before = structuredClone(state);
+    const file = localReportExport(state, 'selected', new Date('2026-11-03T12:00:00Z'));
+    expect(file).toMatchObject({
+      format: 'fieldwork-local-report',
+      formatVersion: 1,
+      exportedAt: '2026-11-03T12:00:00.000Z',
+      orderId: 'selected',
+      assignment: { reference: 'selected', template: selected.template },
+      draft: {
+        answers: [{ value: '', note: 'Gate needs checking.' }],
+        photos: state.drafts.selected.photos,
+      },
+      queuedReport: null,
+    });
+    for (const value of [
+      'token',
+      'worker@example.com',
+      'Private server report',
+      'Unrelated data',
+      'never-export-this',
+      'session-secret',
+    ])
+      expect(JSON.stringify(file)).not.toContain(value);
+    expect(state).toEqual(before);
+    file.draft!.summary = 'Changed file';
+    expect(state).toEqual(before);
+  });
+
+  it('retains the exact blocked payload, even when the assignment and draft are unavailable', async () => {
+    const storage = memory();
+    const payload = input();
+    payload.photos = [{ id: randomUUID(), mimeType: 'image/png', data: 'queued-photo' }];
+    const original: State = {
+      ...emptyState(),
+      outbox: [
+        {
+          orderId: 'gone',
+          input: payload,
+          createdAt: '2026-11-03T12:00:00Z',
+          state: 'blocked',
+          error: 'Newer server version.',
+        },
+      ],
+    };
+    await storage.write(original);
+    const write = vi.spyOn(storage, 'write');
+    const send = vi.fn();
+    const repo = createOfflineRepository(storage, send);
+    const file = localReportExport(await repo.read(), 'gone');
+    expect(file.assignment).toBeNull();
+    expect(file.draft).toBeNull();
+    expect(file.queuedReport).toEqual({
+      input: payload,
+      createdAt: original.outbox[0].createdAt,
+      state: 'blocked',
+    });
+    expect(await repo.read()).toEqual(original);
+    expect(write).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('waits for an in-flight save and preserves separate draft and pending submission snapshots', async () => {
+    const repo = createOfflineRepository(memory(), vi.fn());
+    const payload = input();
+    await repo.enqueue('selected', payload);
+    const saving = repo.saveDraft('selected', {
+      answers: [],
+      summary: 'Newer local notes',
+      photos: [],
+    });
+    const file = localReportExport(await repo.read(), 'selected');
+    await saving;
+    expect(file.draft?.summary).toBe('Newer local notes');
+    expect(file.queuedReport?.input).toEqual(payload);
+    expect(file.queuedReport?.state).toBe('pending');
+  });
+
+  it('rejects an absent or malformed local report without changing storage', () => {
+    const state = emptyState();
+    expect(() => localReportExport(state, 'missing')).toThrow('No local draft');
+    state.drafts.bad = {
+      answers: [],
+      summary: '',
+      photos: [{ id: 'invalid', mimeType: 'image/png', data: 'data' }],
+    };
+    const before = structuredClone(state);
+    expect(() => localReportExport(state, 'bad')).toThrow();
+    expect(state).toEqual(before);
+  });
+});
 describe('durable outbox', () => {
   it('retains an older client queue and draft when the server reports missing photo evidence', async () => {
     const storage = memory();

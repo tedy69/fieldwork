@@ -1,5 +1,11 @@
 # Verification
 
+## Local draft export (2026-11-03)
+
+Workers can prepare a private JSON file from a saved web draft or an outbox report while offline. The selected account's draft and exact pending/blocked payload are projected into a versioned schema, with cached assignment context when available. No server request, acknowledgement or local write is part of export. Account/session fields, unrelated work and server report/review history are excluded.
+
+Four offline-engine regressions cover incomplete answers/photos, projection and independent snapshots, missing assignment metadata, blocked mutation/version retention, pending writes and read-only failure behavior. Two Chromium workflows at 390 and 1440px exercise keyboard downloads, offline photos, stale-version blocking, unchanged payloads, failed downloads and persistence across reload. `npm run check` passes with 439 unit/API tests and the production build; all 97 Chromium workflows pass. Shared mobile types compile; native file export and native device execution are outside this web feature. The [design review](journal-design-review.md) records the scoped antislop gate.
+
 ## Compact icon actions (2026-11-03)
 
 The light field journal now uses named Phosphor icon controls for familiar utility actions across web and native. Toolbar search, sync, sign-out, planner arrows, back, print, history and photo removal use compact controls; navigation, assignment, submission, review, photo-source and saved-batch recovery actions keep short visible labels. Repeated introductory copy is reduced. Web tooltips support hover/focus and Escape; native utility buttons show their name on touch and hold. Targets remain 44px on web and 48 points on native. API, permissions, mutation IDs, draft formats and outbox behavior are unchanged.

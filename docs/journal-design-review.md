@@ -4,6 +4,8 @@
 
 ## Evidence
 
+Local draft export follow-up: the existing per-rule review below also applies to this small web addition. A regular Phosphor download glyph and visible “Export draft” label use the existing quiet button and report-export layout. Private-file guidance sits beside the action. Real downloads, keyboard activation, incomplete answers, photo bytes, offline pending/blocked reports, failed-download recovery and unchanged local data are covered at 390 and 1440px. No new surface, navigation, motion, media asset, theme or native UI is introduced. Source edits use direct patches. This preserves the PASS outcomes for R-01 through R-40, liveliness/craftsmanship and both supplements within this scope; native runtime evidence below belongs to the prior UI changes.
+
 `npm run check` passes formatting, strict web/mobile types, 435 unit/API tests and the production web build. All 95 Chromium workflows pass, including real invitation acceptance and password recovery, permissions, offline drafts/photos, retries/conflicts, review, planners, catalog management and account access. Focused recurring recovery checks pass after the compact-action follow-up. Expo dependency compatibility and iOS/Android Hermes exports pass.
 
 The icon refinement reduces repeated toolbar labels and introductory copy. A dedicated workflow verifies accessible names, actual SVG glyphs, 44px targets, keyboard tooltips, Escape, dialogs and return focus at 320, 390, 768 and 1440px. Pending-batch recovery keeps a visible label on the same DOM button, so lost-response recovery restores focus. Native uses twelve licensed Phosphor paths with a bundled SVG renderer. Navigation, photo-source actions, submission, reviews, warnings and state messages retain text.

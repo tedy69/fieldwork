@@ -29,6 +29,7 @@ import RescheduleOrder from './RescheduleOrder';
 import ReassignOrder from './ReassignOrder';
 import ReportHistory from './ReportHistory';
 import SiteLocation from './SiteLocation';
+import DraftExport from './DraftExport';
 export default function OrderDetail({
   user,
   order,
@@ -201,6 +202,9 @@ export default function OrderDetail({
                   'Your checklist, notes, and photos are saved. Open the outbox for sync details.'}
               </p>
             </Alert>
+          )}
+          {user.role === 'worker' && (state.drafts[order.id] || queued) && (
+            <DraftExport orderId={order.id} repo={repo} disabled={saving || busy} />
           )}
           {editable && (
             <Form noValidate className="inspection-form" onSubmit={submit}>

@@ -27,7 +27,13 @@ The outbox continues with unrelated orders after a blocked item. Only one flush 
 
 ## Resolving a conflict
 
-Open the outbox, keep the draft, and fetch the latest order. Review it before submitting again with a **new intent ID and the latest version**. This is an explicit user action, not an automatic rebase. If the server's state no longer permits editing, the draft remains stored; there is no silent overwrite. A draft export tool is a planned contributor task.
+In the web notebook or outbox, use **Export draft** to save a private JSON copy before resolving a conflict. Then keep the draft and fetch the latest order. Review it before submitting again with a **new intent ID and the latest version**. This is an explicit user action, not an automatic rebase. If the server's state no longer permits editing, the draft remains stored; there is no silent overwrite.
+
+### Local draft files
+
+Export works offline for a selected saved draft or pending/blocked report in the signed-in account's web notebook. The version-1 `fieldwork-local-report` file contains its order ID, export timestamp, incomplete draft answers and notes, summary, photo bytes, and the exact queued submission when present (including its mutation ID and base version). If the draft and queued submission differ, both snapshots are included. Cached assignment details supply the reference, checklist labels, instructions and site; `assignment` is null when that record is no longer saved locally.
+
+The file excludes sessions, account details, unrelated assignments and server report/review history. It contains inspection data and photos, so keep it private. A successful export only prepares a browser download; it does not submit, acknowledge, discard or change local work. Download errors leave that work in place for retry. Import and native file export are not implemented.
 
 ## Storage failures
 

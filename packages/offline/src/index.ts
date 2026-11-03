@@ -1,5 +1,5 @@
 import type { Draft, ReportInput, WorkOrder } from '@fieldwork/contracts';
-import { PHOTO_REQUIRED_MESSAGE } from '@fieldwork/contracts';
+import { LocalReportExportSchema, PHOTO_REQUIRED_MESSAGE } from '@fieldwork/contracts';
 
 export interface StorageAdapter {
   read(): Promise<State | null>;
@@ -27,6 +27,21 @@ export const emptyState = (): State => ({
   outbox: [],
   lastSynced: null,
 });
+/** Project only the selected local report. Export never acknowledges or changes the queue. */
+export function localReportExport(state: State, orderId: string, now = new Date()) {
+  const queued = state.outbox.find((item) => item.orderId === orderId);
+  return LocalReportExportSchema.parse({
+    format: 'fieldwork-local-report',
+    formatVersion: 1,
+    exportedAt: now.toISOString(),
+    orderId,
+    assignment: state.orders.find((order) => order.id === orderId) ?? null,
+    draft: state.drafts[orderId] ?? null,
+    queuedReport: queued
+      ? { input: queued.input, createdAt: queued.createdAt, state: queued.state }
+      : null,
+  });
+}
 export function createOfflineRepository(
   storage: StorageAdapter,
   send: (orderId: string, input: ReportInput) => Promise<WorkOrder>,

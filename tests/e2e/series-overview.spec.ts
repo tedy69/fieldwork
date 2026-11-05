@@ -40,6 +40,66 @@ async function login(page: Page, role = 'manager') {
   await expect(page.getByRole('button', { name: 'Sync now', exact: true })).toBeEnabled();
 }
 
+test('manager filters current batch visits offline and keeps focus when an order leaves the filter', async ({
+  page,
+  context,
+}) => {
+  const { manager, batches } = await fixture('Batch visit filter QA', 2);
+  const [batch, other] = batches;
+  const [late, review] = batch.orders;
+  const session = await createClient(baseURL).login('worker@fieldwork.local', 'fieldwork-demo');
+  await createClient(baseURL, () => session.token).submitReport(review.id, {
+    mutationId: crypto.randomUUID(),
+    baseVersion: review.version,
+    summary: 'Synthetic visit awaiting review.',
+    photos: [],
+    answers: review.template.items.map((item) => ({ itemId: item.id, value: 'pass', note: '' })),
+  });
+  await page.setViewportSize({ width: 320, height: 840 });
+  await page.clock.setFixedTime(new Date('2026-12-30T12:00:00Z'));
+  await login(page);
+  await page.getByRole('button', { name: 'Recurring batches', exact: true }).click();
+  await option(page, batch).click();
+  const dialog = dialogFor(page);
+  const selected = dialog.getByRole('region', { name: 'Selected recurring batch' });
+  const filter = selected.getByRole('combobox', { name: 'Show visits', exact: true });
+  const rows = selected.locator('.series-orders > li');
+  await expect(rows).toHaveCount(2);
+  await filter.selectOption('review');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText(review.reference);
+  await filter.selectOption('overdue');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText(late.reference);
+  await rows
+    .first()
+    .getByRole('button', { name: `Change due date for ${late.reference}` })
+    .click();
+  await selected.getByLabel('New due date', { exact: true }).fill('2027-01-09');
+  await selected.getByRole('button', { name: 'Save due date', exact: true }).click();
+  await expect(filter).toBeFocused();
+  await expect(selected.getByRole('heading', { name: 'No matching visits' })).toBeVisible();
+  await expect(rows).toHaveCount(0);
+  expect((await manager.order(late.id)).dueDate).toBe('2027-01-09');
+
+  const refresh = selected.getByRole('button', { name: 'Refresh batch details', exact: true });
+  await context.setOffline(true);
+  await expect(refresh).toBeDisabled();
+  await filter.selectOption('upcoming');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText(late.reference);
+  await expect(selected.getByText('1 of 2 visits', { exact: true })).toBeVisible();
+  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await context.setOffline(false);
+  await refresh.focus();
+  await page.keyboard.press('Enter');
+  await expect(refresh).toBeEnabled();
+  await expect(filter).toHaveValue('upcoming');
+  await option(page, other).click();
+  await expect(filter).toHaveValue('all');
+  await expect(rows).toHaveCount(2);
+});
+
 test('manager compares planned and current orders, pages with retry, and uses keyboard and narrow layouts', async ({
   page,
 }) => {

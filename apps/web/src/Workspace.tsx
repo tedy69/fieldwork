@@ -446,6 +446,7 @@ export default function Workspace({
                     </Button>
                     <SeriesOverview
                       online={online}
+                      today={today}
                       onCache={async (order) => {
                         await repo.cacheOrder(order);
                         setState(await repo.read());

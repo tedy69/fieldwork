@@ -85,6 +85,15 @@
   align-items: flex-start;
   gap: 8px;
 }
+.series-visit-tools {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-control);
+}
+.series-visit-tools .ui-label {
+  flex: 1;
+  min-width: 0;
+}
 .series-order-actions .schedule {
   min-width: 0;
   margin: 0;

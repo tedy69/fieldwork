@@ -1,6 +1,6 @@
 # Recurring assignments
 
-Managers can create a finite batch of daily, weekly, weekday or monthly assignments through `POST /api/v1/work-order-series` or `client.createOrderSeries(input)`. Each occurrence becomes an ordinary work order immediately, visible in the existing list, search, planner, and worker sync. Managers use **Assign recurring work** beside ordinary assignment in the web dispatch desk. A selected planner date becomes the first date. The form previews every occurrence before creating the batch.
+Managers can create a finite batch of daily, weekday, weekly, two-week or monthly assignments through `POST /api/v1/work-order-series` or `client.createOrderSeries(input)`. Each occurrence becomes an ordinary work order immediately, visible in the existing list, search, planner, and worker sync. Managers use **Assign recurring work** beside ordinary assignment in the web dispatch desk. A selected planner date becomes the first date. The form previews every occurrence before creating the batch.
 
 ## Contract
 
@@ -14,13 +14,13 @@ Use the ordinary assignment fields (`title`, `instructions`, `siteId`, `template
 }
 ```
 
-`dueDate` is the first occurrence. `daily` advances by one calendar day; `weekly` advances by seven. `weekdays` advances to the next Monday–Friday date, skipping Saturday and Sunday. A weekday batch must start on a weekday; weekend starts return 422 without creating any work. The form disables creation for that schedule and explains the weekday requirement. A planner weekend preset stays visible so the manager can choose a weekday or another frequency rather than silently shifting the first assignment.
+`dueDate` is the first occurrence. `daily` advances by one calendar day, `weekly` by seven, and `biweekly` by fourteen. Choose **Every two weeks** in the web form to keep the original weekday and repeat every fourteen days. `weekdays` advances to the next Monday–Friday date, skipping Saturday and Sunday. A weekday batch must start on a weekday. Weekend starts return 422 without creating work, and the form explains how to choose a valid date.
 
 Weekday schedules include public holidays. They are a Monday–Friday calendar rule, not a locale-specific business-day or holiday calendar. For example, a seven-occurrence batch starting Friday 2026-12-25 produces Dec 25, 28, 29, 30, 31, Jan 1, and Jan 4. Those dates are synthetic planning examples.
 
 `monthly` repeats on the original day of each month. If that day is unavailable, the occurrence uses that month's last day. For example, Jan 31, 2027 produces Jan 31, Feb 28, Mar 31, Apr 30. Jan 30 produces Jan 30, Feb 28, Mar 30. Starting Feb 28 repeats on the 28th; this is an original-day rule rather than an end-of-month mode. Weekend and holiday dates remain included. The selector explains the shorter-month behavior before assignment, and recovered batches retain the same rule and preview.
 
-Counts must be integers from 2 through 52, including the first occurrence. Dates use UTC calendar arithmetic without a time-of-day or daylight-saving adjustment. Every generated date, including monthly advances and weekend skips, must fit a four-digit year. Past dates are allowed, as with ordinary assignments. The exported `recurrenceDates` helper validates the same schedule for a client preview; `RecurrenceFrequencySchema` defines all four supported values consistently across requests, receipts, and batch summaries. Existing daily/weekly/weekday calculations, stored inputs, hashes and receipts remain unchanged.
+Counts must be integers from 2 through 52, including the first occurrence. Dates use UTC calendar arithmetic without a time-of-day or daylight-saving adjustment. Every generated date, including monthly advances and weekend skips, must fit a four-digit year. Past dates are allowed, as with ordinary assignments. The exported `recurrenceDates` helper validates the same schedule for a client preview. `RecurrenceFrequencySchema` defines the supported values across requests, receipts, and batch summaries.
 
 The web selector, recovered request and batch ledger use **Weekdays (Mon–Fri)** and **Monthly** for these rules. Lost-response recovery retains and replays the original frequency, payload and mutation ID. No recurrence edits, background scheduling, shared holiday calendar, new dependency or database migration are introduced. Update the server and web bundle together when enabling a new frequency; older clients cannot parse batch metadata for frequencies absent from their schema. Native workers continue to receive ordinary materialized orders without recurrence metadata.
 

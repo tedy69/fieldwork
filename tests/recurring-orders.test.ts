@@ -322,6 +322,7 @@ describe('recurring assignments', () => {
   it.each([
     ['daily', '2027-02-17'],
     ['weekdays', '2027-03-09'],
+    ['biweekly', '2028-12-11'],
     ['monthly', '2031-03-28'],
   ] as const)(
     'accepts the maximum %s batch through the SDK and replays its validated receipt',
@@ -427,6 +428,7 @@ describe('recurring assignments', () => {
   it.each([
     { frequency: 'quarterly' },
     { frequency: 'monthly', dueDate: '9999-12-01' },
+    { frequency: 'biweekly', dueDate: '9999-12-25' },
     { occurrences: 0 },
     { occurrences: 1 },
     { occurrences: 53 },

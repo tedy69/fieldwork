@@ -492,7 +492,13 @@ export const CreateOrderSchema = z
   })
   .strict();
 export type CreateOrder = z.infer<typeof CreateOrderSchema>;
-export const RecurrenceFrequencySchema = z.enum(['daily', 'weekly', 'weekdays', 'monthly']);
+export const RecurrenceFrequencySchema = z.enum([
+  'daily',
+  'weekly',
+  'biweekly',
+  'weekdays',
+  'monthly',
+]);
 function advanceRecurrence(
   date: Date,
   frequency: z.infer<typeof RecurrenceFrequencySchema>,
@@ -505,7 +511,8 @@ function advanceRecurrence(
     date.setUTCDate(Math.min(originalDay, end.getUTCDate()));
     return;
   }
-  date.setUTCDate(date.getUTCDate() + (frequency === 'weekly' ? 7 : 1));
+  const days = { daily: 1, weekdays: 1, weekly: 7, biweekly: 14 }[frequency];
+  date.setUTCDate(date.getUTCDate() + days);
   if (frequency === 'weekdays')
     while (date.getUTCDay() === 0 || date.getUTCDay() === 6) date.setUTCDate(date.getUTCDate() + 1);
 }

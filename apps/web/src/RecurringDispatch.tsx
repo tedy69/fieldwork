@@ -414,6 +414,7 @@ function RecurringDialog({
                   >
                     <Option value="daily">Daily</Option>
                     <Option value="weekly">Weekly</Option>
+                    <Option value="biweekly">{recurrenceLabels.biweekly}</Option>
                     <Option value="weekdays">Weekdays (Mon–Fri)</Option>
                     <Option value="monthly">Monthly</Option>
                   </Select>

@@ -1,5 +1,23 @@
-import type { ReactNode } from 'react';
-import { signInCopy, type Locale } from '@fieldwork/strings';
+import { useEffect, type ReactNode } from 'react';
+import { accountLinkCopy, languageNames, signInCopy, type Locale } from '@fieldwork/strings';
+import { GlobeIcon } from '@phosphor-icons/react/dist/csr/Globe';
+import { Button } from './components/ui/button';
+
+export function EntryLanguage({
+  locale,
+  onChange,
+}: {
+  locale: Locale;
+  onChange: (locale: Locale) => void;
+}) {
+  const alternate = locale === 'en' ? 'id' : 'en';
+  return (
+    <Button type="button" variant="ghost" onClick={() => onChange(alternate)}>
+      <GlobeIcon aria-hidden="true" />
+      <span lang={alternate}>{languageNames[alternate]}</span>
+    </Button>
+  );
+}
 
 /** Shared public shell for sign-in, invitations and password recovery. */
 export default function AuthLayout({
@@ -12,6 +30,12 @@ export default function AuthLayout({
   locale?: Locale;
 }) {
   const copy = signInCopy[locale].web;
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    return () => {
+      document.documentElement.lang = 'en';
+    };
+  }, [locale]);
   return (
     <div className="auth-shell">
       <header className="auth-header">
@@ -29,7 +53,7 @@ export default function AuthLayout({
             {copy.statementEnd}
           </p>
           <div className="auth-field-note">
-            <strong>{recovery ? 'Your work stays with you.' : copy.fieldNote}</strong>
+            <strong>{recovery ? accountLinkCopy[locale].recoveryNote : copy.fieldNote}</strong>
             <p>{copy.retention}</p>
           </div>
         </aside>

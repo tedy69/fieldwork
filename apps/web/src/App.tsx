@@ -7,19 +7,12 @@ import { Form } from './components/ui/form';
 import { useEffect, useState, type FormEvent } from 'react';
 import { UserSchema, type User } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
-import {
-  languageNames,
-  savedLocale,
-  signInCopy,
-  signInError,
-  type Locale,
-} from '@fieldwork/strings';
-import { GlobeIcon } from '@phosphor-icons/react/dist/csr/Globe';
+import { savedLocale, signInCopy, signInError, type Locale } from '@fieldwork/strings';
 import Workspace from './Workspace';
 import { MapSettingsProvider } from './MapSettings';
 import { client, message } from './lib';
 import AccountLink from './AccountLink';
-import AuthLayout from './AuthLayout';
+import AuthLayout, { EntryLanguage } from './AuthLayout';
 import {
   clearInvitationHash,
   invitationTokenFromHash,
@@ -42,6 +35,13 @@ function accountLinkFromHash() {
 export default function App() {
   const [link, setLink] = useState(accountLinkFromHash);
   const [initialEmail, setInitialEmail] = useState('');
+  const [locale, setLocale] = useState(() => {
+    try {
+      return savedLocale(localStorage.getItem('fieldwork.locale'));
+    } catch {
+      return 'en' as const;
+    }
+  });
   useEffect(() => {
     const changed = () => setLink(accountLinkFromHash());
     window.addEventListener('hashchange', changed);
@@ -50,6 +50,14 @@ export default function App() {
   function returnToApp() {
     clearInvitationHash();
     setLink(null);
+  }
+  function changeLanguage(next: Locale) {
+    setLocale(next);
+    try {
+      localStorage.setItem('fieldwork.locale', next);
+    } catch {
+      // The current page can still use the selected language.
+    }
   }
   async function signIn(email: string) {
     try {
@@ -67,34 +75,35 @@ export default function App() {
       key={`${link.mode}:${link.token}`}
       mode={link.mode}
       token={link.token}
+      locale={locale}
+      onLanguageChange={changeLanguage}
       onReturn={returnToApp}
       onSignIn={signIn}
     />
   ) : (
-    <AuthenticatedApp initialEmail={initialEmail} />
+    <AuthenticatedApp
+      initialEmail={initialEmail}
+      locale={locale}
+      onLanguageChange={changeLanguage}
+    />
   );
 }
-function AuthenticatedApp({ initialEmail }: { initialEmail: string }) {
+function AuthenticatedApp({
+  initialEmail,
+  locale,
+  onLanguageChange,
+}: {
+  initialEmail: string;
+  locale: Locale;
+  onLanguageChange: (locale: Locale) => void;
+}) {
   const [user, setUser] = useState<User | null>(initialUser);
-  const [locale, setLocale] = useState(() => {
-    try {
-      return savedLocale(localStorage.getItem('fieldwork.locale'));
-    } catch {
-      return 'en' as const;
-    }
-  });
   const [error, setError] = useState<{ api?: ApiError; detail: string } | null>(null);
   const [checking, setChecking] = useState(true);
   const copy = signInCopy[locale];
-  const alternate: Locale = locale === 'en' ? 'id' : 'en';
   useEffect(() => {
-    if (user) return;
-    document.title = `${copy.signIn} · Fieldwork`;
-    document.documentElement.lang = locale;
-    return () => {
-      document.documentElement.lang = 'en';
-    };
-  }, [user, locale, copy.signIn]);
+    if (!user) document.title = `${copy.signIn} · Fieldwork`;
+  }, [user, copy.signIn]);
   useEffect(() => {
     if (sessionStorage.getItem('fieldwork.locked')) {
       setChecking(false);
@@ -133,14 +142,6 @@ function AuthenticatedApp({ initialEmail }: { initialEmail: string }) {
       setChecking(false);
     }
   }
-  function changeLanguage() {
-    setLocale(alternate);
-    try {
-      localStorage.setItem('fieldwork.locale', alternate);
-    } catch {
-      // The current page can still use the selected language.
-    }
-  }
   function logout() {
     void client.logout().catch(() => {});
     sessionStorage.setItem('fieldwork.locked', '1');
@@ -153,10 +154,7 @@ function AuthenticatedApp({ initialEmail }: { initialEmail: string }) {
         <Card>
           <div className="auth-card-heading">
             <p className="auth-caption">{copy.web.welcome}</p>
-            <Button type="button" variant="ghost" onClick={changeLanguage}>
-              <GlobeIcon aria-hidden="true" />
-              <span lang={alternate}>{languageNames[alternate]}</span>
-            </Button>
+            <EntryLanguage locale={locale} onChange={onLanguageChange} />
           </div>
           <h1>{copy.web.heading}</h1>
           <p className="muted">{copy.web.intro}</p>

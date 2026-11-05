@@ -9,7 +9,12 @@ export function Form({
   validationCopy,
   ...props
 }: ComponentProps<'form'> & {
-  validationCopy?: { validationHeading: string; required: string; invalidEmail: string };
+  validationCopy?: {
+    validationHeading: string;
+    required: string;
+    invalidEmail: string;
+    tooShort?: (minimum: string) => string;
+  };
 }) {
   const summary = useId();
   const invalid = useRef<Control[]>([]);
@@ -64,8 +69,10 @@ export function Form({
             return `${label}: use ${field.getAttribute('min')} or more.`;
           if (field.validity.rangeOverflow)
             return `${label}: use ${field.getAttribute('max')} or less.`;
-          if (field.validity.tooShort)
-            return `${label}: enter at least ${field.getAttribute('minlength')} characters.`;
+          if (field.validity.tooShort) {
+            const minimum = field.getAttribute('minlength') ?? '';
+            return `${label}: ${validationCopy?.tooShort?.(minimum) ?? `enter at least ${minimum} characters.`}`;
+          }
           return `${label}: check the value and try again.`;
         }),
       );

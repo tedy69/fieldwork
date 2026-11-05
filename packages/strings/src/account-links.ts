@@ -1,0 +1,126 @@
+import type { Locale } from './index';
+
+const english = {
+  recoveryNote: 'Your work stays with you.',
+  confirmPassword: 'Confirm password',
+  passwordHint: 'Use 12–256 characters.',
+  passwordLength: (minimum: string) => `enter at least ${minimum} characters.`,
+  passwordsDiffer: 'Passwords do not match.',
+  invalidPassword: 'Use a password with 12–256 characters and try again.',
+  linkExpires: 'Link expires',
+  readyToSignIn: (email: string) => `Sign in with ${email} and the password you chose.`,
+  browserSignOut:
+    'Continuing signs out any account open in this browser. Saved notebooks stay on this device.',
+  offline: 'Your entries stay here while this page is open. Reconnect to continue.',
+  openingSignIn: 'Opening sign-in…',
+  continueToSignIn: 'Continue to sign in',
+  trySignIn: 'Try signing in',
+  signInFailed: 'Reconnect and try opening sign-in again.',
+  returnToFieldwork: 'Return to Fieldwork',
+  sessionNote:
+    'Changing your password ends all existing sessions. Sign in again afterward. Saved drafts and queued photos stay on this device.',
+  invitation: {
+    title: 'Worker invitation',
+    heading: 'Join the field team.',
+    intro: 'Review your invitation and choose a password for your field notebook.',
+    actionHeading: 'Set up your notebook',
+    unavailable: 'Invitation unavailable',
+    loading: 'Loading invitation…',
+    person: 'Invited worker',
+    submitting: 'Creating account…',
+    submit: 'Create worker account',
+    reload: 'Reload invitation',
+    ready: 'Your account is ready',
+    incomplete: 'This invitation link is incomplete. Ask your manager for a new link.',
+    reconnect: 'Reconnect to load this invitation.',
+    expired: 'This invitation is no longer available. Ask your manager for a new link.',
+    failed: 'Could not load the invitation. Try again.',
+    uncertain:
+      'We could not confirm account setup. The account may already exist. Try signing in or reload this invitation before trying again.',
+  },
+  passwordReset: {
+    title: 'Password recovery',
+    heading: 'Return to your notebook.',
+    intro:
+      'Choose a new password for your existing worker account. Saved notebook work stays on its device.',
+    actionHeading: 'Reset your password',
+    unavailable: 'Password reset unavailable',
+    loading: 'Loading password reset…',
+    person: 'Worker account',
+    submitting: 'Changing password…',
+    submit: 'Change password',
+    reload: 'Reload reset link',
+    ready: 'Your password has changed',
+    incomplete: 'This password reset link is incomplete. Ask your manager for a new link.',
+    reconnect: 'Reconnect to load this password reset.',
+    expired: 'This password reset link is no longer available. Ask your manager for a new link.',
+    failed: 'Could not load the password reset. Try again.',
+    uncertain:
+      'We could not confirm the password change. It may already be saved. Try signing in or reload this link before trying again.',
+  },
+};
+
+export const accountLinkCopy: Record<Locale, typeof english> = {
+  en: english,
+  id: {
+    recoveryNote: 'Catatan kerja tetap bersama Anda.',
+    confirmPassword: 'Konfirmasi kata sandi',
+    passwordHint: 'Gunakan 12–256 karakter.',
+    passwordLength: (minimum) => `masukkan minimal ${minimum} karakter.`,
+    passwordsDiffer: 'Kata sandi tidak sama.',
+    invalidPassword: 'Gunakan kata sandi dengan 12–256 karakter, lalu coba lagi.',
+    linkExpires: 'Tautan kedaluwarsa',
+    readyToSignIn: (email) => `Masuk dengan ${email} dan kata sandi yang Anda pilih.`,
+    browserSignOut:
+      'Jika ada akun yang sedang masuk di browser ini, akun tersebut akan keluar saat Anda melanjutkan. Catatan kerja tetap tersimpan di perangkat ini.',
+    offline:
+      'Isian Anda tetap ada selama halaman ini terbuka. Sambungkan kembali untuk melanjutkan.',
+    openingSignIn: 'Membuka halaman masuk…',
+    continueToSignIn: 'Lanjut ke halaman masuk',
+    trySignIn: 'Coba masuk',
+    signInFailed: 'Sambungkan kembali, lalu coba buka halaman masuk.',
+    returnToFieldwork: 'Kembali ke Fieldwork',
+    sessionNote:
+      'Mengubah kata sandi akan mengakhiri semua sesi aktif. Silakan masuk kembali. Draf dan foto yang menunggu pengiriman tetap tersimpan di perangkat ini.',
+    invitation: {
+      title: 'Undangan petugas',
+      heading: 'Bergabung dengan tim lapangan.',
+      intro: 'Periksa undangan Anda dan buat kata sandi untuk membuka catatan kerja.',
+      actionHeading: 'Siapkan akun Anda',
+      unavailable: 'Undangan tidak tersedia',
+      loading: 'Memuat undangan…',
+      person: 'Petugas yang diundang',
+      submitting: 'Membuat akun…',
+      submit: 'Buat akun petugas',
+      reload: 'Muat ulang undangan',
+      ready: 'Akun Anda siap',
+      incomplete: 'Tautan undangan ini tidak lengkap. Minta tautan baru kepada manajer.',
+      reconnect: 'Sambungkan kembali untuk memuat undangan ini.',
+      expired: 'Undangan ini sudah tidak tersedia. Minta tautan baru kepada manajer.',
+      failed: 'Undangan tidak bisa dimuat. Coba lagi.',
+      uncertain:
+        'Pembuatan akun belum bisa dikonfirmasi. Akun mungkin sudah dibuat. Coba masuk atau muat ulang undangan sebelum mencoba lagi.',
+    },
+    passwordReset: {
+      title: 'Pemulihan kata sandi',
+      heading: 'Kembali ke catatan kerja Anda.',
+      intro:
+        'Buat kata sandi baru untuk akun petugas Anda. Catatan kerja tetap tersimpan di perangkat asal.',
+      actionHeading: 'Atur ulang kata sandi',
+      unavailable: 'Pengaturan ulang kata sandi tidak tersedia',
+      loading: 'Memuat tautan pengaturan ulang…',
+      person: 'Akun petugas',
+      submitting: 'Mengubah kata sandi…',
+      submit: 'Ubah kata sandi',
+      reload: 'Muat ulang tautan',
+      ready: 'Kata sandi Anda sudah diubah',
+      incomplete: 'Tautan pengaturan ulang ini tidak lengkap. Minta tautan baru kepada manajer.',
+      reconnect: 'Sambungkan kembali untuk memuat tautan ini.',
+      expired:
+        'Tautan pengaturan ulang ini sudah tidak tersedia. Coba masuk jika sudah menggunakannya, atau minta tautan baru kepada manajer.',
+      failed: 'Tautan pengaturan ulang tidak bisa dimuat. Coba lagi.',
+      uncertain:
+        'Perubahan kata sandi belum bisa dikonfirmasi. Kata sandi baru mungkin sudah tersimpan. Coba masuk atau muat ulang tautan sebelum mencoba lagi.',
+    },
+  },
+};

@@ -19,6 +19,7 @@ import {
   DialogDescription,
 } from './components/ui/dialog';
 import { Empty } from './components';
+import RescheduleOrder from './RescheduleOrder';
 import './series-overview.css';
 
 type Page = Awaited<ReturnType<typeof client.orderSeries>>;
@@ -41,6 +42,8 @@ export default function SeriesOverview({
   const [detailError, setDetailError] = useState('');
   const [openError, setOpenError] = useState('');
   const [opening, setOpening] = useState('');
+  const [scheduleBusy, setScheduleBusy] = useState(false);
+  const [scheduleNotice, setScheduleNotice] = useState('');
   const [invalidCursor, setInvalidCursor] = useState(false);
   const listGeneration = useRef(0);
   const detailGeneration = useRef(0);
@@ -50,6 +53,7 @@ export default function SeriesOverview({
   const heading = useRef<HTMLHeadingElement>(null);
   const navigated = useRef(false);
   function changeOpen(next: boolean) {
+    if (scheduleBusy) return;
     listGeneration.current++;
     detailGeneration.current++;
     navigationGeneration.current++;
@@ -68,6 +72,7 @@ export default function SeriesOverview({
       setSelected('');
       setDetailError('');
       setOpenError('');
+      setScheduleNotice('');
       detailGeneration.current++;
       navigationGeneration.current++;
       setDetailBusy(false);
@@ -100,6 +105,7 @@ export default function SeriesOverview({
     navigationGeneration.current++;
     setOpening('');
     setOpenError('');
+    setScheduleNotice('');
     setSelected(id);
     setDetail(null);
     setDetailBusy(true);
@@ -121,6 +127,7 @@ export default function SeriesOverview({
     setListError('');
     setDetailError('');
     setOpenError('');
+    setScheduleNotice('');
     setListBusy(false);
     setDetailBusy(false);
     if (open) void loadList();
@@ -131,7 +138,7 @@ export default function SeriesOverview({
     };
   }, [open]);
   async function openOrder(id: string) {
-    if (!online || opening) return;
+    if (!online || opening || scheduleBusy) return;
     const current = ++navigationGeneration.current;
     setOpening(id);
     setOpenError('');
@@ -150,6 +157,19 @@ export default function SeriesOverview({
       if (current === navigationGeneration.current) setOpening('');
     }
   }
+  async function saveSchedule(order: WorkOrder) {
+    await onCache(order);
+    setDetail(
+      (previous) =>
+        previous && {
+          ...previous,
+          orders: previous.orders.map((row) =>
+            row.order.id === order.id ? { ...row, order } : row,
+          ),
+        },
+    );
+  }
+  const changingOrder = Boolean(opening) || scheduleBusy;
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>
@@ -161,6 +181,14 @@ export default function SeriesOverview({
         size="compare"
         className="series-dialog"
         aria-modal="true"
+        showCloseButton={!scheduleBusy}
+        onEscapeKeyDown={(event) => {
+          if (
+            scheduleBusy ||
+            (event.target instanceof Element && event.target.closest('.schedule form'))
+          )
+            event.preventDefault();
+        }}
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           heading.current?.focus();
@@ -177,16 +205,13 @@ export default function SeriesOverview({
             <DialogTitle ref={heading} tabIndex={-1}>
               Recurring batches
             </DialogTitle>
-            <DialogDescription>
-              Compare original schedules with current orders. Opening an order fetches its latest
-              details and keeps your drafts.
-            </DialogDescription>
+            <DialogDescription>Compare planned and current dates for each order.</DialogDescription>
           </div>
         </DialogHeader>
         <div className="series-actions">
           <Button
             className="quiet"
-            disabled={!online || listBusy || Boolean(opening)}
+            disabled={!online || listBusy || changingOrder}
             onClick={() => void loadList()}
           >
             Refresh batches
@@ -194,7 +219,7 @@ export default function SeriesOverview({
         </div>
         {!online && (
           <Alert role="status" className="banner notice">
-            You’re offline. Loaded batches stay visible. Reconnect to refresh or open an order.
+            You’re offline. Loaded batches stay visible. Reconnect to refresh or change an order.
           </Alert>
         )}
         {listError && (
@@ -202,7 +227,7 @@ export default function SeriesOverview({
             <p>{listError}</p>
             <Button
               className="quiet"
-              disabled={!online || listBusy}
+              disabled={!online || listBusy || changingOrder}
               onClick={() => void loadList(invalidCursor ? undefined : attemptedCursor.current)}
             >
               {invalidCursor ? 'Restart batch list' : 'Retry batch list'}
@@ -235,7 +260,7 @@ export default function SeriesOverview({
                         className="series-option"
                         aria-pressed={batch.id === selected}
                         aria-label={`View batch ${batch.id}: ${batch.title}`}
-                        disabled={!online || Boolean(opening)}
+                        disabled={!online || changingOrder}
                         onClick={() => void loadDetail(batch.id)}
                       >
                         <span className="reference">Batch {batch.id.slice(0, 8)}</span>
@@ -255,7 +280,7 @@ export default function SeriesOverview({
                 {page.nextCursor && (
                   <Button
                     className="quiet full"
-                    disabled={!online || listBusy || Boolean(opening)}
+                    disabled={!online || listBusy || changingOrder}
                     onClick={() => void loadList(page.nextCursor!)}
                   >
                     Load more batches
@@ -294,12 +319,17 @@ export default function SeriesOverview({
                 <p className="muted">Current at load time. Open an order to fetch it again.</p>
                 <Button
                   className="quiet"
-                  disabled={!online || detailBusy || Boolean(opening)}
+                  disabled={!online || detailBusy || changingOrder}
                   onClick={() => void loadDetail(detail.id)}
                 >
                   Refresh batch details
                 </Button>
                 {openError && <Alert className="banner error">{openError}</Alert>}
+                {scheduleNotice && (
+                  <Alert role="status" className="banner notice">
+                    {scheduleNotice}
+                  </Alert>
+                )}
                 {opening && (
                   <p role="status" className="muted">
                     Opening current order…
@@ -337,14 +367,29 @@ export default function SeriesOverview({
                       <Badge className={`status status-${order.status.toLowerCase()}`}>
                         {labels[order.status]}
                       </Badge>
-                      <Button
-                        className="quiet"
-                        aria-label={`Open batch order ${order.reference}: ${order.title}`}
-                        disabled={!online || Boolean(opening)}
-                        onClick={() => void openOrder(order.id)}
-                      >
-                        Open order
-                      </Button>
+                      <div className="series-order-actions">
+                        <Button
+                          className="quiet"
+                          aria-label={`Open batch order ${order.reference}: ${order.title}`}
+                          disabled={!online || changingOrder}
+                          onClick={() => void openOrder(order.id)}
+                        >
+                          Open order
+                        </Button>
+                        {(order.status === 'ASSIGNED' || order.status === 'CHANGES_REQUESTED') && (
+                          <RescheduleOrder
+                            order={order}
+                            online={online}
+                            onSaved={saveSchedule}
+                            onNotice={setScheduleNotice}
+                            batch={{
+                              locked: changingOrder,
+                              onBusyChange: setScheduleBusy,
+                              onRestoreFocus: () => heading.current?.focus(),
+                            }}
+                          />
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ol>

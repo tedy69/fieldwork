@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import type { Coordinates, Site } from '@fieldwork/contracts';
 import { client, message } from './lib';
 import { parseCoordinateInputs } from './coordinate-input';
@@ -28,6 +28,7 @@ export default function SiteCoordinatesEditor({
   const [notice, setNotice] = useState('');
   const generation = useRef(0);
   const loaded = useRef(false);
+  const restoreFocus = useRef(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const firstInput = useRef<HTMLInputElement>(null);
   const reloadButton = useRef<HTMLButtonElement>(null);
@@ -43,15 +44,18 @@ export default function SiteCoordinatesEditor({
     if (needsReload && online) reloadButton.current?.focus();
     else if (!needsReload) firstInput.current?.focus();
   }, [editing, busy, needsReload, online]);
+  useLayoutEffect(() => {
+    if (editing || !restoreFocus.current) return;
+    restoreFocus.current = false;
+    if (trigger.current && !trigger.current.disabled) trigger.current.focus();
+    else document.getElementById('main')?.focus();
+  }, [editing]);
   function close() {
     generation.current++;
+    restoreFocus.current = true;
     setEditing(false);
     setBusy(null);
     setError('');
-    requestAnimationFrame(() => {
-      if (trigger.current?.isConnected && !trigger.current.disabled) trigger.current.focus();
-      else document.getElementById('main')?.focus();
-    });
   }
   async function reload() {
     const current = ++generation.current;

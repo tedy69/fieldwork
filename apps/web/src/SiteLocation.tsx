@@ -1,21 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Site } from '@fieldwork/contracts';
+import type { Locale } from '@fieldwork/strings';
 import { useMapSettings } from './MapSettings';
 import SiteMap from './SiteMap';
 import { Card } from './components/ui/card';
 import { Alert } from './components/ui/alert';
 import { Button } from './components/ui/button';
+import { workerMapCopy } from './worker-map-copy';
 import './site-location.css';
 
 export default function SiteLocation({
   site,
   online,
   beforeReload,
+  locale = 'en',
 }: {
   site: Site;
   online: boolean;
   beforeReload: () => Promise<void>;
+  locale?: Locale;
 }) {
+  const copy = workerMapCopy[locale];
   const { provider, loading, error, ensure, reload } = useMapSettings();
   const [active, setActive] = useState(false);
   const launcher = useRef<HTMLButtonElement>(null);
@@ -28,41 +33,34 @@ export default function SiteLocation({
   if (!site.coordinates) return null;
   const covered = Math.abs(site.coordinates.latitude) <= 85.05112878;
   return (
-    <Card className="site-location">
-      <h2>Site location</h2>
+    <Card className="site-location" lang={locale}>
+      <h2>{copy.location}</h2>
       <p className="site-coordinates">
-        Latitude {site.coordinates.latitude} · Longitude {site.coordinates.longitude}
+        {copy.latitude} {site.coordinates.latitude} · {copy.longitude} {site.coordinates.longitude}
       </p>
-      {!covered && (
-        <p className="muted">
-          These coordinates are outside the latitude range supported by this map.
-        </p>
-      )}
+      {!covered && <p className="muted">{copy.outside}</p>}
       {!online && (
         <Alert className="notice" role="status">
-          Reconnect to load map tiles. Coordinates remain available in saved assignments.
+          {copy.offline}
         </Alert>
       )}
       {loading && (
         <p className="muted" role="status">
-          Loading map settings…
+          {copy.loadingSettings}
         </p>
       )}
       {error && (
         <Alert className="error">
           <p>{error}</p>
           <Button className="quiet" disabled={!online || loading} onClick={reload}>
-            Retry map settings
+            {copy.retrySettings}
           </Button>
         </Alert>
       )}
-      {provider === null && <p className="muted">Map tiles are disabled for this workspace.</p>}
+      {provider === null && <p className="muted">{copy.disabled}</p>}
       {provider && covered && (
         <>
-          <p className="muted">
-            Tiles come from {provider.name}. Loading shares your IP address, this website's address,
-            and the viewed area with that provider.
-          </p>
+          <p className="muted">{copy.privacy(provider.name)}</p>
           {!active ? (
             <Button
               ref={launcher}
@@ -70,7 +68,7 @@ export default function SiteLocation({
               disabled={!online || loading}
               onClick={() => setActive(true)}
             >
-              Load site map
+              {copy.load}
             </Button>
           ) : (
             <>
@@ -81,13 +79,14 @@ export default function SiteLocation({
                   requestAnimationFrame(() => launcher.current?.focus());
                 }}
               >
-                Hide site map
+                {copy.hide}
               </Button>
               {online && (
                 <SiteMap
                   coordinates={site.coordinates}
                   provider={provider}
                   name={site.name}
+                  locale={locale}
                   beforeReload={beforeReload}
                 />
               )}

@@ -12,7 +12,9 @@ async function fixture(
 ) {
   const session = await createClient(baseURL).login('manager@fieldwork.local', 'fieldwork-demo');
   const manager = createClient(baseURL, () => session.token);
-  const site = await manager.createSite(prefix, 'Synthetic coordinate fixture', coordinates);
+  const { repeatEachIndex, retry } = test.info();
+  const name = repeatEachIndex || retry ? `${prefix} ${repeatEachIndex}-${retry}` : prefix;
+  const site = await manager.createSite(name, 'Synthetic coordinate fixture', coordinates);
   const order = await manager.createOrder({
     title: prefix,
     instructions: 'Synthetic map workflow.',
@@ -34,6 +36,59 @@ async function login(page: Page, role = 'worker') {
 const map = (page: Page, name: string) =>
   page.getByRole('region', { name: `Map of ${name}`, exact: true });
 const location = (page: Page) => page.locator('.site-location');
+
+test('worker uses localized map controls without loading tiles before opting in', async ({
+  page,
+  context,
+}) => {
+  const { site, order } = await fixture('Map worker language QA', {
+    latitude: -6.2,
+    longitude: 106.8,
+  });
+  let fail = true;
+  let requests = 0;
+  await page.route(tileEndpoint, (route) => {
+    requests++;
+    return fail ? route.abort() : route.fulfill({ contentType: 'image/svg+xml', body: tile });
+  });
+  await page.setViewportSize({ width: 320, height: 800 });
+  await login(page);
+  const language = page.getByRole('button', { name: 'Bahasa Indonesia', exact: true });
+  await language.click();
+  await page.getByRole('button', { name: `Buka ${order.reference}: ${order.title}` }).click();
+  await expect(location(page).getByRole('heading', { name: 'Lokasi tugas' })).toBeVisible();
+  const coordinates = 'Lintang -6.2 · Bujur 106.8';
+  await expect(location(page).getByText(coordinates, { exact: true })).toBeVisible();
+  await expect(location(page).getByText(/membagikan alamat IP/)).toBeVisible();
+  expect(requests).toBe(0);
+  const load = location(page).getByRole('button', { name: 'Muat peta lokasi', exact: true });
+  await load.click();
+  await expect(location(page).getByText(/Sebagian peta tidak bisa dimuat/)).toBeVisible();
+  const beforeRetry = requests;
+  fail = false;
+  await location(page).getByRole('button', { name: 'Coba muat peta lagi', exact: true }).click();
+  await expect.poll(() => requests).toBeGreaterThan(beforeRetry);
+  const region = page.getByRole('region', { name: `Peta ${site.name}`, exact: true });
+  await region.focus();
+  await page.keyboard.press('+');
+  await expect(
+    location(page).getByRole('status').filter({ hasText: 'Tingkat pembesaran 16' }),
+  ).toBeVisible();
+  await expect(
+    location(page).getByRole('button', { name: 'Pusatkan peta', exact: true }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('button', { name: 'English', exact: true }).click();
+  await expect(map(page, site.name)).toBeVisible();
+  await expect(location(page).getByRole('status').filter({ hasText: 'Zoom 16' })).toBeVisible();
+  await language.click();
+  await context.setOffline(true);
+  await expect(region).toHaveCount(0);
+  await expect(load).toBeDisabled();
+  await expect(location(page).getByText(coordinates, { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
 
 test('manager adds optional paired coordinates without loading tiles or changing existing assignments', async ({
   page,

@@ -36,17 +36,21 @@ import {
   availableSitePhotoSlots,
   checklistItemLabel,
   completedAnswers,
+  parseReading,
   readingBounds,
   readingInputError,
   reportAnswers,
   reportItemLabel,
+  reportPhotoError,
   type Draft,
   type User,
   type WorkOrder,
 } from '@fieldwork/contracts';
 import { ApiError, createClient } from '@fieldwork/sdk';
 import {
+  inspectionCopy,
   languageNames,
+  notebookCopy,
   savedLocale,
   signInCopy,
   signInError,
@@ -68,7 +72,6 @@ import {
   Panel,
   SectionHeading,
   StatusBadge,
-  statusLabels,
 } from './notebook-ui';
 import { colors, radius, size, spacing } from './theme';
 import WorkspacePage from './workspace-page';
@@ -293,6 +296,7 @@ function Notebook({
   locale: Locale;
   onLanguageChange: (locale: Locale) => void;
 }) {
+  const copy = notebookCopy[locale];
   const notebookScroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const { fontScale } = useWindowDimensions();
   const client = useMemo(() => createClient(session.baseUrl, () => session.token), [session]);
@@ -421,7 +425,7 @@ function Notebook({
           </Copy>
         </View>
         <Button
-          title={busy ? 'Syncing…' : 'Sync now'}
+          title={busy ? copy.syncing : copy.sync}
           icon={ArrowClockwise}
           iconOnly
           onPress={() => void sync()}
@@ -431,7 +435,7 @@ function Notebook({
       </View>
       <View style={styles.content}>
         {error ? (
-          <Notice error title="Sync needs attention">
+          <Notice error title={copy.syncError}>
             {error}
           </Notice>
         ) : null}
@@ -444,6 +448,7 @@ function Notebook({
           back={() => setSelected(null)}
           baseUrl={session.baseUrl}
           token={session.token}
+          locale={locale}
         />
       </View>
     </ScrollView>
@@ -457,6 +462,7 @@ function Inspection({
   back,
   baseUrl,
   token,
+  locale,
 }: {
   order: WorkOrder;
   state: State;
@@ -465,7 +471,10 @@ function Inspection({
   back: () => void;
   baseUrl: string;
   token: string;
+  locale: Locale;
 }) {
+  const copy = inspectionCopy[locale];
+  const labels = signInCopy[locale];
   const [draft, setDraft] = useState<Draft>(state.drafts[order.id] ?? blankDraft(order));
   const currentDraft = useRef(draft);
   const pendingWrites = useRef(0);
@@ -486,7 +495,7 @@ function Inspection({
     try {
       await repo.saveDraft(order.id, value);
     } catch {
-      setError('Could not save this draft. Free some device storage before leaving.');
+      setError(copy.saveFailed);
     } finally {
       pendingWrites.current -= 1;
       setSaving(pendingWrites.current > 0);
@@ -505,7 +514,7 @@ function Inspection({
     setError('');
     try {
       if (camera && !(await ImagePicker.requestCameraPermissionsAsync()).granted)
-        throw new Error('Camera access was not granted. You can choose a photo instead.');
+        throw new Error(copy.cameraDenied);
       const options: ImagePicker.ImagePickerOptions = {
         mediaTypes: ['images'],
         quality: 0.4,
@@ -516,7 +525,7 @@ function Inspection({
         : await ImagePicker.launchImageLibraryAsync(options);
       if (!result.canceled) {
         const data = result.assets[0].base64;
-        if (!data || data.length > 2_666_664) throw new Error('Choose a photo smaller than 2 MB.');
+        if (!data || data.length > 2_666_664) throw new Error(copy.photoTooLarge);
         const mimeType = data.startsWith('/9j/')
           ? 'image/jpeg'
           : data.startsWith('iVBOR')
@@ -550,12 +559,11 @@ function Inspection({
         baseVersion: order.version,
       });
       await repo.saveDraft(order.id, draft);
+      const photoError = reportPhotoError(order.template, input.photos, copy.photoErrors);
+      if (photoError) throw new Error(photoError.message);
       await repo.enqueue(order.id, input);
       await sync();
-      Alert.alert(
-        'Report saved',
-        'Your report stays in the outbox until the server confirms receipt.',
-      );
+      Alert.alert(copy.reportSaved, copy.outboxHint);
     } catch (error) {
       setError(errorText(error));
     } finally {
@@ -565,7 +573,7 @@ function Inspection({
   return (
     <>
       <Button
-        title="Back to assignments"
+        title={copy.back}
         icon={ArrowLeft}
         iconOnly
         variant="ghost"
@@ -579,12 +587,12 @@ function Inspection({
         <Copy accessibilityRole="header" variant="title">
           {order.title}
         </Copy>
-        <StatusBadge status={order.status} />
+        <StatusBadge status={order.status} locale={locale} />
       </View>
       <View style={styles.metadata}>
         <View style={styles.introduction}>
           <Copy muted variant="caption">
-            Site
+            {copy.site}
           </Copy>
           <Copy variant="label">{order.site.name}</Copy>
           <Copy muted variant="caption">
@@ -594,52 +602,50 @@ function Inspection({
         <View style={styles.row}>
           <View style={styles.introduction}>
             <Copy muted variant="caption">
-              Assigned to
+              {copy.assignee}
             </Copy>
             <Copy>{order.assignee.name}</Copy>
           </View>
           <View style={styles.introduction}>
             <Copy muted variant="caption">
-              Due / priority
+              {copy.duePriority}
             </Copy>
             <Copy>
-              {order.dueDate} · {order.priority}
+              {order.dueDate} · {copy.priority[order.priority]}
             </Copy>
           </View>
         </View>
       </View>
       <Panel variant="plain">
-        <SectionHeading title="Field brief" />
-        <Copy>{order.instructions || 'Complete the checklist and describe your findings.'}</Copy>
+        <SectionHeading title={copy.brief} />
+        <Copy>{order.instructions || copy.defaultInstructions}</Copy>
       </Panel>
       {order.review && (
-        <Notice title={statusLabels[order.review.decision]}>
-          {order.review.note || 'The inspection report has been accepted.'}
+        <Notice title={notebookCopy[locale].status[order.review.decision]}>
+          {order.review.note || copy.accepted}
         </Notice>
       )}
       {queued && (
-        <Notice
-          title={
-            queued.state === 'blocked'
-              ? 'Sync needs your attention'
-              : 'Report queued on this device'
-          }
-        >
-          {queued.error ??
-            'Your checklist, notes, and photos are saved. Sync when a connection is available.'}
+        <Notice title={queued.state === 'blocked' ? copy.queueBlocked : copy.queued}>
+          {queued.error ?? copy.queuedHint}
         </Notice>
       )}
       {editable ? (
         <>
           <SectionHeading
-            title="Inspection checklist"
-            detail={`${completed} of ${order.template.items.length} checks recorded · ${saving ? 'Saving locally…' : 'Draft saved on this device'}`}
+            title={copy.checklist}
+            detail={`${copy.progress(completed, order.template.items.length)} · ${saving ? copy.savingLocally : copy.draftSaved}`}
           />
           <Panel style={styles.ledger}>
             {order.template.items.map((item, index) => {
               const answer = draft.answers.find((answer) => answer.itemId === item.id)!;
-              const readingError = readingInputError(item, answer.reading);
-              const bounds = readingBounds(item);
+              const bounds = readingBounds(item, copy.bounds);
+              const readingHint = bounds && copy.readingHint(bounds);
+              const readingError = readingInputError(item, answer.reading)
+                ? bounds && parseReading(answer.reading) !== null
+                  ? copy.invalidBounds(bounds)
+                  : copy.invalidNumber
+                : undefined;
               const hasPhoto = draft.photos.some((photo) => photo.itemId === item.id);
               return (
                 <View key={item.id} style={[styles.question, index > 0 && styles.questionDivider]}>
@@ -653,7 +659,8 @@ function Inspection({
                   </View>
                   {item.responseType === 'text' ? (
                     <Field
-                      label={`Response: ${item.label}`}
+                      label={`${copy.response}: ${item.label}`}
+                      actionLabels={labels}
                       value={answer.text ?? ''}
                       multiline
                       maxLength={1000}
@@ -670,8 +677,9 @@ function Inspection({
                   ) : item.responseType === 'number' ? (
                     <>
                       <Field
-                        label={`Reading: ${checklistItemLabel(item)}`}
-                        accessibilityHint={bounds ? `Enter a reading ${bounds}.` : undefined}
+                        label={`${copy.reading}: ${checklistItemLabel(item)}`}
+                        accessibilityHint={readingHint}
+                        actionLabels={labels}
                         value={answer.reading ?? ''}
                         maxLength={100}
                         autoCorrect={false}
@@ -691,8 +699,8 @@ function Inspection({
                       />
                       {readingError ? (
                         <Copy accessibilityLiveRegion="polite">{readingError}</Copy>
-                      ) : bounds ? (
-                        <Copy muted>Enter a reading {bounds}.</Copy>
+                      ) : readingHint ? (
+                        <Copy muted>{readingHint}</Copy>
                       ) : null}
                     </>
                   ) : (
@@ -700,8 +708,8 @@ function Inspection({
                       {(['pass', 'fail', 'na'] as const).map((value) => (
                         <AnswerChoice
                           selected={answer.value === value}
-                          name={`${item.label}: ${value}`}
-                          label={value === 'pass' ? 'Pass' : value === 'fail' ? 'Issue' : 'N/A'}
+                          name={`${item.label}: ${locale === 'en' ? value : copy.choices[value]}`}
+                          label={copy.choices[value]}
                           key={value}
                           onPress={() =>
                             void save({
@@ -716,10 +724,12 @@ function Inspection({
                     </View>
                   )}
                   <Field
-                    label={`Note: ${item.label}`}
+                    label={`${copy.note}: ${item.label}`}
+                    actionLabels={labels}
                     testID={`inspection-note-${item.id}`}
                     hideLabel
-                    placeholder="Add a note (optional)"
+                    collapsedLabel={copy.optionalNote}
+                    placeholder={copy.notePlaceholder}
                     value={answer.note}
                     maxLength={1000}
                     onChangeText={(note) =>
@@ -734,13 +744,14 @@ function Inspection({
                   {item.requiresPhoto && (
                     <>
                       <Copy muted variant="caption">
-                        {hasPhoto ? 'Photo attached' : 'Photo required'}
+                        {hasPhoto ? copy.photoAttached : copy.photoRequired}
                         {!hasPhoto && draft.photos.length === MAX_REPORT_PHOTOS
-                          ? '. Remove a photo to make room.'
+                          ? copy.removeToMakeRoom
                           : ''}
                       </Copy>
                       {!hasPhoto && (
                         <PhotoActions
+                          locale={locale}
                           disabled={busy || draft.photos.length >= MAX_REPORT_PHOTOS}
                           label={checklistItemLabel(item)}
                           attach={(camera) => void attach(camera, item.id)}
@@ -753,9 +764,10 @@ function Inspection({
             })}
           </Panel>
           <Field
-            label="Inspection summary"
+            label={copy.summary}
+            actionLabels={labels}
             testID="inspection-summary"
-            placeholder="Describe the site condition and follow-up work."
+            placeholder={copy.summaryPlaceholder}
             multiline
             value={draft.summary}
             maxLength={4000}
@@ -763,24 +775,24 @@ function Inspection({
           />
           <Panel variant="plain">
             <SectionHeading
-              title="Site photos"
-              detail={`${draft.photos.length} of ${MAX_REPORT_PHOTOS} attached`}
+              title={copy.photos}
+              detail={copy.photoCount(draft.photos.length, MAX_REPORT_PHOTOS)}
             />
             {order.template.requiresPhoto && (
               <Copy muted variant="caption">
-                At least one site photo is required for each submission, including corrections.
+                {copy.photosRequired}
               </Copy>
             )}
             {draft.photos.map((photo, index) => (
               <View key={photo.id}>
                 <Image
-                  accessibilityLabel={`Site photo ${index + 1}`}
+                  accessibilityLabel={`${copy.photo} ${index + 1}`}
                   source={{ uri: `data:${photo.mimeType};base64,${photo.data}` }}
                   style={styles.photo}
                 />
                 {photo.itemId && <Copy muted>{reportItemLabel(order.template, photo.itemId)}</Copy>}
                 <Button
-                  title={`Remove photo ${index + 1}`}
+                  title={`${copy.removePhoto} ${index + 1}`}
                   icon={Trash}
                   iconOnly
                   variant="ghost"
@@ -796,33 +808,30 @@ function Inspection({
             ))}
             {sitePhotoSlots === 0 && draft.photos.length < MAX_REPORT_PHOTOS && (
               <Copy muted variant="caption">
-                Remaining photo slots are reserved for checklist questions.
+                {copy.reservedPhotos}
               </Copy>
             )}
             <PhotoActions
+              locale={locale}
               disabled={busy || sitePhotoSlots === 0}
               attach={(camera) => void attach(camera)}
             />
             <Copy muted variant="caption">
-              Up to 3 photos, 2 MB each. Photos are saved with your offline draft.
+              {copy.photoLimits}
             </Copy>
           </Panel>
           {error ? (
-            <Notice error title="Inspection needs attention">
+            <Notice error title={copy.needsAttention}>
               {error}
             </Notice>
           ) : null}
           <View style={styles.submitBar}>
             <Copy muted variant="caption">
-              Your report stays on this device until the server confirms it.
+              {copy.retention}
             </Copy>
             <Button
               title={
-                busy
-                  ? preparingPhoto
-                    ? 'Preparing photo…'
-                    : 'Saving report…'
-                  : 'Save and sync inspection'
+                busy ? (preparingPhoto ? copy.preparingPhoto : copy.savingReport) : copy.submit
               }
               disabled={
                 busy || saving || !draft.summary.trim() || completed !== order.template.items.length
@@ -834,24 +843,26 @@ function Inspection({
       ) : order.report ? (
         <Panel>
           <SectionHeading
-            title="Inspection report"
-            detail={`Submitted ${new Date(order.report.submittedAt).toLocaleString()}`}
+            title={copy.report}
+            detail={`${copy.submitted} ${new Date(order.report.submittedAt).toLocaleString(locale === 'id' ? 'id-ID' : undefined)}`}
           />
           {order.report.answers.map((answer) => (
             <View key={answer.itemId} style={styles.checkItem}>
               <Copy variant="label">{reportItemLabel(order.template, answer.itemId)}</Copy>
               <Copy style={answer.value === 'fail' ? { color: colors.amber } : undefined}>
-                {answerLabel(answer)}
+                {answer.value === 'text' || answer.value === 'number'
+                  ? answerLabel(answer)
+                  : copy.results[answer.value]}
               </Copy>
               {answer.note ? <Copy muted>{answer.note}</Copy> : null}
             </View>
           ))}
-          <SectionHeading title="Summary" />
+          <SectionHeading title={copy.reportSummary} />
           <Copy>{order.report.summary}</Copy>
           {order.report.photos.map((photo) => (
             <View key={photo.id}>
               <Image
-                accessibilityLabel="Submitted site photo"
+                accessibilityLabel={copy.submittedPhoto}
                 source={{
                   uri: `${baseUrl}/api/v1/photos/${photo.id}`,
                   headers: { Authorization: `Bearer ${token}` },
@@ -867,20 +878,23 @@ function Inspection({
   );
 }
 function PhotoActions({
+  locale,
   disabled,
   label,
   attach,
 }: {
+  locale: Locale;
   disabled: boolean;
   label?: string;
   attach: (camera: boolean) => void;
 }) {
+  const copy = inspectionCopy[locale];
   return (
     <View style={styles.row}>
       <View style={styles.photoAction}>
         <Button
-          title="Take photo"
-          accessibilityLabel={label ? `Take photo for ${label}` : undefined}
+          title={copy.takePhoto}
+          accessibilityLabel={label ? copy.takePhotoFor(label) : undefined}
           icon={Camera}
           variant="outline"
           disabled={disabled}
@@ -889,8 +903,8 @@ function PhotoActions({
       </View>
       <View style={styles.photoAction}>
         <Button
-          title="Choose photo"
-          accessibilityLabel={label ? `Choose photo for ${label}` : undefined}
+          title={copy.choosePhoto}
+          accessibilityLabel={label ? copy.choosePhotoFor(label) : undefined}
           icon={ImageSquare}
           variant="outline"
           disabled={disabled}

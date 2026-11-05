@@ -152,6 +152,7 @@ export function Field({
   label,
   hint,
   hideLabel = false,
+  collapsedLabel = 'Note (optional)',
   inputRef,
   secureTextEntry = false,
   actionLabels = {
@@ -165,6 +166,7 @@ export function Field({
   label: string;
   hint?: string;
   hideLabel?: boolean;
+  collapsedLabel?: string;
   inputRef?: React.Ref<React.ComponentRef<typeof TextInput>>;
   actionLabels?: { doneEditing: string; showPassword: string; hidePassword: string };
 }) {
@@ -176,7 +178,7 @@ export function Field({
       {(!hideLabel || focused) && (
         <View style={ui.fieldHeading}>
           <Copy variant="label" style={ui.fieldLabel}>
-            {hideLabel ? 'Note (optional)' : label}
+            {hideLabel ? collapsedLabel : label}
           </Copy>
           {focused && (
             <Button
@@ -282,7 +284,6 @@ export function Notice({
   );
 }
 
-export const statusLabels = notebookCopy.en.status;
 export function StatusBadge({
   status,
   locale = 'en',

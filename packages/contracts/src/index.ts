@@ -307,6 +307,7 @@ export function availableSitePhotoSlots(
 export function reportPhotoError(
   template: z.infer<typeof TemplateSchema>,
   photos: Pick<Photo, 'itemId'>[],
+  copy?: { invalidItem: string; missingItem: (label: string) => string; missingSite: string },
 ) {
   if (
     photos.some(
@@ -314,15 +315,20 @@ export function reportPhotoError(
         photo.itemId !== undefined && !template.items.some((item) => item.id === photo.itemId),
     )
   )
-    return { code: 'PHOTO_ITEM', message: 'Link each item photo to a question on this checklist.' };
+    return {
+      code: 'PHOTO_ITEM',
+      message: copy?.invalidItem ?? 'Link each item photo to a question on this checklist.',
+    };
   const [missing] = missingItemPhotos(template, photos);
   if (missing)
     return {
       code: 'PHOTO_REQUIRED',
-      message: `Attach a photo for ${checklistItemLabel(missing)}.`,
+      message:
+        copy?.missingItem(checklistItemLabel(missing)) ??
+        `Attach a photo for ${checklistItemLabel(missing)}.`,
     };
   if (template.requiresPhoto && photos.length === 0)
-    return { code: 'PHOTO_REQUIRED', message: PHOTO_REQUIRED_MESSAGE };
+    return { code: 'PHOTO_REQUIRED', message: copy?.missingSite ?? PHOTO_REQUIRED_MESSAGE };
 }
 const AnswerFieldsSchema = z.object({
   itemId: z.string().max(100),
@@ -361,15 +367,22 @@ export function reportItemLabel(template: z.infer<typeof TemplateSchema>, itemId
   const item = template.items.find((entry) => entry.id === itemId);
   return item ? checklistItemLabel(item) : itemId;
 }
-export function readingBounds(item: ChecklistItem): string | undefined {
+export function readingBounds(
+  item: ChecklistItem,
+  copy = {
+    atMost: (max: string) => `at most ${max}`,
+    atLeast: (min: string) => `at least ${min}`,
+    between: (min: string, max: string) => `from ${min} to ${max}`,
+  },
+): string | undefined {
   const { min, max, unit } = item.readingRule ?? {};
   if (min === undefined && max === undefined) return undefined;
   const range =
     min === undefined
-      ? `at most ${decimalReading(max!)}`
+      ? copy.atMost(decimalReading(max!))
       : max === undefined
-        ? `at least ${decimalReading(min)}`
-        : `from ${decimalReading(min)} to ${decimalReading(max)}`;
+        ? copy.atLeast(decimalReading(min))
+        : copy.between(decimalReading(min), decimalReading(max));
   return unit ? `${range} ${unit}` : range;
 }
 function readingRangeError(item: ChecklistItem, reading: number): string | undefined {

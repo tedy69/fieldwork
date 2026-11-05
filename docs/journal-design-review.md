@@ -10,6 +10,8 @@ Expo report history uses the same Phosphor clock as the web action. A separate n
 
 A small map pin marks saved site coordinates beneath the address in Expo. The iOS fixture reads the original zero latitude and negative longitude during an outage in both languages, then opens an older assignment without coordinates.
 
+The Expo sync notice pairs a sign-in icon with a short recovery action. It keeps cached assignments visible and brings the current server and account into the sign-in form. An iOS test exercised a revoked session, an intact queued report after restarting, and a single saved revision after sign-in.
+
 The sign-in language switch pairs a globe with the destination language in the existing journal layout. Chromium covers keyboard switching, 320px and desktop layouts, translated validation, and an offline reload. On iOS, the same choice survives restart and translates the server and password controls.
 
 Invitation and password-reset pages share the same globe control and language preference. Chromium verifies keyboard switching, 390px and desktop layouts, preserved password entries, offline feedback, completion, and opening a used link.

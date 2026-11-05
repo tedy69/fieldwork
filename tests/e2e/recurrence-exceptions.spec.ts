@@ -4,16 +4,33 @@ import type { CreateOrderSeries, OrderSeriesReceipt } from '@fieldwork/contracts
 
 const baseURL = 'http://127.0.0.1:4173';
 test.use({ timezoneId: 'America/Los_Angeles' });
-for (const width of [390, 1440]) {
-  test(`skipped dates preview, validate and survive declined and lost writes at ${width}px`, async ({
+for (const { width, frequency, skipped, expectedDates } of [
+  {
+    width: 390,
+    frequency: 'daily',
+    skipped: ['2026-12-29', '2026-12-30'],
+    expectedDates: ['2026-12-28', '2026-12-31', '2027-01-01'],
+  },
+  {
+    width: 1440,
+    frequency: 'daily',
+    skipped: ['2026-12-29', '2026-12-30'],
+    expectedDates: ['2026-12-28', '2026-12-31', '2027-01-01'],
+  },
+  {
+    width: 390,
+    frequency: 'biweekly',
+    skipped: ['2027-01-11', '2027-01-25'],
+    expectedDates: ['2026-12-28', '2027-02-08', '2027-02-22'],
+  },
+]) {
+  test(`${frequency} skipped dates preview and survive declined and lost writes at ${width}px`, async ({
     page,
     context,
   }) => {
     const session = await createClient(baseURL).login('manager@fieldwork.local', 'fieldwork-demo');
     const manager = createClient(baseURL, () => session.token);
-    const title = `Synthetic site closure ${width}`;
-    const expectedDates = ['2026-12-28', '2026-12-31', '2027-01-01'];
-    const skipped = ['2026-12-29', '2026-12-30'];
+    const title = `Synthetic ${frequency} site closure ${width}`;
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.setViewportSize({ width, height: 1000 });
@@ -31,7 +48,7 @@ for (const width of [390, 1440]) {
     const dialog = page.getByRole('dialog', { name: 'Assign recurring work', exact: true });
     await dialog.getByLabel('Work order title', { exact: true }).fill(title);
     await dialog.getByRole('combobox', { name: 'Assign to', exact: true }).selectOption('worker');
-    await dialog.getByRole('combobox', { name: 'Repeat', exact: true }).selectOption('daily');
+    await dialog.getByRole('combobox', { name: 'Repeat', exact: true }).selectOption(frequency);
     await dialog.getByLabel('Due date', { exact: true }).fill('2026-12-28');
     await dialog.getByLabel('Occurrences', { exact: true }).fill('3');
     await dialog.getByText('Skip dates (optional)', { exact: true }).focus();
@@ -77,7 +94,7 @@ for (const width of [390, 1440]) {
     await expect(date).toBeFocused();
     await date.fill(skipped[0]);
     await add.click();
-    await dialog.getByLabel('Due date', { exact: true }).fill('2026-12-29');
+    await dialog.getByLabel('Due date', { exact: true }).fill(skipped[0]);
     await expect(
       dialog.getByText(
         'Skipped dates must be after the first due date. Remove them or change the first date.',
@@ -132,6 +149,7 @@ for (const width of [390, 1440]) {
       dialog.getByRole('button', { name: 'Retry saved batch', exact: true }),
     ).toBeEnabled();
     expect(receipt?.orders.map((order) => order.dueDate)).toEqual(expectedDates);
+    expect(receipt?.frequency).toBe(frequency);
     expect(requests[1].mutationId).not.toBe(requests[0].mutationId);
     expect(requests[1].skipDates).toEqual(skipped);
     await dialog.getByRole('button', { name: 'Close', exact: true }).click();
@@ -156,6 +174,7 @@ for (const width of [390, 1440]) {
     await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
     await page.getByRole('button', { name: 'Recurring batches', exact: true }).click();
     const viewer = page.getByRole('dialog', { name: 'Recurring batches', exact: true });
+    if (frequency === 'biweekly') await expect(viewer.getByText(/Every two weeks/)).toBeVisible();
     await viewer
       .getByRole('button', { name: `View batch ${receipt!.id}: ${title}`, exact: true })
       .click();

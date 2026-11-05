@@ -73,7 +73,7 @@ See [mobile development](docs/mobile.md) for the component system and repeatable
 - [Printable inspection reports](docs/print-reports.md) with checklist results and review details, available from saved web records offline.
 - Local SQLite persistence, a typed API client, and Docker self-hosting.
 - [Server search in the web app, API, and SDK](docs/server-search.md) with combined filters, incremental result loading, and individual-order caching alongside the existing offline notebook.
-- [Recurring assignments](docs/recurring-assignments.md) with a web date preview, daily/weekly/weekday/monthly batches, dates to skip for closures, duplicate-safe recovery, and a manager overview comparing planned and current orders.
+- [Recurring assignments](docs/recurring-assignments.md) with date previews, daily, weekday, weekly, two-week and monthly schedules, closure dates, and duplicate-safe recovery.
 - [Optional site coordinates and web maps](docs/site-maps.md) with explicit tile loading, configurable providers, keyboard controls, and offline-readable coordinates.
 - Edit or clear existing site coordinates with conflict recovery; saved assignments and reports keep their original location.
 

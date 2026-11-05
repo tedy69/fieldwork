@@ -16,6 +16,12 @@ describe('explicit recurring date exclusions', () => {
       expected: ['2026-12-28', '2027-01-11', '2027-01-18'],
     },
     {
+      frequency: 'biweekly',
+      dueDate: '2027-03-07',
+      skipDates: ['2027-03-21'],
+      expected: ['2027-03-07', '2027-04-04', '2027-04-18'],
+    },
+    {
       frequency: 'weekdays',
       dueDate: '2026-12-25',
       skipDates: ['2026-12-26', '2026-12-28'],

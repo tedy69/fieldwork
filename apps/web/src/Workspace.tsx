@@ -281,6 +281,7 @@ export default function Workspace({
               </IconButton>
             )}
             <WorkFinder
+              locale={locale}
               user={user}
               orders={state.orders}
               onNavigate={(view) => {

@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
 import { InvitationTokenSchema } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
+import { accountLinkCopy, signInCopy, type Locale } from '@fieldwork/strings';
 import { client, message } from './lib';
 import { clearInvitationHash } from './invitation-link';
 import { Button } from './components/ui/button';
@@ -11,22 +12,32 @@ import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { FieldSet, FieldError } from './components/ui/field';
 import './invitations.css';
-import AuthLayout from './AuthLayout';
+import AuthLayout, { EntryLanguage } from './AuthLayout';
 
 type Preview = Awaited<ReturnType<typeof client.previewInvitation>>;
 export default function AccountLink({
   token,
   mode = 'invitation',
+  locale,
+  onLanguageChange,
   onReturn,
   onSignIn,
 }: {
   token: string;
   mode?: 'invitation' | 'passwordReset';
+  locale: Locale;
+  onLanguageChange: (locale: Locale) => void;
   onReturn: () => void;
   onSignIn: (email: string) => Promise<void>;
 }) {
   const reset = mode === 'passwordReset';
-  const linkName = reset ? 'password reset' : 'invitation';
+  const copy = accountLinkCopy[locale];
+  const link = copy[mode];
+  const fields = signInCopy[locale];
+  const validation = useMemo(
+    () => ({ ...fields.web, tooShort: copy.passwordLength }),
+    [fields, copy],
+  );
   const [preview, setPreview] = useState<Preview | null>(null);
   const [knownEmail, setKnownEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,7 +48,7 @@ export default function AccountLink({
   const [unavailable, setUnavailable] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [done, setDone] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<Record<Locale, string> | null>(null);
   const generation = useRef(0);
   const writing = useRef(false);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -45,8 +56,8 @@ export default function AccountLink({
   const confirmInput = useRef<HTMLInputElement>(null);
   const hint = useId();
   useEffect(() => {
-    document.title = `${reset ? 'Password recovery' : 'Worker invitation'} · Fieldwork`;
-  }, [reset]);
+    document.title = `${link.title} · Fieldwork`;
+  }, [link.title]);
   useEffect(() => {
     const changed = () => setOnline(navigator.onLine);
     window.addEventListener('online', changed);
@@ -66,20 +77,26 @@ export default function AccountLink({
   useEffect(() => {
     if (done) resultHeading.current?.focus();
   }, [done]);
+  function linkProblem(
+    key: 'incomplete' | 'reconnect' | 'expired' | 'failed' | 'uncertain',
+    detail?: string,
+  ) {
+    setError({ en: detail ?? accountLinkCopy.en[mode][key], id: accountLinkCopy.id[mode][key] });
+  }
   async function load() {
     if (writing.current) return;
     if (!InvitationTokenSchema.safeParse(token).success) {
       setUnavailable(true);
-      setError(`This ${linkName} link is incomplete. Ask your manager for a new link.`);
+      linkProblem('incomplete');
       return;
     }
     if (!online) {
-      setError(`Reconnect to load this ${linkName}.`);
+      linkProblem('reconnect');
       return;
     }
     const current = ++generation.current;
     setBusy('loading');
-    setError('');
+    setError(null);
     setNeedsReload(true);
     try {
       const latest = await (reset
@@ -92,11 +109,11 @@ export default function AccountLink({
       setUnavailable(false);
     } catch (error) {
       if (current !== generation.current) return;
-      setError(message(error));
       if (error instanceof ApiError && error.status === 410) {
         setPreview(null);
         setUnavailable(true);
-      }
+        linkProblem('expired', message(error));
+      } else linkProblem('failed', message(error));
     } finally {
       if (current === generation.current) setBusy(null);
     }
@@ -105,24 +122,24 @@ export default function AccountLink({
     event.preventDefault();
     if (!online || writing.current || busy || needsReload || !preview) return;
     if (password !== confirmation) {
-      setError('Passwords do not match.');
+      setError({
+        en: accountLinkCopy.en.passwordsDiffer,
+        id: accountLinkCopy.id.passwordsDiffer,
+      });
       confirmInput.current?.focus();
       return;
     }
     const current = ++generation.current;
     writing.current = true;
     setBusy('accepting');
-    setError('');
+    setError(null);
     setAttempted(true);
     try {
       const result = await (reset
         ? client.completePasswordReset(token, password)
         : client.acceptInvitation(token, password));
       if (current !== generation.current) return;
-      if (result.user.email !== preview.email)
-        throw new Error(
-          `The account confirmation did not match this ${linkName}. Try signing in or contact your manager.`,
-        );
+      if (result.user.email !== preview.email) throw new Error('Account confirmation mismatch.');
       setPassword('');
       setConfirmation('');
       setDone(true);
@@ -132,15 +149,12 @@ export default function AccountLink({
       if (error instanceof ApiError && error.status === 410) {
         setPreview(null);
         setUnavailable(true);
-        setError(message(error));
-      } else if (error instanceof ApiError && error.status === 422) setError(message(error));
-      else {
+        linkProblem('expired', message(error));
+      } else if (error instanceof ApiError && error.status === 422) {
+        setError({ en: message(error), id: accountLinkCopy.id.invalidPassword });
+      } else {
         setNeedsReload(true);
-        setError(
-          reset
-            ? 'We could not confirm the password change. It may already be saved. Try signing in or reload this link before trying again.'
-            : 'We could not confirm account setup. The account may already exist. Try signing in or reload this invitation before trying again.',
-        );
+        linkProblem('uncertain');
       }
     } finally {
       writing.current = false;
@@ -151,83 +165,72 @@ export default function AccountLink({
     if (busy || !online || !knownEmail) return;
     const current = ++generation.current;
     setBusy('leaving');
-    setError('');
+    setError(null);
     try {
       await onSignIn(knownEmail);
     } catch (error) {
       if (current === generation.current)
-        setError(`${message(error)} Reconnect and try opening sign-in again.`);
+        setError({
+          en: `${message(error)} ${accountLinkCopy.en.signInFailed}`,
+          id: accountLinkCopy.id.signInFailed,
+        });
     } finally {
       if (current === generation.current) setBusy(null);
     }
   }
   return (
-    <AuthLayout recovery>
+    <AuthLayout recovery locale={locale}>
       <div className="account-introduction">
-        <h1 ref={heading} tabIndex={-1}>
-          {reset ? 'Return to your notebook.' : 'Join the field team.'}
-        </h1>
-        <p>
-          {reset
-            ? 'Choose a new password for your existing worker account. Saved notebook work stays on its device.'
-            : 'Review your invitation and choose a password for your field notebook.'}
-        </p>
+        <div className="auth-card-heading">
+          <h1 ref={heading} tabIndex={-1}>
+            {link.heading}
+          </h1>
+          <EntryLanguage locale={locale} onChange={onLanguageChange} />
+        </div>
+        <p>{link.intro}</p>
       </div>
       <Card className="invitation-card">
         {done ? (
           <>
             <h2 ref={resultHeading} tabIndex={-1}>
-              {reset ? 'Your password has changed' : 'Your account is ready'}
+              {link.ready}
             </h2>
-            <p role="status">Sign in with {knownEmail} and the password you chose.</p>
-            <p className="muted">
-              Continuing signs out any account open in this browser. Saved notebooks stay on this
-              device.
-            </p>
+            <p role="status">{copy.readyToSignIn(knownEmail)}</p>
+            <p className="muted">{copy.browserSignOut}</p>
           </>
         ) : (
           <>
-            <h2>
-              {unavailable
-                ? reset
-                  ? 'Password reset unavailable'
-                  : 'Invitation unavailable'
-                : reset
-                  ? 'Reset your password'
-                  : 'Set up your notebook'}
-            </h2>
+            <h2>{unavailable ? link.unavailable : link.actionHeading}</h2>
             {busy === 'loading' && (
               <p className="muted" role="status">
-                {reset ? 'Loading password reset…' : 'Loading invitation…'}
+                {link.loading}
               </p>
             )}
             {preview && !unavailable && (
               <>
                 <dl className="invitation-identity">
-                  <dt>{reset ? 'Worker account' : 'Invited worker'}</dt>
+                  <dt>{link.person}</dt>
                   <dd>{preview.name}</dd>
-                  <dt>Email</dt>
+                  <dt>{fields.email}</dt>
                   <dd>{preview.email}</dd>
-                  <dt>Link expires</dt>
+                  <dt>{copy.linkExpires}</dt>
                   <dd>
                     <time dateTime={preview.expiresAt}>
-                      {new Date(preview.expiresAt).toLocaleString()}
+                      {new Date(preview.expiresAt).toLocaleString(
+                        locale === 'id' ? 'id-ID' : undefined,
+                      )}
                     </time>
                   </dd>
                 </dl>
-                {reset && (
-                  <p className="muted">
-                    Changing your password ends all existing sessions. Sign in again afterward;
-                    saved drafts and queued photos stay on this device.
-                  </p>
-                )}
-                <Form noValidate onSubmit={accept}>
+                {reset && <p className="muted">{copy.sessionNote}</p>}
+                <Form noValidate onSubmit={accept} validationCopy={validation}>
                   <FieldSet disabled={Boolean(busy) || needsReload || !online}>
                     <Label>
-                      Password
+                      {fields.password}
                       <Input
                         type="password"
-                        aria-label="Password"
+                        aria-label={fields.password}
+                        passwordLabels={fields}
                         autoComplete="new-password"
                         required
                         minLength={12}
@@ -236,18 +239,19 @@ export default function AccountLink({
                         value={password}
                         onChange={(event) => {
                           setPassword(event.target.value);
-                          setError('');
+                          setError(null);
                         }}
                       />
                     </Label>
                     <p id={hint} className="muted">
-                      Use 12–256 characters.
+                      {copy.passwordHint}
                     </p>
                     <Label>
-                      Confirm password
+                      {copy.confirmPassword}
                       <Input
                         ref={confirmInput}
-                        aria-label="Confirm password"
+                        aria-label={copy.confirmPassword}
+                        passwordLabels={fields}
                         type="password"
                         autoComplete="new-password"
                         required
@@ -256,7 +260,7 @@ export default function AccountLink({
                         value={confirmation}
                         onChange={(event) => {
                           setConfirmation(event.target.value);
-                          setError('');
+                          setError(null);
                         }}
                       />
                     </Label>
@@ -265,13 +269,7 @@ export default function AccountLink({
                     className="primary full"
                     disabled={!online || Boolean(busy) || needsReload}
                   >
-                    {busy === 'accepting'
-                      ? reset
-                        ? 'Changing password…'
-                        : 'Creating account…'
-                      : reset
-                        ? 'Change password'
-                        : 'Create worker account'}
+                    {busy === 'accepting' ? link.submitting : link.submit}
                   </Button>
                 </Form>
               </>
@@ -280,10 +278,10 @@ export default function AccountLink({
         )}
         {!online && (
           <Alert className="notice" role="status">
-            Your entries stay here while this page is open. Reconnect to continue.
+            {copy.offline}
           </Alert>
         )}
-        {error && <FieldError>{error}</FieldError>}
+        {error && <FieldError>{error[locale]}</FieldError>}
         {!done && !unavailable && needsReload && (
           <Button
             type="button"
@@ -291,7 +289,7 @@ export default function AccountLink({
             disabled={!online || Boolean(busy)}
             onClick={() => void load()}
           >
-            {reset ? 'Reload reset link' : 'Reload invitation'}
+            {link.reload}
           </Button>
         )}
         {(done || (attempted && knownEmail)) && (
@@ -302,10 +300,10 @@ export default function AccountLink({
             onClick={() => void signIn()}
           >
             {busy === 'leaving'
-              ? 'Opening sign-in…'
+              ? copy.openingSignIn
               : done
-                ? 'Continue to sign in'
-                : 'Try signing in'}
+                ? copy.continueToSignIn
+                : copy.trySignIn}
           </Button>
         )}
         {!done && (
@@ -315,7 +313,7 @@ export default function AccountLink({
             disabled={busy === 'accepting' || busy === 'leaving'}
             onClick={onReturn}
           >
-            Return to Fieldwork
+            {copy.returnToFieldwork}
           </Button>
         )}
       </Card>

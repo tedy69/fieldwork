@@ -174,10 +174,12 @@ for (const { width, frequency, skipped, expectedDates } of [
     await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
     await page.getByRole('button', { name: 'Recurring batches', exact: true }).click();
     const viewer = page.getByRole('dialog', { name: 'Recurring batches', exact: true });
-    if (frequency === 'biweekly') await expect(viewer.getByText(/Every two weeks/)).toBeVisible();
-    await viewer
-      .getByRole('button', { name: `View batch ${receipt!.id}: ${title}`, exact: true })
-      .click();
+    const savedBatch = viewer.getByRole('button', {
+      name: `View batch ${receipt!.id}: ${title}`,
+      exact: true,
+    });
+    if (frequency === 'biweekly') await expect(savedBatch).toContainText('Every two weeks');
+    await savedBatch.click();
     await expect(
       viewer.getByRole('region', { name: 'Skipped dates', exact: true }).locator('time'),
     ).toHaveCount(2);

@@ -4,7 +4,12 @@ import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwis
 import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass';
 import { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
-import type { OrderSeriesDetail, WorkOrder } from '@fieldwork/contracts';
+import {
+  RecurrenceFrequencySchema,
+  type OrderSeriesDetail,
+  type OrderSeriesQuery,
+  type WorkOrder,
+} from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { client, labels, message } from './lib';
 import { calendarLabel } from './calendar';
@@ -31,6 +36,7 @@ import RescheduleOrder from './RescheduleOrder';
 import './series-overview.css';
 
 type Page = Awaited<ReturnType<typeof client.orderSeries>>;
+type BatchFilters = Pick<OrderSeriesQuery, 'q' | 'frequency'>;
 const visitLabels = {
   all: 'All visits',
   upcoming: 'Upcoming field work',
@@ -69,7 +75,8 @@ export default function SeriesOverview({
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState<Page | null>(null);
   const [search, setSearch] = useState('');
-  const [loadedQuery, setLoadedQuery] = useState('');
+  const [frequency, setFrequency] = useState<BatchFilters['frequency']>();
+  const [loadedFilters, setLoadedFilters] = useState<BatchFilters>({});
   const [detail, setDetail] = useState<OrderSeriesDetail | null>(null);
   const [selected, setSelected] = useState('');
   const [visitFilter, setVisitFilter] = useState<VisitFilter>('all');
@@ -85,7 +92,7 @@ export default function SeriesOverview({
   const listGeneration = useRef(0);
   const detailGeneration = useRef(0);
   const navigationGeneration = useRef(0);
-  const attemptedList = useRef<{ cursor?: string; query: string }>({ query: '' });
+  const attemptedList = useRef<{ cursor?: string; filters: BatchFilters }>({ filters: {} });
   const trigger = useRef<HTMLButtonElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const visitSelect = useRef<HTMLSelectElement>(null);
@@ -99,9 +106,9 @@ export default function SeriesOverview({
     if (next) navigated.current = false;
     setOpen(next);
   }
-  async function loadList(cursor?: string, query = loadedQuery) {
+  async function loadList(cursor?: string, filters = loadedFilters) {
     const current = ++listGeneration.current;
-    attemptedList.current = { cursor, query };
+    attemptedList.current = { cursor, filters };
     setListBusy(true);
     setListError('');
     setInvalidCursor(false);
@@ -117,9 +124,9 @@ export default function SeriesOverview({
       setDetailBusy(false);
     }
     try {
-      const next = await client.orderSeries({ limit: 20, cursor, q: query || undefined });
+      const next = await client.orderSeries({ limit: 20, cursor, ...filters });
       if (current !== listGeneration.current) return;
-      setLoadedQuery(query);
+      setLoadedFilters(filters);
       setPage((previous) =>
         cursor && previous
           ? {
@@ -165,7 +172,8 @@ export default function SeriesOverview({
   useEffect(() => {
     setPage(null);
     setSearch('');
-    setLoadedQuery('');
+    setFrequency(undefined);
+    setLoadedFilters({});
     setDetail(null);
     setSelected('');
     setOpening('');
@@ -175,7 +183,7 @@ export default function SeriesOverview({
     setScheduleNotice('');
     setListBusy(false);
     setDetailBusy(false);
-    if (open) void loadList(undefined, '');
+    if (open) void loadList(undefined, {});
     return () => {
       listGeneration.current++;
       detailGeneration.current++;
@@ -216,9 +224,15 @@ export default function SeriesOverview({
     );
   }
   const changingOrder = Boolean(opening) || scheduleBusy;
-  const query = search.trim();
+  const query = search.trim() || undefined;
+  const { q: loadedQuery, frequency: loadedFrequency } = loadedFilters;
+  const filtered = Boolean(loadedQuery || loadedFrequency);
   const searchDisabled =
-    !online || changingOrder || (listBusy && attemptedList.current.query === query);
+    !online ||
+    changingOrder ||
+    (listBusy &&
+      attemptedList.current.filters.q === query &&
+      attemptedList.current.filters.frequency === frequency);
   useLayoutEffect(() => {
     if (changingOrder || !restoreVisitFocus.current) return;
     restoreVisitFocus.current = false;
@@ -298,38 +312,57 @@ export default function SeriesOverview({
             <DialogDescription>Compare planned and current dates for each order.</DialogDescription>
           </div>
         </DialogHeader>
-        <div className="series-actions">
-          <form
-            className="series-search"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!searchDisabled) void loadList(undefined, query);
-            }}
-          >
-            <Label>
-              Search batches
-              <SearchField
-                value={search}
-                onValueChange={(value) => {
-                  setSearch(value);
-                  if (!value && attemptedList.current.query) void loadList(undefined, '');
-                }}
-                clearLabel="Clear batch search"
-                placeholder="Title, worker, or ID"
-                maxLength={200}
-                disabled={!online || changingOrder}
-              />
-            </Label>
-            <IconButton
-              type="submit"
-              variant="outline"
-              label="Search recurring batches"
-              disabled={searchDisabled}
-            >
-              <MagnifyingGlassIcon aria-hidden="true" />
-            </IconButton>
-          </form>
+        <form
+          className="series-actions"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!searchDisabled) void loadList(undefined, { q: query, frequency });
+          }}
+        >
+          <Label>
+            Search batches
+            <SearchField
+              value={search}
+              onValueChange={(value) => {
+                setSearch(value);
+                if (!value && attemptedList.current.filters.q)
+                  void loadList(undefined, { frequency });
+              }}
+              clearLabel="Clear batch search"
+              placeholder="Title, worker, or ID"
+              maxLength={200}
+              disabled={!online || changingOrder}
+            />
+          </Label>
           <IconButton
+            type="submit"
+            variant="outline"
+            label="Search recurring batches"
+            disabled={searchDisabled}
+          >
+            <MagnifyingGlassIcon aria-hidden="true" />
+          </IconButton>
+          <Label>
+            Frequency
+            <NativeSelect
+              value={frequency ?? ''}
+              onChange={(event) => {
+                const next = RecurrenceFrequencySchema.safeParse(event.currentTarget.value).data;
+                setFrequency(next);
+                void loadList(undefined, { q: query, frequency: next });
+              }}
+              disabled={!online || changingOrder}
+            >
+              <NativeSelectOption value="">All frequencies</NativeSelectOption>
+              {RecurrenceFrequencySchema.options.map((option) => (
+                <NativeSelectOption key={option} value={option}>
+                  {recurrenceLabels[option]}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </Label>
+          <IconButton
+            type="button"
             variant="outline"
             label="Refresh batches"
             disabled={!online || listBusy || changingOrder}
@@ -337,7 +370,7 @@ export default function SeriesOverview({
           >
             <ArrowClockwiseIcon aria-hidden="true" />
           </IconButton>
-        </div>
+        </form>
         {!online && (
           <Alert role="status" className="banner notice">
             You’re offline. Loaded batches stay visible. Reconnect to refresh or change an order.
@@ -352,7 +385,7 @@ export default function SeriesOverview({
               onClick={() =>
                 void loadList(
                   invalidCursor ? undefined : attemptedList.current.cursor,
-                  attemptedList.current.query,
+                  attemptedList.current.filters,
                 )
               }
             >
@@ -374,14 +407,17 @@ export default function SeriesOverview({
                   {loadedQuery
                     ? `${page.total} ${page.total === 1 ? 'match' : 'matches'} for “${loadedQuery}”`
                     : `${page.total} ${page.total === 1 ? 'batch' : 'batches'}`}
+                  {loadedFrequency && ` · ${recurrenceLabels[loadedFrequency]}`}
                 </p>
                 {page.data.length === 0 && (
                   <Empty
-                    title={loadedQuery ? 'No matching batches' : 'No recurring batches yet'}
+                    title={filtered ? 'No matching batches' : 'No recurring batches yet'}
                     description={
-                      loadedQuery
-                        ? 'Try another title, worker, or batch ID.'
-                        : 'Use Assign recurring work in dispatch to schedule a batch.'
+                      loadedFrequency
+                        ? 'Try another frequency or clear the search.'
+                        : loadedQuery
+                          ? 'Try another title, worker, or batch ID.'
+                          : 'Use Assign recurring work in dispatch to schedule a batch.'
                     }
                   />
                 )}

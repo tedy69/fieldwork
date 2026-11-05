@@ -272,19 +272,26 @@ it('sends optional site coordinates and validates provider settings before map u
   await expect(client.mapSettings()).rejects.toThrow();
 });
 
-it('encodes batch searches, cursors, and IDs and rejects malformed overview responses', async () => {
+it('encodes batch filters, cursors, and IDs and rejects malformed overview responses', async () => {
   const fetcher = vi
     .fn<typeof fetch>()
     .mockResolvedValueOnce(new Response(JSON.stringify({ data: [], total: 0, nextCursor: null })))
     .mockResolvedValueOnce(new Response(JSON.stringify({ orders: [] })));
   const client = createClient('https://fieldwork.example', undefined, fetcher);
-  expect(await client.orderSeries({ limit: 2, cursor: 'batch&cursor', q: 'Gate & Pump' })).toEqual({
+  expect(
+    await client.orderSeries({
+      limit: 2,
+      cursor: 'batch&cursor',
+      q: 'Gate & Pump',
+      frequency: 'month-end',
+    }),
+  ).toEqual({
     data: [],
     total: 0,
     nextCursor: null,
   });
   expect(fetcher.mock.calls[0][0]).toBe(
-    'https://fieldwork.example/api/v1/work-order-series?limit=2&cursor=batch%26cursor&q=Gate+%26+Pump',
+    'https://fieldwork.example/api/v1/work-order-series?limit=2&cursor=batch%26cursor&q=Gate+%26+Pump&frequency=month-end',
   );
   await expect(client.orderSeriesDetail('batch/a')).rejects.toThrow();
   expect(fetcher.mock.calls[1][0]).toBe(

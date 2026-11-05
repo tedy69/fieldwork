@@ -12,7 +12,11 @@ const option = (page: Page, batch: OrderSeriesReceipt) =>
     name: `View batch ${batch.id}: ${batch.orders[0].title}`,
     exact: true,
   });
-async function fixture(prefix: string, count = 1) {
+async function fixture(
+  prefix: string,
+  count = 1,
+  frequency: OrderSeriesReceipt['frequency'] = 'weekly',
+) {
   const session = await createClient(baseURL).login('manager@fieldwork.local', 'fieldwork-demo');
   const manager = createClient(baseURL, () => session.token);
   const batches: OrderSeriesReceipt[] = [];
@@ -27,7 +31,7 @@ async function fixture(prefix: string, count = 1) {
         assigneeId: 'worker',
         priority: 'routine',
         dueDate: '2026-12-28',
-        frequency: 'weekly',
+        frequency,
         occurrences: 2,
       }),
     );
@@ -41,12 +45,15 @@ async function login(page: Page, role = 'manager') {
   await expect(page.getByRole('button', { name: 'Sync now', exact: true })).toBeEnabled();
 }
 
-test('manager searches beyond the first batch page and keeps loaded matches during a failure', async ({
+test('manager combines batch search and frequency across pages and keeps loaded matches during a failure', async ({
   page,
   context,
 }) => {
   const prefix = `Batch search ${crypto.randomUUID().slice(0, 8)}`;
   const { batches } = await fixture(prefix, 22);
+  const {
+    batches: [daily],
+  } = await fixture(prefix, 1, 'daily');
   const firstBatch = batches[0];
   const query = firstBatch.id.slice(0, 8);
   await page.setViewportSize({ width: 320, height: 840 });
@@ -55,13 +62,20 @@ test('manager searches beyond the first batch page and keeps loaded matches duri
   const dialog = dialogFor(page);
   const input = dialog.getByRole('searchbox', { name: 'Search batches', exact: true });
   const submit = dialog.getByRole('button', { name: 'Search recurring batches', exact: true });
+  const frequency = dialog.getByRole('combobox', { name: 'Frequency', exact: true });
   await expect(submit.locator('svg[aria-hidden=true]')).toBeVisible();
   await input.fill(prefix);
   await input.press('Enter');
-  await expect(dialog.getByText(`20 loaded · 22 matches for “${prefix}”`)).toBeVisible();
+  await expect(dialog.getByText(`20 loaded · 23 matches for “${prefix}”`)).toBeVisible();
+  await frequency.focus();
+  await page.keyboard.press('w');
+  await expect(frequency).toHaveValue('weekly');
+  await expect(frequency).toBeFocused();
+  await expect(dialog.getByText(`20 loaded · 22 matches for “${prefix}” · Weekly`)).toBeVisible();
+  await expect(option(page, daily)).toHaveCount(0);
   await expect(option(page, firstBatch)).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Load more batches', exact: true }).click();
-  await expect(dialog.getByText(`22 loaded · 22 matches for “${prefix}”`)).toBeVisible();
+  await expect(dialog.getByText(`22 loaded · 22 matches for “${prefix}” · Weekly`)).toBeVisible();
   await expect(option(page, firstBatch)).toHaveCount(1);
 
   let release!: () => void;
@@ -85,7 +99,7 @@ test('manager searches beyond the first batch page and keeps loaded matches duri
   await expect(dialog.getByText('Loading batches…', { exact: true })).toBeVisible();
   await input.fill(query);
   await input.press('Enter');
-  await expect(dialog.getByText(`1 loaded · 1 match for “${query}”`)).toBeVisible();
+  await expect(dialog.getByText(`1 loaded · 1 match for “${query}” · Weekly`)).toBeVisible();
   release();
   await delayed;
   await expect(option(page, firstBatch)).toBeVisible();
@@ -105,6 +119,7 @@ test('manager searches beyond the first batch page and keeps loaded matches duri
   await expect(option(page, firstBatch)).toBeVisible();
   await context.setOffline(true);
   await expect(input).toBeDisabled();
+  await expect(frequency).toBeDisabled();
   const clear = dialog.getByRole('button', { name: 'Clear batch search', exact: true });
   await expect(clear).toBeDisabled();
   await expect(option(page, firstBatch)).toBeVisible();
@@ -117,6 +132,9 @@ test('manager searches beyond the first batch page and keeps loaded matches duri
   await clear.click();
   await expect(input).toBeFocused();
   await expect(input).toHaveValue('');
+  await expect(dialog.getByText(/20 loaded · \d+ batches · Weekly/)).toBeVisible();
+  await frequency.selectOption('');
+  await expect(option(page, daily)).toBeVisible();
   await expect(dialog.getByText(/20 loaded · \d+ batches/)).toBeVisible();
   expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
 });
@@ -277,6 +295,8 @@ test('manager compares planned and current orders, pages with retry, and uses ke
   await expect(refresh).toBeEnabled();
   await refresh.focus();
   await expect(refresh).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(dialog.getByRole('combobox', { name: 'Frequency', exact: true })).toBeFocused();
   await page.keyboard.press('Shift+Tab');
   await expect(
     dialog.getByRole('button', { name: 'Search recurring batches', exact: true }),

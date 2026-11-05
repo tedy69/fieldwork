@@ -48,6 +48,14 @@ export function localReportExport(state: State, orderId: string, now = new Date(
       : null,
   });
 }
+function upsertOrder(orders: WorkOrder[], order: WorkOrder) {
+  return orders.some((existing) => existing.id === order.id)
+    ? orders.map((existing) =>
+        existing.id === order.id && existing.version <= order.version ? order : existing,
+      )
+    : [...orders, order];
+}
+
 export function createOfflineRepository(
   storage: StorageAdapter,
   send: (orderId: string, input: ReportInput) => Promise<WorkOrder>,
@@ -135,11 +143,7 @@ export function createOfflineRepository(
     cacheOrder(order: WorkOrder) {
       return update((state) => ({
         ...state,
-        orders: state.orders.some((existing) => existing.id === order.id)
-          ? state.orders.map((existing) =>
-              existing.id === order.id && existing.version <= order.version ? order : existing,
-            )
-          : [...state.orders, order],
+        orders: upsertOrder(state.orders, order),
       }));
     },
     enqueue(orderId: string, input: ReportInput) {
@@ -171,6 +175,29 @@ export function createOfflineRepository(
             ...state.outbox,
             { orderId, input, createdAt: new Date().toISOString(), state: 'pending' },
           ],
+        };
+      });
+    },
+    reopenBlocked(order: WorkOrder, mutationId: string) {
+      return update((state) => {
+        const item = state.outbox.find((entry) => entry.orderId === order.id);
+        const orders = upsertOrder(state.orders, order);
+        const current = orders.find((entry) => entry.id === order.id);
+        if (
+          item?.state !== 'blocked' ||
+          item.input.mutationId !== mutationId ||
+          !state.drafts[order.id] ||
+          !current ||
+          current.version < item.input.baseVersion ||
+          current.assignee.id !== order.assignee.id ||
+          (current.status !== 'ASSIGNED' && current.status !== 'CHANGES_REQUESTED')
+        ) {
+          throw new Error('The blocked report could not be reopened for editing.');
+        }
+        return {
+          ...state,
+          orders,
+          outbox: state.outbox.filter((entry) => entry !== item),
         };
       });
     },

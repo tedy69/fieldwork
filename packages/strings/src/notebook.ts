@@ -22,6 +22,10 @@ const english = {
   savedAt: 'Saved',
   reportError: 'Could not sync this report',
   openLatest: 'Keep draft and open latest',
+  recoveryUnavailable:
+    'This assignment is no longer available to your account. Your queued report is kept on this device. Contact your manager.',
+  recoveryFailed:
+    'Could not reopen this assignment. Your queued report is kept on this device. Connect and try again.',
   openSaved: 'Open saved assignment',
   unavailable: 'Contact your manager if this assignment is no longer available.',
   open: 'Open',
@@ -72,6 +76,10 @@ export const notebookCopy: Record<Locale, typeof english> = {
     savedAt: 'Disimpan',
     reportError: 'Laporan ini tidak bisa disinkronkan',
     openLatest: 'Simpan draf dan buka tugas terbaru',
+    recoveryUnavailable:
+      'Tugas ini sudah tidak tersedia untuk akun Anda. Laporan tetap tersimpan di perangkat ini. Hubungi manajer.',
+    recoveryFailed:
+      'Tugas ini tidak bisa dibuka kembali. Laporan tetap tersimpan di perangkat ini. Sambungkan ke internet, lalu coba lagi.',
     openSaved: 'Buka tugas tersimpan',
     unavailable: 'Hubungi manajer jika tugas ini sudah tidak tersedia.',
     open: 'Buka',

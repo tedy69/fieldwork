@@ -1,0 +1,23 @@
+appId: host.exp.Exponent
+name: Block a stale inspection report on iOS
+---
+- scrollUntilVisible:
+    element: Save and sync inspection
+    centerElement: true
+- tapOn: Save and sync inspection
+- extendedWaitUntil:
+    visible: Report saved
+    timeout: 15000
+- tapOn: OK
+- scrollUntilVisible:
+    element: Back to assignments
+    direction: UP
+- tapOn: Back to assignments
+- scrollUntilVisible:
+    element: 'Outbox \(1\)'
+    direction: UP
+- tapOn: 'Outbox \(1\)'
+- scrollUntilVisible:
+    element: Needs attention
+    centerElement: true
+- assertVisible: ${SUMMARY}

@@ -36,7 +36,7 @@ export default function WorkspacePage({
   error: string;
   onSync: () => void;
   onOpen: (id: string) => void;
-  onResolve: (orderId: string) => Promise<void>;
+  onResolve: (orderId: string, mutationId: string) => Promise<void>;
   onLogout: () => void;
   view: 'assignments' | 'outbox';
   onViewChange: (view: 'assignments' | 'outbox') => void;
@@ -182,7 +182,7 @@ export default function WorkspacePage({
                   title={copy.openLatest}
                   variant="outline"
                   disabled={busy}
-                  onPress={() => void onResolve(item.orderId)}
+                  onPress={() => void onResolve(item.orderId, item.input.mutationId)}
                 />
               ) : (
                 <Button

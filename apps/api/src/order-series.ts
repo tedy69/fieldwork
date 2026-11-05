@@ -3,6 +3,7 @@ import {
   OrderSeriesDetailSchema,
   OrderSeriesReceiptSchema,
   WorkOrderSchema,
+  type OrderSeriesQuery,
 } from '@fieldwork/contracts';
 import type { Store } from './store';
 
@@ -34,11 +35,20 @@ function summary(row: Record<string, unknown>) {
   });
 }
 export function createSeriesQueries(store: Store) {
-  function list(limit: number, cursor?: string, query?: string) {
-    const match = query
-      ? "fieldwork_contains(json_extract(s.input,'$.title') || ' ' || json_extract(s.receipt,'$.orders[0].assignee.name') || ' ' || s.id,?)=1"
-      : '1=1';
-    const params = query ? [query] : [];
+  function list({ limit, cursor, q, frequency }: OrderSeriesQuery & { limit: number }) {
+    const conditions = ['1=1'];
+    const params: string[] = [];
+    if (q) {
+      conditions.push(
+        "fieldwork_contains(json_extract(s.input,'$.title') || ' ' || json_extract(s.receipt,'$.orders[0].assignee.name') || ' ' || s.id,?)=1",
+      );
+      params.push(q);
+    }
+    if (frequency) {
+      conditions.push("json_extract(s.input,'$.frequency')=?");
+      params.push(frequency);
+    }
+    const match = conditions.join(' AND ');
     const before = cursor
       ? store.db
           .prepare(

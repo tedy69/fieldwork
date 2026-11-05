@@ -692,6 +692,7 @@ export const OrderSeriesQuerySchema = z
     limit: z.coerce.number().int().min(1).max(50).default(20),
     cursor: z.uuid().optional(),
     q: z.string().trim().max(200).optional(),
+    frequency: RecurrenceFrequencySchema.optional(),
   })
   .strict();
 export type OrderSeriesQuery = Partial<z.infer<typeof OrderSeriesQuerySchema>>;

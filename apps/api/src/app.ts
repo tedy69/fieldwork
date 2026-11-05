@@ -415,8 +415,7 @@ export async function buildApp(options: AppOptions) {
   });
   app.get('/api/v1/work-order-series', async (request) => {
     manager(request);
-    const query = OrderSeriesQuerySchema.parse(request.query);
-    const result = series.list(query.limit, query.cursor, query.q);
+    const result = series.list(OrderSeriesQuerySchema.parse(request.query));
     if (!result) fail(422, 'INVALID_CURSOR', 'This batch cursor is unavailable. Start a new list.');
     return result;
   });

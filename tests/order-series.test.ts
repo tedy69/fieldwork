@@ -36,13 +36,13 @@ const input = (): CreateOrderSeries => ({
   frequency: 'weekly',
   occurrences: 3,
 });
-const create = async () =>
+const create = async (overrides: Partial<CreateOrderSeries> = {}) =>
   (
     await fixture.app.inject({
       method: 'POST',
       url: '/api/v1/work-order-series',
       headers: bearer(manager),
-      payload: input(),
+      payload: { ...input(), ...overrides },
     })
   ).json();
 const read = (suffix = '', token = manager) =>
@@ -181,9 +181,29 @@ it.each([
   '?cursor=bad',
   '?offset=0',
   '?search=gate',
+  '?frequency=fortnightly',
   `?q=${'a'.repeat(201)}`,
 ])('rejects invalid list parameters %s', async (suffix) => {
   expect((await read(suffix)).statusCode).toBe(422);
+});
+
+it('combines frequency and text before counting, validating cursors, and paging', async () => {
+  const first = await create({ title: 'Gate review', frequency: 'biweekly' });
+  const second = await create({ title: 'Gate pressure', frequency: 'biweekly' });
+  const otherFrequency = await create({ title: 'Gate photos', frequency: 'daily' });
+  await create({ title: 'Pump review', frequency: 'biweekly' });
+  const filter = '?q=Gate&frequency=biweekly&limit=1';
+  const page = OrderSeriesPageSchema.parse((await read(filter)).json());
+  const next = OrderSeriesPageSchema.parse(
+    (await read(`${filter}&cursor=${page.nextCursor}`)).json(),
+  );
+  expect([page.total, next.total]).toEqual([2, 2]);
+  expect([page.data[0].id, next.data[0].id].sort()).toEqual([first.id, second.id].sort());
+  expect(next.nextCursor).toBeNull();
+  expect((await read(`${filter}&cursor=${otherFrequency.id}`)).json().error.code).toBe(
+    'INVALID_CURSOR',
+  );
+  expect((await read(filter, worker)).statusCode).toBe(403);
 });
 
 it('reads batches created by another current manager without changing any saved records', async () => {

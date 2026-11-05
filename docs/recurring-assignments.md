@@ -72,7 +72,7 @@ Back up the database, including committed WAL content, before deploying an upgra
 
 Managers open **Recurring batches** beside assignment creation. The ledger shows original schedules, workers, and occurrence counts. Selecting a batch loads its current orders, with planned and current due dates labeled separately. Independent rescheduling, reassignment, and report status appear in those current orders. **Refresh batch details** reloads that comparison; **Refresh batches** restarts the ledger. Loaded data represents the time of its last successful read.
 
-Use **Search batches** to find a saved batch by title, original worker name, or batch ID. The server searches across all saved batches before paging. The last loaded results stay visible if a search fails, and clearing the field restores the full ledger.
+Use **Search batches** to find a saved batch by title, original worker name, or batch ID. Choose a **Frequency** to narrow the results to a schedule such as weekly or month-end. The server applies both filters before paging. Clearing the search keeps the selected frequency. The last loaded results stay visible if a request fails.
 
 Use **Show visits** to narrow a loaded batch. Upcoming field work includes unfinished assignments due today or later. Overdue follows the work-order list and uses the current due date and the device's local date. The filter works offline and stays selected when you refresh the same batch.
 

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { WorkOrder } from '@fieldwork/contracts';
 import { localDate } from './dates';
 import { reportCsv } from './reportCsv';
+import { downloadCsv } from './csv';
 
 export default function ReportExport({
   orders,
@@ -18,27 +19,11 @@ export default function ReportExport({
   function download() {
     setError('');
     onNotice('');
-    let url: string | undefined;
     try {
-      const csv = reportCsv(orders);
-      url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `fieldwork-reports-${localDate()}.csv`;
-      document.body.append(link);
-      try {
-        link.click();
-      } finally {
-        link.remove();
-      }
+      downloadCsv(`fieldwork-reports-${localDate()}.csv`, reportCsv(orders));
       onNotice(`CSV prepared for ${count} ${count === 1 ? 'report' : 'reports'}.`);
     } catch {
       setError('Could not create the CSV. Narrow the list and try again.');
-    } finally {
-      if (url) {
-        const objectUrl = url;
-        setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
-      }
     }
   }
   return (

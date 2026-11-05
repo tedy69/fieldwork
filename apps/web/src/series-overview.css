@@ -108,6 +108,14 @@
 .series-detail > h3 {
   overflow-wrap: anywhere;
 }
+@media (max-width: 480px) {
+  .series-visit-tools {
+    flex-wrap: wrap;
+  }
+  .series-visit-tools .ui-label {
+    flex-basis: 100%;
+  }
+}
 @media (max-width: 700px) {
   .series-layout {
     grid-template-columns: 1fr;

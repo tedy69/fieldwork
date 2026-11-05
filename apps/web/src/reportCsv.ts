@@ -1,11 +1,5 @@
 import { type WorkOrder, answerLabel, reportItemLabel } from '@fieldwork/contracts';
-
-function cell(value: string | number) {
-  const text = String(value);
-  // The leading tab marks formula-like values as text for spreadsheet viewing.
-  const formula = /^[\s\u0000-\u001f]*[=+\-@＝＋－＠]/u.test(text) || /^[\t\r\n]/u.test(text);
-  return `"${(formula ? `\t${text}` : text).replaceAll('"', '""')}"`;
-}
+import { formatCsv } from './csv';
 
 export function reportCsv(orders: WorkOrder[]) {
   const rows: (string | number)[][] = [
@@ -55,5 +49,5 @@ export function reportCsv(orders: WorkOrder[]) {
         report.photos.length,
       ]);
   }
-  return '\uFEFF' + rows.map((row) => row.map(cell).join(',')).join('\r\n') + '\r\n';
+  return formatCsv(rows);
 }

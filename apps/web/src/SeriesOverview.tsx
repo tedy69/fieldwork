@@ -1,11 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { IconButton } from './components/ui/icon-button';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
+import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple';
 import { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
 import type { OrderSeriesDetail, WorkOrder } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { client, labels, message } from './lib';
 import { calendarLabel } from './calendar';
+import { downloadCsv, formatCsv } from './csv';
 import { isOverdue } from './dates';
 import { recurrenceLabels } from './recurrence-labels';
 import { SkippedDates } from './RecurrenceExceptions';
@@ -215,6 +217,40 @@ export default function SeriesOverview({
   }, [changingOrder, detail]);
   const visibleVisits =
     detail?.orders.filter(({ order }) => matchesVisit(order, visitFilter, today)) ?? [];
+  function downloadVisits() {
+    if (!detail || !visibleVisits.length) return;
+    setOpenError('');
+    setScheduleNotice('');
+    try {
+      const csv = formatCsv([
+        [
+          'Visit',
+          'Reference',
+          'Work order',
+          'Site',
+          'Planned due date',
+          'Current due date',
+          'Assigned to',
+          'Status',
+        ],
+        ...visibleVisits.map(({ occurrence, plannedDueDate, order }) => [
+          occurrence,
+          order.reference,
+          order.title,
+          order.site.name,
+          plannedDueDate,
+          order.dueDate,
+          order.assignee.name,
+          order.status,
+        ]),
+      ]);
+      downloadCsv(`fieldwork-batch-${detail.id.slice(0, 8)}.csv`, csv);
+      const count = visibleVisits.length;
+      setScheduleNotice(`CSV prepared for ${count} ${count === 1 ? 'visit' : 'visits'}.`);
+    } catch {
+      setOpenError('Could not create the schedule CSV. Try again.');
+    }
+  }
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>
@@ -385,6 +421,14 @@ export default function SeriesOverview({
                     onClick={() => void loadDetail(detail.id)}
                   >
                     <ArrowClockwiseIcon aria-hidden="true" />
+                  </IconButton>
+                  <IconButton
+                    label="Export batch visits as CSV"
+                    className="quiet"
+                    disabled={!visibleVisits.length || detailBusy || changingOrder}
+                    onClick={downloadVisits}
+                  >
+                    <DownloadSimpleIcon aria-hidden="true" />
                   </IconButton>
                 </div>
                 {visitFilter !== 'all' && (

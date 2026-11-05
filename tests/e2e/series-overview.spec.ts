@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { createClient } from '@fieldwork/sdk';
 import type { OrderSeriesReceipt } from '@fieldwork/contracts';
@@ -98,6 +99,64 @@ test('manager filters current batch visits offline and keeps focus when an order
   await option(page, other).click();
   await expect(filter).toHaveValue('all');
   await expect(rows).toHaveCount(2);
+});
+
+test('manager exports only filtered batch visits while offline and can retry a failed download', async ({
+  page,
+  context,
+}) => {
+  const {
+    manager,
+    batches: [batch],
+  } = await fixture('=Batch visit CSV QA');
+  const [visit, other] = batch.orders;
+  await manager.rescheduleOrder(visit.id, { baseVersion: visit.version, dueDate: '2027-01-08' });
+  const session = await createClient(baseURL).login('worker@fieldwork.local', 'fieldwork-demo');
+  await createClient(baseURL, () => session.token).submitReport(other.id, {
+    mutationId: crypto.randomUUID(),
+    baseVersion: other.version,
+    summary: 'Synthetic inspection omitted from the schedule file.',
+    photos: [],
+    answers: other.template.items.map((item) => ({ itemId: item.id, value: 'pass', note: '' })),
+  });
+  await page.setViewportSize({ width: 320, height: 840 });
+  await page.clock.setFixedTime(new Date('2026-12-30T12:00:00Z'));
+  await login(page);
+  await page.getByRole('button', { name: 'Recurring batches', exact: true }).click();
+  await option(page, batch).click();
+  const dialog = dialogFor(page);
+  const filter = dialog.getByRole('combobox', { name: 'Show visits', exact: true });
+  const button = dialog.getByRole('button', { name: 'Export batch visits as CSV', exact: true });
+  await context.setOffline(true);
+  await filter.selectOption('approved');
+  await expect(button).toBeDisabled();
+  await filter.selectOption('upcoming');
+  await expect(button).toBeEnabled();
+  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await page.evaluate(() => {
+    const create = URL.createObjectURL;
+    URL.createObjectURL = () => {
+      URL.createObjectURL = create;
+      throw new Error('Synthetic download failure');
+    };
+  });
+  await button.click();
+  await expect(dialog.getByRole('alert')).toHaveText(
+    'Could not create the schedule CSV. Try again.',
+  );
+  await button.focus();
+  const ready = page.waitForEvent('download');
+  await page.keyboard.press('Enter');
+  const download = await ready;
+  expect(download.suggestedFilename()).toBe(`fieldwork-batch-${batch.id.slice(0, 8)}.csv`);
+  const csv = readFileSync((await download.path())!, 'utf8');
+  expect(csv).toContain('"Planned due date","Current due date"');
+  expect(csv).toContain(`"\t${visit.title}"`);
+  expect(csv).toContain(`"${visit.reference}"`);
+  expect(csv).toContain('"2026-12-28","2027-01-08"');
+  expect(csv).not.toContain(other.reference);
+  expect(csv).not.toContain('Synthetic inspection omitted');
+  await expect(dialog.getByText('CSV prepared for 1 visit.', { exact: true })).toBeVisible();
 });
 
 test('manager compares planned and current orders, pages with retry, and uses keyboard and narrow layouts', async ({

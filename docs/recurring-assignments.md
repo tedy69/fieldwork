@@ -70,6 +70,8 @@ Managers open **Recurring batches** beside assignment creation. The ledger shows
 
 Use **Show visits** to narrow a loaded batch. Upcoming field work includes unfinished assignments due today or later. Overdue follows the work-order list and uses the current due date and the device's local date. The filter works offline and stays selected when you refresh the same batch.
 
+**Export batch visits as CSV** downloads the visits in the current filter, including both due dates and the current worker and status. The export works from loaded batch data while offline. It contains schedule rows without inspection report content.
+
 Use the calendar action beside an assigned order or an order with changes requested to edit its current due date from this view. The planned date and sibling orders stay as scheduled. If another update arrives first, **Reload order** refreshes the row and keeps the proposed date available for review. The action needs a connection. See [rescheduling](rescheduling.md) for version checks and worker sync behavior.
 
 The ledger loads 20 batches at a time and offers **Load more batches**. Failed pages keep earlier rows and the selected comparison available for retry. Offline transitions retain loaded details but disable server actions. Closing the viewer discards its temporary data. Opening an order fetches fresh authorization/state and awaits individual-order persistence before navigation; it does not replace the saved collection or change drafts, outbox entries, assignment versions, or reports. A failed open or local write leaves the viewer available for retry.

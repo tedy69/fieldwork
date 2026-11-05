@@ -1,0 +1,35 @@
+appId: host.exp.exponent
+name: Attach a photo to a required question
+---
+- scrollUntilVisible:
+    element: My assignments
+    direction: UP
+- assertVisible: My assignments
+- assertVisible: 'Outbox \(0\)'
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- scrollUntilVisible:
+    element: ${ORDER_NAME}
+    centerElement: true
+- tapOn: ${ORDER_NAME}
+- scrollUntilVisible:
+    element: 'Check valve: pass'
+    centerElement: true
+- tapOn: 'Check valve: pass'
+- addMedia:
+    - ../../docs/images/notebook-sign-in.png
+- scrollUntilVisible:
+    element: Choose photo for Check valve
+    centerElement: true
+- tapOn: Choose photo for Check valve
+- tapOn:
+    text: 'Photo taken on.*'
+    index: 0
+- assertVisible: Photo attached
+- scrollUntilVisible:
+    element:
+      id: inspection-summary
+    centerElement: true
+- tapOn:
+    id: inspection-summary

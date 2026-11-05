@@ -34,6 +34,13 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
     '2028-02-29',
     ['2028-02-29', '2028-03-31', '2028-04-30', '2028-05-31'],
   ],
+  [
+    320,
+    'month-end-weekday',
+    'Last weekday of month',
+    '2026-10-30',
+    ['2026-10-30', '2026-11-30', '2026-12-31', '2027-01-29'],
+  ],
 ] as const) {
   test(`${frequency} batches preview, recover offline and retain planned dates at ${width}px`, async ({
     page,
@@ -41,7 +48,7 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
   }) => {
     const session = await createClient(baseURL).login('manager@fieldwork.local', 'fieldwork-demo');
     const manager = createClient(baseURL, () => session.token);
-    const title = `Synthetic ${frequency} schedule ${width}`;
+    const title = `Synthetic ${frequency} schedule ${width} ${crypto.randomUUID().slice(0, 8)}`;
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.setViewportSize({ width, height: 1000 });
@@ -65,14 +72,19 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
     await dialog.getByRole('combobox', { name: 'Repeat', exact: true }).selectOption(frequency);
     await dialog.getByLabel('Occurrences', { exact: true }).fill('4');
     const monthEnd = frequency === 'month-end';
+    const weekdayEnd = frequency === 'month-end-weekday';
     await expect(
       dialog.getByText(
-        monthEnd ? /Choose the last day of a month/ : /Shorter months use their last day\./,
+        monthEnd
+          ? /Choose the last day of a month/
+          : weekdayEnd
+            ? /Choose the last Monday through Friday/
+            : /Shorter months use their last day\./,
       ),
     ).toBeVisible();
     await dialog
       .getByLabel('Due date', { exact: true })
-      .fill(monthEnd ? '2028-02-28' : '9999-12-31');
+      .fill(monthEnd ? '2028-02-28' : weekdayEnd ? '2026-10-31' : '9999-12-31');
     await expect(
       dialog.getByRole('heading', { name: 'Choose a valid schedule', exact: true }),
     ).toBeVisible();
@@ -80,9 +92,9 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
       dialog.getByRole('button', { name: 'Assign work orders', exact: true }),
     ).toBeDisabled();
     await dialog.getByLabel('Due date', { exact: true }).fill(initialDate);
-    if (monthEnd) {
+    if (monthEnd || weekdayEnd) {
       await dialog.getByRole('combobox', { name: 'Ends', exact: true }).selectOption('date');
-      await dialog.getByLabel('End date', { exact: true }).fill('2028-05-31');
+      await dialog.getByLabel('End date', { exact: true }).fill(expectedDates[3]);
     }
     expect(
       await dates.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('datetime'))),

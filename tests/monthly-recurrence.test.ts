@@ -94,3 +94,34 @@ describe('month-end calendar rules', () => {
     ).toEqual(['2028-02-29', '2028-04-30']);
   });
 });
+
+describe('last weekday of month calendar rules', () => {
+  it('moves Saturday and Sunday month ends back to Friday', () => {
+    expect(
+      recurrenceDates({
+        dueDate: '2026-10-30',
+        frequency: 'month-end-weekday',
+        occurrences: 5,
+      }),
+    ).toEqual(['2026-10-30', '2026-11-30', '2026-12-31', '2027-01-29', '2027-02-26']);
+  });
+
+  it.each(['2026-10-29', '2026-10-31'])('rejects %s as the first date', (dueDate) => {
+    expect(() =>
+      recurrenceDates({ dueDate, frequency: 'month-end-weekday', occurrences: 2 }),
+    ).toThrow('Choose the last weekday of a month for the first visit.');
+  });
+
+  it('skips a closure and includes the cutoff without shifting later visits', () => {
+    expect(
+      recurrenceDatesThrough(
+        {
+          dueDate: '2026-10-30',
+          frequency: 'month-end-weekday',
+          skipDates: ['2026-11-30'],
+        },
+        '2027-01-29',
+      ),
+    ).toEqual(['2026-10-30', '2026-12-31', '2027-01-29']);
+  });
+});

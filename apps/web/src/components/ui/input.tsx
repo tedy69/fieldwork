@@ -5,7 +5,14 @@ import { EyeSlashIcon } from '@phosphor-icons/react/dist/csr/EyeSlash';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
 
-export function Input({ className, type, ...props }: ComponentProps<'input'>) {
+export function Input({
+  className,
+  type,
+  passwordLabels = { showPassword: 'Show password', hidePassword: 'Hide password' },
+  ...props
+}: ComponentProps<'input'> & {
+  passwordLabels?: { showPassword: string; hidePassword: string };
+}) {
   const [revealed, setRevealed] = useState(false);
   if (type === 'password')
     return (
@@ -19,7 +26,7 @@ export function Input({ className, type, ...props }: ComponentProps<'input'>) {
         <Button
           type="button"
           variant="ghost"
-          aria-label={revealed ? 'Hide password' : 'Show password'}
+          aria-label={revealed ? passwordLabels.hidePassword : passwordLabels.showPassword}
           aria-pressed={revealed}
           disabled={props.disabled}
           onClick={(event) => {

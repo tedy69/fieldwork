@@ -7,6 +7,14 @@ import { Form } from './components/ui/form';
 import { useEffect, useState, type FormEvent } from 'react';
 import { UserSchema, type User } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
+import {
+  languageNames,
+  savedLocale,
+  signInCopy,
+  signInError,
+  type Locale,
+} from '@fieldwork/strings';
+import { GlobeIcon } from '@phosphor-icons/react/dist/csr/Globe';
 import Workspace from './Workspace';
 import { MapSettingsProvider } from './MapSettings';
 import { client, message } from './lib';
@@ -68,11 +76,25 @@ export default function App() {
 }
 function AuthenticatedApp({ initialEmail }: { initialEmail: string }) {
   const [user, setUser] = useState<User | null>(initialUser);
-  const [error, setError] = useState('');
+  const [locale, setLocale] = useState(() => {
+    try {
+      return savedLocale(localStorage.getItem('fieldwork.locale'));
+    } catch {
+      return 'en' as const;
+    }
+  });
+  const [error, setError] = useState<{ api?: ApiError; detail: string } | null>(null);
   const [checking, setChecking] = useState(true);
+  const copy = signInCopy[locale];
+  const alternate: Locale = locale === 'en' ? 'id' : 'en';
   useEffect(() => {
-    if (!user) document.title = 'Sign in · Fieldwork';
-  }, [user]);
+    if (user) return;
+    document.title = `${copy.signIn} · Fieldwork`;
+    document.documentElement.lang = locale;
+    return () => {
+      document.documentElement.lang = 'en';
+    };
+  }, [user, locale, copy.signIn]);
   useEffect(() => {
     if (sessionStorage.getItem('fieldwork.locked')) {
       setChecking(false);
@@ -94,7 +116,7 @@ function AuthenticatedApp({ initialEmail }: { initialEmail: string }) {
   }, []);
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
+    setError(null);
     setChecking(true);
     const data = new FormData(event.currentTarget);
     try {
@@ -106,9 +128,17 @@ function AuthenticatedApp({ initialEmail }: { initialEmail: string }) {
       sessionStorage.removeItem('fieldwork.locked');
       setUser(user);
     } catch (error) {
-      setError(message(error));
+      setError({ api: error instanceof ApiError ? error : undefined, detail: message(error) });
     } finally {
       setChecking(false);
+    }
+  }
+  function changeLanguage() {
+    setLocale(alternate);
+    try {
+      localStorage.setItem('fieldwork.locale', alternate);
+    } catch {
+      // The current page can still use the selected language.
     }
   }
   function logout() {
@@ -119,48 +149,53 @@ function AuthenticatedApp({ initialEmail }: { initialEmail: string }) {
   }
   if (!user)
     return (
-      <AuthLayout>
+      <AuthLayout locale={locale}>
         <Card>
-          <p className="auth-caption">Welcome back</p>
-          <h1>Open your notebook</h1>
-          <p className="muted">Sign in to see the work that needs you.</p>
-          <Form noValidate onSubmit={login}>
+          <div className="auth-card-heading">
+            <p className="auth-caption">{copy.web.welcome}</p>
+            <Button type="button" variant="ghost" onClick={changeLanguage}>
+              <GlobeIcon aria-hidden="true" />
+              <span lang={alternate}>{languageNames[alternate]}</span>
+            </Button>
+          </div>
+          <h1>{copy.web.heading}</h1>
+          <p className="muted">{copy.web.intro}</p>
+          <Form noValidate onSubmit={login} validationCopy={copy.web}>
             <Label>
-              Email
+              {copy.email}
               <Input
                 name="email"
                 type="email"
                 autoComplete="username"
                 required
-                placeholder="you@your-team.com"
+                placeholder={copy.emailExample}
                 defaultValue={initialEmail}
               />
             </Label>
             <Label>
-              Password
+              {copy.password}
               <Input
                 name="password"
                 type="password"
-                aria-label="Password"
+                aria-label={copy.password}
+                passwordLabels={copy}
                 autoComplete="current-password"
                 required
               />
             </Label>
-            {error && <Alert className="error">{error}</Alert>}
+            {error && (
+              <Alert className="error">{signInError(locale, error.api, error.detail)}</Alert>
+            )}
             <Button className="primary full" disabled={checking}>
-              {checking ? 'Connecting…' : 'Sign in'}
+              {checking ? copy.web.connecting : copy.signIn}
             </Button>
           </Form>
         </Card>
-        <p className="account-help">
-          New to the team or need a new password? Ask your manager for an invitation or a
-          password-reset link.
-        </p>
+        <p className="account-help">{copy.web.help}</p>
         <details className="demo-note">
-          <summary>Running the local demo?</summary>
+          <summary>{copy.web.demo}</summary>
           <p>
-            Use manager@fieldwork.local or worker@fieldwork.local with password{' '}
-            <code>fieldwork-demo</code>. These accounts exist only after seeding the demo.
+            {copy.web.demoAccounts} <code>fieldwork-demo</code>. {copy.web.demoNote}
           </p>
         </details>
       </AuthLayout>

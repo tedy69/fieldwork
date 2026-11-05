@@ -65,6 +65,8 @@ Run the API, then `npm run mobile`. Use a compatible Expo Go client for SDK 58 o
 
 Alternatively set `EXPO_PUBLIC_API_URL` when starting Metro. This is a public server address, not a secret. Never put credentials in `EXPO_PUBLIC_*` variables.
 
+The sign-in screen can switch between **English** and **Bahasa Indonesia**. The choice is saved on the device and applies to sign-in, server settings, and sign-in errors. Start `sign-in-language.ios.yaml` on a signed-out synthetic simulator in English, with `METRO_URL` set to the running project. It checks the localized controls and invalid credentials, then restarts and verifies the language was saved before returning to English.
+
 ## Native acceptance checklist
 
 1. Sign in online and load an assigned order.

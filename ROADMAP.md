@@ -8,6 +8,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Sites, checklists, assignment, and inspection reports.
 - [x] Web dispatch desk and offline browser notebook.
 - [x] Expo worker notebook with local SQLite drafts and secure session storage.
+- [x] English and Indonesian sign-in on web and Expo, with a saved device preference.
 - [x] Notes, photo attachments, durable outbox, and idempotent submissions.
 - [x] Private local draft JSON exports in the web notebook/outbox, including offline photos and blocked submissions without changing the queue.
 - [x] Indonesian contributor quick-start guide for local setup, demo accounts, offline production builds and checks.

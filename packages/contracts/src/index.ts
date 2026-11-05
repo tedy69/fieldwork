@@ -520,19 +520,25 @@ export const RecurrenceFrequencySchema = z.enum([
   'biweekly',
   'weekdays',
   'monthly',
+  'month-end',
   'quarterly',
 ]);
+function lastDayOfMonth(date: Date) {
+  const end = new Date(date);
+  end.setUTCMonth(end.getUTCMonth() + 1, 0);
+  return end.getUTCDate();
+}
+
 function advanceRecurrence(
   date: Date,
   frequency: z.infer<typeof RecurrenceFrequencySchema>,
   originalDay: number,
 ) {
-  if (frequency === 'monthly' || frequency === 'quarterly') {
+  if (frequency === 'monthly' || frequency === 'month-end' || frequency === 'quarterly') {
     const months = frequency === 'quarterly' ? 3 : 1;
     date.setUTCMonth(date.getUTCMonth() + months, 1);
-    const end = new Date(date);
-    end.setUTCMonth(end.getUTCMonth() + 1, 0);
-    date.setUTCDate(Math.min(originalDay, end.getUTCDate()));
+    const lastDay = lastDayOfMonth(date);
+    date.setUTCDate(frequency === 'month-end' ? lastDay : Math.min(originalDay, lastDay));
     return;
   }
   const days = { daily: 1, weekdays: 1, weekly: 7, biweekly: 14 }[frequency];
@@ -587,7 +593,7 @@ export const RecurrenceSchema = z
       input.occurrences > MAX_RECURRENCE_OCCURRENCES
     )
       return;
-    const last = new Date(`${input.dueDate}T12:00:00Z`);
+    const first = new Date(`${input.dueDate}T12:00:00Z`);
     if (input.skipDates && input.skipDates.length > 52) return;
     if (input.skipDates?.some((date) => date <= input.dueDate))
       context.addIssue({
@@ -596,10 +602,16 @@ export const RecurrenceSchema = z
           'Skipped dates must be after the first due date. Change the first date to skip it.',
         path: ['skipDates'],
       });
-    if (input.frequency === 'weekdays' && (last.getUTCDay() === 0 || last.getUTCDay() === 6))
+    if (input.frequency === 'weekdays' && (first.getUTCDay() === 0 || first.getUTCDay() === 6))
       context.addIssue({
         code: 'custom',
         message: 'Choose a Monday–Friday first date for weekday repeats.',
+        path: ['dueDate'],
+      });
+    if (input.frequency === 'month-end' && first.getUTCDate() !== lastDayOfMonth(first))
+      context.addIssue({
+        code: 'custom',
+        message: 'Choose the last day of a month for the first visit.',
         path: ['dueDate'],
       });
     if (!scheduledDates(input))

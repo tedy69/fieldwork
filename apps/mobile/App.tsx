@@ -74,7 +74,11 @@ import {
   StatusBadge,
 } from './notebook-ui';
 import { colors, radius, size, spacing } from './theme';
-import WorkspacePage, { NotebookNotice, type NotebookProblem } from './workspace-page';
+import WorkspacePage, {
+  NotebookNotice,
+  type AssignmentFilter,
+  type NotebookProblem,
+} from './workspace-page';
 import ReportHistoryAction from './report-history';
 import SavedReport from './saved-report';
 
@@ -338,7 +342,7 @@ function Notebook({
   const [selected, setSelected] = useState<string | null>(null);
   const [notebookView, setNotebookView] = useState<'assignments' | 'outbox'>('assignments');
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<WorkOrder['status'] | null>(null);
+  const [assignmentFilter, setAssignmentFilter] = useState<AssignmentFilter>(null);
   const listOffset = useRef(0);
   useEffect(() => {
     notebookScroll.current?.scrollTo({ y: 0, animated: false });
@@ -419,10 +423,10 @@ function Notebook({
           listOffset.current = 0;
           setSearch(search);
         }}
-        statusFilter={statusFilter}
-        onStatusFilterChange={(status) => {
+        assignmentFilter={assignmentFilter}
+        onAssignmentFilterChange={(filter) => {
           listOffset.current = 0;
-          setStatusFilter(status);
+          setAssignmentFilter(filter);
         }}
         scrollPosition={listOffset}
         onResolve={async (orderId, mutationId) => {

@@ -1,8 +1,6 @@
-import type { WorkOrder } from '@fieldwork/contracts';
+import { localDate } from '@fieldwork/contracts';
 
-export function localDate(now = new Date()) {
-  return `${String(now.getFullYear()).padStart(4, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-}
+export { isOverdue, localDate } from '@fieldwork/contracts';
 
 /** Parse date-only values locally, without UTC conversion or Date's overflow normalization. */
 export function parseLocalDate(value: string): Date | undefined {
@@ -21,10 +19,6 @@ export function isValidDueRange(from: string, through: string) {
     (!through || Boolean(parseLocalDate(through))) &&
     (!from || !through || from <= through)
   );
-}
-
-export function isOverdue(order: Pick<WorkOrder, 'dueDate' | 'status'>, today: string) {
-  return order.status !== 'APPROVED' && order.dueDate < today;
 }
 
 export function isInDueRange(dueDate: string, from: string, through: string) {

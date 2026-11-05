@@ -18,6 +18,8 @@ Invitation and password-reset pages share the same globe control and language pr
 
 The web worker list and outbox use a globe in the top bar and share the sign-in preference. Chromium verifies keyboard switching with an active search and status filter, 320px and desktop layouts, date validation, an offline draft export, reload, and reconnect.
 
+Overdue fits into the existing Expo funnel menu, with the selected view shown beneath search. The iOS fixture verifies one late unfinished visit while offline, retained search after opening it, and an Indonesian result count. Web date tests exercise the shared rule in Jakarta and Los Angeles.
+
 The web worker inspection follows the same language choice. Chromium verifies that switching keeps the active draft, invalid readings and missing photos explain how to recover, and a zero reading plus its required photo survive offline reload and sync.
 
 Report history and the printable report use the worker's language while preserving the saved answers and manager feedback. Chromium verifies keyboard focus, loaded history during an outage, and an offline print containing the latest saved revision.

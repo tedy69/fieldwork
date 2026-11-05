@@ -1,0 +1,19 @@
+appId: host.exp.Exponent
+name: Cache past, approved, and future assignments
+---
+- scrollUntilVisible:
+    element: Sync now
+    direction: UP
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- scrollUntilVisible:
+    element:
+      id: assignment-search
+- tapOn:
+    id: assignment-search
+- inputText: Overdue QA
+- tapOn: Done editing
+- scrollUntilVisible:
+    element: ${FUTURE}
+    centerElement: true

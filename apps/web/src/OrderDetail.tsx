@@ -2,6 +2,7 @@ import { Button } from './components/ui/button';
 import { IconButton } from './components/ui/icon-button';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
+import { ImageSquareIcon } from '@phosphor-icons/react/dist/csr/ImageSquare';
 import { Form } from './components/ui/form';
 import { Card } from './components/ui/card';
 import { Badge } from './components/ui/badge';
@@ -15,7 +16,9 @@ import { RadioGroup, RadioGroupItem } from './components/ui/radio-group';
 import { useRef, useState, type FormEvent } from 'react';
 import {
   ReportInputSchema,
+  MAX_REPORT_PHOTOS,
   answerLabel,
+  availableSitePhotoSlots,
   blankDraft,
   checklistItemLabel,
   completedAnswers,
@@ -61,6 +64,9 @@ export default function OrderDetail({
   const [draft, setDraft] = useState<Draft>(state.drafts[order.id] ?? blankDraft(order));
   const currentDraft = useRef(draft);
   const pendingWrites = useRef(0);
+  const attaching = useRef(false);
+  const itemPhotoInput = useRef<HTMLInputElement>(null);
+  const photoItem = useRef<string | undefined>(undefined);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -69,6 +75,8 @@ export default function OrderDetail({
   const editable =
     user.role === 'worker' && ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status) && !queued;
   const completed = completedAnswers(order.template, draft.answers);
+  const sitePhotoSlots = availableSitePhotoSlots(order.template, draft.photos);
+  const itemPhotosRequired = order.template.items.some((item) => item.requiresPhoto);
   async function save(next: Draft) {
     currentDraft.current = next;
     setDraft(next);
@@ -86,12 +94,18 @@ export default function OrderDetail({
       setSaving(pendingWrites.current > 0);
     }
   }
-  async function photos(files: File[]) {
-    if (!files.length) return;
+  async function photos(files: File[], itemId?: string) {
+    if (!files.length || attaching.current) return;
+    attaching.current = true;
     setBusy(true);
     setError('');
     try {
-      if (draft.photos.length + files.length > 3) throw new Error('Attach up to 3 photos.');
+      const existing = currentDraft.current.photos;
+      if (existing.length + files.length > MAX_REPORT_PHOTOS)
+        throw new Error('Attach up to 3 photos.');
+      if (itemId && existing.some((photo) => photo.itemId === itemId)) return;
+      if (!itemId && files.length > availableSitePhotoSlots(order.template, existing))
+        throw new Error('Keep a photo slot available for each question that requires one.');
       const added: Photo[] = [];
       for (const file of Array.from(files)) {
         if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 2_000_000)
@@ -102,17 +116,24 @@ export default function OrderDetail({
           reader.onerror = reject;
           reader.readAsDataURL(file);
         });
-        added.push({ id: crypto.randomUUID(), mimeType: file.type as Photo['mimeType'], data });
+        added.push({
+          id: crypto.randomUUID(),
+          mimeType: file.type as Photo['mimeType'],
+          data,
+          ...(itemId && { itemId }),
+        });
       }
       await save({ ...currentDraft.current, photos: [...currentDraft.current.photos, ...added] });
     } catch (error) {
       setError(message(error));
     } finally {
+      attaching.current = false;
       setBusy(false);
     }
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (attaching.current) return;
     setError('');
     if (completed !== order.template.items.length) {
       setError('Complete every checklist item before submitting.');
@@ -234,6 +255,7 @@ export default function OrderDetail({
                 const answer = draft.answers.find((answer) => answer.itemId === item.id)!;
                 const readingError = readingInputError(item, answer.reading);
                 const bounds = readingBounds(item);
+                const hasPhoto = draft.photos.some((photo) => photo.itemId === item.id);
                 return (
                   <FieldSet className="checklist-item" key={item.id}>
                     <FieldLegend id={`item-${item.id}`}>
@@ -341,6 +363,25 @@ export default function OrderDetail({
                         }
                       />
                     </Label>
+                    {item.requiresPhoto && (
+                      <div className="item-photo-evidence">
+                        <p className="muted">{hasPhoto ? 'Photo attached' : 'Photo required'}</p>
+                        {!hasPhoto && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            aria-label={`Add photo for ${checklistItemLabel(item)}`}
+                            disabled={busy || draft.photos.length >= MAX_REPORT_PHOTOS}
+                            onClick={() => {
+                              photoItem.current = item.id;
+                              itemPhotoInput.current?.click();
+                            }}
+                          >
+                            <ImageSquareIcon aria-hidden="true" /> Add photo
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </FieldSet>
                 );
               })}
@@ -359,7 +400,10 @@ export default function OrderDetail({
               </Label>
               <section className="photo-section">
                 <h2>
-                  Site photos <span className="muted">{draft.photos.length}/3</span>
+                  Site photos{' '}
+                  <span className="muted">
+                    {draft.photos.length}/{MAX_REPORT_PHOTOS}
+                  </span>
                 </h2>
                 {order.template.requiresPhoto && (
                   <p className="muted">
@@ -373,13 +417,17 @@ export default function OrderDetail({
                         alt={`Site attachment ${index + 1}`}
                         src={`data:${photo.mimeType};base64,${photo.data}`}
                       />
+                      {photo.itemId && <p>{reportItemLabel(order.template, photo.itemId)}</p>}
                       <IconButton
                         label={`Remove photo ${index + 1}`}
                         variant="ghost"
+                        disabled={busy}
                         onClick={() =>
                           void save({
-                            ...draft,
-                            photos: draft.photos.filter((entry) => entry.id !== photo.id),
+                            ...currentDraft.current,
+                            photos: currentDraft.current.photos.filter(
+                              (entry) => entry.id !== photo.id,
+                            ),
                           })
                         }
                       >
@@ -388,11 +436,36 @@ export default function OrderDetail({
                     </div>
                   ))}
                 </div>
-                <FileUpload
-                  onFiles={photos}
-                  disabled={busy || draft.photos.length >= 3}
-                  busy={busy}
-                />
+                {itemPhotosRequired && (
+                  <>
+                    <input
+                      hidden
+                      type="file"
+                      ref={itemPhotoInput}
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(event) => {
+                        const itemId = photoItem.current;
+                        if (itemId)
+                          void photos(Array.from(event.currentTarget.files ?? []), itemId);
+                        event.currentTarget.value = '';
+                      }}
+                    />
+                    {sitePhotoSlots === 0 && draft.photos.length < MAX_REPORT_PHOTOS && (
+                      <p className="muted">
+                        Remaining photo slots are reserved for checklist questions.
+                      </p>
+                    )}
+                    {draft.photos.length === MAX_REPORT_PHOTOS &&
+                      !order.template.items.every(
+                        (item) =>
+                          !item.requiresPhoto ||
+                          draft.photos.some((photo) => photo.itemId === item.id),
+                      ) && (
+                        <p className="muted">Remove a photo to make room for required evidence.</p>
+                      )}
+                  </>
+                )}
+                <FileUpload onFiles={photos} disabled={busy || sitePhotoSlots === 0} busy={busy} />
               </section>
               {error && <FieldError>{error}</FieldError>}
               <div className="submit-bar">
@@ -443,6 +516,7 @@ export default function OrderDetail({
                         src={client.photoUrl(photo.id)}
                         alt={`Submitted site photo ${index + 1}`}
                       />
+                      {photo.itemId && <p>{reportItemLabel(order.template, photo.itemId)}</p>}
                     </a>
                   ))}
                 </div>

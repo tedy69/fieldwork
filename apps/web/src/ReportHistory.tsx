@@ -288,6 +288,9 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
                             src={client.photoUrl(photo.id)}
                             alt={`Saved report photo ${index + 1}`}
                           />
+                          {photo.itemId && (
+                            <p>{reportItemLabel(selected.snapshot.template, photo.itemId)}</p>
+                          )}
                         </a>
                       ))}
                     </div>

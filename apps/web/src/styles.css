@@ -931,6 +931,7 @@ main#main {
 .photos > div,
 .photos > a {
   max-width: 180px;
+  overflow-wrap: anywhere;
 }
 .photos img {
   display: block;
@@ -1642,6 +1643,19 @@ main#main {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: end;
+}
+.item-photo-option,
+.item-photo-evidence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.item-photo-option input[type='checkbox'] {
+  width: auto;
+}
+.item-photo-evidence {
+  flex-wrap: wrap;
+  margin-top: 12px;
 }
 @media (max-width: 850px) {
   .resource-grid {

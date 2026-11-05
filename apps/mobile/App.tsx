@@ -23,7 +23,9 @@ import { ArrowClockwise, ArrowLeft, Camera, ImageSquare, Trash, GearSix } from '
 import {
   blankDraft,
   ReportInputSchema,
+  MAX_REPORT_PHOTOS,
   answerLabel,
+  availableSitePhotoSlots,
   checklistItemLabel,
   completedAnswers,
   readingBounds,
@@ -390,6 +392,7 @@ function Inspection({
   const [draft, setDraft] = useState<Draft>(state.drafts[order.id] ?? blankDraft(order));
   const currentDraft = useRef(draft);
   const pendingWrites = useRef(0);
+  const attaching = useRef(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -397,6 +400,7 @@ function Inspection({
   const queued = state.outbox.find((item) => item.orderId === order.id);
   const editable = ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status) && !queued;
   const completed = completedAnswers(order.template, draft.answers);
+  const sitePhotoSlots = availableSitePhotoSlots(order.template, draft.photos);
   async function save(value: Draft) {
     currentDraft.current = value;
     setDraft(value);
@@ -411,7 +415,14 @@ function Inspection({
       setSaving(pendingWrites.current > 0);
     }
   }
-  async function attach(camera: boolean) {
+  async function attach(camera: boolean, itemId?: string) {
+    if (attaching.current) return;
+    const photos = currentDraft.current.photos;
+    if (itemId) {
+      if (photos.length >= MAX_REPORT_PHOTOS || photos.some((photo) => photo.itemId === itemId))
+        return;
+    } else if (availableSitePhotoSlots(order.template, photos) === 0) return;
+    attaching.current = true;
     setPreparingPhoto(true);
     setBusy(true);
     setError('');
@@ -436,17 +447,22 @@ function Inspection({
             : 'image/webp';
         await save({
           ...currentDraft.current,
-          photos: [...currentDraft.current.photos, { id: Crypto.randomUUID(), mimeType, data }],
+          photos: [
+            ...currentDraft.current.photos,
+            { id: Crypto.randomUUID(), mimeType, data, ...(itemId && { itemId }) },
+          ],
         });
       }
     } catch (error) {
       setError(errorText(error));
     } finally {
+      attaching.current = false;
       setBusy(false);
       setPreparingPhoto(false);
     }
   }
   async function submit() {
+    if (attaching.current) return;
     setBusy(true);
     setError('');
     try {
@@ -547,6 +563,7 @@ function Inspection({
               const answer = draft.answers.find((answer) => answer.itemId === item.id)!;
               const readingError = readingInputError(item, answer.reading);
               const bounds = readingBounds(item);
+              const hasPhoto = draft.photos.some((photo) => photo.itemId === item.id);
               return (
                 <View key={item.id} style={[styles.question, index > 0 && styles.questionDivider]}>
                   <View style={styles.questionHeading}>
@@ -637,6 +654,23 @@ function Inspection({
                       })
                     }
                   />
+                  {item.requiresPhoto && (
+                    <>
+                      <Copy muted variant="caption">
+                        {hasPhoto ? 'Photo attached' : 'Photo required'}
+                        {!hasPhoto && draft.photos.length === MAX_REPORT_PHOTOS
+                          ? '. Remove a photo to make room.'
+                          : ''}
+                      </Copy>
+                      {!hasPhoto && (
+                        <PhotoActions
+                          disabled={busy || draft.photos.length >= MAX_REPORT_PHOTOS}
+                          label={checklistItemLabel(item)}
+                          attach={(camera) => void attach(camera, item.id)}
+                        />
+                      )}
+                    </>
+                  )}
                 </View>
               );
             })}
@@ -651,7 +685,10 @@ function Inspection({
             onChangeText={(summary) => void save({ ...draft, summary })}
           />
           <Panel variant="plain">
-            <SectionHeading title="Site photos" detail={`${draft.photos.length} of 3 attached`} />
+            <SectionHeading
+              title="Site photos"
+              detail={`${draft.photos.length} of ${MAX_REPORT_PHOTOS} attached`}
+            />
             {order.template.requiresPhoto && (
               <Copy muted variant="caption">
                 At least one site photo is required for each submission, including corrections.
@@ -664,40 +701,31 @@ function Inspection({
                   source={{ uri: `data:${photo.mimeType};base64,${photo.data}` }}
                   style={styles.photo}
                 />
+                {photo.itemId && <Copy muted>{reportItemLabel(order.template, photo.itemId)}</Copy>}
                 <Button
                   title={`Remove photo ${index + 1}`}
                   icon={Trash}
                   iconOnly
                   variant="ghost"
+                  disabled={busy}
                   onPress={() =>
                     void save({
-                      ...draft,
-                      photos: draft.photos.filter((entry) => entry.id !== photo.id),
+                      ...currentDraft.current,
+                      photos: currentDraft.current.photos.filter((entry) => entry.id !== photo.id),
                     })
                   }
                 />
               </View>
             ))}
-            <View style={styles.row}>
-              <View style={styles.photoAction}>
-                <Button
-                  title="Take photo"
-                  icon={Camera}
-                  variant="outline"
-                  disabled={busy || draft.photos.length >= 3}
-                  onPress={() => void attach(true)}
-                />
-              </View>
-              <View style={styles.photoAction}>
-                <Button
-                  title="Choose photo"
-                  icon={ImageSquare}
-                  variant="outline"
-                  disabled={busy || draft.photos.length >= 3}
-                  onPress={() => void attach(false)}
-                />
-              </View>
-            </View>
+            {sitePhotoSlots === 0 && draft.photos.length < MAX_REPORT_PHOTOS && (
+              <Copy muted variant="caption">
+                Remaining photo slots are reserved for checklist questions.
+              </Copy>
+            )}
+            <PhotoActions
+              disabled={busy || sitePhotoSlots === 0}
+              attach={(camera) => void attach(camera)}
+            />
             <Copy muted variant="caption">
               Up to 3 photos, 2 MB each. Photos are saved with your offline draft.
             </Copy>
@@ -744,19 +772,55 @@ function Inspection({
           <SectionHeading title="Summary" />
           <Copy>{order.report.summary}</Copy>
           {order.report.photos.map((photo) => (
-            <Image
-              key={photo.id}
-              accessibilityLabel="Submitted site photo"
-              source={{
-                uri: `${baseUrl}/api/v1/photos/${photo.id}`,
-                headers: { Authorization: `Bearer ${token}` },
-              }}
-              style={styles.photo}
-            />
+            <View key={photo.id}>
+              <Image
+                accessibilityLabel="Submitted site photo"
+                source={{
+                  uri: `${baseUrl}/api/v1/photos/${photo.id}`,
+                  headers: { Authorization: `Bearer ${token}` },
+                }}
+                style={styles.photo}
+              />
+              {photo.itemId && <Copy muted>{reportItemLabel(order.template, photo.itemId)}</Copy>}
+            </View>
           ))}
         </Panel>
       ) : null}
     </>
+  );
+}
+function PhotoActions({
+  disabled,
+  label,
+  attach,
+}: {
+  disabled: boolean;
+  label?: string;
+  attach: (camera: boolean) => void;
+}) {
+  return (
+    <View style={styles.row}>
+      <View style={styles.photoAction}>
+        <Button
+          title="Take photo"
+          accessibilityLabel={label ? `Take photo for ${label}` : undefined}
+          icon={Camera}
+          variant="outline"
+          disabled={disabled}
+          onPress={() => attach(true)}
+        />
+      </View>
+      <View style={styles.photoAction}>
+        <Button
+          title="Choose photo"
+          accessibilityLabel={label ? `Choose photo for ${label}` : undefined}
+          icon={ImageSquare}
+          variant="outline"
+          disabled={disabled}
+          onPress={() => attach(false)}
+        />
+      </View>
+    </View>
   );
 }
 const styles = StyleSheet.create({

@@ -45,6 +45,7 @@ export function Brand() {
 
 export function Button({
   title,
+  accessibilityLabel = title,
   onPress,
   disabled = false,
   variant = 'primary',
@@ -56,6 +57,7 @@ export function Button({
   iconOnly = false,
 }: {
   title: string;
+  accessibilityLabel?: string;
   onPress: () => void;
   disabled?: boolean;
   variant?: 'primary' | 'outline' | 'ghost';
@@ -78,7 +80,7 @@ export function Button({
     <Pressable
       ref={button}
       accessibilityRole="button"
-      accessibilityLabel={title}
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled, expanded, selected }}
       disabled={disabled}
       testID={testID}

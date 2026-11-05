@@ -6,11 +6,15 @@ import { join } from 'node:path';
 import {
   TemplateSchema,
   WorkOrderSchema,
+  CreateTemplateSchema,
+  DraftSchema,
+  type CreateItem,
   type ReportInput,
   type WorkOrder,
 } from '@fieldwork/contracts';
 import { buildApp } from '../apps/api/src/app';
 import { seed } from '../apps/api/src/seed';
+import { createOfflineRepository, localReportExport, type State } from '@fieldwork/offline';
 
 let fixture: Awaited<ReturnType<typeof buildApp>>;
 let manager: string;
@@ -25,14 +29,14 @@ async function login(role: string) {
     })
   ).json().token as string;
 }
-async function template(requiresPhoto?: boolean) {
+async function template(requiresPhoto?: boolean, items: CreateItem[] = ['Check access']) {
   const response = await fixture.app.inject({
     method: 'POST',
     url: '/api/v1/templates',
     headers: bearer(manager),
     payload: {
       name: 'Synthetic evidence checklist',
-      items: ['Check access'],
+      items,
       ...(requiresPhoto === undefined ? {} : { requiresPhoto }),
     },
   });
@@ -176,6 +180,128 @@ it('rejects missing or invalid evidence atomically and retries the same mutation
   const after = records();
   expect((await submit(order, withPhoto)).json()).toEqual(accepted.json());
   expect(records()).toEqual(after);
+});
+const itemEvidence = [
+  { label: 'Inspect valve', responseType: 'check', requiresPhoto: true },
+  { label: 'Inspect seal', responseType: 'check', requiresPhoto: true },
+  'Check access',
+] satisfies CreateItem[];
+
+it('requires distinct item links and preserves them in retry receipts and report revisions', async () => {
+  const saved = await template(true, itemEvidence);
+  const order = await assignment(saved.id);
+  const [valve, seal, access] = order.template.items;
+  const payload = input(order);
+  const before = records();
+  const first = { ...photo(), itemId: valve.id };
+  const second = { ...photo(), itemId: seal.id };
+  expect((await submit(order, { ...payload, photos: [first, photo()] })).json().error).toEqual({
+    code: 'PHOTO_REQUIRED',
+    message: 'Attach a photo for Inspect seal.',
+  });
+  expect(
+    (await submit(order, { ...payload, photos: [first, { ...second, itemId: access.id }] })).json()
+      .error.code,
+  ).toBe('PHOTO_REQUIRED');
+  expect(
+    (
+      await submit(order, { ...payload, photos: [first, { ...second, itemId: randomUUID() }] })
+    ).json().error.code,
+  ).toBe('PHOTO_ITEM');
+  expect(records()).toEqual(before);
+  const withPhotos = { ...payload, photos: [first, second] };
+  const accepted = await submit(order, withPhotos);
+  expect(accepted.statusCode).toBe(200);
+  expect(
+    WorkOrderSchema.parse(accepted.json()).report?.photos.map((entry) => entry.itemId),
+  ).toEqual([valve.id, seal.id]);
+  const after = records();
+  expect((await submit(order, withPhotos)).json()).toEqual(accepted.json());
+  expect(
+    (await submit(order, { ...withPhotos, photos: [{ ...first, itemId: seal.id }, second] })).json()
+      .error.code,
+  ).toBe('IDEMPOTENCY_MISMATCH');
+  expect(records()).toEqual(after);
+  expect(
+    fixture.store
+      .reportHistory(order.id, 10)
+      ?.data[0].snapshot.report.photos.map((entry) => entry.itemId),
+  ).toEqual([valve.id, seal.id]);
+  const review = await fixture.app.inject({
+    method: 'POST',
+    url: `/api/v1/work-orders/${order.id}/reviews`,
+    headers: bearer(manager),
+    payload: {
+      baseVersion: accepted.json().version,
+      decision: 'CHANGES_REQUESTED',
+      note: 'Add current evidence.',
+    },
+  });
+  const correction = WorkOrderSchema.parse(review.json());
+  expect(
+    (await submit(correction, { ...input(correction), photos: [photo()] })).json().error.code,
+  ).toBe('PHOTO_REQUIRED');
+});
+
+it('rejects a checklist whose required photos could exceed the submission limit', () => {
+  const items = Array.from({ length: 4 }, (_, i) => ({
+    label: `Evidence ${i}`,
+    responseType: 'check',
+    requiresPhoto: true,
+  }));
+  expect(CreateTemplateSchema.safeParse({ name: 'Four photos', items }).success).toBe(false);
+  expect(
+    CreateTemplateSchema.safeParse({
+      name: 'Three photos',
+      items: items.slice(0, 3),
+      requiresPhoto: true,
+    }).success,
+  ).toBe(true);
+});
+
+it('keeps linked photos in local export and in a blocked queue after an assignment changes', async () => {
+  const order = await assignment((await template(undefined, itemEvidence)).id);
+  let state: State | null = null;
+  const repo = createOfflineRepository(
+    {
+      read: async () => structuredClone(state),
+      write: async (next) => {
+        state = structuredClone(next);
+      },
+    },
+    async (_id, report) => {
+      const response = await submit(order, report);
+      if (response.statusCode !== 200)
+        throw Object.assign(new Error(response.json().error.message), {
+          status: response.statusCode,
+        });
+      return WorkOrderSchema.parse(response.json());
+    },
+  );
+  await repo.cacheOrder(order);
+  const payload = input(order);
+  const draft = DraftSchema.parse({
+    answers: payload.answers,
+    summary: payload.summary,
+    photos: [{ ...photo(), itemId: order.template.items[0].id }],
+  });
+  await repo.saveDraft(order.id, draft);
+  await expect(repo.enqueue(order.id, { ...payload, photos: draft.photos })).rejects.toThrow(
+    'Attach a photo for Inspect seal.',
+  );
+  expect((await repo.read()).drafts[order.id]).toEqual(draft);
+  expect((await repo.read()).outbox).toEqual([]);
+  draft.photos.push({ ...photo(), itemId: order.template.items[1].id });
+  await repo.saveDraft(order.id, draft);
+  await repo.enqueue(order.id, { ...payload, photos: draft.photos });
+  fixture.store.writeOrder({ ...order, version: order.version + 1, dueDate: '2026-12-29' });
+  await repo.flush();
+  const exported = localReportExport(await repo.read(), order.id);
+  expect(exported.draft?.photos).toEqual(draft.photos);
+  expect(exported.queuedReport).toMatchObject({
+    state: 'blocked',
+    input: { mutationId: payload.mutationId, photos: draft.photos },
+  });
 });
 it('carries the requirement into every recurring occurrence', async () => {
   const saved = await template(true);

@@ -1,7 +1,7 @@
 import type { Draft, ReportInput, WorkOrder } from '@fieldwork/contracts';
 import {
   LocalReportExportSchema,
-  PHOTO_REQUIRED_MESSAGE,
+  reportPhotoError,
   answersMatchTemplate,
   reportReadingError,
   ReportInputSchema,
@@ -163,8 +163,8 @@ export function createOfflineRepository(
           );
         const readingError = order && reportReadingError(order.template, input.answers);
         if (readingError) throw new Error(readingError);
-        if (order?.template.requiresPhoto && input.photos.length === 0)
-          throw new Error(PHOTO_REQUIRED_MESSAGE);
+        const photoError = order && reportPhotoError(order.template, input.photos);
+        if (photoError) throw new Error(photoError.message);
         return {
           ...state,
           outbox: [

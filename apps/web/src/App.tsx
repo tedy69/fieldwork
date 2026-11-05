@@ -37,9 +37,9 @@ export default function App() {
   const [initialEmail, setInitialEmail] = useState('');
   const [locale, setLocale] = useState(() => {
     try {
-      return savedLocale(localStorage.getItem('fieldwork.locale'));
+      return savedLocale(localStorage.getItem('fieldwork.locale'), navigator.language);
     } catch {
-      return 'en' as const;
+      return savedLocale(null, navigator.language);
     }
   });
   useEffect(() => {

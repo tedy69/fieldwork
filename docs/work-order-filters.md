@@ -6,6 +6,8 @@ Use **Due from** and **Due through** to choose a planning window. Both dates are
 
 Due dates are calendar dates, not timestamps: a work order due on 22 October matches that date in every time zone. Overdue still uses the device's local date and excludes approved work. Selecting Overdue together with a range shows only unfinished work that meets both conditions.
 
+**Next 7 days** shows open work due today through the following six local dates, earliest first. The list uses the current saved due date, including after a reschedule.
+
 If Due through is before Due from, both fields are marked invalid and a message explains how to fix the range. No orders or reports are included until the dates are corrected or cleared. A valid range with no matching work shows a separate empty state.
 
 The footer shows the filtered count. The In the field and Ready for review totals remain workspace summaries. Manager CSV exports include only reports in the filtered list, including its date range.

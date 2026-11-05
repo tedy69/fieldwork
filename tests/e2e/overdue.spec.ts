@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { createClient } from '@fieldwork/sdk';
 
+test.use({ timezoneId: 'UTC' });
+
 for (const scenario of [
   { zone: 'America/Los_Angeles', time: '2026-10-23T06:50:00Z', role: 'manager' },
   { zone: 'Asia/Jakarta', time: '2026-10-22T16:50:00Z', role: 'worker' },
@@ -175,4 +177,51 @@ test('an empty notebook explains when work becomes overdue', async ({ page }) =>
       { exact: true },
     ),
   ).toBeVisible();
+});
+
+test('Next 7 days orders saved work by its current due date after rescheduling', async ({
+  page,
+  context,
+}) => {
+  const baseURL = 'http://127.0.0.1:4173';
+  const session = await createClient(baseURL).login('manager@fieldwork.local', 'fieldwork-demo');
+  const manager = createClient(baseURL, () => session.token);
+  const catalog = await manager.catalog();
+  const prefix = `Upcoming order ${crypto.randomUUID().slice(0, 8)}`;
+  const create = (name: string, dueDate: string) =>
+    manager.createOrder({
+      title: `${prefix} ${name}`,
+      instructions: 'Synthetic upcoming assignment.',
+      siteId: catalog.sites[0].id,
+      templateId: catalog.templates[0].id,
+      assigneeId: 'worker',
+      dueDate,
+      priority: 'routine',
+    });
+  const first = await create('first', '2026-10-23');
+  const second = await create('second', '2026-10-25');
+  await page.clock.setFixedTime(new Date('2026-10-22T12:00:00Z'));
+  await page.goto('/');
+  await page.getByLabel('Email', { exact: true }).fill('manager@fieldwork.local');
+  await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.getByLabel('Search work orders').fill(prefix);
+  await page.getByRole('button', { name: 'Next 7 days', exact: true }).click();
+  const rows = page.locator('.order-row');
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first()).toContainText(first.title);
+
+  await page.getByRole('button', { name: `Open ${second.reference}: ${second.title}` }).click();
+  await page.getByRole('button', { name: 'Change due date', exact: true }).click();
+  await page.getByLabel('New due date', { exact: true }).fill('2026-10-22');
+  await page.getByRole('button', { name: 'Save due date', exact: true }).click();
+  await expect(page.getByRole('main').getByRole('status')).toContainText(
+    `${second.reference} is now due`,
+  );
+  await context.setOffline(true);
+  await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first()).toContainText(second.title);
+  await expect(rows.first().locator('time')).toHaveAttribute('datetime', '2026-10-22');
+  await expect(rows.last()).toContainText(first.title);
 });

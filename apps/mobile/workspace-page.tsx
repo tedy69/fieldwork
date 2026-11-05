@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import {
+  compareOrdersByDueDate,
   isOpenDueBetween,
   nextSevenDaysEnd,
   isOverdue,
@@ -137,20 +138,20 @@ export default function WorkspacePage({
   const entries = useMemo<Entry[]>(() => {
     if (view === 'outbox') return state.outbox.map((item) => ({ kind: 'queued', item }));
     const through = assignmentFilter === 'next' ? nextSevenDaysEnd(today) : today;
-    return state.orders
-      .filter((order) => {
-        const matches =
-          assignmentFilter === 'overdue'
-            ? isOverdue(order, today)
-            : assignmentFilter === 'today' || assignmentFilter === 'next'
-              ? isOpenDueBetween(order, today, through)
-              : !assignmentFilter || order.status === assignmentFilter;
-        return (
-          matches &&
-          `${order.reference} ${order.title} ${order.site.name}`.toLowerCase().includes(query)
-        );
-      })
-      .map((order) => ({ kind: 'order', order }));
+    const orders = state.orders.filter((order) => {
+      const matches =
+        assignmentFilter === 'overdue'
+          ? isOverdue(order, today)
+          : assignmentFilter === 'today' || assignmentFilter === 'next'
+            ? isOpenDueBetween(order, today, through)
+            : !assignmentFilter || order.status === assignmentFilter;
+      return (
+        matches &&
+        `${order.reference} ${order.title} ${order.site.name}`.toLowerCase().includes(query)
+      );
+    });
+    if (assignmentFilter === 'next') orders.sort(compareOrdersByDueDate);
+    return orders.map((order) => ({ kind: 'order', order }));
   }, [state.orders, state.outbox, query, assignmentFilter, today, view]);
   const queuedReports = state.outbox.length;
   const queuedLabel = copy.pending(queuedReports);

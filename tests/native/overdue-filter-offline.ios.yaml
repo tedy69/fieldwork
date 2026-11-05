@@ -15,7 +15,7 @@ name: Find assignments by due date while offline
     direction: UP
 - tapOn: Filter assignments
 - tapOn:
-    text: Due today
+    text: '^Due today$'
     index: 0
 - scrollUntilVisible:
     element: Due today · 1 shown
@@ -26,11 +26,12 @@ name: Find assignments by due date while offline
 - assertVisible: ${TODAY}
 - scrollUntilVisible:
     element:
-      text: Next 7 days
+      text: '^Next 7 days$'
       index: 0
     direction: UP
+    centerElement: true
 - tapOn:
-    text: Next 7 days
+    text: '^Next 7 days$'
     index: 0
 - scrollUntilVisible:
     element: Next 7 days · 2 shown
@@ -41,11 +42,12 @@ name: Find assignments by due date while offline
 - assertVisible: ${EDGE}
 - scrollUntilVisible:
     element:
-      text: Overdue
+      text: '^Overdue$'
       index: 0
     direction: UP
+    centerElement: true
 - tapOn:
-    text: Overdue
+    text: '^Overdue$'
     index: 0
 - scrollUntilVisible:
     element: Overdue · 1 shown

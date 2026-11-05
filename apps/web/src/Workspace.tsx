@@ -21,7 +21,13 @@ import { SearchField } from './components/ui/search-field';
 import { Label } from './components/ui/label';
 import { Avatar, AvatarFallback } from './components/ui/avatar';
 import { useEffect, useMemo, useState } from 'react';
-import { isOpenDueBetween, nextSevenDaysEnd, type User, type Catalog } from '@fieldwork/contracts';
+import {
+  compareOrdersByDueDate,
+  isOpenDueBetween,
+  nextSevenDaysEnd,
+  type User,
+  type Catalog,
+} from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { emptyState, type State } from '@fieldwork/offline';
 import { languageNames, notebookCopy, type Locale } from '@fieldwork/strings';
@@ -189,10 +195,7 @@ export default function Workspace({
       planner ? plannerDay || period[period.length - 1] : dueThrough,
     ),
   );
-  if (planner)
-    visible.sort(
-      (a, b) => a.dueDate.localeCompare(b.dueDate) || a.reference.localeCompare(b.reference),
-    );
+  if (planner || nextWeek) visible.sort(compareOrdersByDueDate);
   const reviewCount = state.orders.filter((order) => order.status === 'SUBMITTED').length;
   const assignedCount = state.orders.filter(
     (order) => order.status === 'ASSIGNED' || order.status === 'CHANGES_REQUESTED',

@@ -493,6 +493,15 @@ export function isOpenDueBetween(
   return order.status !== 'APPROVED' && order.dueDate >= from && order.dueDate <= through;
 }
 
+export function compareOrdersByDueDate(
+  first: Pick<WorkOrder, 'dueDate' | 'reference'>,
+  second: Pick<WorkOrder, 'dueDate' | 'reference'>,
+) {
+  return (
+    first.dueDate.localeCompare(second.dueDate) || first.reference.localeCompare(second.reference)
+  );
+}
+
 export const ReportSnapshotSchema = WorkOrderSchema.omit({
   status: true,
   version: true,

@@ -61,6 +61,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Expo report history with saved revisions, review feedback, and retry without changing the active draft.
 - [x] Offline site coordinates in Expo inspections, taken from the saved assignment snapshot.
 - [x] Expo sign-in recovery from the notebook and outbox with the current server, account, and local reports retained.
+- [x] Repeatable Android smoke test for Expo sign-in recovery, assignment filters, saved coordinates, report history, and Back navigation.
 - [x] Text-response checklist fields on web and Expo, including mixed API templates, offline drafts and saved report exports.
 - [x] Numeric checklist readings on web and Expo, with partial offline input, zero/negative decimals, type validation and saved report exports.
 - [x] Mixed checklist creation on web, with a response type per question and a bulk entry shortcut.

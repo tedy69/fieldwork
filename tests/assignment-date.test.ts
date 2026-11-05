@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { assignmentDate, nextSevenDaysEnd } from '../apps/mobile/assignment-date';
-import { isOpenDueBetween } from '@fieldwork/contracts';
+import { assignmentDate } from '../apps/mobile/assignment-date';
+import { isOpenDueBetween, nextSevenDaysEnd } from '@fieldwork/contracts';
 
 test('assignment dates keep the stored calendar day in each notebook language', () => {
   expect(assignmentDate('2028-02-29', 'en')).toBe('Feb 29, 2028');

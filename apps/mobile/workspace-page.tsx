@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import {
   isOpenDueBetween,
+  nextSevenDaysEnd,
   isOverdue,
   localDate,
   StatusSchema,
@@ -18,7 +19,7 @@ import {
 } from '@fieldwork/contracts';
 import type { State } from '@fieldwork/offline';
 import { languageNames, notebookCopy, signInCopy, type Locale } from '@fieldwork/strings';
-import { assignmentDate, nextSevenDaysEnd } from './assignment-date';
+import { assignmentDate } from './assignment-date';
 import { Brand, Button, Copy, Field, Notice, Panel, StatusBadge } from './notebook-ui';
 import { colors, radius, spacing } from './theme';
 import {

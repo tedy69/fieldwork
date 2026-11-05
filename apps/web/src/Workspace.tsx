@@ -21,7 +21,7 @@ import { SearchField } from './components/ui/search-field';
 import { Label } from './components/ui/label';
 import { Avatar, AvatarFallback } from './components/ui/avatar';
 import { useEffect, useMemo, useState } from 'react';
-import { isDueToday, type User, type Catalog } from '@fieldwork/contracts';
+import { isOpenDueBetween, nextSevenDaysEnd, type User, type Catalog } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { emptyState, type State } from '@fieldwork/offline';
 import { languageNames, notebookCopy, type Locale } from '@fieldwork/strings';
@@ -146,16 +146,27 @@ export default function Workspace({
         title: copy.noOverdue,
         description: copy.overdueHint,
       };
-  const todayEmpty = {
-    title: search ? copy.noMatch : copy.noDueToday,
-    description: search ? copy.trySearch : copy.dueTodayHint,
-  };
+  const nextWeek = filter === 'NEXT_SEVEN_DAYS';
+  const dateWindow = nextWeek || filter === 'DUE_TODAY';
+  const windowEnd = nextWeek ? nextSevenDaysEnd(today) : today;
   const dateFilterEmpty =
-    filter === 'OVERDUE' ? overdueEmpty : filter === 'DUE_TODAY' ? todayEmpty : null;
+    filter === 'OVERDUE'
+      ? overdueEmpty
+      : dateWindow
+        ? {
+            title: search ? copy.noMatch : nextWeek ? copy.noDueNextWeek : copy.noDueToday,
+            description: search
+              ? copy.trySearch
+              : nextWeek
+                ? copy.dueNextWeekHint
+                : copy.dueTodayHint,
+          }
+        : null;
   const filterLabels = {
     ALL: copy.all,
     OVERDUE: copy.overdue,
     DUE_TODAY: notebook.dueToday,
+    NEXT_SEVEN_DAYS: notebook.nextSevenDays,
     ...notebook.status,
   };
   const matching = state.orders.filter(
@@ -163,8 +174,8 @@ export default function Workspace({
       (filter === 'ALL' ||
         (filter === 'OVERDUE'
           ? isOverdue(order, today)
-          : filter === 'DUE_TODAY'
-            ? isDueToday(order, today)
+          : dateWindow
+            ? isOpenDueBetween(order, today, windowEnd)
             : order.status === filter)) &&
       `${order.title} ${order.site.name} ${order.reference} ${order.assignee.name}`
         .toLowerCase()
@@ -603,6 +614,7 @@ export default function Workspace({
                           'ALL',
                           'OVERDUE',
                           'DUE_TODAY',
+                          'NEXT_SEVEN_DAYS',
                           'ASSIGNED',
                           'SUBMITTED',
                           'APPROVED',

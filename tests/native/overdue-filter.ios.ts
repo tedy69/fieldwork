@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { localDate } from '@fieldwork/contracts';
+import { localDate, nextSevenDaysEnd } from '@fieldwork/contracts';
 import { createClient } from '@fieldwork/sdk';
-import { nextSevenDaysEnd } from '../../apps/mobile/assignment-date';
 import { iosSmokeFlows } from './ios-smoke-flows';
 import { openFixture } from './smoke-fixture';
 

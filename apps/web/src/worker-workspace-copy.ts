@@ -41,12 +41,14 @@ const english = {
   noMatchingOverdue: 'No matching overdue work orders',
   noOverdue: 'No overdue work orders',
   noDueToday: 'No work orders due today',
+  noDueNextWeek: 'No work orders due in the next 7 days',
   noMatch: 'No matching work orders',
   empty: 'A clean page',
   trySearch: 'Try another order, site, or person.',
   overdueHint:
     'Unfinished work appears here after its due date, based on this device’s local date.',
   dueTodayHint: 'Open work due on this device’s local date appears here.',
+  dueNextWeekHint: 'Open work due today or in the following six days appears here.',
   plannerHint: (period: 'month' | 'week') =>
     `Choose another day or ${period}, or adjust your search and status filter.`,
   dateHint: 'Change or clear the dates, or adjust your search and status filter.',
@@ -133,12 +135,15 @@ export const workerWorkspaceCopy: Record<Locale, typeof english> = {
     noMatchingOverdue: 'Tidak ada tugas lewat tenggat yang cocok',
     noOverdue: 'Tidak ada tugas lewat tenggat',
     noDueToday: 'Tidak ada tugas dengan tenggat hari ini',
+    noDueNextWeek: 'Tidak ada tugas dengan tenggat dalam 7 hari ke depan',
     noMatch: 'Tidak ada tugas yang cocok',
     empty: 'Belum ada tugas',
     trySearch: 'Coba tugas, lokasi, atau petugas lain.',
     overdueHint:
       'Tugas yang belum selesai muncul di sini setelah tenggatnya, sesuai tanggal di perangkat ini.',
     dueTodayHint: 'Tugas terbuka dengan tenggat sesuai tanggal perangkat ini muncul di sini.',
+    dueNextWeekHint:
+      'Tugas terbuka dengan tenggat hari ini hingga enam hari berikutnya muncul di sini.',
     plannerHint: (period) =>
       `Pilih hari atau ${period === 'month' ? 'bulan' : 'minggu'} lain, atau sesuaikan pencarian dan filter status.`,
     dateHint: 'Ubah atau hapus tanggal, atau sesuaikan pencarian dan filter status.',

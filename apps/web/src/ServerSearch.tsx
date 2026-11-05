@@ -6,10 +6,11 @@ import {
   type WorkOrder,
 } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
+import { inspectionCopy, notebookCopy, type Locale } from '@fieldwork/strings';
 import { client, labels, dateLabel, message } from './lib';
 import { Button } from './components/ui/button';
 import { IconButton } from './components/ui/icon-button';
-import { GlobeIcon } from '@phosphor-icons/react/dist/csr/Globe';
+import { DatabaseIcon } from '@phosphor-icons/react/dist/csr/Database';
 import { Form } from './components/ui/form';
 import { SearchField } from './components/ui/search-field';
 import { DatePicker } from './components/ui/date-picker';
@@ -30,6 +31,8 @@ import {
 import { Alert } from './components/ui/alert';
 import { Badge } from './components/ui/badge';
 import { Empty } from './components';
+import { serverSearchCopy } from './server-search-copy';
+import { workerWorkspaceCopy } from './worker-workspace-copy';
 import './server-search.css';
 
 const emptyFilters = () => ({
@@ -46,6 +49,7 @@ type Page = Awaited<ReturnType<typeof client.searchOrders>>;
 
 export default function ServerSearch({
   user,
+  locale,
   workers,
   online,
   today,
@@ -53,12 +57,17 @@ export default function ServerSearch({
   onOpened,
 }: {
   user: User;
+  locale: Locale;
   workers: User[];
   online: boolean;
   today: string;
   onCache: (order: WorkOrder) => Promise<void>;
   onOpened: (id: string) => void;
 }) {
+  const copy = serverSearchCopy[locale];
+  const statuses = locale === 'id' ? notebookCopy.id.status : labels;
+  const priorities = inspectionCopy[locale].priority;
+  const dateLocale = locale === 'id' ? 'id-ID' : undefined;
   const [open, setOpen] = useState(false);
   const [filters, setFilters] = useState(emptyFilters);
   const [page, setPage] = useState<Page | null>(null);
@@ -107,8 +116,9 @@ export default function ServerSearch({
       setApplied({ ...query, cursor: undefined });
     } catch (error) {
       if (current === generation.current) {
-        setError(message(error));
-        setInvalidCursor(error instanceof ApiError && error.code === 'INVALID_CURSOR');
+        const cursorChanged = error instanceof ApiError && error.code === 'INVALID_CURSOR';
+        setInvalidCursor(cursorChanged);
+        setError(locale === 'en' ? message(error) : cursorChanged ? copy.cursor : copy.failed);
       }
     } finally {
       if (current === generation.current) setBusy(false);
@@ -155,7 +165,13 @@ export default function ServerSearch({
     });
     if (!query.success) {
       attempt.current = null;
-      setError(query.error.issues[0].message);
+      const issue = query.error.issues[0];
+      const dates = workerWorkspaceCopy[locale].dates;
+      let validation = copy.invalidFilters;
+      if (issue.code === 'custom') validation = dates.invalidRange;
+      else if (['dueFrom', 'dueThrough', 'overdueBefore'].includes(String(issue.path[0])))
+        validation = dates.invalidDate;
+      setError(locale === 'en' ? issue.message : validation);
       return;
     }
     void load(query.data);
@@ -177,7 +193,9 @@ export default function ServerSearch({
       changeOpen(false);
       onOpened(order.id);
     } catch (error) {
-      if (current === generation.current) setError(`${message(error)} Your current draft is kept.`);
+      if (current === generation.current) {
+        setError(locale === 'en' ? `${message(error)} ${copy.draftKept}` : copy.openFailed);
+      }
     } finally {
       if (current === generation.current) {
         setBusy(false);
@@ -189,21 +207,20 @@ export default function ServerSearch({
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>
         <IconButton
-          label="Search server"
+          label={copy.title}
+          lang={locale}
           ref={trigger}
           className="quiet server-search-launcher"
           disabled={!online}
-          tooltip={
-            !online
-              ? 'Connect to search the server. Saved work is available in Find work.'
-              : 'Search server'
-          }
+          tooltip={online ? copy.title : copy.connect}
         >
-          <GlobeIcon aria-hidden="true" />
+          <DatabaseIcon aria-hidden="true" />
         </IconButton>
       </DialogTrigger>
       <DialogContent
         size="compare"
+        lang={locale}
+        closeLabel={copy.close}
         className="server-search-dialog"
         aria-modal="true"
         onOpenAutoFocus={(event) => {
@@ -219,34 +236,32 @@ export default function ServerSearch({
       >
         <DialogHeader className="server-search-heading">
           <div>
-            <DialogTitle>Search server</DialogTitle>
-            <DialogDescription>
-              Find current records online. Opening a result saves that order on this device. Your
-              drafts and saved filters stay intact.
-            </DialogDescription>
+            <DialogTitle>{copy.title}</DialogTitle>
+            <DialogDescription>{copy.intro}</DialogDescription>
           </div>
         </DialogHeader>
-        <Form noValidate aria-label="Search server records" onSubmit={search}>
+        <Form noValidate aria-label={copy.form} onSubmit={search}>
           <FieldSet className="server-search-fields" disabled={Boolean(opening)}>
             <Label className="server-search-text">
-              Search text
+              {copy.query}
               <SearchField
-                aria-label="Search text"
+                aria-label={copy.query}
+                clearLabel={copy.clearQuery}
                 inputRef={searchInput}
                 maxLength={200}
                 value={filters.q}
                 onValueChange={(q) => change({ q })}
-                placeholder="Order, reference, site, or person"
+                placeholder={copy.placeholder}
               />
             </Label>
             <Label>
-              Status
+              {copy.status}
               <Select
                 value={filters.status}
                 onChange={(event) => change({ status: event.target.value })}
               >
-                <Option value="">All statuses</Option>
-                {Object.entries(labels).map(([value, label]) => (
+                <Option value="">{copy.anyStatus}</Option>
+                {Object.entries(statuses).map(([value, label]) => (
                   <Option key={value} value={value}>
                     {label}
                   </Option>
@@ -254,14 +269,14 @@ export default function ServerSearch({
               </Select>
             </Label>
             <Label>
-              Priority
+              {copy.priority}
               <Select
                 value={filters.priority}
                 onChange={(event) => change({ priority: event.target.value })}
               >
-                <Option value="">All priorities</Option>
-                <Option value="routine">Routine</Option>
-                <Option value="urgent">Urgent</Option>
+                <Option value="">{copy.anyPriority}</Option>
+                <Option value="routine">{copy.routine}</Option>
+                <Option value="urgent">{copy.urgent}</Option>
               </Select>
             </Label>
             {user.role === 'manager' && (
@@ -283,35 +298,37 @@ export default function ServerSearch({
               </Label>
             )}
             <Label>
-              Server due from
+              {copy.from}
               <DatePicker
-                calendarLabel="Choose server due from"
+                calendarLabel={copy.chooseFrom}
+                locale={locale}
                 value={filters.dueFrom}
                 onValueChange={(value) => change({ dueFrom: value })}
               />
             </Label>
             <Label>
-              Server due through
+              {copy.through}
               <DatePicker
-                calendarLabel="Choose server due through"
+                calendarLabel={copy.chooseThrough}
+                locale={locale}
                 value={filters.dueThrough}
                 onValueChange={(value) => change({ dueThrough: value })}
               />
             </Label>
             <Label>
-              Due state
+              {copy.dueState}
               <Select
                 value={filters.dueState}
                 onChange={(event) => change({ dueState: event.target.value })}
               >
-                <Option value="">All due dates</Option>
-                <Option value="overdue">Overdue before today</Option>
+                <Option value="">{copy.anyDate}</Option>
+                <Option value="overdue">{copy.overdue}</Option>
               </Select>
             </Label>
           </FieldSet>
           <div className="server-search-actions">
             <Button className="primary" disabled={!online || busy}>
-              Search records
+              {copy.submit}
             </Button>
             <Button
               type="button"
@@ -319,14 +336,13 @@ export default function ServerSearch({
               disabled={Boolean(opening)}
               onClick={() => change(emptyFilters())}
             >
-              Clear filters
+              {copy.clearFilters}
             </Button>
           </div>
         </Form>
         {!online && (
           <Alert role="status" className="banner notice">
-            You’re offline. Loaded results stay visible. Connect to search or open an order; saved
-            work is available in the notebook.
+            {copy.offline}
           </Alert>
         )}
         {error && (
@@ -345,27 +361,22 @@ export default function ServerSearch({
                   )
                 }
               >
-                {invalidCursor ? 'Start new search' : 'Retry search'}
+                {invalidCursor ? copy.restart : copy.retry}
               </Button>
             )}
           </Alert>
         )}
         {busy && (
           <p className="muted" role="status">
-            {opening ? 'Opening current order…' : 'Searching server…'}
+            {opening ? copy.opening : copy.searching}
           </p>
         )}
         {page ? (
           <>
             <p className="muted server-search-count" role="status">
-              {page.data.length} loaded · {page.total} matching on server
+              {copy.count(page.data.length, page.total)}
             </p>
-            {!page.data.length && (
-              <Empty
-                title="No matching server records"
-                description="Try different text, dates, or filters."
-              />
-            )}
+            {!page.data.length && <Empty title={copy.empty} description={copy.emptyHint} />}
             <ul className="server-search-results">
               {page.data.map((order) => (
                 <li key={order.id}>
@@ -373,19 +384,20 @@ export default function ServerSearch({
                     variant="unstyled"
                     className="server-search-result"
                     disabled={!online || busy}
-                    aria-label={`Open server order ${order.reference}: ${order.title}`}
+                    aria-label={copy.openOrder(order.reference, order.title)}
                     aria-describedby={`server-result-meta-${order.id}`}
                     onClick={() => void openOrder(order.id)}
                   >
                     <span className="reference">
-                      {order.reference} · {order.priority}
+                      {order.reference} · {priorities[order.priority]}
                     </span>
                     <strong>{order.title}</strong>
                     <span className="muted" id={`server-result-meta-${order.id}`}>
-                      {order.site.name} · {order.assignee.name} · Due {dateLabel(order.dueDate)}
+                      {order.site.name} · {order.assignee.name} · {copy.due}{' '}
+                      {dateLabel(order.dueDate, dateLocale)}
                     </span>
                     <Badge className={`status status-${order.status.toLowerCase()}`}>
-                      {labels[order.status]}
+                      {statuses[order.status]}
                     </Badge>
                   </Button>
                 </li>
@@ -397,18 +409,12 @@ export default function ServerSearch({
                 disabled={!online || busy}
                 onClick={() => void load({ ...applied!, cursor: page.nextCursor! }, true)}
               >
-                Load more results
+                {copy.more}
               </Button>
             )}
           </>
         ) : (
-          !busy &&
-          !error && (
-            <Empty
-              title="Ready to search"
-              description="Choose filters and select Search records."
-            />
-          )
+          !busy && !error && <Empty title={copy.ready} description={copy.readyHint} />
         )}
       </DialogContent>
     </Dialog>

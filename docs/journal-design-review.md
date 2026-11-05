@@ -20,6 +20,8 @@ Site maps use named zoom and recenter icons and show opt-in and recovery guidanc
 
 The saved work finder pairs destination icons with readable names and uses the worker’s language for controls and feedback. Chromium exercises it offline at 320 pixels, including keyboard access, clearing the query, and opening cached assignments and the outbox.
 
+Server search has a distinct database icon so it can be distinguished from the language globe. Chromium verifies Indonesian filter validation, retry, result dates, worker permissions, and the loaded result state during an outage at 320 pixels.
+
 Rescheduling from a recurring batch uses the same calendar icon and date field as an order. Planned and current dates remain side by side on desktop and stack on narrow screens. Chromium verifies keyboard entry and Escape, focus after saving, conflict recovery with the proposed date intact, offline controls, and 320px reflow.
 
 Quarterly recurrence adds one choice to Repeat and uses the existing date preview and recovery panel. Chromium verifies keyboard entry, shorter-month dates, a 320px layout, and recovery of a saved request after the response is lost.

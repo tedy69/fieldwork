@@ -295,6 +295,7 @@ export default function Workspace({
             />
             <ServerSearch
               user={user}
+              locale={locale}
               workers={catalog.users}
               online={online}
               today={today}

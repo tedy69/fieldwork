@@ -26,6 +26,10 @@ Server search has a distinct database icon so it can be distinguished from the l
 
 Rescheduling from a recurring batch uses the same calendar icon and date field as an order. Planned and current dates remain side by side on desktop and stack on narrow screens. Chromium verifies keyboard entry and Escape, focus after saving, conflict recovery with the proposed date intact, offline controls, and 320px reflow.
 
+The recurring batch detail keeps a labeled visit filter beside the named refresh icon. The ledger remains the focus, with counts shown when a filter is active. Chromium verifies the 320px layout, offline filtering, keyboard refresh, and focus returning to the filter when a rescheduled visit leaves the view.
+
+The visit filter keeps its own row on narrow screens, with named refresh and download icons below. Chromium checks keyboard download at 320 pixels, error recovery, and a CSV containing only the filtered visits with both due dates.
+
 Quarterly recurrence adds one choice to Repeat and uses the existing date preview and recovery panel. Chromium verifies keyboard entry, shorter-month dates, a 320px layout, and recovery of a saved request after the response is lost.
 
 The recurring form groups repeat, end rule, and count or date. The existing named calendar icon identifies the date picker. Chromium checks keyboard focus and narrow reflow, validates the inclusive preview with skips, and confirms that retry uses the original schedule.

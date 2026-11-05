@@ -1,15 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { IconButton } from './components/ui/icon-button';
+import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
+import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple';
 import { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
 import type { OrderSeriesDetail, WorkOrder } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { client, labels, message } from './lib';
 import { calendarLabel } from './calendar';
+import { downloadCsv, formatCsv } from './csv';
+import { isOverdue } from './dates';
 import { recurrenceLabels } from './recurrence-labels';
 import { SkippedDates } from './RecurrenceExceptions';
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
 import { Alert } from './components/ui/alert';
+import { Label } from './components/ui/label';
+import { NativeSelect, NativeSelectOption } from './components/ui/native-select';
 import {
   Dialog,
   DialogTrigger,
@@ -23,12 +29,38 @@ import RescheduleOrder from './RescheduleOrder';
 import './series-overview.css';
 
 type Page = Awaited<ReturnType<typeof client.orderSeries>>;
+const visitLabels = {
+  all: 'All visits',
+  upcoming: 'Upcoming field work',
+  overdue: 'Overdue',
+  review: 'Awaiting review',
+  approved: 'Approved',
+};
+type VisitFilter = keyof typeof visitLabels;
+
+function matchesVisit(order: WorkOrder, filter: VisitFilter, today: string) {
+  switch (filter) {
+    case 'upcoming':
+      return order.dueDate >= today && ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status);
+    case 'overdue':
+      return isOverdue(order, today);
+    case 'review':
+      return order.status === 'SUBMITTED';
+    case 'approved':
+      return order.status === 'APPROVED';
+    case 'all':
+      return true;
+  }
+}
+
 export default function SeriesOverview({
   online,
+  today,
   onCache,
   onOpened,
 }: {
   online: boolean;
+  today: string;
   onCache: (order: WorkOrder) => Promise<void>;
   onOpened: (id: string) => void;
 }) {
@@ -36,6 +68,7 @@ export default function SeriesOverview({
   const [page, setPage] = useState<Page | null>(null);
   const [detail, setDetail] = useState<OrderSeriesDetail | null>(null);
   const [selected, setSelected] = useState('');
+  const [visitFilter, setVisitFilter] = useState<VisitFilter>('all');
   const [listBusy, setListBusy] = useState(false);
   const [detailBusy, setDetailBusy] = useState(false);
   const [listError, setListError] = useState('');
@@ -51,6 +84,8 @@ export default function SeriesOverview({
   const attemptedCursor = useRef<string | undefined>(undefined);
   const trigger = useRef<HTMLButtonElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
+  const visitSelect = useRef<HTMLSelectElement>(null);
+  const restoreVisitFocus = useRef(false);
   const navigated = useRef(false);
   function changeOpen(next: boolean) {
     if (scheduleBusy) return;
@@ -70,6 +105,7 @@ export default function SeriesOverview({
       setPage(null);
       setDetail(null);
       setSelected('');
+      setVisitFilter('all');
       setDetailError('');
       setOpenError('');
       setScheduleNotice('');
@@ -106,8 +142,11 @@ export default function SeriesOverview({
     setOpening('');
     setOpenError('');
     setScheduleNotice('');
-    setSelected(id);
-    setDetail(null);
+    if (id !== selected) {
+      setSelected(id);
+      setDetail(null);
+      setVisitFilter('all');
+    }
     setDetailBusy(true);
     setDetailError('');
     try {
@@ -159,6 +198,7 @@ export default function SeriesOverview({
   }
   async function saveSchedule(order: WorkOrder) {
     await onCache(order);
+    restoreVisitFocus.current = !matchesVisit(order, visitFilter, today);
     setDetail(
       (previous) =>
         previous && {
@@ -170,6 +210,47 @@ export default function SeriesOverview({
     );
   }
   const changingOrder = Boolean(opening) || scheduleBusy;
+  useLayoutEffect(() => {
+    if (changingOrder || !restoreVisitFocus.current) return;
+    restoreVisitFocus.current = false;
+    visitSelect.current?.focus();
+  }, [changingOrder, detail]);
+  const visibleVisits =
+    detail?.orders.filter(({ order }) => matchesVisit(order, visitFilter, today)) ?? [];
+  function downloadVisits() {
+    if (!detail || !visibleVisits.length) return;
+    setOpenError('');
+    setScheduleNotice('');
+    try {
+      const csv = formatCsv([
+        [
+          'Visit',
+          'Reference',
+          'Work order',
+          'Site',
+          'Planned due date',
+          'Current due date',
+          'Assigned to',
+          'Status',
+        ],
+        ...visibleVisits.map(({ occurrence, plannedDueDate, order }) => [
+          occurrence,
+          order.reference,
+          order.title,
+          order.site.name,
+          plannedDueDate,
+          order.dueDate,
+          order.assignee.name,
+          order.status,
+        ]),
+      ]);
+      downloadCsv(`fieldwork-batch-${detail.id.slice(0, 8)}.csv`, csv);
+      const count = visibleVisits.length;
+      setScheduleNotice(`CSV prepared for ${count} ${count === 1 ? 'visit' : 'visits'}.`);
+    } catch {
+      setOpenError('Could not create the schedule CSV. Try again.');
+    }
+  }
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>
@@ -317,13 +398,44 @@ export default function SeriesOverview({
                   {detail.assignee.name}.
                 </p>
                 <p className="muted">Current at load time. Open an order to fetch it again.</p>
-                <Button
-                  className="quiet"
-                  disabled={!online || detailBusy || changingOrder}
-                  onClick={() => void loadDetail(detail.id)}
-                >
-                  Refresh batch details
-                </Button>
+                <div className="series-visit-tools">
+                  <Label>
+                    Show visits
+                    <NativeSelect
+                      ref={visitSelect}
+                      value={visitFilter}
+                      disabled={changingOrder}
+                      onChange={(event) => setVisitFilter(event.currentTarget.value as VisitFilter)}
+                    >
+                      {Object.entries(visitLabels).map(([value, label]) => (
+                        <NativeSelectOption value={value} key={value}>
+                          {label}
+                        </NativeSelectOption>
+                      ))}
+                    </NativeSelect>
+                  </Label>
+                  <IconButton
+                    label="Refresh batch details"
+                    className="quiet"
+                    disabled={!online || detailBusy || changingOrder}
+                    onClick={() => void loadDetail(detail.id)}
+                  >
+                    <ArrowClockwiseIcon aria-hidden="true" />
+                  </IconButton>
+                  <IconButton
+                    label="Export batch visits as CSV"
+                    className="quiet"
+                    disabled={!visibleVisits.length || detailBusy || changingOrder}
+                    onClick={downloadVisits}
+                  >
+                    <DownloadSimpleIcon aria-hidden="true" />
+                  </IconButton>
+                </div>
+                {visitFilter !== 'all' && (
+                  <p role="status" className="muted">
+                    {visibleVisits.length} of {detail.orders.length} visits
+                  </p>
+                )}
                 {openError && <Alert className="banner error">{openError}</Alert>}
                 {scheduleNotice && (
                   <Alert role="status" className="banner notice">
@@ -335,8 +447,11 @@ export default function SeriesOverview({
                     Opening current order…
                   </p>
                 )}
+                {visibleVisits.length === 0 && (
+                  <Empty title="No matching visits" description="Choose another visit filter." />
+                )}
                 <ol className="series-orders">
-                  {detail.orders.map(({ occurrence, plannedDueDate, order }) => (
+                  {visibleVisits.map(({ occurrence, plannedDueDate, order }) => (
                     <li key={order.id}>
                       <span className="reference">
                         {occurrence}. {order.reference}
@@ -371,7 +486,7 @@ export default function SeriesOverview({
                         <Button
                           className="quiet"
                           aria-label={`Open batch order ${order.reference}: ${order.title}`}
-                          disabled={!online || changingOrder}
+                          disabled={!online || detailBusy || changingOrder}
                           onClick={() => void openOrder(order.id)}
                         >
                           Open order
@@ -383,9 +498,13 @@ export default function SeriesOverview({
                             onSaved={saveSchedule}
                             onNotice={setScheduleNotice}
                             batch={{
-                              locked: changingOrder,
+                              locked: changingOrder || detailBusy,
                               onBusyChange: setScheduleBusy,
-                              onRestoreFocus: () => heading.current?.focus(),
+                              onRestoreFocus: () => {
+                                if (visitSelect.current && !visitSelect.current.disabled)
+                                  visitSelect.current.focus();
+                                else heading.current?.focus();
+                              },
                             }}
                           />
                         )}

@@ -479,6 +479,12 @@ export function isDueToday(order: Pick<WorkOrder, 'dueDate' | 'status'>, today: 
   return isOpenDueBetween(order, today, today);
 }
 
+export function nextSevenDaysEnd(today: string) {
+  const end = new Date(today);
+  end.setUTCDate(end.getUTCDate() + 6);
+  return end.getUTCFullYear() > 9999 ? '9999-12-31' : end.toISOString().slice(0, 10);
+}
+
 export function isOpenDueBetween(
   order: Pick<WorkOrder, 'dueDate' | 'status'>,
   from: string,

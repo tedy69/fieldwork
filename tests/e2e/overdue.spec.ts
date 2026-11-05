@@ -5,7 +5,7 @@ for (const scenario of [
   { zone: 'America/Los_Angeles', time: '2026-10-23T06:50:00Z', role: 'manager' },
   { zone: 'Asia/Jakarta', time: '2026-10-22T16:50:00Z', role: 'worker' },
 ] as const) {
-  test(`due-today and overdue filters follow the local date offline in ${scenario.zone}`, async ({
+  test(`due-date filters follow the local date offline in ${scenario.zone}`, async ({
     browser,
   }) => {
     const baseURL = 'http://127.0.0.1:4173';
@@ -20,6 +20,8 @@ for (const scenario of [
       ['Yesterday', '2026-10-21', 'ASSIGNED'],
       ['Today', '2026-10-22', 'ASSIGNED'],
       ['Tomorrow', '2026-10-23', 'ASSIGNED'],
+      ['Last in range', '2026-10-28', 'ASSIGNED'],
+      ['After range', '2026-10-29', 'ASSIGNED'],
       ['Approved', '2026-10-21', 'APPROVED'],
       ['Approved today', '2026-10-22', 'APPROVED'],
       ['Submitted', '2026-10-21', 'SUBMITTED'],
@@ -67,7 +69,7 @@ for (const scenario of [
     const search = page.getByLabel('Search work orders');
     await search.fill(prefix);
     const rows = page.locator('.order-row');
-    await expect(rows).toHaveCount(7);
+    await expect(rows).toHaveCount(9);
     for (const name of ['Yesterday', 'Submitted', 'Changes']) {
       const row = rows.filter({ hasText: `${prefix} ${name}` });
       await expect(row.locator('.due')).toHaveClass(/is-overdue/);
@@ -85,6 +87,14 @@ for (const scenario of [
     await expect(dueToday).toHaveAttribute('aria-pressed', 'true');
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText(`${prefix} Today`);
+    const nextWeek = page.getByRole('button', { name: 'Next 7 days', exact: true });
+    await nextWeek.focus();
+    await page.keyboard.press('Enter');
+    await expect(nextWeek).toHaveAttribute('aria-pressed', 'true');
+    await expect(rows).toHaveCount(3);
+    await expect(rows.filter({ hasText: `${prefix} Last in range` })).toHaveCount(1);
+    await expect(rows.filter({ hasText: `${prefix} After range` })).toHaveCount(0);
+    await expect(rows.filter({ hasText: `${prefix} Approved` })).toHaveCount(0);
     const overdue = page.getByRole('button', { name: 'Overdue', exact: true });
     await overdue.focus();
     await page.keyboard.press('Enter');
@@ -134,8 +144,14 @@ for (const scenario of [
     await dueToday.click();
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText(`${prefix} Tomorrow`);
+    await nextWeek.focus();
+    await page.keyboard.press('Space');
+    await expect(nextWeek).toBeInViewport();
+    await expect(rows).toHaveCount(3);
+    await expect(rows.filter({ hasText: `${prefix} After range` })).toHaveCount(1);
+    await expect(rows.filter({ hasText: `${prefix} Today` })).toHaveCount(0);
     await page.getByRole('button', { name: 'All orders', exact: true }).click();
-    await expect(rows).toHaveCount(7);
+    await expect(rows).toHaveCount(9);
     expect(errors).toEqual([]);
     await context.close();
   });

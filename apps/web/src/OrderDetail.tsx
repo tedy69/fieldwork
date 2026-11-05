@@ -603,8 +603,8 @@ export default function OrderDetail({
                   />
                 </>
               )}
-            {order.report && <ReportPrint order={order} report={order.report} />}
-            <ReportHistory orderId={order.id} online={online} />
+            {order.report && <ReportPrint order={order} report={order.report} locale={locale} />}
+            <ReportHistory orderId={order.id} online={online} locale={locale} />
           </Card>
           <SiteLocation
             key={order.site.id}

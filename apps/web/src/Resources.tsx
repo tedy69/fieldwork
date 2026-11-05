@@ -10,6 +10,7 @@ import {
   checklistItemLabel,
   readingBounds,
   type Catalog,
+  type CatalogSite,
   type Site,
   type WorkerAccount,
 } from '@fieldwork/contracts';
@@ -17,6 +18,7 @@ import { createClient } from '@fieldwork/sdk';
 import { parseCoordinateInputs } from './coordinate-input';
 import SiteLocation from './SiteLocation';
 import SiteCoordinatesEditor from './SiteCoordinatesEditor';
+import SiteClosuresEditor from './SiteClosuresEditor';
 import WorkerInvitations from './WorkerInvitations';
 import WorkerAccounts from './WorkerAccounts';
 import { PageHeading, PanelHeader } from './components';
@@ -27,6 +29,7 @@ export default function Resources({
   refresh,
   online,
   onSiteUpdated,
+  onSiteClosuresUpdated,
   onCatalog,
   onWorkerUpdated,
 }: {
@@ -34,6 +37,7 @@ export default function Resources({
   refresh: () => Promise<void>;
   online: boolean;
   onSiteUpdated: (site: Site) => void;
+  onSiteClosuresUpdated: (site: CatalogSite) => void;
   onCatalog: (catalog: Catalog) => void;
   onWorkerUpdated: (account: WorkerAccount) => void;
 }) {
@@ -46,6 +50,8 @@ export default function Resources({
     if (busy) throw new Error('Wait for the workspace save to finish before reloading.');
     if (forms.current?.querySelector('[data-site-coordinate-form]'))
       throw new Error('Save or cancel the open coordinate editor before reloading.');
+    if (forms.current?.querySelector('[data-site-closure-form]'))
+      throw new Error('Save or cancel the open closure dates editor before reloading.');
     for (const form of forms.current?.querySelectorAll<HTMLFormElement>('form') ?? []) {
       if (form && [...new FormData(form).values()].some((value) => String(value).trim()))
         throw new Error(
@@ -115,6 +121,11 @@ export default function Resources({
                   <strong>{site.name}</strong>
                   <p>{site.address}</p>
                   <SiteCoordinatesEditor site={site} online={online} onUpdated={onSiteUpdated} />
+                  <SiteClosuresEditor
+                    site={site}
+                    online={online}
+                    onUpdated={onSiteClosuresUpdated}
+                  />
                   <SiteLocation
                     key={`${site.id}:${site.coordinates?.latitude ?? ''}:${site.coordinates?.longitude ?? ''}`}
                     site={site}

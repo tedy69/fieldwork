@@ -14,6 +14,8 @@ import {
   CreateTemplateSchema,
   reportPhotoError,
   UpdateSiteLocationSchema,
+  UpdateSiteClosuresSchema,
+  SiteSchema,
   MapProviderSchema,
   type MapProvider,
   CreateOrderSeriesSchema,
@@ -228,6 +230,10 @@ export async function buildApp(options: AppOptions) {
     const catalog = store.catalog();
     return {
       ...catalog,
+      sites:
+        request.actor!.role === 'manager'
+          ? catalog.sites
+          : catalog.sites.map((site) => SiteSchema.parse(site)),
       users: request.actor!.role === 'manager' ? catalog.users : [request.actor],
     };
   });
@@ -247,7 +253,39 @@ export async function buildApp(options: AppOptions) {
     const id = z.string().min(1).max(100).parse(request.params.id);
     const site = store.catalog().sites.find((site) => site.id === id);
     if (!site) fail(404, 'NOT_FOUND', 'Site not found.');
-    return site;
+    return request.actor!.role === 'manager' ? site : SiteSchema.parse(site);
+  });
+  app.patch<{ Params: { id: string } }>('/api/v1/sites/:id/closures', async (request) => {
+    manager(request);
+    const id = z.string().min(1).max(100).parse(request.params.id);
+    const input = UpdateSiteClosuresSchema.parse(request.body);
+    const dates = [...input.dates].sort();
+    const expected = [...input.expectedDates].sort();
+    return store.transaction(() => {
+      const { sites, templates } = store.catalog();
+      const site = sites.find((entry) => entry.id === id);
+      if (!site) fail(404, 'NOT_FOUND', 'Site not found.');
+      const current = site.closureDates ?? [];
+      const matches = (list: string[]) =>
+        current.length === list.length && current.every((date, index) => date === list[index]);
+      if (matches(dates)) return site;
+      if (!matches(expected))
+        fail(
+          409,
+          'CLOSURE_CONFLICT',
+          'Site closure dates changed. Load the saved dates and review your proposal.',
+        );
+      const updated = { ...site };
+      if (dates.length) updated.closureDates = dates;
+      else delete updated.closureDates;
+      store.db.prepare('UPDATE catalog SET data=? WHERE id=1').run(
+        JSON.stringify({
+          sites: sites.map((entry) => (entry.id === id ? updated : entry)),
+          templates,
+        }),
+      );
+      return updated;
+    });
   });
   app.patch<{ Params: { id: string } }>('/api/v1/sites/:id/location', async (request) => {
     manager(request);
@@ -354,7 +392,7 @@ export async function buildApp(options: AppOptions) {
       reference: `FW-${randomBytes(3).toString('hex').toUpperCase()}`,
       title: input.title,
       instructions: input.instructions,
-      site,
+      site: SiteSchema.parse(site),
       template,
       assignee,
       dueDate: input.dueDate,

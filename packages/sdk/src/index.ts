@@ -1,5 +1,6 @@
 import {
   CatalogSchema,
+  CatalogSiteSchema,
   WorkerPageSchema,
   WorkerAccountSchema,
   WorkerAccessHistoryPageSchema,
@@ -22,6 +23,7 @@ import {
   MapSettingsSchema,
   type Coordinates,
   type UpdateSiteLocation,
+  type UpdateSiteClosures,
   OrderSeriesReceiptSchema,
   OrderSeriesPageSchema,
   OrderSeriesDetailSchema,
@@ -163,7 +165,9 @@ export function createClient(
     mapSettings: () => request('/map-settings', MapSettingsSchema),
     createSite: (name: string, address: string, coordinates?: Coordinates) =>
       request('/sites', SiteSchema, 'POST', { name, address, coordinates }),
-    site: (id: string) => request(`/sites/${encodeURIComponent(id)}`, SiteSchema),
+    site: (id: string) => request(`/sites/${encodeURIComponent(id)}`, CatalogSiteSchema),
+    updateSiteClosures: (id: string, input: UpdateSiteClosures) =>
+      request(`/sites/${encodeURIComponent(id)}/closures`, CatalogSiteSchema, 'PATCH', input),
     updateSiteLocation: (id: string, input: UpdateSiteLocation) =>
       request(`/sites/${encodeURIComponent(id)}/location`, SiteSchema, 'PATCH', input),
     createTemplate: (name: string, items: CreateItem[], requiresPhoto?: boolean) =>

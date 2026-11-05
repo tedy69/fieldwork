@@ -1,0 +1,29 @@
+appId: host.exp.exponent
+name: Filter the next seven dates in the cached Android notebook
+---
+- scrollUntilVisible:
+    element: Sync now
+    direction: UP
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- extendedWaitUntil:
+    visible: Sync needs attention
+    timeout: 15000
+- scrollUntilVisible:
+    element: Filter assignments
+- tapOn: Filter assignments
+- tapOn:
+    text: Next 7 days
+    index: 0
+- tapOn: Filter assignments
+- assertVisible:
+    id: assignment-search
+    text: ${SEARCH}
+- assertVisible: Next 7 days · 2 shown
+- scrollUntilVisible:
+    element: ${FIRST}
+- assertVisible: ${FIRST}
+- scrollUntilVisible:
+    element: ${LAST}
+- assertVisible: ${LAST}

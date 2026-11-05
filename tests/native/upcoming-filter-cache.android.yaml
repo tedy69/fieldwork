@@ -1,0 +1,17 @@
+appId: host.exp.exponent
+name: Cache the Android schedule fixture
+---
+- assertVisible: My assignments
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- scrollUntilVisible:
+    element:
+      id: assignment-search
+- tapOn:
+    id: assignment-search
+- inputText: ${SEARCH}
+- tapOn: Done editing
+- scrollUntilVisible:
+    element: ${BEYOND}
+- assertVisible: ${BEYOND}

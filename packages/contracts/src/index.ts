@@ -476,7 +476,15 @@ export function isOverdue(order: Pick<WorkOrder, 'dueDate' | 'status'>, today: s
 }
 
 export function isDueToday(order: Pick<WorkOrder, 'dueDate' | 'status'>, today: string) {
-  return order.status !== 'APPROVED' && order.dueDate === today;
+  return isOpenDueBetween(order, today, today);
+}
+
+export function isOpenDueBetween(
+  order: Pick<WorkOrder, 'dueDate' | 'status'>,
+  from: string,
+  through: string,
+) {
+  return order.status !== 'APPROVED' && order.dueDate >= from && order.dueDate <= through;
 }
 
 export const ReportSnapshotSchema = WorkOrderSchema.omit({

@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import {
-  isDueToday,
+  isOpenDueBetween,
   isOverdue,
   localDate,
   StatusSchema,
@@ -18,7 +18,7 @@ import {
 } from '@fieldwork/contracts';
 import type { State } from '@fieldwork/offline';
 import { languageNames, notebookCopy, signInCopy, type Locale } from '@fieldwork/strings';
-import { assignmentDate } from './assignment-date';
+import { assignmentDate, nextSevenDaysEnd } from './assignment-date';
 import { Brand, Button, Copy, Field, Notice, Panel, StatusBadge } from './notebook-ui';
 import { colors, radius, spacing } from './theme';
 import {
@@ -33,8 +33,10 @@ import {
 
 type QueueItem = State['outbox'][number];
 type Entry = { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: QueueItem };
-export type AssignmentFilter = WorkOrder['status'] | 'overdue' | 'today' | null;
-const filters: AssignmentFilter[] = [null, 'overdue', 'today', ...StatusSchema.options];
+const dateFilters = ['overdue', 'today', 'next'] as const;
+type DateFilter = (typeof dateFilters)[number];
+export type AssignmentFilter = WorkOrder['status'] | DateFilter | null;
+const filters: AssignmentFilter[] = [null, ...dateFilters, ...StatusSchema.options];
 
 export type NotebookProblem =
   'session' | 'syncUnavailable' | 'notebookReadFailed' | 'recoveryUnavailable' | 'recoveryFailed';
@@ -108,9 +110,9 @@ export default function WorkspacePage({
   const largeText = fontScale > 1.4;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [today, setToday] = useState(localDate);
+  const dateFiltered = dateFilters.some((filter) => filter === assignmentFilter);
   useEffect(() => {
-    if (view !== 'assignments' || (assignmentFilter !== 'overdue' && assignmentFilter !== 'today'))
-      return;
+    if (view !== 'assignments' || !dateFiltered) return;
     const update = () => setToday(localDate());
     update();
     const interval = setInterval(update, 60_000);
@@ -121,20 +123,26 @@ export default function WorkspacePage({
       clearInterval(interval);
       listener.remove();
     };
-  }, [assignmentFilter, view]);
-  const filterLabels = { overdue: copy.overdue, today: copy.dueToday, ...copy.status };
+  }, [dateFiltered, view]);
+  const filterLabels = {
+    overdue: copy.overdue,
+    today: copy.dueToday,
+    next: copy.nextSevenDays,
+    ...copy.status,
+  };
   const filterLabel = (filter: AssignmentFilter) =>
     filter ? filterLabels[filter] : copy.allAssignments;
   const query = search.trim().toLowerCase();
   const entries = useMemo<Entry[]>(() => {
     if (view === 'outbox') return state.outbox.map((item) => ({ kind: 'queued', item }));
+    const through = assignmentFilter === 'next' ? nextSevenDaysEnd(today) : today;
     return state.orders
       .filter((order) => {
         const matches =
           assignmentFilter === 'overdue'
             ? isOverdue(order, today)
-            : assignmentFilter === 'today'
-              ? isDueToday(order, today)
+            : assignmentFilter === 'today' || assignmentFilter === 'next'
+              ? isOpenDueBetween(order, today, through)
               : !assignmentFilter || order.status === assignmentFilter;
         return (
           matches &&

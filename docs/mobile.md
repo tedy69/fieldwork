@@ -78,7 +78,7 @@ When sync requires a new session, **Sign in again** opens the sign-in form with 
 
 To verify the filter, start on **My assignments** in English with the synthetic fixture cached, an empty search, and the filter closed. Run `npm exec -- tsx tests/native/assignment-status-filter.ios.ts <simulator-id>`. The runner temporarily disables the fixture API and checks the empty state, search, inspection navigation, and the language switch.
 
-Run `npm exec -- tsx tests/native/overdue-filter.ios.ts <simulator-id>` from the same starting screen with the simulator using your computer’s time zone. The runner checks that Due today and Overdue work during an outage and show only the matching open assignments. It switches the sync notice from English to Indonesian and checks that a successful retry clears it.
+Run `npm exec -- tsx tests/native/overdue-filter.ios.ts <simulator-id>` from the same starting screen with the simulator using your computer’s time zone. The runner checks that Due today, Overdue, and Next 7 days work during an outage. Next 7 days includes today and the following six local dates. The runner also switches the sync notice from English to Indonesian and checks that a successful retry clears it.
 
 Assignment rows and inspection details display the due date in the notebook language. The stored calendar day stays the same across time zones.
 

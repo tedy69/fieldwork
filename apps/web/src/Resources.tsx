@@ -3,7 +3,6 @@ import { Form } from './components/ui/form';
 import { Card } from './components/ui/card';
 import { Alert } from './components/ui/alert';
 import { Input } from './components/ui/input';
-import { Textarea } from './components/ui/textarea';
 import { Label } from './components/ui/label';
 import { NativeSelect, NativeSelectOption } from './components/ui/native-select';
 import { useRef, useState, type FormEvent } from 'react';
@@ -15,6 +14,7 @@ import SiteCoordinatesEditor from './SiteCoordinatesEditor';
 import WorkerInvitations from './WorkerInvitations';
 import WorkerAccounts from './WorkerAccounts';
 import { PageHeading, PanelHeader } from './components';
+import ChecklistItemsEditor, { checklistItems } from './ChecklistItemsEditor';
 const client = createClient();
 export default function Resources({
   catalog,
@@ -34,6 +34,7 @@ export default function Resources({
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const [checklistRevision, resetChecklist] = useState(0);
   const forms = useRef<HTMLDivElement>(null);
   async function beforeReload() {
     if (busy) throw new Error('Wait for the workspace save to finish before reloading.');
@@ -66,19 +67,12 @@ export default function Resources({
       else
         await client.createTemplate(
           String(data.get('name')),
-          String(data.get('items'))
-            .split('\n')
-            .map((item) => item.trim())
-            .filter(Boolean)
-            .map((label) =>
-              data.get('responseType') === 'text' || data.get('responseType') === 'number'
-                ? { label, responseType: data.get('responseType') as 'text' | 'number' }
-                : label,
-            ),
+          checklistItems(data),
           data.get('requiresPhoto') === 'required',
         );
       await refresh();
       form.reset();
+      if (kind === 'template') resetChecklist((revision) => revision + 1);
       setNotice(kind === 'site' ? 'Site added.' : 'Checklist added.');
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Unable to save.');
@@ -202,25 +196,7 @@ export default function Resources({
                 Checklist name
                 <Input name="name" required minLength={2} maxLength={120} />
               </Label>
-              <Label>
-                Inspection items, one per line
-                <Textarea
-                  className="resize-none"
-                  name="items"
-                  required
-                  rows={5}
-                  placeholder={'Check access route\nCheck equipment condition'}
-                />
-              </Label>
-              <Label>
-                Response type
-                <NativeSelect name="responseType" aria-label="Response type" defaultValue="">
-                  <NativeSelectOption value="">Pass / issue / N/A</NativeSelectOption>
-                  <NativeSelectOption value="text">Text response</NativeSelectOption>
-                  <NativeSelectOption value="number">Numeric reading</NativeSelectOption>
-                </NativeSelect>
-              </Label>
-              <p className="muted">The response type applies to each item in this checklist.</p>
+              <ChecklistItemsEditor key={checklistRevision} busy={busy} />
               <Label>
                 Photo evidence
                 <NativeSelect name="requiresPhoto" aria-label="Photo evidence" defaultValue="">

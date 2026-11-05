@@ -1,0 +1,15 @@
+appId: host.exp.Exponent
+name: Retain a blocked iOS report after a failed lookup
+---
+- scrollUntilVisible:
+    element: Keep draft and open latest
+    centerElement: true
+- tapOn: Keep draft and open latest
+- scrollUntilVisible:
+    element: ${ERROR}
+    direction: UP
+- assertVisible: 'Outbox \(1\)'
+- scrollUntilVisible:
+    element: ${SUMMARY}
+    centerElement: true
+- assertVisible: ${SUMMARY}

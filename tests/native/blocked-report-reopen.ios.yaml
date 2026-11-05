@@ -1,0 +1,31 @@
+appId: host.exp.Exponent
+name: Reopen the current assignment and submit the retained iOS report
+---
+- scrollUntilVisible:
+    element: Keep draft and open latest
+    centerElement: true
+- tapOn: Keep draft and open latest
+- scrollUntilVisible:
+    element:
+      id: inspection-summary
+    centerElement: true
+- assertVisible:
+    id: inspection-summary
+    text: ${SUMMARY}
+- scrollUntilVisible:
+    element: Save and sync inspection
+    centerElement: true
+- tapOn: Save and sync inspection
+- extendedWaitUntil:
+    visible: Report saved
+    timeout: 15000
+- tapOn: OK
+- scrollUntilVisible:
+    element: Back to assignments
+    direction: UP
+- tapOn: Back to assignments
+- scrollUntilVisible:
+    element: 'Outbox \(0\)'
+    direction: UP
+- tapOn: 'Outbox \(0\)'
+- assertVisible: Everything is up to date

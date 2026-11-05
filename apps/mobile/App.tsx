@@ -395,15 +395,21 @@ function Notebook({
           setSearch(search);
         }}
         scrollPosition={listOffset}
-        onResolve={async (orderId) => {
+        onResolve={async (orderId, mutationId) => {
           setBusy(true);
           setError('');
+          const recovery = notebookCopy[locale];
           try {
-            await repo.discard(orderId);
-            await sync();
+            const latest = await client.order(orderId);
+            await repo.reopenBlocked(latest, mutationId);
+            setState(await repo.read());
             setSelected(orderId);
           } catch (error) {
-            setError(errorText(error));
+            setError(
+              error instanceof ApiError && (error.status === 403 || error.status === 404)
+                ? recovery.recoveryUnavailable
+                : recovery.recoveryFailed,
+            );
           } finally {
             setBusy(false);
           }

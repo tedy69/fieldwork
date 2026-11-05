@@ -387,6 +387,83 @@ describe('durable outbox', () => {
     await repo.discard('one');
     expect((await repo.read()).drafts.one.summary).toBe('Keep this');
   });
+  it('reopens the same blocked report with a fresh assignment and retains the full draft', async () => {
+    const storage = memory();
+    const original = { ...order('one'), version: 1, status: 'ASSIGNED' as const };
+    const latest = { ...original, version: 2, dueDate: '2026-10-23' };
+    const payload = input();
+    const draft = {
+      answers: [{ itemId: 'check', value: 'pass' as const, note: '' }],
+      summary: payload.summary,
+      photos: [{ id: randomUUID(), mimeType: 'image/png' as const, data: 'draft-photo' }],
+    };
+    payload.photos = draft.photos;
+    const send = vi
+      .fn()
+      .mockRejectedValueOnce(Object.assign(new Error('Try again'), { status: 503 }))
+      .mockRejectedValueOnce(Object.assign(new Error('Order changed'), { status: 409 }))
+      .mockResolvedValueOnce(order('one'));
+    const repo = createOfflineRepository(storage, send);
+    await repo.cacheOrder(original);
+    await repo.saveDraft(original.id, draft);
+    await repo.enqueue(original.id, payload);
+    await repo.flush();
+    await repo.flush();
+    expect(send.mock.calls.slice(0, 2)).toEqual([
+      [original.id, payload],
+      [original.id, payload],
+    ]);
+    const blocked = await repo.read();
+
+    vi.spyOn(storage, 'write').mockRejectedValueOnce(new Error('Could not write'));
+    await expect(repo.reopenBlocked(latest, payload.mutationId)).rejects.toThrow('Could not write');
+    expect(await repo.read()).toEqual(blocked);
+    await repo.reopenBlocked(latest, payload.mutationId);
+    expect(await repo.read()).toMatchObject({
+      orders: [latest],
+      drafts: { one: draft },
+      outbox: [],
+    });
+    const replacement = { ...payload, mutationId: randomUUID(), baseVersion: latest.version };
+    await repo.enqueue(original.id, replacement);
+    await repo.flush();
+    expect(send).toHaveBeenLastCalledWith(original.id, replacement);
+    expect((await repo.read()).outbox).toEqual([]);
+  });
+
+  it.each([
+    'different mutation',
+    'missing draft',
+    'pending report',
+    'already submitted',
+    'newer submitted snapshot',
+  ])('retains the report when reopening with %s', async (reason) => {
+    const storage = memory();
+    const latest = {
+      ...order('one'),
+      status: reason === 'already submitted' ? ('SUBMITTED' as const) : ('ASSIGNED' as const),
+    };
+    const payload = input();
+    const state: State = {
+      ...emptyState(),
+      orders: reason === 'newer submitted snapshot' ? [{ ...order(latest.id), version: 3 }] : [],
+      drafts: reason === 'missing draft' ? {} : { one: { answers: [], summary: '', photos: [] } },
+      outbox: [
+        {
+          orderId: latest.id,
+          input: payload,
+          createdAt: new Date().toISOString(),
+          state: reason === 'pending report' ? 'pending' : 'blocked',
+        },
+      ],
+    };
+    await storage.write(state);
+    const repo = createOfflineRepository(storage, vi.fn());
+    const mutationId = reason === 'different mutation' ? randomUUID() : payload.mutationId;
+    await expect(repo.reopenBlocked(latest, mutationId)).rejects.toThrow('could not be reopened');
+    expect(await repo.read()).toEqual(state);
+  });
+
   it('uses adapter transactions for atomic browser writes', async () => {
     let state = emptyState();
     const transact = vi.fn(async (change: (state: State) => State) => {

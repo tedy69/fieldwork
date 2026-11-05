@@ -54,6 +54,8 @@ For the iOS offline report smoke test, use a dedicated simulator with [a matchin
 
 Run `npm exec -- tsx tests/native/offline-report.ios.ts <simulator-id>`. The runner defaults to Metro on port 8082 and the fixture on 4180. Set `METRO_URL` or `FIELDWORK_DESIGN_TEST_PORT` when using different ports. It checks a retained draft and a queued report after separate restarts, restores the fixture API, and verifies one report revision after repeated sync.
 
+Run `npm exec -- tsx tests/native/blocked-report.ios.ts <simulator-id>` from the same starting screen to test a blocked report. The runner reschedules the assignment after the worker starts a draft, verifies the outbox survives an API outage and reassignment, and checks that the original answers sync once after access is restored.
+
 ## Start
 
 Run the API, then `npm run mobile`. Use a compatible Expo Go client for SDK 58 or create a development build. Enter a worker account and server URL on the sign-in screen.

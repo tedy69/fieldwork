@@ -98,6 +98,7 @@ function AuthenticatedApp({
   onLanguageChange: (locale: Locale) => void;
 }) {
   const [user, setUser] = useState<User | null>(initialUser);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
   const [error, setError] = useState<{ api?: ApiError; detail: string } | null>(null);
   const [checking, setChecking] = useState(true);
   const copy = signInCopy[locale];
@@ -117,6 +118,7 @@ function AuthenticatedApp({
       })
       .catch((error) => {
         if (error instanceof ApiError && error.status === 401) {
+          if (user?.role === 'worker') setRecoveryEmail(user.email);
           setUser(null);
           localStorage.removeItem('fieldwork.user');
         }
@@ -135,6 +137,7 @@ function AuthenticatedApp({
       );
       localStorage.setItem('fieldwork.user', JSON.stringify(user));
       sessionStorage.removeItem('fieldwork.locked');
+      setRecoveryEmail('');
       setUser(user);
     } catch (error) {
       setError({ api: error instanceof ApiError ? error : undefined, detail: message(error) });
@@ -142,11 +145,19 @@ function AuthenticatedApp({
       setChecking(false);
     }
   }
-  function logout() {
-    void client.logout().catch(() => {});
+  function lockNotebook() {
     sessionStorage.setItem('fieldwork.locked', '1');
     localStorage.removeItem('fieldwork.user');
     setUser(null);
+  }
+  function logout() {
+    void client.logout().catch(() => {});
+    lockNotebook();
+  }
+  function signInAgain() {
+    if (!user) return;
+    setRecoveryEmail(user.email);
+    lockNotebook();
   }
   if (!user)
     return (
@@ -167,7 +178,7 @@ function AuthenticatedApp({
                 autoComplete="username"
                 required
                 placeholder={copy.emailExample}
-                defaultValue={initialEmail}
+                defaultValue={recoveryEmail || initialEmail}
               />
             </Label>
             <Label>
@@ -178,6 +189,7 @@ function AuthenticatedApp({
                 aria-label={copy.password}
                 passwordLabels={copy}
                 autoComplete="current-password"
+                autoFocus={Boolean(recoveryEmail)}
                 required
               />
             </Label>
@@ -203,6 +215,7 @@ function AuthenticatedApp({
       <Workspace
         user={user}
         logout={logout}
+        signInAgain={signInAgain}
         language={locale}
         onLanguageChange={onLanguageChange}
       />

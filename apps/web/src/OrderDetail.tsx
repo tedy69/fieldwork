@@ -13,7 +13,7 @@ import { Textarea } from './components/ui/textarea';
 import { Label } from './components/ui/label';
 import { FieldSet, FieldLegend, FieldError } from './components/ui/field';
 import { RadioGroup, RadioGroupItem } from './components/ui/radio-group';
-import { useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   ReportInputSchema,
   MAX_REPORT_PHOTOS,
@@ -53,6 +53,7 @@ export default function OrderDetail({
   state,
   online,
   locale = 'en',
+  queuedRecovery,
   onBack,
   onRefresh,
   onNotice,
@@ -64,6 +65,7 @@ export default function OrderDetail({
   state: State;
   online: boolean;
   locale?: Locale;
+  queuedRecovery?: ReactNode;
   onBack: () => void;
   onRefresh: () => Promise<void>;
   onNotice: (notice: string) => void;
@@ -234,12 +236,13 @@ export default function OrderDetail({
               <p>{order.review.note || copy.accepted}</p>
             </Alert>
           )}
-          {queued && (
-            <Alert role="status" className="banner notice">
-              <strong>{queued.state === 'blocked' ? copy.queueBlocked : copy.queued}</strong>
-              <p>{queued.error ?? web.queuedHint}</p>
-            </Alert>
-          )}
+          {queued &&
+            (queuedRecovery ?? (
+              <Alert role="status" className="banner notice">
+                <strong>{queued.state === 'blocked' ? copy.queueBlocked : copy.queued}</strong>
+                <p>{queued.error ?? web.queuedHint}</p>
+              </Alert>
+            ))}
           {user.role === 'worker' && (state.drafts[order.id] || queued) && (
             <DraftExport orderId={order.id} repo={repo} disabled={saving || busy} locale={locale} />
           )}

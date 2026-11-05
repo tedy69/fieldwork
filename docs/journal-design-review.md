@@ -72,6 +72,8 @@ The icon refinement reduces repeated toolbar labels and introductory copy. A ded
 
 The journal browser checks exercise 320, 390, 768, 1024 and 1440px widths, OS dark preference, one sign-in heading, keyboard disclosure, destination navigation, finder focus restoration and offline checklist progress. The existing responsive suite additionally exercises intermediate widths, bottom navigation clearance and modal/form recovery. Documentation captures come from the actual synthetic fixture walkthrough.
 
+Web session recovery uses the same sign-in icon and retention copy as the Expo notebook. The amber notice sits beside a queued inspection or above the outbox and uses the existing sign-in form with the worker email filled in. Browser tests use an actual password reset at 320px and 1440px, including Indonesian copy, keyboard recovery and a single acknowledgement of the original queued report.
+
 Android native execution and its platform limits are recorded in [verification](verification.md). This report does not certify iOS execution, physical cameras, full screen-reader traversal or app-store readiness. No performance score is claimed.
 
 ## Antislop Delivery Gate

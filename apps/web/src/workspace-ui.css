@@ -197,6 +197,16 @@ form > .ui-field-label {
   border-left-color: var(--error);
   color: var(--error);
 }
+.session-recovery {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+}
+.session-recovery p {
+  margin: 0;
+}
 .ui-badge {
   width: fit-content;
   padding: 5px 8px;

@@ -579,6 +579,7 @@ export default function Workspace({
                 </div>
                 {plannerView === 'month' ? (
                   <MonthPlanner
+                    locale={locale}
                     anchor={plannerAnchor}
                     today={today}
                     day={plannerDay}
@@ -591,6 +592,7 @@ export default function Workspace({
                   />
                 ) : planner ? (
                   <WeekPlanner
+                    locale={locale}
                     anchor={plannerAnchor}
                     today={today}
                     day={plannerDay}

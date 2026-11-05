@@ -1,6 +1,6 @@
 # Checklist response types
 
-Managers can choose **Text response** or **Numeric reading** when adding a checklist in Sites & checklists. Each line becomes a required question of that type. The default remains Pass / issue / N/A. The web creation form applies one type to all lines; the API and SDK also support mixed items:
+Managers can paste a list into **Add a checklist** in Sites & checklists and choose a common response type. Choose **Set types per item** to keep the pasted questions and set their types individually, or start with a blank item. Add or remove questions before saving. A failed save retains the form. The default remains Pass / issue / N/A. The API and SDK use the same mixed item format:
 
 ```ts
 await client.createTemplate('Equipment visit', [
@@ -22,6 +22,6 @@ The submission boundary converts a completed reading to a finite JavaScript numb
 
 Saved web/native reports, web revision history, print views and CSV exports show the response itself. Text uses ordinary escaped rendering and CSV formula protection. Existing check-only requests, receipts and stored records keep their prior shapes.
 
-Update the API, web app and Expo client together before dispatching typed checklists. Older clients cannot interpret the new report answers, and older servers cannot accept the new template types. This also applies when upgrading from text-only support to numeric support. Do not roll back to an older client with typed drafts/reports on the device. No database migration is needed; item and answer metadata live in existing JSON snapshots. Per-item photos, optional questions and a mixed-type web editor remain future work.
+Update the API, web app and Expo client together before dispatching typed checklists. Older clients cannot interpret the new report answers, and older servers cannot accept the new template types. This also applies when upgrading from text-only support to numeric support. Do not roll back to an older client with typed drafts/reports on the device. No database migration is needed; item and answer metadata live in existing JSON snapshots. Per-item photos and optional questions remain future work.
 
 Regression coverage is in `tests/typed-fields.test.ts`, `tests/numeric-fields.test.ts` and their browser workflows. Device evidence and platform limits are recorded in [verification](verification.md).

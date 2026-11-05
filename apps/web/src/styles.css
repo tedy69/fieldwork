@@ -1616,6 +1616,31 @@ main#main {
 .resource-grid form h3 {
   margin-bottom: 15px;
 }
+.checklist-item-editor {
+  display: grid;
+  gap: 12px;
+}
+.checklist-item-editor > button {
+  justify-self: start;
+}
+.checklist-item-fields {
+  min-width: 0;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius);
+  padding: 12px;
+}
+.checklist-item-fields legend {
+  padding-inline: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.checklist-item-label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
 @media (max-width: 850px) {
   .resource-grid {
     grid-template-columns: 1fr;

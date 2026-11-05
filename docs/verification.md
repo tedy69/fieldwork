@@ -1,5 +1,9 @@
 # Verification
 
+## Mixed checklist editor (2026-11-05)
+
+The web workflow covers conversion from bulk entry, keeping the pasted questions and selected type, keyboard focus after add/remove, required-field errors, offline save failure and retry at 320/390/1440px. It verifies the saved mixed template and restores all three types of worker responses after an offline reload. The ten targeted Chromium workflows also cover existing photo, text and numeric checklists. No native code or API contract changes are needed for the editor.
+
 ## Numeric checklist readings (2026-11-03)
 
 Twenty new unit/API cases exercise zero, signed decimals, incomplete/unsupported input, nonfinite/wrong-kind wire values, mixed snapshots, permissions, raw draft versus numeric queue representations, lost acknowledgements, exact retries, changed readings under the same mutation ID, newer-version conflicts, unchanged drafts, SQLite restart and correction revisions. Three browser workflows cover numeric template creation and 320/390/1440px access, keyboard focus, partial-input offline reload, zero, invalid-input guidance, JSON draft export, stale-version recovery with the original raw reading, actual numeric submission, history and print output. Existing text workflows also pass.

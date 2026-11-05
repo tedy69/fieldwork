@@ -35,6 +35,40 @@ async function signIn(page: Page, role: 'manager' | 'worker') {
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 }
 
+test('worker finds saved work and the outbox in Indonesian while offline', async ({
+  page,
+  context,
+}) => {
+  const [gate, , privateOrder] = await fixtures('Finder language QA');
+  await page.setViewportSize({ width: 320, height: 800 });
+  await signIn(page, 'worker');
+  await expect(
+    page.getByRole('button', { name: `Open ${gate.reference}: ${gate.title}` }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+  await context.setOffline(true);
+  await page.keyboard.press('Control+k');
+  const dialog = page.getByRole('dialog', { name: 'Cari pekerjaan tersimpan', exact: true });
+  const input = dialog.getByRole('combobox', { name: 'Cari pekerjaan dan halaman tersimpan' });
+  await expect(dialog).toHaveAttribute('lang', 'id');
+  await expect(input).toBeFocused();
+  await expect(dialog.getByRole('group', { name: 'Pekerjaan tersimpan' })).toBeVisible();
+  await input.fill(privateOrder.reference);
+  await expect(dialog.getByText(`Tidak ada hasil untuk “${privateOrder.reference}”`)).toBeVisible();
+  await dialog.getByRole('button', { name: 'Hapus pencarian', exact: true }).click();
+  await expect(input).toBeFocused();
+  await input.fill('Antrean');
+  await expect(dialog.getByRole('option', { name: 'Antrean sinkronisasi' })).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Antrean sinkronisasi' })).toBeVisible();
+  await expect(page.getByRole('main')).toBeFocused();
+  await page.keyboard.press('Control+k');
+  await input.fill(gate.reference);
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: gate.title, exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test('manager finds real work and pages with Kokonut keyboard navigation and modal focus', async ({
   page,
 }) => {

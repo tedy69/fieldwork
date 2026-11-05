@@ -52,6 +52,71 @@ async function search(page: Page, text: string) {
   await dialog.getByRole('button', { name: 'Search records', exact: true }).click();
 }
 
+test('worker searches the server in Indonesian and keeps loaded results offline', async ({
+  page,
+  context,
+}) => {
+  const prefix = 'Server language QA';
+  const { orders, foreign } = await fixture(prefix, 2);
+  const [first] = orders;
+  await page.setViewportSize({ width: 320, height: 800 });
+  await login(page, 'worker');
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+  const trigger = page.getByRole('button', { name: 'Cari di server', exact: true });
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog', { name: 'Cari di server', exact: true });
+  const query = dialog.getByLabel('Kata kunci', { exact: true });
+  const submit = dialog.getByRole('button', { name: 'Cari tugas', exact: true });
+  const from = dialog.getByLabel('Tenggat mulai', { exact: true });
+  const through = dialog.getByLabel('Tenggat hingga', { exact: true });
+  await expect(dialog).toHaveAttribute('lang', 'id');
+  await expect(query).toBeFocused();
+
+  await from.fill('2026-10-25');
+  await through.fill('2026-10-20');
+  await submit.click();
+  await expect(dialog.getByRole('alert')).toHaveText(
+    'Tanggal akhir harus sama dengan atau sesudah tanggal awal.',
+  );
+  await dialog.getByRole('button', { name: 'Hapus filter', exact: true }).click();
+  await query.fill(foreign.reference);
+  await submit.click();
+  await expect(
+    dialog.getByRole('heading', { name: 'Tidak ada tugas yang cocok di server' }),
+  ).toBeVisible();
+
+  await query.fill(prefix);
+  const endpoint = '**/api/v1/work-orders/search?*';
+  await page.route(endpoint, (route) =>
+    route.fulfill({
+      status: 503,
+      json: { error: { code: 'UNAVAILABLE', message: 'Search unavailable.' } },
+    }),
+  );
+  await submit.click();
+  await expect(dialog.getByRole('alert')).toContainText('Pencarian di server gagal.');
+  await page.unroute(endpoint);
+  await dialog.getByRole('button', { name: 'Coba cari lagi', exact: true }).click();
+  await expect(dialog.getByText('2 dimuat · 2 cocok di server', { exact: true })).toBeVisible();
+  const result = dialog.getByRole('button', {
+    name: `Buka tugas dari server ${first.reference}: ${first.title}`,
+    exact: true,
+  });
+  await expect(result).toContainText('mendesak');
+  await expect(result).toContainText('Tenggat 20 Okt');
+  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+
+  await context.setOffline(true);
+  await expect(dialog.getByText(/Hasil yang sudah dimuat tetap terlihat/)).toBeVisible();
+  await expect(result).toBeDisabled();
+  await expect(result).toBeVisible();
+  await context.setOffline(false);
+  await result.click();
+  await expect(page.getByRole('heading', { name: first.title, exact: true })).toBeVisible();
+  await expect(page.getByRole('main')).toBeFocused();
+});
+
 test('manager searches server filters and paged results with retry, changed cursors, and narrow layouts', async ({
   page,
 }) => {

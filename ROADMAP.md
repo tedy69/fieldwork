@@ -17,6 +17,8 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] English and Indonesian report history and printable reports for web workers.
 - [x] English and Indonesian week and month planners in the web worker notebook.
 - [x] English and Indonesian site maps with named zoom and recenter icons in the web worker notebook.
+- [x] English and Indonesian saved work finder with offline keyboard navigation and named destinations.
+- [x] English and Indonesian server search for web workers, with localized filters, results and recovery.
 - [x] Notes, photo attachments, durable outbox, and idempotent submissions.
 - [x] Private local draft JSON exports in the web notebook/outbox, including offline photos and blocked submissions without changing the queue.
 - [x] Indonesian contributor quick-start guide for local setup, demo accounts, offline production builds and checks.

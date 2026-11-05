@@ -281,6 +281,7 @@ export default function Workspace({
               </IconButton>
             )}
             <WorkFinder
+              locale={locale}
               user={user}
               orders={state.orders}
               onNavigate={(view) => {
@@ -294,6 +295,7 @@ export default function Workspace({
             />
             <ServerSearch
               user={user}
+              locale={locale}
               workers={catalog.users}
               online={online}
               today={today}

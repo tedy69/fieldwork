@@ -37,6 +37,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { Locale } from '@fieldwork/strings';
+import { workerFinderCopy } from '@/worker-finder-copy';
 
 export interface CommandItem {
   id: string;
@@ -81,6 +83,7 @@ export interface ActionSearchBarProps {
   className?: string;
   animateTransitions?: boolean;
   closeOnBlur?: boolean;
+  locale?: Locale;
 }
 
 interface Entry {
@@ -219,6 +222,7 @@ function buildSections(
   rootItems: CommandItem[],
   query: string,
   recent: Entry[],
+  recentLabel: string,
 ): Section[] {
   const items = page?.children ?? rootItems;
   const fallback = page?.label;
@@ -235,7 +239,7 @@ function buildSections(
     if (!page && recent.length > 0) {
       sections.unshift({
         key: 'recent',
-        label: 'Recent',
+        label: recentLabel,
         rows: recent.map((e) => ({
           ...e,
           key: `recent-${e.item.id}`,
@@ -368,7 +372,9 @@ function ActionSearchBar({
   className,
   animateTransitions = false,
   closeOnBlur = true,
+  locale = 'en',
 }: ActionSearchBarProps) {
+  const copy = workerFinderCopy[locale].palette;
   const uid = useId();
   const inputId = `${uid}-input`;
   const listboxId = `${uid}-listbox`;
@@ -412,8 +418,8 @@ function ActionSearchBar({
     [recentIds, items],
   );
   const sections = useMemo(
-    () => buildSections(page, items, query, recent),
-    [page, items, query, recent],
+    () => buildSections(page, items, query, recent, copy.recent),
+    [page, items, query, recent, copy.recent],
   );
   const rows = useMemo(() => sections.flatMap((s) => s.rows), [sections]);
   const highlighted = Math.min(activeIndex, rows.length - 1);
@@ -596,7 +602,7 @@ function ActionSearchBar({
     setStack((s) => [...s, item]);
     setQuery('');
     setActiveIndex(0);
-    setAnnouncement(`${item.label}, ${item.children?.length ?? 0} options`);
+    setAnnouncement(copy.options(item.label, item.children?.length ?? 0));
   };
 
   const popPage = (source: InputSource) => {
@@ -612,11 +618,11 @@ function ActionSearchBar({
     setStack(nextStack);
     setQuery('');
     // Land back on the row that opened the page.
-    const back = buildSections(nextStack.at(-1), items, '', recent)
+    const back = buildSections(nextStack.at(-1), items, '', recent, copy.recent)
       .flatMap((s) => s.rows)
       .findIndex((r) => r.key === left.id);
     setActiveIndex(Math.max(0, back));
-    setAnnouncement(nextStack.at(-1)?.label ?? 'All commands');
+    setAnnouncement(nextStack.at(-1)?.label ?? copy.all);
     inputRef.current?.focus();
   };
 
@@ -626,7 +632,7 @@ function ActionSearchBar({
     if (token !== runToken.current) {
       return;
     }
-    setAnnouncement(`${row.item.label}, done`);
+    setAnnouncement(copy.done(row.item.label));
     setRecentIds((ids) =>
       [row.item.id, ...ids.filter((id) => id !== row.item.id)].slice(0, RECENT_LIMIT),
     );
@@ -642,13 +648,13 @@ function ActionSearchBar({
       return;
     }
     setRunning({ key: row.key, phase: 'pending' });
-    setAnnouncement(`Running ${row.item.label}`);
+    setAnnouncement(copy.running(row.item.label));
     result.then(
       () => finishRun(row, token),
       () => {
         if (token === runToken.current) {
           setRunning(null);
-          setAnnouncement(`${row.item.label} failed`);
+          setAnnouncement(copy.failed(row.item.label));
         }
       },
     );
@@ -796,7 +802,7 @@ function ActionSearchBar({
           {stack.map((p, i) => (
             <Button
               variant="unstyled"
-              aria-label={`Back from ${p.label}`}
+              aria-label={copy.backFrom(p.label)}
               className="inline-flex h-6 shrink-0 items-center rounded-md bg-zinc-100 px-2 font-medium text-xs text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
               key={p.id}
               onClick={() => {
@@ -838,7 +844,7 @@ function ActionSearchBar({
             <Button
               type="button"
               variant="ghost"
-              aria-label="Clear search"
+              aria-label={copy.clear}
               disabled={running !== null}
               onClick={() => {
                 setQuery('');
@@ -869,7 +875,7 @@ function ActionSearchBar({
               <div ref={contentRef}>
                 <div
                   aria-busy={running?.phase === 'pending'}
-                  aria-label={page ? page.label : 'Commands'}
+                  aria-label={page ? page.label : copy.commands}
                   className="relative max-h-72 overflow-y-auto overscroll-contain p-1.5"
                   id={listboxId}
                   ref={listRef}
@@ -928,7 +934,9 @@ function ActionSearchBar({
                                 </span>
                               ))}
                               <Highlighted matches={row.matches} text={row.item.label} />
-                              {row.item.children && <span className="sr-only">, opens a page</span>}
+                              {row.item.children && (
+                                <span className="sr-only">{copy.opensPage}</span>
+                              )}
                             </span>
                             <span className="flex shrink-0 items-center">
                               <RowEnd item={row.item} status={status} />
@@ -941,7 +949,7 @@ function ActionSearchBar({
                 </div>
                 {rows.length === 0 && (
                   <p className="px-3 pt-1 pb-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                    No results for “{query.trim()}”
+                    {copy.noResults(query.trim())}
                   </p>
                 )}
               </div>
@@ -951,20 +959,20 @@ function ActionSearchBar({
                 <span className="@xs/palette:flex hidden items-center gap-1.5">
                   <Kbd>↑</Kbd>
                   <Kbd>↓</Kbd>
-                  <span className="mr-1.5">Navigate</span>
+                  <span className="mr-1.5">{copy.navigate}</span>
                 </span>
                 <Kbd>↵</Kbd>
-                <span>{activeRow?.item.children ? 'Open' : 'Run'}</span>
+                <span>{activeRow?.item.children ? copy.open : copy.run}</span>
               </span>
               <span className="flex items-center gap-1.5">
                 {stack.length > 0 && (
                   <>
                     <Kbd>⌫</Kbd>
-                    <span className="mr-1.5">Back</span>
+                    <span className="mr-1.5">{copy.back}</span>
                   </>
                 )}
                 <Kbd>esc</Kbd>
-                <span>Close</span>
+                <span>{copy.close}</span>
               </span>
             </div>
           </div>

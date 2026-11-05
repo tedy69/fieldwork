@@ -1,0 +1,63 @@
+import type { Locale } from '@fieldwork/strings';
+
+const english = {
+  open: 'Find work',
+  shortcut: 'Find work (Cmd+K or Ctrl+K)',
+  heading: 'Find saved work',
+  intro: 'Search saved references, titles, sites, or people. Open with Cmd+K or Ctrl+K.',
+  close: 'Close finder',
+  search: 'Search saved work and pages',
+  placeholder: 'Reference, title, site, or person',
+  saved: 'Saved work',
+  palette: {
+    recent: 'Recent',
+    commands: 'Commands',
+    all: 'All commands',
+    clear: 'Clear search',
+    navigate: 'Navigate',
+    open: 'Open',
+    run: 'Run',
+    back: 'Back',
+    close: 'Close',
+    opensPage: ', opens a page',
+    noResults: (query: string) => `No results for “${query}”`,
+    backFrom: (label: string) => `Back from ${label}`,
+    options: (label: string, count: number) => `${label}, ${count} options`,
+    done: (label: string) => `${label}, done`,
+    running: (label: string) => `Running ${label}`,
+    failed: (label: string) => `${label} failed`,
+  },
+};
+
+export const workerFinderCopy: Record<Locale, typeof english> = {
+  en: english,
+  id: {
+    open: 'Cari pekerjaan',
+    shortcut: 'Cari pekerjaan (Cmd+K atau Ctrl+K)',
+    heading: 'Cari pekerjaan tersimpan',
+    intro:
+      'Cari nomor tugas, judul, lokasi, atau petugas yang tersimpan. Buka dengan Cmd+K atau Ctrl+K.',
+    close: 'Tutup pencarian',
+    search: 'Cari pekerjaan dan halaman tersimpan',
+    placeholder: 'Nomor tugas, judul, lokasi, atau petugas',
+    saved: 'Pekerjaan tersimpan',
+    palette: {
+      recent: 'Terbaru',
+      commands: 'Perintah',
+      all: 'Semua perintah',
+      clear: 'Hapus pencarian',
+      navigate: 'Pindah',
+      open: 'Buka',
+      run: 'Jalankan',
+      back: 'Kembali',
+      close: 'Tutup',
+      opensPage: ', membuka halaman',
+      noResults: (query) => `Tidak ada hasil untuk “${query}”`,
+      backFrom: (label) => `Kembali dari ${label}`,
+      options: (label, count) => `${label}, ${count} pilihan`,
+      done: (label) => `${label}, selesai`,
+      running: (label) => `Menjalankan ${label}`,
+      failed: (label) => `${label} gagal`,
+    },
+  },
+};

@@ -12,7 +12,9 @@ async function fixture(
 ) {
   const session = await createClient(baseURL).login('manager@fieldwork.local', 'fieldwork-demo');
   const manager = createClient(baseURL, () => session.token);
-  const site = await manager.createSite(prefix, 'Synthetic coordinate fixture', coordinates);
+  const { repeatEachIndex, retry } = test.info();
+  const name = repeatEachIndex || retry ? `${prefix} ${repeatEachIndex}-${retry}` : prefix;
+  const site = await manager.createSite(name, 'Synthetic coordinate fixture', coordinates);
   const order = await manager.createOrder({
     title: prefix,
     instructions: 'Synthetic map workflow.',

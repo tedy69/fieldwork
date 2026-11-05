@@ -10,8 +10,9 @@ const tile =
 async function fixture(name: string, coordinates?: Coordinates) {
   const session = await createClient(baseURL).login('manager@fieldwork.local', 'fieldwork-demo');
   const manager = createClient(baseURL, () => session.token);
+  const { repeatEachIndex, retry } = test.info();
   const site = await manager.createSite(
-    name,
+    repeatEachIndex || retry ? `${name} ${repeatEachIndex}-${retry}` : name,
     'Synthetic editor fixture, not a real worksite',
     coordinates,
   );

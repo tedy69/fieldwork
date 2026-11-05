@@ -81,6 +81,7 @@ import WorkspacePage, {
 } from './workspace-page';
 import ReportHistoryAction from './report-history';
 import SavedReport from './saved-report';
+import { assignmentDate } from './assignment-date';
 
 type Session = { user: User; token: string; baseUrl: string };
 type SignInProblem =
@@ -660,7 +661,7 @@ function Inspection({
               {copy.duePriority}
             </Copy>
             <Copy>
-              {order.dueDate} · {copy.priority[order.priority]}
+              {assignmentDate(order.dueDate, locale)} · {copy.priority[order.priority]}
             </Copy>
           </View>
         </View>

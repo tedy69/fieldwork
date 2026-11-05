@@ -76,6 +76,8 @@ To verify the filter, start on **My assignments** in English with the synthetic 
 
 Run `npm exec -- tsx tests/native/overdue-filter.ios.ts <simulator-id>` from the same starting screen with the simulator using your computer’s time zone. The runner checks that Due today and Overdue work during an outage and show only the matching open assignments. It switches the sync notice from English to Indonesian and checks that a successful retry clears it.
 
+Assignment rows and inspection details display the due date in the notebook language. The stored calendar day stays the same across time zones.
+
 Run the API, then `npm run mobile`. Use a compatible Expo Go client for SDK 58 or create a development build. Enter a worker account and server URL on the sign-in screen.
 
 - iOS simulator: `http://localhost:3001`.

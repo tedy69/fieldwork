@@ -1,5 +1,6 @@
 export type Locale = 'en' | 'id';
 export { accountLinkCopy } from './account-links';
+export { notebookCopy } from './notebook';
 export const languageNames: Record<Locale, string> = { en: 'English', id: 'Bahasa Indonesia' };
 
 export function savedLocale(value: string | null): Locale {

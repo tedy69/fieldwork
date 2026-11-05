@@ -15,6 +15,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import type { WorkOrder } from '@fieldwork/contracts';
+import { notebookCopy, type Locale } from '@fieldwork/strings';
 import { colors, radius, size, spacing, typography } from './theme';
 
 export function Copy({
@@ -281,13 +282,14 @@ export function Notice({
   );
 }
 
-export const statusLabels = {
-  ASSIGNED: 'Assigned',
-  SUBMITTED: 'To review',
-  APPROVED: 'Approved',
-  CHANGES_REQUESTED: 'Changes requested',
-};
-export function StatusBadge({ status }: { status: WorkOrder['status'] }) {
+export const statusLabels = notebookCopy.en.status;
+export function StatusBadge({
+  status,
+  locale = 'en',
+}: {
+  status: WorkOrder['status'];
+  locale?: Locale;
+}) {
   return (
     <View
       style={[
@@ -308,7 +310,7 @@ export function StatusBadge({ status }: { status: WorkOrder['status'] }) {
                 : colors.amber,
         }}
       >
-        {statusLabels[status]}
+        {notebookCopy[locale].status[status]}
       </Copy>
     </View>
   );

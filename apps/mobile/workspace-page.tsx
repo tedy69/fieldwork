@@ -2,9 +2,10 @@ import { useMemo, type RefObject } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import type { User, WorkOrder } from '@fieldwork/contracts';
 import type { State } from '@fieldwork/offline';
+import { languageNames, notebookCopy, signInCopy, type Locale } from '@fieldwork/strings';
 import { Brand, Button, Copy, Field, Notice, Panel, StatusBadge } from './notebook-ui';
 import { colors, radius, spacing } from './theme';
-import { ArrowClockwise, ClipboardText, Tray, SignOut } from './notebook-icons';
+import { ArrowClockwise, ClipboardText, Globe, Tray, SignOut } from './notebook-icons';
 
 type QueueItem = State['outbox'][number];
 type Entry = { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: QueueItem };
@@ -13,6 +14,8 @@ type Entry = { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: Queue
 export default function WorkspacePage({
   state,
   user,
+  locale,
+  onLanguageChange,
   busy,
   error,
   onSync,
@@ -27,6 +30,8 @@ export default function WorkspacePage({
 }: {
   state: State;
   user: User;
+  locale: Locale;
+  onLanguageChange: (locale: Locale) => void;
   busy: boolean;
   error: string;
   onSync: () => void;
@@ -39,6 +44,9 @@ export default function WorkspacePage({
   onSearchChange: (search: string) => void;
   scrollPosition: RefObject<number>;
 }) {
+  const copy = notebookCopy[locale];
+  const alternate = locale === 'en' ? 'id' : 'en';
+  const dateLocale = locale === 'id' ? 'id-ID' : undefined;
   const entries = useMemo<Entry[]>(
     () =>
       view === 'outbox'
@@ -72,27 +80,36 @@ export default function WorkspacePage({
         <View style={styles.heading}>
           <View style={styles.utility}>
             <Brand />
-            <Button
-              title={busy ? 'Syncing…' : 'Sync now'}
-              icon={ArrowClockwise}
-              iconOnly
-              variant="ghost"
-              disabled={busy}
-              onPress={onSync}
-            />
+            <View style={styles.utilityActions}>
+              <Button
+                title={languageNames[alternate]}
+                icon={Globe}
+                iconOnly
+                variant="ghost"
+                onPress={() => onLanguageChange(alternate)}
+              />
+              <Button
+                title={busy ? copy.syncing : copy.sync}
+                icon={ArrowClockwise}
+                iconOnly
+                variant="ghost"
+                disabled={busy}
+                onPress={onSync}
+              />
+            </View>
           </View>
           <View style={styles.introduction}>
             <Copy variant="caption" muted>
-              {user.name} · Field worker
+              {user.name} · {copy.worker}
             </Copy>
             <Copy accessibilityRole="header" variant="title">
-              {view === 'assignments' ? 'My assignments' : 'Sync outbox'}
+              {view === 'assignments' ? copy.assignments : copy.outbox}
             </Copy>
-            {view === 'outbox' && <Copy muted>Saved here until the server confirms receipt.</Copy>}
+            {view === 'outbox' && <Copy muted>{copy.outboxIntro}</Copy>}
           </View>
           <View style={styles.tabs}>
             <Button
-              title={`Assignments (${state.orders.length})`}
+              title={`${copy.assignmentTab} (${state.orders.length})`}
               icon={ClipboardText}
               variant="ghost"
               selected={view === 'assignments'}
@@ -100,7 +117,7 @@ export default function WorkspacePage({
               onPress={() => onViewChange('assignments')}
             />
             <Button
-              title={`Outbox (${state.outbox.length})`}
+              title={`${copy.outboxTab} (${state.outbox.length})`}
               icon={Tray}
               variant="ghost"
               selected={view === 'outbox'}
@@ -109,14 +126,15 @@ export default function WorkspacePage({
             />
           </View>
           {error ? (
-            <Notice error title="Sync needs attention">
+            <Notice error title={copy.syncError}>
               {error}
             </Notice>
           ) : null}
           {view === 'assignments' && (
             <Field
-              label="Search assignments"
-              placeholder="Reference, title or site"
+              label={copy.search}
+              placeholder={copy.searchHint}
+              actionLabels={signInCopy[locale]}
               value={search}
               onChangeText={onSearchChange}
               autoCapitalize="none"
@@ -126,10 +144,10 @@ export default function WorkspacePage({
             />
           )}
           {view === 'assignments' && state.outbox.length > 0 && (
-            <Notice title={`${state.outbox.length} waiting to sync`}>
-              <Copy muted>Open Outbox to check the reports saved on this device.</Copy>
+            <Notice title={copy.pending(state.outbox.length)}>
+              <Copy muted>{copy.pendingHint}</Copy>
               <Button
-                title="Open outbox"
+                title={copy.openOutbox}
                 variant="outline"
                 onPress={() => onViewChange('outbox')}
               />
@@ -144,31 +162,31 @@ export default function WorkspacePage({
           return (
             <Panel style={styles.queueCard}>
               <Copy variant="caption" style={{ color: colors.amber }}>
-                {item.state === 'blocked' ? 'Needs attention' : 'Waiting for confirmation'}
+                {item.state === 'blocked' ? copy.needsAttention : copy.awaitingConfirmation}
               </Copy>
               <Copy accessibilityRole="header" variant="record">
-                {order?.title ?? 'Saved inspection'}
+                {order?.title ?? copy.savedInspection}
               </Copy>
               <Copy>{item.input.summary}</Copy>
               <Copy muted variant="caption">
-                {item.input.photos.length} photos · Saved{' '}
-                {new Date(item.createdAt).toLocaleString()}
+                {copy.photoCount(item.input.photos.length)} · {copy.savedAt}{' '}
+                {new Date(item.createdAt).toLocaleString(dateLocale)}
               </Copy>
               {item.error && (
-                <Notice error title="Could not sync this report">
+                <Notice error title={copy.reportError}>
                   {item.error}
                 </Notice>
               )}
               {item.state === 'blocked' ? (
                 <Button
-                  title="Keep draft and open latest"
+                  title={copy.openLatest}
                   variant="outline"
                   disabled={busy}
                   onPress={() => void onResolve(item.orderId)}
                 />
               ) : (
                 <Button
-                  title="Open saved assignment"
+                  title={copy.openSaved}
                   variant="outline"
                   disabled={!order}
                   onPress={() => onOpen(item.orderId)}
@@ -176,7 +194,7 @@ export default function WorkspacePage({
               )}
               {!order && (
                 <Copy muted variant="caption">
-                  Contact your manager if this assignment is no longer available.
+                  {copy.unavailable}
                 </Copy>
               )}
             </Panel>
@@ -186,7 +204,8 @@ export default function WorkspacePage({
         return (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Open ${order.reference}: ${order.title}`}
+            accessibilityLabel={`${copy.open} ${order.reference}: ${order.title}`}
+            accessibilityHint={`${copy.due} ${order.dueDate}. ${copy.status[order.status]}.`}
             onPress={() => onOpen(order.id)}
             style={({ pressed }) => [styles.order, pressed && styles.orderPressed]}
           >
@@ -196,12 +215,12 @@ export default function WorkspacePage({
               </Copy>
               {order.priority === 'urgent' && (
                 <Copy variant="caption" style={{ color: colors.amber }}>
-                  Urgent
+                  {copy.urgent}
                 </Copy>
               )}
               {state.outbox.some((item) => item.orderId === order.id) && (
                 <Copy variant="caption" style={{ color: colors.amber }}>
-                  Queued
+                  {copy.queued}
                 </Copy>
               )}
             </View>
@@ -209,9 +228,9 @@ export default function WorkspacePage({
             <Copy muted>{order.site.name}</Copy>
             <View style={styles.metadata}>
               <Copy muted variant="caption">
-                Due {order.dueDate}
+                {copy.due} {order.dueDate}
               </Copy>
-              <StatusBadge status={order.status} />
+              <StatusBadge status={order.status} locale={locale} />
             </View>
           </Pressable>
         );
@@ -220,35 +239,35 @@ export default function WorkspacePage({
         <Notice
           title={
             view === 'outbox'
-              ? 'Everything is up to date'
+              ? copy.upToDate
               : busy
-                ? 'Loading assignments…'
+                ? copy.loading
                 : search
-                  ? 'No matching assignments'
-                  : 'No saved assignments yet'
+                  ? copy.noMatch
+                  : copy.noAssignments
           }
         >
           {view === 'outbox'
-            ? 'Reports waiting for confirmation will appear here.'
+            ? copy.outboxEmpty
             : busy
-              ? 'Opening your saved notebook and checking the server.'
+              ? copy.loadingHint
               : search
-                ? 'Try another reference, title or site.'
-                : 'Connect and sync after your manager assigns work.'}
+                ? copy.noMatchHint
+                : copy.noAssignmentsHint}
         </Notice>
       }
       ListFooterComponent={
         <View style={styles.footer}>
           <Copy muted variant="caption">
             {state.lastSynced
-              ? `Last synced ${new Date(state.lastSynced).toLocaleString()}`
-              : 'Not yet synced'}
+              ? `${copy.lastSynced} ${new Date(state.lastSynced).toLocaleString(dateLocale)}`
+              : copy.neverSynced}
           </Copy>
           <Copy muted variant="caption">
-            Drafts stay on this device.
+            {copy.draftsStay}
           </Copy>
           <Button
-            title="Sign out"
+            title={copy.signOut}
             icon={SignOut}
             iconOnly
             variant="ghost"
@@ -278,6 +297,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
+  utilityActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   introduction: { gap: spacing.sm },
   tabs: {
     flexDirection: 'row',

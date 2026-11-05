@@ -10,6 +10,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Expo worker notebook with local SQLite drafts and secure session storage.
 - [x] English and Indonesian sign-in on web and Expo, with a saved device preference.
 - [x] English and Indonesian invitation and password-reset pages that share the web sign-in preference.
+- [x] English and Indonesian assignment and outbox screens in the Expo worker notebook.
 - [x] Notes, photo attachments, durable outbox, and idempotent submissions.
 - [x] Private local draft JSON exports in the web notebook/outbox, including offline photos and blocked submissions without changing the queue.
 - [x] Indonesian contributor quick-start guide for local setup, demo accounts, offline production builds and checks.

@@ -79,6 +79,8 @@ The sign-in screen can switch between **English** and **Bahasa Indonesia**. The 
 8. Check large text, screen reader labels, keyboard avoidance, and Android back behavior.
 9. Assign a checklist that requires a photo. Confirm its guidance appears, saving without a photo keeps the draft and shows an actionable error, and attaching/removing/re-attaching evidence works offline through restart. Submit a correction with fresh evidence after a manager requests changes.
 
+The globe beside Sync changes the language for assignments and the outbox while keeping the current search. It uses the same saved language as sign-in. Run `notebook-language.ios.yaml` from **My assignments** in English with the synthetic fixture and an empty outbox to verify search, the outbox, and restart persistence.
+
 The iOS simulator does not emulate a real camera or cellular conditions. JavaScript export, simulator smoke tests, physical-device acceptance, and store release are separate checks; record them accurately in docs/verification.md.
 
 ## Storage and synchronization

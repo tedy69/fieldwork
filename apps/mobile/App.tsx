@@ -116,10 +116,10 @@ export default function App() {
       .catch(() => setError({ local: 'unlockFailed' }))
       .finally(() => setReady(true));
   }, []);
-  function changeLanguage() {
-    setLocale(alternate);
+  function changeLanguage(next: Locale) {
+    setLocale(next);
     try {
-      Storage.setItemSync('fieldwork.locale', alternate);
+      Storage.setItemSync('fieldwork.locale', next);
     } catch {
       // The current session can still use the selected language.
     }
@@ -165,7 +165,13 @@ export default function App() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           {session ? (
-            <Notebook key={session.user.id} session={session} logout={logout} />
+            <Notebook
+              key={session.user.id}
+              session={session}
+              logout={logout}
+              locale={locale}
+              onLanguageChange={changeLanguage}
+            />
           ) : (
             <ScrollView
               contentInsetAdjustmentBehavior="automatic"
@@ -179,7 +185,7 @@ export default function App() {
                   title={languageNames[alternate]}
                   icon={Globe}
                   variant="ghost"
-                  onPress={changeLanguage}
+                  onPress={() => changeLanguage(alternate)}
                 />
               </View>
               <View style={styles.introduction}>
@@ -276,7 +282,17 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
-function Notebook({ session, logout }: { session: Session; logout: () => Promise<void> }) {
+function Notebook({
+  session,
+  logout,
+  locale,
+  onLanguageChange,
+}: {
+  session: Session;
+  logout: () => Promise<void>;
+  locale: Locale;
+  onLanguageChange: (locale: Locale) => void;
+}) {
   const notebookScroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const { fontScale } = useWindowDimensions();
   const client = useMemo(() => createClient(session.baseUrl, () => session.token), [session]);
@@ -354,6 +370,8 @@ function Notebook({ session, logout }: { session: Session; logout: () => Promise
       <WorkspacePage
         state={state}
         user={session.user}
+        locale={locale}
+        onLanguageChange={onLanguageChange}
         busy={busy}
         error={error}
         onSync={() => void sync()}

@@ -21,7 +21,7 @@ import { SearchField } from './components/ui/search-field';
 import { Label } from './components/ui/label';
 import { Avatar, AvatarFallback } from './components/ui/avatar';
 import { useEffect, useMemo, useState } from 'react';
-import { type User, type Catalog } from '@fieldwork/contracts';
+import { isDueToday, type User, type Catalog } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { emptyState, type State } from '@fieldwork/offline';
 import { languageNames, notebookCopy, type Locale } from '@fieldwork/strings';
@@ -146,10 +146,26 @@ export default function Workspace({
         title: copy.noOverdue,
         description: copy.overdueHint,
       };
+  const todayEmpty = {
+    title: search ? copy.noMatch : copy.noDueToday,
+    description: search ? copy.trySearch : copy.dueTodayHint,
+  };
+  const dateFilterEmpty =
+    filter === 'OVERDUE' ? overdueEmpty : filter === 'DUE_TODAY' ? todayEmpty : null;
+  const filterLabels = {
+    ALL: copy.all,
+    OVERDUE: copy.overdue,
+    DUE_TODAY: notebook.dueToday,
+    ...notebook.status,
+  };
   const matching = state.orders.filter(
     (order) =>
       (filter === 'ALL' ||
-        (filter === 'OVERDUE' ? isOverdue(order, today) : order.status === filter)) &&
+        (filter === 'OVERDUE'
+          ? isOverdue(order, today)
+          : filter === 'DUE_TODAY'
+            ? isDueToday(order, today)
+            : order.status === filter)) &&
       `${order.title} ${order.site.name} ${order.reference} ${order.assignee.name}`
         .toLowerCase()
         .includes(search.toLowerCase()),
@@ -586,20 +602,13 @@ export default function Workspace({
                         [
                           'ALL',
                           'OVERDUE',
+                          'DUE_TODAY',
                           'ASSIGNED',
                           'SUBMITTED',
                           'APPROVED',
                           'CHANGES_REQUESTED',
                         ] as const
-                      ).map((status) => ({
-                        id: status,
-                        title:
-                          status === 'ALL'
-                            ? copy.all
-                            : status === 'OVERDUE'
-                              ? copy.overdue
-                              : notebook.status[status],
-                      }))}
+                      ).map((id) => ({ id, title: filterLabels[id] }))}
                     />
                     <p className="status-scroll-hint">{copy.moreStatuses}</p>
                   </div>
@@ -709,8 +718,8 @@ export default function Workspace({
                               : copy.noWeek
                           : dueFrom || dueThrough
                             ? copy.noDate
-                            : filter === 'OVERDUE'
-                              ? overdueEmpty.title
+                            : dateFilterEmpty
+                              ? dateFilterEmpty.title
                               : search || filter !== 'ALL'
                                 ? copy.noMatch
                                 : copy.empty
@@ -722,8 +731,8 @@ export default function Workspace({
                           ? copy.plannerHint(plannerView === 'month' ? 'month' : 'week')
                           : dueFrom || dueThrough
                             ? copy.dateHint
-                            : filter === 'OVERDUE'
-                              ? overdueEmpty.description
+                            : dateFilterEmpty
+                              ? dateFilterEmpty.description
                               : user.role === 'manager'
                                 ? 'Assign a work order to start the first inspection.'
                                 : locale === 'id' && (search || filter !== 'ALL')

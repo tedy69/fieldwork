@@ -26,6 +26,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] API and sync tests, browser workflow checks, Docker setup, contributor documentation.
 - [x] Overdue filter with search and offline support in the web notebook and dispatch desk.
 - [x] Overdue filter with search and offline support in the Expo notebook.
+- [x] Due today filter for open work on web and Expo, with offline search and the device’s local date.
 - [x] CSV exports for filtered manager report lists, including saved offline reports.
 - [x] Inclusive due-date ranges in the web list, combined with search, status filters, and offline records.
 - [x] Printable saved inspection reports in the web app, including offline access and browser PDF output.

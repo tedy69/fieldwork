@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState, type RefObject } from 'react';
-import { AppState, FlatList, Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import {
+  AppState,
+  FlatList,
+  Keyboard,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import {
+  isDueToday,
   isOverdue,
   localDate,
   StatusSchema,
@@ -23,8 +32,8 @@ import {
 
 type QueueItem = State['outbox'][number];
 type Entry = { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: QueueItem };
-export type AssignmentFilter = WorkOrder['status'] | 'overdue' | null;
-const filters: AssignmentFilter[] = [null, 'overdue', ...StatusSchema.options];
+export type AssignmentFilter = WorkOrder['status'] | 'overdue' | 'today' | null;
+const filters: AssignmentFilter[] = [null, 'overdue', 'today', ...StatusSchema.options];
 
 export type NotebookProblem = { kind: 'session' } | { kind: 'message'; text: string };
 
@@ -93,10 +102,13 @@ export default function WorkspacePage({
   const copy = notebookCopy[locale];
   const alternate = locale === 'en' ? 'id' : 'en';
   const dateLocale = locale === 'id' ? 'id-ID' : undefined;
+  const { fontScale } = useWindowDimensions();
+  const largeText = fontScale > 1.4;
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [today, setToday] = useState(localDate);
   useEffect(() => {
-    if (view !== 'assignments' || assignmentFilter !== 'overdue') return;
+    if (view !== 'assignments' || (assignmentFilter !== 'overdue' && assignmentFilter !== 'today'))
+      return;
     const update = () => setToday(localDate());
     update();
     const interval = setInterval(update, 60_000);
@@ -108,8 +120,9 @@ export default function WorkspacePage({
       listener.remove();
     };
   }, [assignmentFilter, view]);
+  const filterLabels = { overdue: copy.overdue, today: copy.dueToday, ...copy.status };
   const filterLabel = (filter: AssignmentFilter) =>
-    filter === 'overdue' ? copy.overdue : filter ? copy.status[filter] : copy.allAssignments;
+    filter ? filterLabels[filter] : copy.allAssignments;
   const query = search.trim().toLowerCase();
   const entries = useMemo<Entry[]>(() => {
     if (view === 'outbox') return state.outbox.map((item) => ({ kind: 'queued', item }));
@@ -118,7 +131,9 @@ export default function WorkspacePage({
         const matches =
           assignmentFilter === 'overdue'
             ? isOverdue(order, today)
-            : !assignmentFilter || order.status === assignmentFilter;
+            : assignmentFilter === 'today'
+              ? isDueToday(order, today)
+              : !assignmentFilter || order.status === assignmentFilter;
         return (
           matches &&
           `${order.reference} ${order.title} ${order.site.name}`.toLowerCase().includes(query)
@@ -173,13 +188,13 @@ export default function WorkspacePage({
             </Copy>
             {view === 'outbox' && <Copy muted>{copy.outboxIntro}</Copy>}
           </View>
-          <View style={styles.tabs}>
+          <View style={[styles.tabs, largeText && styles.tabsLarge]}>
             <Button
               title={`${copy.assignmentTab} (${state.orders.length})`}
               icon={ClipboardText}
               variant="ghost"
               selected={view === 'assignments'}
-              style={styles.tab}
+              style={largeText ? undefined : styles.tab}
               onPress={() => onViewChange('assignments')}
             />
             <Button
@@ -187,7 +202,7 @@ export default function WorkspacePage({
               icon={Tray}
               variant="ghost"
               selected={view === 'outbox'}
-              style={styles.tab}
+              style={largeText ? undefined : styles.tab}
               onPress={() => onViewChange('outbox')}
             />
           </View>
@@ -408,6 +423,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.control,
     backgroundColor: colors.raised,
   },
+  tabsLarge: { flexDirection: 'column', flexWrap: 'nowrap' },
   tab: { flexGrow: 1, flexBasis: 120 },
   searchTools: { gap: spacing.sm },
   searchRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },

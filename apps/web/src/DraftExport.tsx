@@ -1,25 +1,30 @@
 import { useState } from 'react';
 import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple';
 import { localReportExport, type OfflineRepository } from '@fieldwork/offline';
+import type { Locale } from '@fieldwork/strings';
 import { Button } from './components/ui/button';
 import { FieldError } from './components/ui/field';
+import { workerWorkspaceCopy } from './worker-workspace-copy';
 
 export default function DraftExport({
   orderId,
   repo,
   disabled = false,
+  locale = 'en',
 }: {
   orderId: string;
   repo: OfflineRepository;
   disabled?: boolean;
+  locale?: Locale;
 }) {
+  const copy = workerWorkspaceCopy[locale].export;
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
+  const [error, setError] = useState(false);
+  const [notice, setNotice] = useState(false);
   async function download() {
     setBusy(true);
-    setError('');
-    setNotice('');
+    setError(false);
+    setNotice(false);
     let url: string | undefined;
     try {
       const file = localReportExport(await repo.read(), orderId);
@@ -38,9 +43,9 @@ export default function DraftExport({
       } finally {
         link.remove();
       }
-      setNotice('Draft file prepared. Your local draft and sync queue are kept.');
+      setNotice(true);
     } catch {
-      setError('Could not export this draft. Your local data is kept. Try again.');
+      setError(true);
     } finally {
       setBusy(false);
       if (url) {
@@ -50,17 +55,15 @@ export default function DraftExport({
     }
   }
   return (
-    <section className="report-export" aria-label="Local draft export">
-      <p className="export-note muted">
-        JSON includes this report’s answers, notes and photos. Keep the file private.
-      </p>
+    <section className="report-export" aria-label={copy.title}>
+      <p className="export-note muted">{copy.privacy}</p>
       <Button className="quiet" onClick={download} disabled={disabled || busy}>
-        <DownloadSimpleIcon aria-hidden="true" /> {busy ? 'Preparing…' : 'Export draft'}
+        <DownloadSimpleIcon aria-hidden="true" /> {busy ? copy.preparing : copy.download}
       </Button>
-      {error && <FieldError>{error}</FieldError>}
+      {error && <FieldError>{copy.failed}</FieldError>}
       {notice && (
         <p className="full" role="status">
-          {notice}
+          {copy.complete}
         </p>
       )}
     </section>

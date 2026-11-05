@@ -7,6 +7,8 @@ import { useId, useRef } from 'react';
 import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
 import { CaretDownIcon } from '@phosphor-icons/react/dist/csr/CaretDown';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './components/ui/collapsible';
+import type { Locale } from '@fieldwork/strings';
+import { workerWorkspaceCopy } from './worker-workspace-copy';
 export default function DueDateRange({
   from,
   through,
@@ -15,6 +17,7 @@ export default function DueDateRange({
   onClear,
   open,
   onOpenChange,
+  locale = 'en',
 }: {
   from: string;
   through: string;
@@ -23,7 +26,9 @@ export default function DueDateRange({
   onClear: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  locale?: Locale;
 }) {
+  const copy = workerWorkspaceCopy[locale].dates;
   const invalid = Boolean(parseLocalDate(from) && parseLocalDate(through) && from > through);
   const summaryId = useId();
   const hasDates = Boolean(from || through);
@@ -31,7 +36,7 @@ export default function DueDateRange({
     (from && !parseLocalDate(from)) || (through && !parseLocalDate(through)),
   );
   const trigger = useRef<HTMLButtonElement>(null);
-  const summary = hasDates ? `${from || 'Any start'} to ${through || 'Any end'}` : 'Any due date';
+  const summary = hasDates ? copy.summary(from, through) : copy.any;
   function clear() {
     onClear();
     trigger.current?.focus();
@@ -43,12 +48,12 @@ export default function DueDateRange({
           ref={trigger}
           type="button"
           variant="ghost"
-          aria-label="Date range"
+          aria-label={copy.range}
           aria-describedby={summaryId}
           className="date-filter-trigger"
         >
           <CalendarBlankIcon aria-hidden="true" />
-          Date range
+          {copy.range}
           <CaretDownIcon aria-hidden="true" className="date-filter-caret" />
         </CollapsibleTrigger>
         <span id={summaryId} className="date-filter-summary">
@@ -56,26 +61,24 @@ export default function DueDateRange({
         </span>
         {hasDates && !open && (
           <Button type="button" variant="ghost" onClick={clear}>
-            Clear dates
+            {copy.clear}
           </Button>
         )}
       </div>
       {!open && (invalid || invalidDate) && (
         <FieldError>
-          {invalid
-            ? 'Due through must be on or after Due from.'
-            : 'Enter a real date as YYYY-MM-DD.'}{' '}
-          Open Date range to correct it, or clear the dates.
+          {invalid ? copy.invalidRange : copy.invalidDate} {copy.reopen}
         </FieldError>
       )}
       <CollapsibleContent>
         <FieldSet className="due-range">
-          <FieldLegend className="sr-only">Due dates</FieldLegend>
+          <FieldLegend className="sr-only">{copy.dates}</FieldLegend>
           <div className="due-range-fields">
             <Label>
-              Due from
+              {copy.from}
               <DatePicker
-                calendarLabel="Choose due from"
+                calendarLabel={copy.chooseFrom}
+                locale={locale}
                 value={from}
                 onValueChange={onFrom}
                 aria-invalid={invalid || undefined}
@@ -83,9 +86,10 @@ export default function DueDateRange({
               />
             </Label>
             <Label>
-              Due through
+              {copy.through}
               <DatePicker
-                calendarLabel="Choose due through"
+                calendarLabel={copy.chooseThrough}
+                locale={locale}
                 value={through}
                 onValueChange={onThrough}
                 aria-invalid={invalid || undefined}
@@ -93,16 +97,16 @@ export default function DueDateRange({
               />
             </Label>
             <Button className="quiet" onClick={clear} disabled={!from && !through}>
-              Clear dates
+              {copy.clear}
             </Button>
           </div>
           {invalid ? (
             <FieldError id="due-range-error">
-              Due through must be on or after Due from. Change a date or clear the range.
+              {copy.invalidRange} {copy.repair}
             </FieldError>
           ) : (
             <p id="due-range-help" className="muted">
-              Includes both dates. Leave either end open.
+              {copy.hint}
             </p>
           )}
         </FieldSet>

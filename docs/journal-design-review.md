@@ -8,6 +8,8 @@ The sign-in language switch pairs a globe with the destination language in the e
 
 Invitation and password-reset pages share the same globe control and language preference. Chromium verifies keyboard switching, 390px and desktop layouts, preserved password entries, offline feedback, completion, and opening a used link.
 
+The web worker list and outbox use a globe in the top bar and share the sign-in preference. Chromium verifies keyboard switching with an active search and status filter, 320px and desktop layouts, date validation, an offline draft export, reload, and reconnect.
+
 Rescheduling from a recurring batch uses the same calendar icon and date field as an order. Planned and current dates remain side by side on desktop and stack on narrow screens. Chromium verifies keyboard entry and Escape, focus after saving, conflict recovery with the proposed date intact, offline controls, and 320px reflow.
 
 Quarterly recurrence adds one choice to Repeat and uses the existing date preview and recovery panel. Chromium verifies keyboard entry, shorter-month dates, a 320px layout, and recovery of a saved request after the response is lost.

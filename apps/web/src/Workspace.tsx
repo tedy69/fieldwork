@@ -14,6 +14,7 @@ import { ListDashesIcon } from '@phosphor-icons/react/dist/csr/ListDashes';
 import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
 import { CalendarDotsIcon } from '@phosphor-icons/react/dist/csr/CalendarDots';
 import { XIcon } from '@phosphor-icons/react/dist/csr/X';
+import { GlobeIcon } from '@phosphor-icons/react/dist/csr/Globe';
 import { IconButton } from './components/ui/icon-button';
 import { SearchField } from './components/ui/search-field';
 import { Label } from './components/ui/label';
@@ -22,8 +23,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { type User, type Catalog } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { emptyState, type State } from '@fieldwork/offline';
+import { languageNames, notebookCopy, type Locale } from '@fieldwork/strings';
 import { repositoryFor } from './storage';
-import { client, labels, message, dateLabel } from './lib';
+import { client, message, dateLabel } from './lib';
 import { PageHeading, Empty, ActionGroup } from './components';
 import Resources from './Resources';
 import CreateOrder from './CreateOrderDialog';
@@ -39,7 +41,24 @@ import MonthPlanner from './MonthPlanner';
 import { monthDates, weekDates } from './calendar';
 import WorkFinder from './WorkFinder';
 import ServerSearch from './ServerSearch';
-export default function Workspace({ user, logout }: { user: User; logout: () => void }) {
+import { workerWorkspaceCopy } from './worker-workspace-copy';
+
+export default function Workspace({
+  user,
+  logout,
+  language,
+  onLanguageChange,
+}: {
+  user: User;
+  logout: () => void;
+  language: Locale;
+  onLanguageChange: (language: Locale) => void;
+}) {
+  const locale = user.role === 'worker' ? language : 'en';
+  const alternate = locale === 'id' ? 'en' : 'id';
+  const copy = workerWorkspaceCopy[locale];
+  const notebook = notebookCopy[locale];
+  const dateLocale = locale === 'id' ? 'id-ID' : undefined;
   const repo = useMemo(() => repositoryFor(user.id, client), [user.id]);
   const [state, setState] = useState<State>(emptyState);
   const [catalog, setCatalog] = useState<Catalog>({ users: [], sites: [], templates: [] });
@@ -60,7 +79,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
   const [online, setOnline] = useState(navigator.onLine);
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>('');
   const [notice, setNotice] = useState('');
   async function refresh() {
     setBusy(true);
@@ -74,11 +93,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
       setCatalog(catalog);
       await repo.cacheOrders(orders);
     } catch (error) {
-      setError(
-        error instanceof ApiError
-          ? error.message
-          : 'Server unavailable. Saved work is still available on this device.',
-      );
+      setError(error instanceof ApiError ? error.message : null);
     } finally {
       setState(await repo.read());
       setBusy(false);
@@ -115,13 +130,12 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
   const order = state.orders.find((order) => order.id === selected);
   const overdueEmpty = search
     ? {
-        title: 'No matching overdue work orders',
-        description: 'Try another order, site, or person.',
+        title: copy.noMatchingOverdue,
+        description: copy.trySearch,
       }
     : {
-        title: 'No overdue work orders',
-        description:
-          'Unfinished work appears here after its due date, based on this device’s local date.',
+        title: copy.noOverdue,
+        description: copy.overdueHint,
       };
   const matching = state.orders.filter(
     (order) =>
@@ -152,25 +166,25 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
       view === 'resources'
         ? 'Sites & checklists'
         : view === 'outbox'
-          ? 'Sync outbox'
+          ? notebook.outbox
           : order
             ? order.reference
             : user.role === 'manager'
-              ? 'Work orders'
-              : 'My assignments';
+              ? copy.orders
+              : notebook.assignments;
     document.title = `${title} · Fieldwork`;
-  }, [view, order?.reference, user.role]);
+  }, [view, order?.reference, user.role, copy.orders, notebook]);
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#main">
-        Skip to work orders
+      <a className="skip-link" href="#main" lang={locale}>
+        {copy.skip}
       </a>
-      <header className="sidebar">
+      <header className="sidebar" lang={locale}>
         <div className="brand">
           Fieldwork<span className="version">v0.1</span>
         </div>
-        <p className="workspace-label">Operations notebook</p>
-        <nav aria-label="Workspace">
+        <p className="workspace-label">{copy.notebook}</p>
+        <nav aria-label={copy.workspace}>
           <Button
             variant="ghost"
             aria-current={view === 'orders' ? 'page' : undefined}
@@ -182,7 +196,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           >
             <ClipboardTextIcon aria-hidden="true" />
             <span className="nav-label">
-              Work orders <span className="nav-count">{state.orders.length}</span>
+              {copy.orders} <span className="nav-count">{state.orders.length}</span>
             </span>
           </Button>
           <Button
@@ -196,7 +210,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           >
             <TrayIcon aria-hidden="true" />
             <span className="nav-label">
-              Sync outbox <span className="nav-count">{state.outbox.length}</span>
+              {notebook.outbox} <span className="nav-count">{state.outbox.length}</span>
             </span>
           </Button>
           {user.role === 'manager' && (
@@ -226,36 +240,46 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           </Avatar>
           <div>
             <strong>{user.name}</strong>
-            <small>{user.role === 'manager' ? 'Dispatch manager' : 'Field worker'}</small>
+            <small>{user.role === 'manager' ? 'Dispatch manager' : notebook.worker}</small>
           </div>
           <IconButton
             className="quiet"
-            label="Sign out"
+            label={notebook.signOut}
             onClick={logout}
-            tooltip="Sign out. Drafts stay on this device."
+            tooltip={copy.signOutHint}
           >
             <SignOutIcon aria-hidden="true" />
           </IconButton>
         </Card>
       </header>
       <div className="main-column">
-        <div className="topbar">
+        <div className="topbar" lang={locale}>
           <span className="workspace-context">
-            {user.role === 'manager' ? 'Dispatch desk' : 'Field notebook'}
+            {user.role === 'manager' ? 'Dispatch desk' : copy.context}
           </span>
           <div className="connection">
             <span className={online ? 'signal' : 'signal offline'} />
-            <span role="status">{online ? 'Connected' : 'Working offline'}</span>
+            <span role="status">{online ? copy.connected : copy.offline}</span>
             <IconButton
               className="quiet sync-action"
-              label={busy ? 'Syncing…' : 'Sync now'}
+              label={busy ? notebook.syncing : notebook.sync}
               onClick={() => void refresh()}
               disabled={busy || !online}
             >
               <ArrowClockwiseIcon aria-hidden="true" />
             </IconButton>
           </div>
-          <div className="topbar-tools">
+          <div className="topbar-tools" lang="en">
+            {user.role === 'worker' && (
+              <IconButton
+                className="quiet"
+                label={languageNames[alternate]}
+                lang={alternate}
+                onClick={() => onLanguageChange(alternate)}
+              >
+                <GlobeIcon aria-hidden="true" />
+              </IconButton>
+            )}
             <WorkFinder
               user={user}
               orders={state.orders}
@@ -284,12 +308,12 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
             />
           </div>
         </div>
-        <main id="main" tabIndex={-1}>
-          {error && <Alert className="banner error">{error}</Alert>}
+        <main id="main" tabIndex={-1} lang={order ? 'en' : locale}>
+          {error !== '' && <Alert className="banner error">{error ?? copy.unavailable}</Alert>}
           {notice && (
             <Alert role="status" className="banner notice">
               {notice}
-              <IconButton label="Dismiss" variant="ghost" onClick={() => setNotice('')}>
+              <IconButton label={copy.dismiss} variant="ghost" onClick={() => setNotice('')}>
                 <XIcon aria-hidden="true" />
               </IconButton>
             </Alert>
@@ -328,21 +352,15 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
             />
           ) : view === 'outbox' ? (
             <>
-              <PageHeading
-                title="Sync outbox"
-                description="Queued reports stay here until the server confirms receipt."
-              />
+              <PageHeading title={notebook.outbox} description={copy.outboxIntro} />
               <div className="outbox-list">
                 {state.outbox.length === 0 ? (
-                  <Empty
-                    title="Everything is up to date"
-                    description="Completed reports will appear here when they are waiting to sync."
-                  />
+                  <Empty title={notebook.upToDate} description={copy.outboxEmpty} />
                 ) : (
                   state.outbox.map((item) => (
                     <Card className="outbox-item" key={item.input.mutationId}>
                       <span className="eyebrow">
-                        {item.state === 'blocked' ? 'NEEDS YOUR ATTENTION' : 'WAITING TO SYNC'}
+                        {item.state === 'blocked' ? copy.blocked : copy.waiting}
                       </span>
                       <h2>
                         {state.orders.find((order) => order.id === item.orderId)?.title ??
@@ -351,10 +369,10 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                       <p>{item.input.summary}</p>
                       {item.error && <p className="error">{item.error}</p>}
                       <p className="muted">
-                        {item.input.photos.length} photos · Saved{' '}
-                        {new Date(item.createdAt).toLocaleString()}
+                        {notebook.photoCount(item.input.photos.length)} · {notebook.savedAt}{' '}
+                        {new Date(item.createdAt).toLocaleString(dateLocale)}
                       </p>
-                      <DraftExport orderId={item.orderId} repo={repo} />
+                      <DraftExport orderId={item.orderId} repo={repo} locale={locale} />
                       {item.state === 'blocked' && (
                         <Button
                           className="quiet"
@@ -368,21 +386,19 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                               await repo.discard(item.orderId);
                               setSelected(item.orderId);
                               setView('orders');
-                              setNotice(
-                                'Your draft is kept. Check the latest order before submitting it again.',
-                              );
+                              setNotice(copy.retainedDraft);
                             } catch (error) {
                               setError(
                                 error instanceof ApiError && error.status === 404
-                                  ? 'This assignment is no longer available to your account. Your queued report is kept on this device. Contact your manager before trying again.'
-                                  : `${message(error)} Your queued report is kept on this device.`,
+                                  ? copy.unavailableOrder
+                                  : `${message(error)} ${copy.retainedReport}`,
                               );
                             } finally {
                               setBusy(false);
                             }
                           }}
                         >
-                          Keep draft and open latest order
+                          {copy.openLatest}
                         </Button>
                       )}
                     </Card>
@@ -406,7 +422,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
           ) : (
             <>
               <div className="heading-row">
-                <PageHeading title={user.role === 'manager' ? 'Work orders' : 'My assignments'} />
+                <PageHeading title={user.role === 'manager' ? copy.orders : notebook.assignments} />
                 {user.role === 'manager' && (
                   <ActionGroup className="assignment-actions">
                     <Button
@@ -451,8 +467,8 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                 <Card>
                   <span className="summary-number">{assignedCount}</span>
                   <div>
-                    <strong>In the field</strong>
-                    <small className="summary-help">Assigned &amp; changes requested</small>
+                    <strong>{copy.inField}</strong>
+                    <small className="summary-help">{copy.inFieldHelp}</small>
                   </div>
                 </Card>
                 <Card>
@@ -460,19 +476,19 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                     {reviewCount}
                   </span>
                   <div>
-                    <strong>Ready for review</strong>
-                    <small className="summary-help">Submitted inspection reports</small>
+                    <strong>{copy.ready}</strong>
+                    <small className="summary-help">{copy.readyHelp}</small>
                   </div>
                 </Card>
                 <div className="last-sync">
-                  <span className="muted">Last sync</span>
+                  <span className="muted">{copy.lastSync}</span>
                   <strong>
                     {state.lastSynced
-                      ? new Date(state.lastSynced).toLocaleTimeString([], {
+                      ? new Date(state.lastSynced).toLocaleTimeString(dateLocale ?? [], {
                           hour: '2-digit',
                           minute: '2-digit',
                         })
-                      : 'Not yet synced'}
+                      : notebook.neverSynced}
                   </strong>
                 </div>
               </div>
@@ -480,7 +496,7 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                 <div className="board-heading">
                   <SmoothTab
                     className="work-view-toggle"
-                    label="Work order view"
+                    label={copy.view}
                     value={plannerView}
                     onChange={(value) => {
                       if (value !== 'list' && value !== 'week' && value !== 'month') return;
@@ -490,28 +506,29 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                       setPlannerView(value);
                     }}
                     items={[
-                      { id: 'list', title: 'List', icon: <ListDashesIcon aria-hidden="true" /> },
+                      { id: 'list', title: copy.list, icon: <ListDashesIcon aria-hidden="true" /> },
                       {
                         id: 'week',
-                        title: 'Week',
-                        label: 'Week planner',
+                        title: copy.week,
+                        label: copy.weekPlanner,
                         icon: <CalendarBlankIcon aria-hidden="true" />,
                       },
                       {
                         id: 'month',
-                        title: 'Month',
-                        label: 'Month planner',
+                        title: copy.month,
+                        label: copy.monthPlanner,
                         icon: <CalendarDotsIcon aria-hidden="true" />,
                       },
                     ]}
                   />
                   <Label className="search">
-                    <span className="sr-only">Search work orders</span>
+                    <span className="sr-only">{copy.search}</span>
                     <SearchField
-                      aria-label="Search work orders"
+                      aria-label={copy.search}
+                      clearLabel={copy.clearSearch}
                       value={search}
                       onValueChange={setSearch}
-                      placeholder="Search orders, sites, people…"
+                      placeholder={copy.searchHint}
                     />
                   </Label>
                 </div>
@@ -519,31 +536,34 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   <div className="list-toolbar">
                     <SmoothTab
                       className="status-filters"
-                      label="Filter work orders"
+                      label={copy.filter}
                       value={filter}
                       onChange={setFilter}
-                      items={[
-                        'ALL',
-                        'OVERDUE',
-                        'ASSIGNED',
-                        'SUBMITTED',
-                        'APPROVED',
-                        'CHANGES_REQUESTED',
-                      ].map((status) => ({
+                      items={(
+                        [
+                          'ALL',
+                          'OVERDUE',
+                          'ASSIGNED',
+                          'SUBMITTED',
+                          'APPROVED',
+                          'CHANGES_REQUESTED',
+                        ] as const
+                      ).map((status) => ({
                         id: status,
                         title:
                           status === 'ALL'
-                            ? 'All orders'
+                            ? copy.all
                             : status === 'OVERDUE'
-                              ? 'Overdue'
-                              : labels[status],
+                              ? copy.overdue
+                              : notebook.status[status],
                       }))}
                     />
-                    <p className="status-scroll-hint">Scroll for more statuses</p>
+                    <p className="status-scroll-hint">{copy.moreStatuses}</p>
                   </div>
                   {!planner && (
                     <DueDateRange
                       open={datesOpen}
+                      locale={locale}
                       onOpenChange={setDatesOpen}
                       from={dueFrom}
                       through={dueThrough}
@@ -582,10 +602,10 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   />
                 ) : null}
                 <div className="list-header" aria-hidden="true">
-                  <span>Work order / site</span>
-                  <span>Assigned to</span>
-                  <span>Due</span>
-                  <span>Status</span>
+                  <span>{copy.orderSite}</span>
+                  <span>{copy.assignee}</span>
+                  <span>{notebook.due}</span>
+                  <span>{copy.status}</span>
                 </div>
                 <ul className="order-list">
                   {visible.map((order) => (
@@ -594,34 +614,38 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                         variant="unstyled"
                         className="order-row"
                         onClick={() => setSelected(order.id)}
-                        aria-label={`Open ${order.reference}: ${order.title}`}
+                        aria-label={`${notebook.open} ${order.reference}: ${order.title}`}
                       >
                         <div>
                           <div className="reference">
                             <span>{order.reference}</span>
-                            {order.priority === 'urgent' && <span className="urgent">Urgent</span>}
+                            {order.priority === 'urgent' && (
+                              <span className="urgent">{notebook.urgent}</span>
+                            )}
                             {state.outbox.some((item) => item.orderId === order.id) && (
-                              <span className="urgent">Queued</span>
+                              <span className="urgent">{notebook.queued}</span>
                             )}
                           </div>
                           <strong className="order-title">{order.title}</strong>
                           <span className="muted site-name">{order.site.name}</span>
                         </div>
                         <span className="assignee">
-                          <span className="row-label">Assigned to </span>
+                          <span className="row-label">{copy.assignee} </span>
                           {order.assignee.name}
                         </span>
                         <span className={`due${isOverdue(order, today) ? ' is-overdue' : ''}`}>
                           <span>
-                            <span className="row-label">Due </span>
-                            <time dateTime={order.dueDate}>{dateLabel(order.dueDate)}</time>
+                            <span className="row-label">{notebook.due} </span>
+                            <time dateTime={order.dueDate}>
+                              {dateLabel(order.dueDate, dateLocale)}
+                            </time>
                           </span>
                           {isOverdue(order, today) && (
-                            <span className="overdue-label">Overdue</span>
+                            <span className="overdue-label">{copy.overdue}</span>
                           )}
                         </span>
                         <Badge className={`status status-${order.status.toLowerCase()}`}>
-                          {labels[order.status]}
+                          {notebook.status[order.status]}
                         </Badge>
                       </Button>
                     </li>
@@ -631,41 +655,41 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
                   <Empty
                     title={
                       !loaded
-                        ? 'Loading your workspace…'
+                        ? copy.loading
                         : planner
                           ? plannerDay
-                            ? 'No work orders for this day'
+                            ? copy.noDay
                             : plannerView === 'month'
-                              ? 'No work orders this month'
-                              : 'No work orders this week'
+                              ? copy.noMonth
+                              : copy.noWeek
                           : dueFrom || dueThrough
-                            ? 'No work orders in this date range'
+                            ? copy.noDate
                             : filter === 'OVERDUE'
                               ? overdueEmpty.title
                               : search || filter !== 'ALL'
-                                ? 'No matching work orders'
-                                : 'A clean page'
+                                ? copy.noMatch
+                                : copy.empty
                     }
                     description={
                       !loaded
-                        ? 'Checking for saved assignments and recent changes.'
+                        ? copy.loadingHint
                         : planner
-                          ? `Choose another day or ${plannerView === 'month' ? 'month' : 'week'}, or adjust your search and status filter.`
+                          ? copy.plannerHint(plannerView === 'month' ? 'month' : 'week')
                           : dueFrom || dueThrough
-                            ? 'Change or clear the dates, or adjust your search and status filter.'
+                            ? copy.dateHint
                             : filter === 'OVERDUE'
                               ? overdueEmpty.description
                               : user.role === 'manager'
                                 ? 'Assign a work order to start the first inspection.'
-                                : 'Your manager will assign work here. Sync to check for new jobs.'
+                                : locale === 'id' && (search || filter !== 'ALL')
+                                  ? copy.trySearch
+                                  : copy.emptyHint
                     }
                   />
                 )}
                 <footer className="list-footer">
-                  <span>
-                    {visible.length} of {state.orders.length} work orders
-                  </span>
-                  <span>Saved on this device · {state.outbox.length} queued</span>
+                  <span>{copy.orderCount(visible.length, state.orders.length)}</span>
+                  <span>{copy.queuedCount(state.outbox.length)}</span>
                 </footer>
                 {user.role === 'manager' && <ReportExport orders={visible} onNotice={setNotice} />}
               </Card>
@@ -685,8 +709,8 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
             />
           )}
         </main>
-        <footer className="workspace-footer">
-          <a href="https://github.com/tedy69/fieldwork">Project &amp; documentation</a>
+        <footer className="workspace-footer" lang={locale}>
+          <a href="https://github.com/tedy69/fieldwork">{copy.project}</a>
         </footer>
       </div>
     </div>

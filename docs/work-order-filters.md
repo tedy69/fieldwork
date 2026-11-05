@@ -14,4 +14,4 @@ The footer shows the filtered count. The In the field and Ready for review total
 
 The [weekly planner](week-planner.md) uses its displayed week or selected day instead of these range inputs. The list's range is preserved when you switch views. Search and status apply to both views.
 
-Filters stay in place when you open an order and return to the list. Reloading the app or signing out resets them. Filtering does not change due dates, assignments, reports, drafts, or the outbox. Rescheduling existing assignments and native date-range controls remain roadmap work.
+Filters stay in place when you open an order and return to the list. Reloading the app or signing out resets them. Filtering does not change due dates, assignments, reports, drafts, or the outbox. Custom date ranges on Expo remain roadmap work.

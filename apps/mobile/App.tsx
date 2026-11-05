@@ -18,6 +18,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
 import Storage from 'expo-sqlite/kv-store';
 import * as ImagePicker from 'expo-image-picker';
+import { getLocales } from 'expo-localization';
 import { StatusBar } from 'expo-status-bar';
 import {
   ArrowClockwise,
@@ -109,10 +110,11 @@ export default function App() {
   const [password, setPassword] = useState('');
   const [serverExpanded, setServerExpanded] = useState(false);
   const [locale, setLocale] = useState(() => {
+    const deviceLanguage = getLocales()[0].languageTag;
     try {
-      return savedLocale(Storage.getItemSync('fieldwork.locale'));
+      return savedLocale(Storage.getItemSync('fieldwork.locale'), deviceLanguage);
     } catch {
-      return 'en' as const;
+      return savedLocale(null, deviceLanguage);
     }
   });
   const [error, setError] = useState<SignInProblem | null>(null);

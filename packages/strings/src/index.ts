@@ -4,8 +4,9 @@ export { inspectionCopy } from './inspection';
 export { notebookCopy } from './notebook';
 export const languageNames: Record<Locale, string> = { en: 'English', id: 'Bahasa Indonesia' };
 
-export function savedLocale(value: string | null): Locale {
-  return value === 'id' ? 'id' : 'en';
+export function savedLocale(value: string | null, deviceLanguage = 'en'): Locale {
+  if (value === 'en' || value === 'id') return value;
+  return /^(?:id|in)(?:[-_]|$)/i.test(deviceLanguage) ? 'id' : 'en';
 }
 
 const english = {

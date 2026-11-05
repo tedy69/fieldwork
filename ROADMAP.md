@@ -9,6 +9,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Web dispatch desk and offline browser notebook.
 - [x] Expo worker notebook with local SQLite drafts and secure session storage.
 - [x] English and Indonesian sign-in on web and Expo, with a saved device preference.
+- [x] First-open language follows the device, with explicit choices saved on web and Expo.
 - [x] English and Indonesian invitation and password-reset pages that share the web sign-in preference.
 - [x] English and Indonesian assignment and outbox screens in the Expo worker notebook.
 - [x] Localized Expo sync recovery that keeps saved work visible during an outage and clears after reconnect.

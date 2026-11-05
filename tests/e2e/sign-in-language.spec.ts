@@ -1,5 +1,19 @@
 import { expect, test } from '@playwright/test';
 
+test.describe('Indonesian browser language', () => {
+  test.use({ locale: 'id-ID' });
+
+  test('starts in Indonesian and keeps an explicit English choice', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Buka catatan kerja Anda' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'id');
+    await page.getByRole('button', { name: 'English', exact: true }).click();
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Open your notebook' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  });
+});
+
 test('switches sign-in language by keyboard and retains it across an offline reload', async ({
   page,
   context,

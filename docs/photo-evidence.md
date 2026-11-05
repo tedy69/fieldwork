@@ -2,7 +2,13 @@
 
 Managers can require a site photo for a checklist. In **Sites & checklists**, choose **At least one photo required** under **Photo evidence** before adding the checklist. The default keeps photos optional. The catalog and assignment selector identify required-photo checklists, and new assignments store that requirement in their checklist snapshot.
 
-This is a checklist-wide requirement of at least one attachment per submission. It does not assign evidence to individual items or verify what a photo depicts, when it was captured, or where it was taken. Existing image type, size, and three-photo limits still apply.
+The checklist-wide setting requires at least one attachment per submission. Item photo requirements also apply when the checklist-wide setting is optional. A linked photo counts toward both requirements. Existing image type, size, and three-photo limits apply.
+
+## Photos for specific questions
+
+In **Set types per item**, select **Require a photo** on up to three questions. In the worker notebook, use the photo action on the question to link evidence. The Site photos section shows the linked question beside each attachment and reserves a slot for each missing required photo. Remove an attachment there to replace it. Every correction needs its own evidence.
+
+Typed items can set `requiresPhoto: true`. On submission, the photo's optional `itemId` points to a question in the assignment snapshot. The API returns `PHOTO_ITEM` for an unknown link and `PHOTO_REQUIRED` when a required question has no linked photo. Generic site photos cannot satisfy a question's requirement. Links survive offline drafts, draft exports, retries, saved reports and revisions. Photo bytes still use the existing attachment store.
 
 ## Worker workflow
 
@@ -26,7 +32,7 @@ Every correction submission needs its own attachment. A previous saved report's 
 
 The SDK extends the existing call with an optional third argument: `client.createTemplate(name, items, requiresPhoto?)`. Omitting it preserves the previous request shape. False explicitly keeps photos optional. Null, strings, numbers, and extra input fields are rejected. Current manager permissions and cookie-origin checks remain in effect.
 
-`TemplateSchema` carries the optional flag through catalog, assignment, search, sync, receipt, report-history, and client cache contracts. `CreateTemplateSchema` owns creation input. No SQLite migration, order version change, historical rewrite, or new storage adapter is needed. This feature creates new checklist policies; editing an existing template's policy is not included.
+`TemplateSchema` carries the optional flags through catalog, assignment, search, sync, receipt, report-history, and client cache contracts. `CreateTemplateSchema` owns creation input. These fields use the existing JSON snapshots, so no SQLite migration is required. Policies are configured when creating a checklist.
 
 `POST /api/v1/work-orders/:id/reports` returns 422 `PHOTO_REQUIRED` when the assigned snapshot requires evidence and the report input has no photos. Authorization, assignment version, state, and checklist-answer checks still apply. A rejected report leaves orders, photo rows, action history, revisions, and mutation receipts unchanged. A subsequent corrected request may reuse the rejected mutation ID; successful retries still require the original content and return its saved acknowledgment.
 

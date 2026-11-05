@@ -231,6 +231,7 @@ const ReadingRuleSchema = z
 const ItemResponseFields = {
   responseType: ResponseTypeSchema.optional(),
   readingRule: ReadingRuleSchema.optional(),
+  requiresPhoto: z.boolean().optional(),
 };
 function validItemResponse(item: {
   responseType?: z.infer<typeof ResponseTypeSchema>;
@@ -263,21 +264,66 @@ export const TemplateSchema = z.object({
   requiresPhoto: z.boolean().optional(),
 });
 export type CreateItem = z.infer<typeof CreateItemSchema>;
+export const MAX_REPORT_PHOTOS = 3;
 export const CreateTemplateSchema = z
   .object({
     name: z.string().trim().min(2).max(120),
     items: z.array(CreateItemSchema).min(1).max(50),
     requiresPhoto: z.boolean().optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    ({ items }) =>
+      items.filter((item) => typeof item !== 'string' && item.requiresPhoto).length <=
+      MAX_REPORT_PHOTOS,
+    { path: ['items'], message: 'Require photos for up to 3 checklist items.' },
+  );
 export const PHOTO_REQUIRED_MESSAGE =
   'Attach at least one site photo before submitting this checklist.';
 export const PhotoSchema = z.object({
   id: z.uuid(),
   mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp']),
   data: z.string().min(1).max(2_800_000),
+  itemId: z.string().min(1).max(100).optional(),
 });
 export type Photo = z.infer<typeof PhotoSchema>;
+function missingItemPhotos(
+  template: z.infer<typeof TemplateSchema>,
+  photos: Pick<Photo, 'itemId'>[],
+) {
+  return template.items.filter(
+    (item) => item.requiresPhoto && !photos.some((photo) => photo.itemId === item.id),
+  );
+}
+export function availableSitePhotoSlots(
+  template: z.infer<typeof TemplateSchema>,
+  photos: Pick<Photo, 'itemId'>[],
+) {
+  return Math.max(
+    0,
+    MAX_REPORT_PHOTOS - photos.length - missingItemPhotos(template, photos).length,
+  );
+}
+export function reportPhotoError(
+  template: z.infer<typeof TemplateSchema>,
+  photos: Pick<Photo, 'itemId'>[],
+) {
+  if (
+    photos.some(
+      (photo) =>
+        photo.itemId !== undefined && !template.items.some((item) => item.id === photo.itemId),
+    )
+  )
+    return { code: 'PHOTO_ITEM', message: 'Link each item photo to a question on this checklist.' };
+  const [missing] = missingItemPhotos(template, photos);
+  if (missing)
+    return {
+      code: 'PHOTO_REQUIRED',
+      message: `Attach a photo for ${checklistItemLabel(missing)}.`,
+    };
+  if (template.requiresPhoto && photos.length === 0)
+    return { code: 'PHOTO_REQUIRED', message: PHOTO_REQUIRED_MESSAGE };
+}
 const AnswerFieldsSchema = z.object({
   itemId: z.string().max(100),
   value: z.enum(['pass', 'fail', 'na', 'text', 'number']),
@@ -368,7 +414,7 @@ export const ReportInputSchema = z
     baseVersion: z.number().int().positive(),
     answers: z.array(AnswerSchema).min(1).max(50),
     summary: z.string().trim().min(1).max(4000),
-    photos: z.array(PhotoSchema).max(3),
+    photos: z.array(PhotoSchema).max(MAX_REPORT_PHOTOS),
   })
   .strict();
 export type ReportInput = z.infer<typeof ReportInputSchema>;
@@ -378,7 +424,9 @@ export const ReportSchema = z.object({
   submittedBy: z.string(),
   answers: z.array(AnswerSchema),
   summary: z.string(),
-  photos: z.array(z.object({ id: z.string(), mimeType: z.string() })),
+  photos: z.array(
+    z.object({ id: z.string(), mimeType: z.string(), itemId: PhotoSchema.shape.itemId }),
+  ),
 });
 export const StatusSchema = z.enum(['ASSIGNED', 'SUBMITTED', 'APPROVED', 'CHANGES_REQUESTED']);
 export const WorkOrderSchema = z.object({
@@ -654,7 +702,7 @@ export const DraftSchema = z.object({
     )
     .max(50),
   summary: z.string().max(4000),
-  photos: z.array(PhotoSchema).max(3),
+  photos: z.array(PhotoSchema).max(MAX_REPORT_PHOTOS),
 });
 export type Draft = z.infer<typeof DraftSchema>;
 export function parseReading(value: string | undefined): number | null {

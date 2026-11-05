@@ -12,7 +12,7 @@ import {
   CreateOrderSchema,
   CreateSiteSchema,
   CreateTemplateSchema,
-  PHOTO_REQUIRED_MESSAGE,
+  reportPhotoError,
   UpdateSiteLocationSchema,
   MapProviderSchema,
   type MapProvider,
@@ -542,8 +542,8 @@ export async function buildApp(options: AppOptions) {
         );
       const readingError = reportReadingError(order.template, input.answers);
       if (readingError) fail(422, 'READING_RANGE', readingError);
-      if (order.template.requiresPhoto && input.photos.length === 0)
-        fail(422, 'PHOTO_REQUIRED', PHOTO_REQUIRED_MESSAGE);
+      const photoError = reportPhotoError(order.template, input.photos);
+      if (photoError) fail(422, photoError.code, photoError.message);
       for (const photo of input.photos) {
         const bytes = Buffer.from(photo.data, 'base64');
         const valid =
@@ -572,7 +572,7 @@ export async function buildApp(options: AppOptions) {
           submittedBy: actor.id,
           answers: input.answers,
           summary: input.summary,
-          photos: input.photos.map(({ id, mimeType }) => ({ id, mimeType })),
+          photos: input.photos.map(({ data: _data, ...photo }) => photo),
         },
       };
       store.writeOrder(updated);

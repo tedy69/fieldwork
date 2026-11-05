@@ -108,6 +108,9 @@ export default function ReportPrint({
                   <TableRow key={answer.itemId}>
                     <TableHead scope="row">
                       {reportItemLabel(order.template, answer.itemId)}
+                      {report.photos.some((photo) => photo.itemId === answer.itemId) && (
+                        <div>Photo attached</div>
+                      )}
                     </TableHead>
                     <TableCell className="print-lines">{answerLabel(answer)}</TableCell>
                     <TableCell className="print-lines">{answer.note}</TableCell>

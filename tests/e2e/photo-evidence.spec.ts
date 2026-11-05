@@ -122,6 +122,106 @@ test('manager creates a required-photo checklist and the assignment selector ide
   expect(errors).toEqual([]);
 });
 
+test('item photos are required individually and keep their labels through offline sync', async ({
+  page,
+  browser,
+}) => {
+  const manager = await managerClient();
+  await login(page, 'manager');
+  await page.getByRole('button', { name: 'Sites & checklists', exact: true }).click();
+  const form = page.getByRole('form', { name: 'Add a checklist', exact: true });
+  await form.getByLabel('Checklist name').fill('Valve evidence checklist');
+  await form.getByLabel('Inspection items, one per line').fill('Check valve\nCheck seal');
+  await form.getByRole('button', { name: 'Set types per item' }).click();
+  for (const name of ['Require photo for item 1', 'Require photo for item 2']) {
+    await form.getByRole('checkbox', { name }).focus();
+    await page.keyboard.press('Space');
+    await expect(form.getByRole('checkbox', { name })).toBeChecked();
+  }
+  for (const width of [1440, 320]) {
+    await page.setViewportSize({ width, height: 850 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  }
+  const response = page.waitForResponse(
+    (result) => result.url().endsWith('/templates') && result.request().method() === 'POST',
+  );
+  await form.getByRole('button', { name: 'Add checklist', exact: true }).click();
+  const template = await (await response).json();
+  expect(template.items.every((item: { requiresPhoto?: boolean }) => item.requiresPhoto)).toBe(
+    true,
+  );
+  const order = await manager.createOrder({
+    title: 'Valve evidence visit',
+    instructions: '',
+    siteId: 'north',
+    assigneeId: 'worker',
+    templateId: template.id,
+    dueDate: '2026-12-28',
+    priority: 'routine',
+  });
+  const context = await browser.newContext({ baseURL, viewport: { width: 320, height: 850 } });
+  try {
+    const worker = await context.newPage();
+    await login(worker);
+    await worker.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+    });
+    await openOrder(worker, order);
+    await fillReport(worker, 'Synthetic linked evidence report.');
+    await attach(worker);
+    await expect(worker.getByRole('button', { name: 'Choose photos', exact: true })).toBeDisabled();
+    await expect(
+      worker.getByText('Remaining photo slots are reserved for checklist questions.'),
+    ).toBeVisible();
+    await context.setOffline(true);
+    const save = worker.getByRole('button', { name: 'Save report for sync', exact: true });
+    await save.click();
+    await expect(
+      worker.getByRole('alert').filter({ hasText: 'Attach a photo for Check valve.' }),
+    ).toBeVisible();
+    async function addItemPhoto(label: string, number: number) {
+      const chooser = worker.waitForEvent('filechooser');
+      await worker.getByRole('button', { name: `Add photo for ${label}`, exact: true }).focus();
+      await worker.keyboard.press('Enter');
+      await (
+        await chooser
+      ).setFiles({ name: 'item.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
+      await expect(worker.getByAltText(`Site attachment ${number}`)).toBeVisible();
+    }
+    await addItemPhoto('Check valve', 2);
+    await addItemPhoto('Check seal', 3);
+    await worker.getByRole('button', { name: 'Remove photo 2', exact: true }).click();
+    await expect(worker.getByRole('button', { name: 'Add photo for Check valve' })).toBeEnabled();
+    await addItemPhoto('Check valve', 3);
+    await expect(worker.getByText('Draft saved on this device', { exact: true })).toBeVisible();
+    await worker.reload();
+    await openOrder(worker, order);
+    await expect(worker.getByText('Photo attached', { exact: true })).toHaveCount(2);
+    expect(await worker.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await save.click();
+    await expect(worker.getByText('Report queued on this device', { exact: true })).toBeVisible();
+    await context.setOffline(false);
+    await expect(
+      worker.getByRole('heading', { name: 'Inspection report', exact: true }),
+    ).toBeVisible();
+    await expect(
+      worker.getByRole('link', { name: /Submitted site photo 3 Check valve/ }),
+    ).toBeVisible();
+    const history = await manager.reportHistory(order.id);
+    expect(history.data[0].snapshot.report.photos.map((photo) => photo.itemId)).toEqual([
+      undefined,
+      template.items[1].id,
+      template.items[0].id,
+    ]);
+  } finally {
+    await context.close();
+  }
+});
+
 test('worker keeps a missing-photo draft offline, attaches evidence, and supplies evidence again for corrections', async ({
   page,
   context,

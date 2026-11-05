@@ -180,6 +180,7 @@ export default function Resources({
                     {template.items.map((item) => (
                       <li key={item.id}>
                         {checklistItemLabel(item)}
+                        {item.requiresPhoto && <span className="muted"> · Photo required</span>}
                         {item.responseType === 'text' && (
                           <span className="muted"> · Text response</span>
                         )}
@@ -217,7 +218,8 @@ export default function Resources({
                 </NativeSelect>
               </Label>
               <p className="muted">
-                Up to 50 items. Assigned orders keep their original checklist and photo requirement.
+                Up to 50 items, with required photos on up to 3. Assigned orders keep their original
+                checklist and photo requirements.
               </p>
               <Button className="primary" disabled={busy}>
                 Add checklist

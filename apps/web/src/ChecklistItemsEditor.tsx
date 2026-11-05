@@ -31,8 +31,13 @@ export function checklistItems(data: FormData): CreateItem[] {
   const choice = responseChoice(data.get('responseType'));
   return (labels.length ? labels : bulkLabels(data)).map((label, index) => {
     const type = labels.length ? responseChoice(types[index] ?? null) : choice;
-    if (!type) return String(label);
-    const item = { label: String(label), responseType: type };
+    const requiresPhoto = data.has(`item-${index}-photo`);
+    if (!type && !requiresPhoto) return String(label);
+    const item = {
+      label: String(label),
+      responseType: type || ('check' as const),
+      ...(requiresPhoto && { requiresPhoto }),
+    };
     if (type !== 'number' || !labels.length) return item;
     const unit = String(data.get(`item-${index}-unit`) ?? '').trim();
     const min = String(data.get(`item-${index}-min`) ?? '');
@@ -235,6 +240,15 @@ export default function ChecklistItemsEditor({ busy }: { busy: boolean }) {
             </IconButton>
           </div>
           <ItemResponse initial={row.type} index={index} busy={busy} />
+          <Label className="item-photo-option">
+            <Input
+              type="checkbox"
+              name={`item-${index}-photo`}
+              aria-label={`Require photo for item ${index + 1}`}
+              disabled={busy}
+            />
+            Require a photo
+          </Label>
         </fieldset>
       ))}
       <Button

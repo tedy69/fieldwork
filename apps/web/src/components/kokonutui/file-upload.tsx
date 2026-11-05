@@ -4,6 +4,8 @@ import { UploadSimpleIcon } from '@phosphor-icons/react/dist/csr/UploadSimple';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import type { Locale } from '@fieldwork/strings';
+import { workerInspectionCopy } from '@/worker-inspection-copy';
 
 function isFileDrag(event: { dataTransfer: DataTransfer | null }) {
   return event.dataTransfer?.types.includes('Files') ?? false;
@@ -14,11 +16,14 @@ export default function FileUpload({
   onFiles,
   disabled,
   busy,
+  locale = 'en',
 }: {
   onFiles: (files: File[]) => Promise<void>;
   disabled: boolean;
   busy: boolean;
+  locale?: Locale;
 }) {
+  const copy = workerInspectionCopy[locale].upload;
   const input = useRef<HTMLInputElement>(null);
   const pending = useRef(false);
   const [over, setOver] = useState(false);
@@ -46,7 +51,7 @@ export default function FileUpload({
     <div
       className={cn('kokonut-upload', over && !disabled && 'is-dragging')}
       role="group"
-      aria-label="Site photo attachments"
+      aria-label={copy.title}
       aria-busy={busy}
       onDragOver={(event) => {
         if (isFileDrag(event)) {
@@ -70,13 +75,13 @@ export default function FileUpload({
     >
       <UploadSimpleIcon aria-hidden="true" size={24} />
       <div>
-        <strong>{busy ? 'Saving photos on this device…' : 'Drop site photos here'}</strong>
-        <p>JPEG, PNG, or WebP. Up to 3 photos, 2 MB each.</p>
-        <p className="muted">Photos stay in your draft until you submit the inspection.</p>
+        <strong>{busy ? copy.saving : copy.drop}</strong>
+        <p>{copy.formats}</p>
+        <p className="muted">{copy.retention}</p>
       </div>
       <Input
         ref={input}
-        aria-label="Attach site photos"
+        aria-label={copy.input}
         className="sr-only"
         type="file"
         accept="image/jpeg,image/png,image/webp"
@@ -93,7 +98,7 @@ export default function FileUpload({
         disabled={disabled}
         onClick={() => input.current?.click()}
       >
-        Choose photos
+        {copy.choose}
       </Button>
     </div>
   );

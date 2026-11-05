@@ -56,10 +56,12 @@ test('worker language keeps filters and an offline report available at 320px', a
   await context.setOffline(true);
   await expect(page.getByText('Bekerja offline', { exact: true })).toBeVisible();
   await idOrder.click();
-  await page.getByRole('radio', { name: 'Pass', exact: true }).check();
+  await page.getByRole('radio', { name: 'Lolos', exact: true }).check();
   const summary = 'Synthetic worker locale draft.';
-  await page.getByLabel('Inspection summary', { exact: true }).fill(summary);
-  await page.getByRole('button', { name: 'Save report for sync', exact: true }).click();
+  await page.getByLabel('Ringkasan inspeksi', { exact: true }).fill(summary);
+  await page
+    .getByRole('button', { name: 'Simpan laporan untuk sinkronisasi', exact: true })
+    .click();
   const outbox = page.getByRole('button', { name: /^Antrean sinkronisasi/ });
   await outbox.click();
   await expect(page.getByText('MENUNGGU SINKRONISASI', { exact: true })).toBeVisible();

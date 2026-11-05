@@ -13,6 +13,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] English and Indonesian assignment and outbox screens in the Expo worker notebook.
 - [x] English and Indonesian inspection forms and saved reports in Expo, including reading and photo guidance.
 - [x] English and Indonesian web worker lists and outbox, with localized date filters and draft export.
+- [x] English and Indonesian web worker inspection forms and saved reports, with localized photo and reading feedback.
 - [x] Notes, photo attachments, durable outbox, and idempotent submissions.
 - [x] Private local draft JSON exports in the web notebook/outbox, including offline photos and blocked submissions without changing the queue.
 - [x] Indonesian contributor quick-start guide for local setup, demo accounts, offline production builds and checks.

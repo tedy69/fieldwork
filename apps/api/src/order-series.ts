@@ -34,32 +34,38 @@ function summary(row: Record<string, unknown>) {
   });
 }
 export function createSeriesQueries(store: Store) {
-  function list(limit: number, cursor?: string) {
+  function list(limit: number, cursor?: string, query?: string) {
+    const match = query
+      ? "fieldwork_contains(json_extract(s.input,'$.title') || ' ' || json_extract(s.receipt,'$.orders[0].assignee.name') || ' ' || s.id,?)=1"
+      : '1=1';
+    const params = query ? [query] : [];
     const before = cursor
       ? store.db
           .prepare(
-            "SELECT json_extract(receipt,'$.createdAt') AS created_at FROM order_series WHERE id=?",
+            `SELECT json_extract(s.receipt,'$.createdAt') AS created_at FROM order_series s WHERE ${match} AND s.id=?`,
           )
-          .get(cursor)
+          .get(...params, cursor)
       : null;
     if (cursor && !before) return null;
     const boundary = before
-      ? " WHERE (json_extract(s.receipt,'$.createdAt')<? OR (json_extract(s.receipt,'$.createdAt')=? AND s.id<?))"
+      ? " AND (json_extract(s.receipt,'$.createdAt')<? OR (json_extract(s.receipt,'$.createdAt')=? AND s.id<?))"
       : '';
     const rows = store.db
       .prepare(
-        `${summarySelect}${boundary}
+        `${summarySelect} WHERE ${match}${boundary}
       ORDER BY json_extract(s.receipt,'$.createdAt') DESC,s.id DESC LIMIT ?`,
       )
       .all(
-        ...(before
-          ? [before.created_at as string, before.created_at as string, cursor!, limit + 1]
-          : [limit + 1]),
+        ...params,
+        ...(before ? [before.created_at as string, before.created_at as string, cursor!] : []),
+        limit + 1,
       );
     const data = rows.slice(0, limit).map(summary);
     return {
       data,
-      total: store.db.prepare('SELECT COUNT(*) AS total FROM order_series').get()!.total as number,
+      total: store.db
+        .prepare(`SELECT COUNT(*) AS total FROM order_series s WHERE ${match}`)
+        .get(...params)!.total as number,
       nextCursor: rows.length > limit ? data.at(-1)!.id : null,
     };
   }

@@ -108,6 +108,45 @@ describe('calendar recurrence', () => {
 });
 
 describe('recurring assignments', () => {
+  it('filters all saved batches before pagination and keeps search manager-only', async () => {
+    const receipts = [];
+    for (const [title, assigneeId] of [
+      ['Café gate rounds', 'worker'],
+      ['Café pump rounds', 'worker'],
+      ['Reservoir inspection', 'worker-2'],
+    ]) {
+      const created = await create({ ...input(), title, assigneeId });
+      expect(created.statusCode).toBe(201);
+      receipts.push(OrderSeriesReceiptSchema.parse(created.json()));
+    }
+    const before = counts();
+    const list = (q: string, cursor?: string, token = manager) => {
+      const params = new URLSearchParams({ q, limit: '1' });
+      if (cursor) params.set('cursor', cursor);
+      return fixture.app.inject({
+        url: `/api/v1/work-order-series?${params}`,
+        headers: bearer(token),
+      });
+    };
+    const first = (await list(' CAFE\u0301 ')).json();
+    const second = (await list('café', first.nextCursor)).json();
+    expect(first.total).toBe(2);
+    expect(second.total).toBe(2);
+    expect(second.nextCursor).toBeNull();
+    expect([first.data[0].id, second.data[0].id].sort()).toEqual(
+      receipts
+        .slice(0, 2)
+        .map((receipt) => receipt.id)
+        .sort(),
+    );
+    expect((await list('Jordan Lee')).json().data[0].id).toBe(receipts[2].id);
+    expect((await list(receipts[0].id.slice(0, 8))).json().data[0].id).toBe(receipts[0].id);
+    expect((await list('%')).json()).toEqual({ data: [], total: 0, nextCursor: null });
+    expect((await list('Jordan Lee', first.nextCursor)).statusCode).toBe(422);
+    expect((await list('café', undefined, worker)).statusCode).toBe(403);
+    expect(counts()).toEqual(before);
+  });
+
   it('creates and browses excluded dates through the SDK, replaying their set without duplicate work', async () => {
     const { createClient } = await import('@fieldwork/sdk');
     const fetcher: typeof fetch = async (url, init) => {

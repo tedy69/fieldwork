@@ -5,7 +5,7 @@ import { Form } from './components/ui/form';
 import { DatePicker } from './components/ui/date-picker';
 import { Label } from './components/ui/label';
 import { FieldError } from './components/ui/field';
-import { useId, useRef, useState, type FormEvent } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import type { WorkOrder } from '@fieldwork/contracts';
 import { client, dateLabel, message } from './lib';
 import './reschedule.css';
@@ -33,18 +33,23 @@ export default function RescheduleOrder({
   const [error, setError] = useState('');
   const [needsReload, setNeedsReload] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
+  const restoreFocus = useRef(false);
   const formId = useId();
   const locked = Boolean(busy || batch?.locked);
+
+  useLayoutEffect(() => {
+    if (!batch || locked || !restoreFocus.current) return;
+    restoreFocus.current = false;
+    if (trigger.current && !trigger.current.disabled) trigger.current.focus();
+    else batch.onRestoreFocus();
+  }, [batch, editing, locked]);
 
   function focusAfterUpdate() {
     if (!batch) {
       document.getElementById('main')?.focus();
       return;
     }
-    requestAnimationFrame(() => {
-      if (trigger.current && !trigger.current.disabled) trigger.current.focus();
-      else batch.onRestoreFocus();
-    });
+    restoreFocus.current = true;
   }
 
   function cancel() {

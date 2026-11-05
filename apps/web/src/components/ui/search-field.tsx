@@ -31,6 +31,7 @@ export function SearchField({
           type="button"
           variant="ghost"
           aria-label={clearLabel}
+          disabled={props.disabled}
           onClick={(event) => {
             event.preventDefault();
             onValueChange('');

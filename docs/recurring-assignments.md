@@ -72,6 +72,8 @@ Back up the database, including committed WAL content, before deploying an upgra
 
 Managers open **Recurring batches** beside assignment creation. The ledger shows original schedules, workers, and occurrence counts. Selecting a batch loads its current orders, with planned and current due dates labeled separately. Independent rescheduling, reassignment, and report status appear in those current orders. **Refresh batch details** reloads that comparison; **Refresh batches** restarts the ledger. Loaded data represents the time of its last successful read.
 
+Use **Search batches** to find a saved batch by title, original worker name, or batch ID. The server searches across all saved batches before paging. The last loaded results stay visible if a search fails, and clearing the field restores the full ledger.
+
 Use **Show visits** to narrow a loaded batch. Upcoming field work includes unfinished assignments due today or later. Overdue follows the work-order list and uses the current due date and the device's local date. The filter works offline and stays selected when you refresh the same batch.
 
 **Export batch visits as CSV** downloads the visits in the current filter, including both due dates and the current worker and status. The export works from loaded batch data while offline. It contains schedule rows without inspection report content.
@@ -82,7 +84,7 @@ The ledger loads 20 batches at a time and offers **Load more batches**. Failed p
 
 Read-only API methods, restricted to current manager accounts:
 
-- `GET /api/v1/work-order-series?limit=20&cursor=<batch-id>`, through `client.orderSeries(query)`, returns `{ data, total, nextCursor }`. Limits are 1–50, default 20. Rows contain `id`, `title`, `createdAt`, `createdBy` (ID/name), `frequency`, `occurrences`, `firstDueDate`, `lastDueDate`, and original `assignee` (ID/name). Mutation IDs, hashes, full request bodies, and original receipts are omitted.
+- `GET /api/v1/work-order-series?limit=20&cursor=<batch-id>`, through `client.orderSeries(query)`, returns `{ data, total, nextCursor }`. Limits are 1–50, default 20. Optional `q` matches up to 200 characters of batch title, original worker name, or ID, regardless of case. Use the same query when following the cursor. Rows contain `id`, `title`, `createdAt`, `createdBy` (ID/name), `frequency`, `occurrences`, `firstDueDate`, `lastDueDate`, and original `assignee` (ID/name). Mutation IDs, hashes, full request bodies, and original receipts are omitted.
 - `GET /api/v1/work-order-series/:id`, through `client.orderSeriesDetail(id)`, returns that summary plus `orders: [{ occurrence, plannedDueDate, order }]`. Members stay in original occurrence order, while each `order` contains its current complete work-order state. Creator names use the current account display name; original worker/date metadata uses the creation snapshot.
 
 Lists sort newest first by creation timestamp, then batch ID. The cursor anchors the next older page; later arrivals do not shift that boundary. Totals reflect the current database, not a frozen historical snapshot. Unknown cursors return 422 `INVALID_CURSOR`; malformed queries/IDs return 422 `VALIDATION`; unknown valid batch IDs return 404. Authorization runs before pagination or lookup. An incomplete membership record returns an error rather than a successful partial batch. These reads use existing schema 3 tables without a new migration; large-scale indexed querying remains separate work.

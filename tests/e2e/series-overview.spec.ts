@@ -41,6 +41,86 @@ async function login(page: Page, role = 'manager') {
   await expect(page.getByRole('button', { name: 'Sync now', exact: true })).toBeEnabled();
 }
 
+test('manager searches beyond the first batch page and keeps loaded matches during a failure', async ({
+  page,
+  context,
+}) => {
+  const prefix = `Batch search ${crypto.randomUUID().slice(0, 8)}`;
+  const { batches } = await fixture(prefix, 22);
+  const firstBatch = batches[0];
+  const query = firstBatch.id.slice(0, 8);
+  await page.setViewportSize({ width: 320, height: 840 });
+  await login(page);
+  await page.getByRole('button', { name: 'Recurring batches', exact: true }).click();
+  const dialog = dialogFor(page);
+  const input = dialog.getByRole('searchbox', { name: 'Search batches', exact: true });
+  const submit = dialog.getByRole('button', { name: 'Search recurring batches', exact: true });
+  await expect(submit.locator('svg[aria-hidden=true]')).toBeVisible();
+  await input.fill(prefix);
+  await input.press('Enter');
+  await expect(dialog.getByText(`20 loaded · 22 matches for “${prefix}”`)).toBeVisible();
+  await expect(option(page, firstBatch)).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Load more batches', exact: true }).click();
+  await expect(dialog.getByText(`22 loaded · 22 matches for “${prefix}”`)).toBeVisible();
+  await expect(option(page, firstBatch)).toHaveCount(1);
+
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(listEndpoint, async (route) => {
+    if (new URL(route.request().url()).searchParams.get('q') === 'held result') {
+      await held;
+      await route.fulfill({
+        headers: { 'x-test-held-batch-search': 'yes' },
+        json: { data: [], total: 0, nextCursor: null },
+      });
+    } else await route.continue();
+  });
+  const delayed = page.waitForResponse(
+    (response) => response.headers()['x-test-held-batch-search'] === 'yes',
+  );
+  await input.fill('held result');
+  await input.press('Enter');
+  await expect(dialog.getByText('Loading batches…', { exact: true })).toBeVisible();
+  await input.fill(query);
+  await input.press('Enter');
+  await expect(dialog.getByText(`1 loaded · 1 match for “${query}”`)).toBeVisible();
+  release();
+  await delayed;
+  await expect(option(page, firstBatch)).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath('recurring-batch-search-phone.png') });
+  await page.unroute(listEndpoint);
+
+  const noMatches = 'no such synthetic batch';
+  await page.route(listEndpoint, (route) =>
+    route.fulfill({
+      status: 503,
+      json: { error: { code: 'UNAVAILABLE', message: 'Try loading batches again.' } },
+    }),
+  );
+  await input.fill(noMatches);
+  await submit.click();
+  await expect(dialog.getByRole('alert')).toContainText('Try loading batches again.');
+  await expect(option(page, firstBatch)).toBeVisible();
+  await context.setOffline(true);
+  await expect(input).toBeDisabled();
+  const clear = dialog.getByRole('button', { name: 'Clear batch search', exact: true });
+  await expect(clear).toBeDisabled();
+  await expect(option(page, firstBatch)).toBeVisible();
+  await page.unroute(listEndpoint);
+  await context.setOffline(false);
+  await dialog.getByRole('button', { name: 'Retry batch list', exact: true }).click();
+  await expect(
+    dialog.getByRole('heading', { name: 'No matching batches', exact: true }),
+  ).toBeVisible();
+  await clear.click();
+  await expect(input).toBeFocused();
+  await expect(input).toHaveValue('');
+  await expect(dialog.getByText(/20 loaded · \d+ batches/)).toBeVisible();
+  expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+});
+
 test('manager filters current batch visits offline and keeps focus when an order leaves the filter', async ({
   page,
   context,
@@ -198,6 +278,14 @@ test('manager compares planned and current orders, pages with retry, and uses ke
   await refresh.focus();
   await expect(refresh).toBeFocused();
   await page.keyboard.press('Shift+Tab');
+  await expect(
+    dialog.getByRole('button', { name: 'Search recurring batches', exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(
+    dialog.getByRole('searchbox', { name: 'Search batches', exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
   await expect(dialog.getByRole('button', { name: 'Close dialog', exact: true })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(trigger).toBeFocused();
@@ -237,9 +325,10 @@ test('manager compares planned and current orders, pages with retry, and uses ke
   await expect(occurrences).toHaveCount(2);
   await page.unroute(listEndpoint);
   await dialog.getByRole('button', { name: 'Retry batch list', exact: true }).click();
-  await expect(dialog.locator('.series-option')).toHaveCount(
-    (await manager.orderSeries({ limit: 50 })).total,
-  );
+  const { total } = await manager.orderSeries({ limit: 50 });
+  await expect(dialog.locator('.series-option')).toHaveCount(Math.min(total, 40));
+  if (total > 40)
+    await expect(dialog.getByRole('button', { name: 'Load more batches' })).toBeEnabled();
   await selected.getByRole('heading').scrollIntoViewIfNeeded();
   await page.screenshot({ path: test.info().outputPath('series-overview-desktop.png') });
   for (const width of [768, 390, 320]) {

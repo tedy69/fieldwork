@@ -6,5 +6,6 @@ export const recurrenceLabels: Record<Recurrence['frequency'], string> = {
   biweekly: 'Every two weeks',
   weekdays: 'Weekdays (Mon–Fri)',
   monthly: 'Monthly',
+  'month-end': 'Last day of month',
   quarterly: 'Every three months',
 };

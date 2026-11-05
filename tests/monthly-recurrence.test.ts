@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RecurrenceSchema, recurrenceDates } from '@fieldwork/contracts';
+import { RecurrenceSchema, recurrenceDates, recurrenceDatesThrough } from '@fieldwork/contracts';
 
 describe('monthly calendar rules', () => {
   it.each([
@@ -68,5 +68,29 @@ describe('quarterly calendar rules', () => {
         skipDates: ['2026-11-30', '2027-01-31'],
       }),
     ).toEqual(['2026-08-31', '2027-02-28', '2027-05-31']);
+  });
+});
+
+describe('month-end calendar rules', () => {
+  it.each([
+    ['2027-02-28', ['2027-02-28', '2027-03-31', '2027-04-30']],
+    ['2028-02-29', ['2028-02-29', '2028-03-31', '2028-04-30']],
+    ['9999-11-30', ['9999-11-30', '9999-12-31']],
+  ])('uses the last day of each month from %s', (dueDate, dates) => {
+    expect(recurrenceDates({ dueDate, frequency: 'month-end', occurrences: dates.length })).toEqual(
+      dates,
+    );
+  });
+
+  it('requires a month-end start and applies skips within an inclusive end date', () => {
+    expect(() =>
+      recurrenceDates({ dueDate: '2028-02-28', frequency: 'month-end', occurrences: 2 }),
+    ).toThrow('Choose the last day of a month');
+    expect(
+      recurrenceDatesThrough(
+        { dueDate: '2028-02-29', frequency: 'month-end', skipDates: ['2028-03-31'] },
+        '2028-04-30',
+      ),
+    ).toEqual(['2028-02-29', '2028-04-30']);
   });
 });

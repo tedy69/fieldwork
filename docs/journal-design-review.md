@@ -42,6 +42,8 @@ Quarterly recurrence adds one choice to Repeat and uses the existing date previe
 
 The recurring form groups repeat, end rule, and count or date. The existing named calendar icon identifies the date picker. Chromium checks keyboard focus and narrow reflow, validates the inclusive preview with skips, and confirms that retry uses the original schedule.
 
+Month-end uses the existing repeat selector and calendar preview. Its guide identifies the required starting date. Chromium checks a 320px preview beginning on leap day, an inclusive last date, and the same planned dates after a lost response and offline recovery.
+
 Per-item photo evidence: the attachment action sits by the required question and uses the existing photo icon, outline button and draft panel. Text names the required and attached states. Captions in drafts and saved reports identify the linked questions. The scoped web gate passes at 320px and 1440px with keyboard setup and upload, removal, offline reload, missing evidence feedback and reconnect. The existing site-photo flow stays available for general evidence.
 
 Two-week recurrence uses one option in the existing Repeat selector. Preview and recovery keep the schedule alongside the selected dates and use the existing light journal controls. The scoped web gate passes at 390px with keyboard entry, skipped dates, failed-save recovery, offline reload and batch browsing. The daily comparison runs at 390px and 1440px.

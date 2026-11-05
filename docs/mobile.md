@@ -58,6 +58,10 @@ Run `npm exec -- tsx tests/native/blocked-report.ios.ts <simulator-id>` from the
 
 ## Start
 
+The assignment list has a named funnel beside Search. Pick a status to narrow the saved list, or choose **All statuses** to clear the status while keeping the search. The selected status and result count stay visible when the choices are closed.
+
+To verify the filter, start on **My assignments** in English with the synthetic fixture cached, an empty search, and the filter closed. Run `npm exec -- tsx tests/native/assignment-status-filter.ios.ts <simulator-id>`. The runner temporarily disables the fixture API and checks the empty state, search, inspection navigation, and the language switch.
+
 Run the API, then `npm run mobile`. Use a compatible Expo Go client for SDK 58 or create a development build. Enter a worker account and server URL on the sign-in screen.
 
 - iOS simulator: `http://localhost:3001`.

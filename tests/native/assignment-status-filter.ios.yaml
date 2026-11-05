@@ -1,0 +1,51 @@
+appId: host.exp.Exponent
+name: Filter cached assignments by status on iOS
+---
+- scrollUntilVisible:
+    element: My assignments
+    direction: UP
+- tapOn: Filter assignments by status
+- tapOn:
+    text: Approved
+    index: 0
+- assertVisible: Approved · 0 shown
+- scrollUntilVisible:
+    element: No matching assignments
+    centerElement: true
+- scrollUntilVisible:
+    element: Assigned
+    direction: UP
+- tapOn:
+    text: Assigned
+    index: 0
+- tapOn: Filter assignments by status
+- tapOn:
+    id: assignment-search
+- inputText: Weekly
+- tapOn: Done editing
+- assertVisible: Assigned · 1 shown
+- scrollUntilVisible:
+    element: 'Open FW-003: Weekly equipment inspection'
+    centerElement: true
+- tapOn: 'Open FW-003: Weekly equipment inspection'
+- assertVisible: Weekly equipment inspection
+- tapOn: Back to assignments
+- scrollUntilVisible:
+    element: Assigned · 1 shown
+    direction: UP
+- assertVisible:
+    id: assignment-search
+    text: Weekly
+- scrollUntilVisible:
+    element: Bahasa Indonesia
+    direction: UP
+- tapOn: Bahasa Indonesia
+- scrollUntilVisible:
+    element: Ditugaskan · 1 ditampilkan
+- assertVisible: Ditugaskan · 1 ditampilkan
+- tapOn: Saring tugas berdasarkan status
+- tapOn: Semua status
+- assertNotVisible: Ditugaskan · 1 ditampilkan
+- assertVisible:
+    id: assignment-search
+    text: Weekly

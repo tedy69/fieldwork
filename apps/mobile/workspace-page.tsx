@@ -1,14 +1,22 @@
-import { useMemo, type RefObject } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
-import type { User, WorkOrder } from '@fieldwork/contracts';
+import { useMemo, useState, type RefObject } from 'react';
+import { FlatList, Keyboard, Pressable, StyleSheet, View } from 'react-native';
+import { StatusSchema, type User, type WorkOrder } from '@fieldwork/contracts';
 import type { State } from '@fieldwork/offline';
 import { languageNames, notebookCopy, signInCopy, type Locale } from '@fieldwork/strings';
 import { Brand, Button, Copy, Field, Notice, Panel, StatusBadge } from './notebook-ui';
 import { colors, radius, spacing } from './theme';
-import { ArrowClockwise, ClipboardText, Globe, Tray, SignOut } from './notebook-icons';
+import {
+  ArrowClockwise,
+  ClipboardText,
+  FunnelSimple,
+  Globe,
+  Tray,
+  SignOut,
+} from './notebook-icons';
 
 type QueueItem = State['outbox'][number];
 type Entry = { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: QueueItem };
+const statuses = [null, ...StatusSchema.options];
 
 /** Native list pages keep local browsing separate from the repository's write operations. */
 export default function WorkspacePage({
@@ -26,6 +34,8 @@ export default function WorkspacePage({
   onViewChange,
   search,
   onSearchChange,
+  statusFilter,
+  onStatusFilterChange,
   scrollPosition,
 }: {
   state: State;
@@ -42,24 +52,25 @@ export default function WorkspacePage({
   onViewChange: (view: 'assignments' | 'outbox') => void;
   search: string;
   onSearchChange: (search: string) => void;
+  statusFilter: WorkOrder['status'] | null;
+  onStatusFilterChange: (status: WorkOrder['status'] | null) => void;
   scrollPosition: RefObject<number>;
 }) {
   const copy = notebookCopy[locale];
   const alternate = locale === 'en' ? 'id' : 'en';
   const dateLocale = locale === 'id' ? 'id-ID' : undefined;
-  const entries = useMemo<Entry[]>(
-    () =>
-      view === 'outbox'
-        ? state.outbox.map((item) => ({ kind: 'queued', item }))
-        : state.orders
-            .filter((order) =>
-              `${order.reference} ${order.title} ${order.site.name}`
-                .toLowerCase()
-                .includes(search.trim().toLowerCase()),
-            )
-            .map((order) => ({ kind: 'order', order })),
-    [state.orders, state.outbox, search, view],
-  );
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const query = search.trim().toLowerCase();
+  const entries = useMemo<Entry[]>(() => {
+    if (view === 'outbox') return state.outbox.map((item) => ({ kind: 'queued', item }));
+    return state.orders
+      .filter(
+        (order) =>
+          (!statusFilter || order.status === statusFilter) &&
+          `${order.reference} ${order.title} ${order.site.name}`.toLowerCase().includes(query),
+      )
+      .map((order) => ({ kind: 'order', order }));
+  }, [state.orders, state.outbox, query, statusFilter, view]);
   return (
     <FlatList
       data={entries}
@@ -131,17 +142,54 @@ export default function WorkspacePage({
             </Notice>
           ) : null}
           {view === 'assignments' && (
-            <Field
-              label={copy.search}
-              placeholder={copy.searchHint}
-              actionLabels={signInCopy[locale]}
-              value={search}
-              onChangeText={onSearchChange}
-              autoCapitalize="none"
-              autoCorrect={false}
-              clearButtonMode="while-editing"
-              testID="assignment-search"
-            />
+            <View style={styles.searchTools}>
+              <View style={styles.searchRow}>
+                <View style={styles.searchField}>
+                  <Field
+                    label={copy.search}
+                    placeholder={copy.searchHint}
+                    actionLabels={signInCopy[locale]}
+                    value={search}
+                    onChangeText={onSearchChange}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    clearButtonMode="while-editing"
+                    testID="assignment-search"
+                  />
+                </View>
+                <Button
+                  title={copy.filterStatus}
+                  icon={FunnelSimple}
+                  iconOnly
+                  variant="outline"
+                  expanded={filtersOpen}
+                  selected={Boolean(statusFilter)}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setFiltersOpen((open) => !open);
+                  }}
+                />
+              </View>
+              {filtersOpen && (
+                <View style={styles.statusChoices}>
+                  {statuses.map((status) => (
+                    <Button
+                      key={status ?? 'all'}
+                      title={status ? copy.status[status] : copy.allStatuses}
+                      variant="outline"
+                      selected={status === statusFilter}
+                      style={styles.statusChoice}
+                      onPress={() => onStatusFilterChange(status)}
+                    />
+                  ))}
+                </View>
+              )}
+              {statusFilter && (
+                <Copy variant="caption" muted accessibilityLiveRegion="polite">
+                  {copy.filteredCount(copy.status[statusFilter], entries.length)}
+                </Copy>
+              )}
+            </View>
           )}
           {view === 'assignments' && state.outbox.length > 0 && (
             <Notice title={copy.pending(state.outbox.length)}>
@@ -242,7 +290,7 @@ export default function WorkspacePage({
               ? copy.upToDate
               : busy
                 ? copy.loading
-                : search
+                : query || statusFilter
                   ? copy.noMatch
                   : copy.noAssignments
           }
@@ -251,9 +299,11 @@ export default function WorkspacePage({
             ? copy.outboxEmpty
             : busy
               ? copy.loadingHint
-              : search
-                ? copy.noMatchHint
-                : copy.noAssignmentsHint}
+              : statusFilter
+                ? copy.noStatusMatchHint
+                : query
+                  ? copy.noMatchHint
+                  : copy.noAssignmentsHint}
         </Notice>
       }
       ListFooterComponent={
@@ -308,6 +358,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.raised,
   },
   tab: { flexGrow: 1, flexBasis: 120 },
+  searchTools: { gap: spacing.sm },
+  searchRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
+  searchField: { flex: 1, minWidth: 0 },
+  statusChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  statusChoice: { maxWidth: '100%' },
   order: {
     padding: spacing.xl,
     marginBottom: spacing.md,

@@ -47,3 +47,26 @@ describe('monthly calendar rules', () => {
     ).toBe(false);
   });
 });
+
+describe('quarterly calendar rules', () => {
+  it.each([
+    ['2026-08-31', ['2026-08-31', '2026-11-30', '2027-02-28', '2027-05-31']],
+    ['2027-08-31', ['2027-08-31', '2027-11-30', '2028-02-29', '2028-05-31']],
+    ['9999-09-30', ['9999-09-30', '9999-12-30']],
+  ])('keeps the original day every three months from %s', (dueDate, dates) => {
+    expect(recurrenceDates({ dueDate, frequency: 'quarterly', occurrences: dates.length })).toEqual(
+      dates,
+    );
+  });
+
+  it('skips a candidate without changing the original day or quarter', () => {
+    expect(
+      recurrenceDates({
+        dueDate: '2026-08-31',
+        frequency: 'quarterly',
+        occurrences: 3,
+        skipDates: ['2026-11-30', '2027-01-31'],
+      }),
+    ).toEqual(['2026-08-31', '2027-02-28', '2027-05-31']);
+  });
+});

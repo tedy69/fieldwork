@@ -33,6 +33,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Weekday-only recurring batches with Monday–Friday previews, saved-request recovery, and batch browsing.
 - [x] Monthly recurring batches with original-day anchoring, shorter-month handling, date previews, saved-request recovery, and batch browsing.
 - [x] Recurring batches every two weeks, with date previews, skipped dates and duplicate-safe recovery.
+- [x] Recurring batches every three months, with original-day anchoring and shorter-month handling.
 - [x] Per-batch dates to skip for holidays/site closures, with extended previews, preserved order counts and duplicate-safe recovery.
 - [x] Reusable site closure dates that managers can copy into new recurring batches.
 - [x] Checklist-wide photo requirements, web/Expo guidance, offline draft protection, and server enforcement.

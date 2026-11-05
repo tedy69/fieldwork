@@ -498,14 +498,16 @@ export const RecurrenceFrequencySchema = z.enum([
   'biweekly',
   'weekdays',
   'monthly',
+  'quarterly',
 ]);
 function advanceRecurrence(
   date: Date,
   frequency: z.infer<typeof RecurrenceFrequencySchema>,
   originalDay: number,
 ) {
-  if (frequency === 'monthly') {
-    date.setUTCMonth(date.getUTCMonth() + 1, 1);
+  if (frequency === 'monthly' || frequency === 'quarterly') {
+    const months = frequency === 'quarterly' ? 3 : 1;
+    date.setUTCMonth(date.getUTCMonth() + months, 1);
     const end = new Date(date);
     end.setUTCMonth(end.getUTCMonth() + 1, 0);
     date.setUTCDate(Math.min(originalDay, end.getUTCDate()));

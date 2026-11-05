@@ -335,6 +335,11 @@ function RecurringDialog({
             Repeats on the original day of the month. Shorter months use their last day.
           </p>
         )}
+        {(pending?.frequency ?? frequency) === 'quarterly' && (
+          <p className="muted">
+            Repeats every three months on the original day. Shorter months use their last day.
+          </p>
+        )}
         {pending ? (
           <>
             <Alert className="recurrence-recovery">
@@ -420,7 +425,8 @@ function RecurringDialog({
                     <Option value="weekly">Weekly</Option>
                     <Option value="biweekly">{recurrenceLabels.biweekly}</Option>
                     <Option value="weekdays">Weekdays (Mon–Fri)</Option>
-                    <Option value="monthly">Monthly</Option>
+                    <Option value="monthly">{recurrenceLabels.monthly}</Option>
+                    <Option value="quarterly">{recurrenceLabels.quarterly}</Option>
                   </Select>
                 </Label>
                 <Label>

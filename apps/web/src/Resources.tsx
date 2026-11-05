@@ -6,7 +6,13 @@ import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { NativeSelect, NativeSelectOption } from './components/ui/native-select';
 import { useRef, useState, type FormEvent } from 'react';
-import type { Catalog, Site, WorkerAccount } from '@fieldwork/contracts';
+import {
+  checklistItemLabel,
+  readingBounds,
+  type Catalog,
+  type Site,
+  type WorkerAccount,
+} from '@fieldwork/contracts';
 import { createClient } from '@fieldwork/sdk';
 import { parseCoordinateInputs } from './coordinate-input';
 import SiteLocation from './SiteLocation';
@@ -173,12 +179,16 @@ export default function Resources({
                   <ol>
                     {template.items.map((item) => (
                       <li key={item.id}>
-                        {item.label}
+                        {checklistItemLabel(item)}
                         {item.responseType === 'text' && (
                           <span className="muted"> · Text response</span>
                         )}
                         {item.responseType === 'number' && (
-                          <span className="muted"> · Numeric reading</span>
+                          <span className="muted">
+                            {readingBounds(item)
+                              ? ` · Reading ${readingBounds(item)}`
+                              : ' · Numeric reading'}
+                          </span>
                         )}
                       </li>
                     ))}

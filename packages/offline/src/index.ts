@@ -3,6 +3,7 @@ import {
   LocalReportExportSchema,
   PHOTO_REQUIRED_MESSAGE,
   answersMatchTemplate,
+  reportReadingError,
   ReportInputSchema,
 } from '@fieldwork/contracts';
 
@@ -160,6 +161,8 @@ export function createOfflineRepository(
           throw new Error(
             'Complete each checklist item with its required response type before queueing.',
           );
+        const readingError = order && reportReadingError(order.template, input.answers);
+        if (readingError) throw new Error(readingError);
         if (order?.template.requiresPhoto && input.photos.length === 0)
           throw new Error(PHOTO_REQUIRED_MESSAGE);
         return {

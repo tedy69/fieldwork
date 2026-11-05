@@ -50,7 +50,7 @@ See [mobile development](docs/mobile.md) for the component system and repeatable
 
 - Manager and worker accounts with server-enforced permissions.
 - Sites, reusable inspection checklists, and assigned work orders.
-- [Text and numeric checklist fields](docs/checklist-fields.md) on web and Expo, with offline drafts and saved report exports.
+- [Mixed checklists](docs/checklist-fields.md) with checks, text and numeric readings, optional units and limits, and offline drafts on web and Expo.
 - Search and overdue filtering for cached web assignments. Approved work is excluded; unfinished work becomes overdue the day after its due date in the device's local time zone.
 - [Due-date ranges](docs/work-order-filters.md) for planning from the cached web list, with open-ended or inclusive start/end dates.
 - A [weekly planner](docs/week-planner.md) with daily workloads, offline browsing, and date-preset assignments for managers.

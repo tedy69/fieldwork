@@ -15,10 +15,14 @@ import { RadioGroup, RadioGroupItem } from './components/ui/radio-group';
 import { useRef, useState, type FormEvent } from 'react';
 import {
   ReportInputSchema,
-  answerComplete,
   answerLabel,
   blankDraft,
+  checklistItemLabel,
+  completedAnswers,
+  readingBounds,
+  readingInputError,
   reportAnswers,
+  reportItemLabel,
   type Draft,
   type Photo,
   type User,
@@ -64,6 +68,7 @@ export default function OrderDetail({
   const queued = state.outbox.find((item) => item.orderId === order.id);
   const editable =
     user.role === 'worker' && ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status) && !queued;
+  const completed = completedAnswers(order.template, draft.answers);
   async function save(next: Draft) {
     currentDraft.current = next;
     setDraft(next);
@@ -109,7 +114,7 @@ export default function OrderDetail({
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError('');
-    if (draft.answers.some((answer) => !answerComplete(answer))) {
+    if (completed !== order.template.items.length) {
       setError('Complete every checklist item before submitting.');
       return;
     }
@@ -223,16 +228,17 @@ export default function OrderDetail({
                 </span>
               </div>
               <p className="inspection-progress" role="status">
-                <strong>{draft.answers.filter(answerComplete).length}</strong> of{' '}
-                {order.template.items.length} checks recorded
+                <strong>{completed}</strong> of {order.template.items.length} checks recorded
               </p>
               {order.template.items.map((item, index) => {
                 const answer = draft.answers.find((answer) => answer.itemId === item.id)!;
+                const readingError = readingInputError(item, answer.reading);
+                const bounds = readingBounds(item);
                 return (
                   <FieldSet className="checklist-item" key={item.id}>
                     <FieldLegend id={`item-${item.id}`}>
                       <span>{String(index + 1).padStart(2, '0')}</span>
-                      {item.label}
+                      {checklistItemLabel(item)}
                     </FieldLegend>
                     {item.responseType === 'text' ? (
                       <Label>
@@ -258,17 +264,15 @@ export default function OrderDetail({
                     ) : item.responseType === 'number' ? (
                       <>
                         <Label>
-                          <span className="sr-only">Reading: {item.label}</span>
+                          <span className="sr-only">Reading: {checklistItemLabel(item)}</span>
                           <Input
-                            aria-label={`Reading: ${item.label}`}
+                            aria-label={`Reading: ${checklistItemLabel(item)}`}
                             required
                             maxLength={100}
                             value={answer.reading ?? ''}
-                            aria-invalid={Boolean(answer.reading && !answerComplete(answer))}
+                            aria-invalid={Boolean(readingError)}
                             aria-describedby={
-                              !answerComplete(answer) && answer.reading
-                                ? `reading-help-${item.id}`
-                                : undefined
+                              readingError || bounds ? `reading-help-${item.id}` : undefined
                             }
                             onChange={(event) =>
                               void save({
@@ -282,11 +286,13 @@ export default function OrderDetail({
                             }
                           />
                         </Label>
-                        {answer.reading && !answerComplete(answer) && (
-                          <FieldError id={`reading-help-${item.id}`}>
-                            Enter a number, such as 12.5 or -3.
-                          </FieldError>
-                        )}
+                        {readingError ? (
+                          <FieldError id={`reading-help-${item.id}`}>{readingError}</FieldError>
+                        ) : bounds ? (
+                          <p id={`reading-help-${item.id}`} className="muted">
+                            Enter a reading {bounds}.
+                          </p>
+                        ) : null}
                       </>
                     ) : (
                       <RadioGroup
@@ -412,9 +418,7 @@ export default function OrderDetail({
               <ul className="report-checklist">
                 {order.report.answers.map((answer) => (
                   <li key={answer.itemId}>
-                    <strong>
-                      {order.template.items.find((item) => item.id === answer.itemId)?.label}
-                    </strong>
+                    <strong>{reportItemLabel(order.template, answer.itemId)}</strong>
                     <span
                       className={`preserve-lines ${answer.value === 'fail' ? 'amber' : 'muted'}`}
                     >

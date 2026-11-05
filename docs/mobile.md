@@ -75,7 +75,7 @@ The iOS simulator does not emulate a real camera or cellular conditions. JavaScr
 
 ## Storage and synchronization
 
-Text and numeric questions use the existing labeled Field component and local SQLite notebook. Numeric drafts keep partial input as text; Save and sync inspection requires a valid finite reading, including zero and negative decimals. The iOS punctuation keyboard and Android full keyboard allow the sign and decimal point. Shared submission conversion sends numbers while keeping the raw draft until acknowledgement. See [checklist fields](checklist-fields.md) for precision, units and coordinated API/web/Expo upgrades.
+Text and numeric questions use the existing labeled Field component and local SQLite notebook. Numeric drafts keep partial or out-of-range input as text. Save and sync inspection requires a finite reading within the assignment's inclusive limits, when set. The field shows the unit and expected range. The iOS punctuation keyboard and Android full keyboard allow the sign and decimal point. Shared submission conversion sends numbers while keeping the raw draft until acknowledgement. See [checklist fields](checklist-fields.md) for precision, units and coordinated API/web/Expo upgrades.
 
 Managers can issue [worker invitation links](worker-invitations.md) from the web workspace. Open the link in a browser to choose a password, then sign in through Expo with that email, password, and the same server URL. Native invitation deep-link handling is not included.
 

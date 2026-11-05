@@ -50,6 +50,10 @@ After sign-in, run `ADB=<adb-path> bash tests/native/icon-actions.android.sh <em
 
 For the item photo smoke test, use a dedicated Android emulator with the same synthetic API and Metro setup. Start signed in as the fixture worker on **My assignments** with an empty outbox. Run `ADB=<adb-path> npm exec -- tsx tests/native/item-evidence.android.ts <emulator-id>`. Set `METRO_URL` or `FIELDWORK_DESIGN_TEST_PORT` if your fixture uses different defaults. The runner creates a synthetic assignment, switches the fixture API offline, and checks the photo and report across two restarts. It restores the API before reconnecting and verifies exactly one server revision with the photo linked to its question.
 
+For the iOS offline report smoke test, use a dedicated simulator with [a matching Expo Go build](https://docs.expo.dev/workflow/ios-simulator/). Start the synthetic fixture and Metro with `EXPO_PUBLIC_API_URL=http://127.0.0.1:4180`. Open the project, dismiss Expo Go's welcome sheet, and turn off its floating **Tools button** from the developer menu so the app's sync action is reachable. Sign in as the fixture worker, dismiss the system password prompt, and start from **My assignments** with an empty outbox.
+
+Run `npm exec -- tsx tests/native/offline-report.ios.ts <simulator-id>`. The runner defaults to Metro on port 8082 and the fixture on 4180. Set `METRO_URL` or `FIELDWORK_DESIGN_TEST_PORT` when using different ports. It checks a retained draft and a queued report after separate restarts, restores the fixture API, and verifies one report revision after repeated sync.
+
 ## Start
 
 Run the API, then `npm run mobile`. Use a compatible Expo Go client for SDK 58 or create a development build. Enter a worker account and server URL on the sign-in screen.

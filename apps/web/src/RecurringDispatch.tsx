@@ -217,6 +217,8 @@ function RecurringDialog({
   const [error, setError] = useState('');
   const [editable, setEditable] = useState(false);
   const [dueDate, setDueDate] = useState(pending?.dueDate ?? initialDueDate ?? localDate());
+  const [siteId, setSiteId] = useState(pending?.siteId ?? catalog.sites[0]?.id ?? '');
+  const siteClosures = catalog.sites.find((site) => site.id === siteId)?.closureDates;
   const [frequency, setFrequency] = useState<Recurrence['frequency']>(
     pending?.frequency ?? 'weekly',
   );
@@ -371,6 +373,7 @@ function RecurringDialog({
                   try {
                     draft.current = pending;
                     setDueDate(pending.dueDate);
+                    setSiteId(pending.siteId);
                     setFrequency(pending.frequency);
                     setOccurrences(pending.occurrences);
                     setSkipDates(pending.skipDates ?? []);
@@ -401,6 +404,7 @@ function RecurringDialog({
                 catalog={catalog}
                 initial={draft.current ?? { dueDate }}
                 onDateChange={setDueDate}
+                onSiteChange={setSiteId}
               />
               <div className="form-grid">
                 <Label>
@@ -436,6 +440,7 @@ function RecurringDialog({
                 dates={skipDates}
                 candidate={skipDate}
                 dueDate={dueDate}
+                closureDates={siteClosures}
                 disabled={busy}
                 onCandidate={setSkipDate}
                 onChange={setSkipDates}

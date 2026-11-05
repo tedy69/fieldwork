@@ -33,6 +33,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Monthly recurring batches with original-day anchoring, shorter-month handling, date previews, saved-request recovery, and batch browsing.
 - [x] Recurring batches every two weeks, with date previews, skipped dates and duplicate-safe recovery.
 - [x] Per-batch dates to skip for holidays/site closures, with extended previews, preserved order counts and duplicate-safe recovery.
+- [x] Reusable site closure dates that managers can copy into new recurring batches.
 - [x] Checklist-wide photo requirements, web/Expo guidance, offline draft protection, and server enforcement.
 - [x] Photo evidence for individual checklist items, with offline attachments and labeled report history.
 - [x] Text-response checklist fields on web and Expo, including mixed API templates, offline drafts and saved report exports.
@@ -46,7 +47,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 
 ## Next · Make daily work easier
 
-- Broader scheduling rules, holiday calendars, and editing or retiring future series work.
+- Broader scheduling rules and editing or retiring future series work.
 - Automated native flows on Android and iOS.
 - Application translations, beginning with English and Indonesian.
 

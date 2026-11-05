@@ -662,9 +662,20 @@ export const ReviewSchema = z
     message: 'Explain what needs to change.',
     path: ['note'],
   });
+export const CatalogSiteSchema = SiteSchema.extend({
+  closureDates: SkippedDatesSchema.optional(),
+});
+export type CatalogSite = z.infer<typeof CatalogSiteSchema>;
+export const UpdateSiteClosuresSchema = z
+  .object({
+    expectedDates: SkippedDatesSchema,
+    dates: SkippedDatesSchema,
+  })
+  .strict();
+export type UpdateSiteClosures = z.infer<typeof UpdateSiteClosuresSchema>;
 export const CatalogSchema = z.object({
   users: z.array(UserSchema),
-  sites: z.array(SiteSchema),
+  sites: z.array(CatalogSiteSchema),
   templates: z.array(TemplateSchema),
 });
 export type Catalog = z.infer<typeof CatalogSchema>;

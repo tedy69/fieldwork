@@ -312,7 +312,17 @@ export default function Workspace({ user, logout }: { user: User; logout: () => 
               onSiteUpdated={(updated) =>
                 setCatalog((current) => ({
                   ...current,
-                  sites: current.sites.map((site) => (site.id === updated.id ? updated : site)),
+                  sites: current.sites.map((site) =>
+                    site.id === updated.id ? { ...site, coordinates: updated.coordinates } : site,
+                  ),
+                }))
+              }
+              onSiteClosuresUpdated={(updated) =>
+                setCatalog((current) => ({
+                  ...current,
+                  sites: current.sites.map((site) =>
+                    site.id === updated.id ? { ...site, closureDates: updated.closureDates } : site,
+                  ),
                 }))
               }
             />

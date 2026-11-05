@@ -13,10 +13,12 @@ export default function AssignmentFields({
   catalog,
   initial,
   onDateChange,
+  onSiteChange,
 }: {
   catalog: Catalog;
   initial?: Partial<CreateOrder>;
   onDateChange?: (date: string) => void;
+  onSiteChange?: (siteId: string) => void;
 }) {
   return (
     <>
@@ -34,7 +36,13 @@ export default function AssignmentFields({
       </Label>
       <Label>
         Site
-        <Select name="siteId" aria-label="Site" required defaultValue={initial?.siteId}>
+        <Select
+          name="siteId"
+          aria-label="Site"
+          required
+          defaultValue={initial?.siteId}
+          onChange={(event) => onSiteChange?.(event.currentTarget.value)}
+        >
           {catalog.sites.map((site) => (
             <Option key={site.id} value={site.id}>
               {site.name}

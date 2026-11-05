@@ -1599,6 +1599,9 @@ main#main {
   padding: 18px 0;
   font-size: 14px;
 }
+.site-closure-editor {
+  margin-top: 8px;
+}
 .resource-list p,
 .resource-list ol,
 .resource-grid form > p {

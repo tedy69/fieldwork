@@ -47,6 +47,7 @@ export default function RecurrenceExceptions({
   dates,
   candidate,
   dueDate,
+  closureDates,
   disabled,
   onCandidate,
   onChange,
@@ -54,6 +55,7 @@ export default function RecurrenceExceptions({
   dates: string[];
   candidate: string;
   dueDate: string;
+  closureDates?: string[];
   disabled: boolean;
   onCandidate: (date: string) => void;
   onChange: (dates: string[]) => void;
@@ -61,6 +63,9 @@ export default function RecurrenceExceptions({
   const id = useId();
   const [open, setOpen] = useState(dates.length > 0);
   const validDate = RecurrenceSchema.shape.dueDate.safeParse(candidate).success;
+  const laterClosures =
+    closureDates?.filter((date) => date > dueDate && !dates.includes(date)) ?? [];
+  const tooMany = dates.length + laterClosures.length > 52;
   const error =
     validDate && candidate <= dueDate
       ? 'Choose a skipped date after the first due date.'
@@ -84,6 +89,32 @@ export default function RecurrenceExceptions({
         Add holidays or site closures. The batch still creates the chosen number of orders,
         extending the schedule when needed.
       </p>
+      {closureDates?.length ? (
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={disabled || tooMany || laterClosures.length === 0}
+            onClick={() => {
+              onChange([...dates, ...laterClosures].sort());
+              focusDate();
+            }}
+          >
+            Copy site closure dates
+          </Button>
+          {closureDates.includes(dueDate) && (
+            <p className="muted">
+              The first date is marked closed. Change it to start on another date.
+            </p>
+          )}
+          {tooMany && (
+            <p className="muted">Remove skipped dates before copying this site calendar.</p>
+          )}
+          {!tooMany && laterClosures.length === 0 && (
+            <p className="muted">No later closure dates to copy.</p>
+          )}
+        </>
+      ) : null}
       <Label htmlFor={id}>Date to skip</Label>
       <DatePicker
         id={id}

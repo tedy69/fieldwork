@@ -36,6 +36,13 @@ const update = (
     headers: bearer(token),
     payload: { coordinates, expectedCoordinates },
   });
+const updateClosures = (dates: string[], expectedDates: string[] = [], token = manager) =>
+  fixture.app.inject({
+    method: 'PATCH',
+    url: '/api/v1/sites/north/closures',
+    headers: bearer(token),
+    payload: { dates, expectedDates },
+  });
 beforeEach(async () => {
   fixture = await buildApp({ databasePath: ':memory:', rateLimits: false });
   seed(fixture.store);
@@ -230,14 +237,18 @@ it('persists location edits and clears across restart without a new migration', 
   seed(fixture.store);
   manager = await login('manager');
   await update(point);
+  const closures = ['2026-12-25', '2027-01-01'];
+  expect((await updateClosures(closures)).statusCode).toBe(200);
   await fixture.app.close();
   fixture = await buildApp({ databasePath: path, rateLimits: false });
   try {
     expect(fixture.store.catalog().sites[0].coordinates).toEqual(point);
+    expect(fixture.store.catalog().sites[0].closureDates).toEqual(closures);
     expect((await update(null, point)).statusCode).toBe(200);
     await fixture.app.close();
     fixture = await buildApp({ databasePath: path, rateLimits: false });
     expect(fixture.store.catalog().sites[0]).not.toHaveProperty('coordinates');
+    expect(fixture.store.catalog().sites[0].closureDates).toEqual(closures);
     expect(
       fixture.store.db
         .prepare('SELECT version FROM migrations ORDER BY version')
@@ -249,4 +260,45 @@ it('persists location edits and clears across restart without a new migration', 
     rmSync(directory, { recursive: true, force: true });
     fixture = await buildApp({ databasePath: ':memory:', rateLimits: false });
   }
+});
+
+it('guards closure writes, compares saved dates, and preserves assignment snapshots', async () => {
+  const original = fixture.store.getOrder('demo-1');
+  const dates = ['2026-12-25', '2027-01-01'];
+  expect((await updateClosures(dates, [], worker)).statusCode).toBe(403);
+  expect((await updateClosures([dates[0], dates[0]])).statusCode).toBe(422);
+  expect((await updateClosures(['2027-02-29'])).statusCode).toBe(422);
+  const saved = await updateClosures([...dates].reverse());
+  expect(saved.statusCode).toBe(200);
+  expect(saved.json().closureDates).toEqual(dates);
+  expect((await updateClosures(dates)).json()).toEqual(saved.json());
+  const conflict = await updateClosures(['2027-03-01']);
+  expect(conflict.statusCode).toBe(409);
+  expect(conflict.json().error.code).toBe('CLOSURE_CONFLICT');
+  const catalog = await fixture.app.inject({ url: '/api/v1/catalog', headers: bearer(worker) });
+  expect(
+    catalog.json().sites.find((site: { id: string }) => site.id === 'north'),
+  ).not.toHaveProperty('closureDates');
+  const read = await fixture.app.inject({ url: '/api/v1/sites/north', headers: bearer(worker) });
+  expect(read.json()).not.toHaveProperty('closureDates');
+  const assigned = await fixture.app.inject({
+    method: 'POST',
+    url: '/api/v1/work-orders',
+    headers: bearer(manager),
+    payload: {
+      title: 'Closure snapshot fixture',
+      instructions: '',
+      siteId: 'north',
+      templateId: 'routine',
+      assigneeId: 'worker',
+      dueDate: dates[0],
+      priority: 'routine',
+    },
+  });
+  expect(assigned.statusCode).toBe(201);
+  expect(assigned.json().site).not.toHaveProperty('closureDates');
+  expect(fixture.store.getOrder('demo-1')).toEqual(original);
+  expect((await updateClosures([], [...dates].reverse())).json()).not.toHaveProperty(
+    'closureDates',
+  );
 });

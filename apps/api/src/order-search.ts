@@ -3,18 +3,6 @@ import type { z } from 'zod';
 import type { Store } from './store';
 
 export function createOrderSearch(store: Store) {
-  store.db.function('fieldwork_contains', { deterministic: true }, (value, needle) =>
-    String(value ?? '')
-      .normalize('NFC')
-      .toLowerCase()
-      .includes(
-        String(needle ?? '')
-          .normalize('NFC')
-          .toLowerCase(),
-      )
-      ? 1
-      : 0,
-  );
   return (actor: User, query: z.infer<typeof OrderSearchQuerySchema>) => {
     const conditions = ['1=1'];
     const params: string[] = [];

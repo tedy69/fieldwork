@@ -677,6 +677,7 @@ export const OrderSeriesQuerySchema = z
   .object({
     limit: z.coerce.number().int().min(1).max(50).default(20),
     cursor: z.uuid().optional(),
+    q: z.string().trim().max(200).optional(),
   })
   .strict();
 export type OrderSeriesQuery = Partial<z.infer<typeof OrderSeriesQuerySchema>>;

@@ -173,12 +173,18 @@ it('paginates timestamp ties by ID and does not shift older pages when another b
   expect((await read(`?cursor=${randomUUID()}`)).json().error.code).toBe('INVALID_CURSOR');
 });
 
-it.each(['?limit=0', '?limit=51', '?limit=2.5', '?cursor=', '?cursor=bad', '?offset=0', '?q=gate'])(
-  'rejects invalid pagination %s',
-  async (suffix) => {
-    expect((await read(suffix)).statusCode).toBe(422);
-  },
-);
+it.each([
+  '?limit=0',
+  '?limit=51',
+  '?limit=2.5',
+  '?cursor=',
+  '?cursor=bad',
+  '?offset=0',
+  '?search=gate',
+  `?q=${'a'.repeat(201)}`,
+])('rejects invalid list parameters %s', async (suffix) => {
+  expect((await read(suffix)).statusCode).toBe(422);
+});
 
 it('reads batches created by another current manager without changing any saved records', async () => {
   const batch = await create();

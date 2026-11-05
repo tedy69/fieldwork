@@ -5,7 +5,31 @@
   color: var(--muted);
 }
 .series-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
   margin: 16px 0;
+}
+.series-search {
+  display: flex;
+  align-items: flex-end;
+  flex: 1;
+  gap: 8px;
+  min-width: 0;
+}
+.series-search .ui-field-label {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.series-search .input-with-action > .ui-input {
+  padding-right: 12px;
+}
+.series-search .input-with-action:has(> .ui-button) > .ui-input {
+  padding-right: 44px;
+}
+.series-search-status {
+  overflow-wrap: anywhere;
 }
 .series-layout {
   display: grid;

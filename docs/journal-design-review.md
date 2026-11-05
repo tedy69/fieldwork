@@ -78,6 +78,8 @@ Due today uses the existing status controls and the named native funnel. Browser
 
 The native notebook shows one localized sync notice during a server outage and keeps queued work visible. The iOS and Android synthetic fixtures verify the language switch during the same outage. The iOS flow also verifies that a successful retry clears the notice and preserves the active filter.
 
+Recurring batch search uses the existing labeled search field and named Phosphor search and refresh actions. The 320px browser flow exercises keyboard submission, all matching pages, stale responses, failed searches, offline retention, and focus after clearing the field.
+
 Android native execution and its platform limits are recorded in [verification](verification.md). This report does not certify iOS execution, physical cameras, full screen-reader traversal or app-store readiness. No performance score is claimed.
 
 ## Antislop Delivery Gate

@@ -23,6 +23,18 @@ export function verifyPassword(password: string, encoded: string) {
 export function openStore(path: string) {
   if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
   const db = new DatabaseSync(path);
+  db.function('fieldwork_contains', { deterministic: true }, (value, needle) =>
+    String(value ?? '')
+      .normalize('NFC')
+      .toLowerCase()
+      .includes(
+        String(needle ?? '')
+          .normalize('NFC')
+          .toLowerCase(),
+      )
+      ? 1
+      : 0,
+  );
   db.exec(`
     PRAGMA journal_mode=WAL;
     PRAGMA foreign_keys=ON;

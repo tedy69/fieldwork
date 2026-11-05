@@ -12,6 +12,8 @@ The web worker list and outbox use a globe in the top bar and share the sign-in 
 
 The web worker inspection follows the same language choice. Chromium verifies that switching keeps the active draft, invalid readings and missing photos explain how to recover, and a zero reading plus its required photo survive offline reload and sync.
 
+Report history and the printable report use the worker's language while preserving the saved answers and manager feedback. Chromium verifies keyboard focus, loaded history during an outage, and an offline print containing the latest saved revision.
+
 Rescheduling from a recurring batch uses the same calendar icon and date field as an order. Planned and current dates remain side by side on desktop and stack on narrow screens. Chromium verifies keyboard entry and Escape, focus after saving, conflict recovery with the proposed date intact, offline controls, and 320px reflow.
 
 Quarterly recurrence adds one choice to Repeat and uses the existing date preview and recovery panel. Chromium verifies keyboard entry, shorter-month dates, a 320px layout, and recovery of a saved request after the response is lost.

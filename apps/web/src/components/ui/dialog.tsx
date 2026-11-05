@@ -12,10 +12,12 @@ export function DialogContent({
   className,
   children,
   showCloseButton = true,
+  closeLabel = 'Close dialog',
   size = 'form',
   ...props
 }: ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
+  closeLabel?: string;
   size?: 'form' | 'directory' | 'compare' | 'finder';
 }) {
   return (
@@ -32,7 +34,7 @@ export function DialogContent({
           <DialogPrimitive.Close
             type="button"
             className="ui-button ui-button-outline quiet ui-dialog-close"
-            aria-label="Close dialog"
+            aria-label={closeLabel}
           >
             <XIcon aria-hidden="true" />
           </DialogPrimitive.Close>

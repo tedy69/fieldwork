@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { type ReportRevision, answerLabel, reportItemLabel } from '@fieldwork/contracts';
+import { inspectionCopy, notebookCopy, type Locale } from '@fieldwork/strings';
 import { ClockCounterClockwiseIcon } from '@phosphor-icons/react/dist/csr/ClockCounterClockwise';
-import { client, dateLabel, labels, message } from './lib';
+import { client, dateLabel, message } from './lib';
 import { Button } from './components/ui/button';
 import { IconButton } from './components/ui/icon-button';
 import { Badge } from './components/ui/badge';
@@ -23,16 +24,27 @@ import {
   TableCell,
 } from './components/ui/table';
 import { Empty } from './components';
+import { workerReportCopy } from './worker-report-copy';
 import './report-history.css';
 
 type HistoryPage = Awaited<ReturnType<typeof client.reportHistory>>;
-const versionLabel = (revision: ReportRevision) =>
-  revision.submissionVersion === null
-    ? 'Saved report'
-    : `Order version ${revision.submissionVersion}`;
-const timeLabel = (time: string) => new Date(time).toLocaleString();
-
-export default function ReportHistory({ orderId, online }: { orderId: string; online: boolean }) {
+export default function ReportHistory({
+  orderId,
+  online,
+  locale = 'en',
+}: {
+  orderId: string;
+  online: boolean;
+  locale?: Locale;
+}) {
+  const report = workerReportCopy[locale];
+  const copy = report.history;
+  const inspection = inspectionCopy[locale];
+  const status = notebookCopy[locale].status;
+  const dateLocale = locale === 'id' ? 'id-ID' : undefined;
+  const timeLabel = (time: string) => new Date(time).toLocaleString(dateLocale);
+  const versionLabel = (revision: ReportRevision) =>
+    revision.submissionVersion === null ? copy.saved : copy.version(revision.submissionVersion);
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState<HistoryPage | null>(null);
   const [selectedId, setSelectedId] = useState('');
@@ -86,10 +98,10 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
 
   const selected = page?.data.find((revision) => revision.snapshot.report.id === selectedId);
   return (
-    <section className="history-launcher" aria-label="Saved submission history">
+    <section className="history-launcher" aria-label={copy.section} lang={locale}>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <IconButton label="Report history" ref={trigger} className="quiet" disabled={!online}>
+          <IconButton label={copy.title} ref={trigger} className="quiet" disabled={!online}>
             <ClockCounterClockwiseIcon aria-hidden="true" />
           </IconButton>
         </DialogTrigger>
@@ -97,6 +109,8 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
           size="compare"
           className="history-dialog"
           aria-modal="true"
+          lang={locale}
+          closeLabel={copy.close}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             title.current?.focus();
@@ -111,17 +125,14 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
           <DialogHeader className="history-heading">
             <div>
               <DialogTitle ref={title} tabIndex={-1}>
-                Report history
+                {copy.title}
               </DialogTitle>
-              <DialogDescription>
-                Saved submissions and manager feedback. Viewing a report does not change your draft.
-              </DialogDescription>
+              <DialogDescription>{copy.intro}</DialogDescription>
             </div>
           </DialogHeader>
           {!online && (
             <Alert role="status" className="banner notice">
-              You’re offline. Loaded text stays available until you close this history. Connect to
-              load more submissions or photos.
+              {copy.offline}
             </Alert>
           )}
           {error && (
@@ -132,29 +143,22 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
                 disabled={busy || !online}
                 onClick={() => void load(page?.nextCursor ?? undefined, generation.current)}
               >
-                Retry history
+                {copy.retry}
               </Button>
             </Alert>
           )}
           {busy && (
             <p className="muted" role="status">
-              Loading report history…
+              {copy.loading}
             </p>
           )}
           {page && (
-            <p className="muted history-count">
-              Showing {page.data.length} of {page.total} saved submissions
-            </p>
+            <p className="muted history-count">{copy.count(page.data.length, page.total)}</p>
           )}
-          {page && !page.data.length && (
-            <Empty
-              title="No submitted reports yet"
-              description="Reports will appear here after the server confirms a submission."
-            />
-          )}
+          {page && !page.data.length && <Empty title={copy.empty} description={copy.emptyHint} />}
           {selected && page && (
             <div className="history-layout">
-              <nav aria-label="Report revisions">
+              <nav aria-label={copy.revisions}>
                 <ul className="history-list">
                   {page.data.map((revision) => (
                     <li key={revision.snapshot.report.id}>
@@ -162,17 +166,17 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
                         variant="unstyled"
                         className="history-choice"
                         aria-pressed={revision.snapshot.report.id === selectedId}
-                        aria-label={`View report: ${versionLabel(revision)}`}
+                        aria-label={copy.view(versionLabel(revision))}
                         onClick={() => setSelectedId(revision.snapshot.report.id)}
                       >
                         <strong>{versionLabel(revision)}</strong>
                         <span>{timeLabel(revision.snapshot.report.submittedAt)}</span>
                         <span>
                           {revision.review
-                            ? labels[revision.review.decision]
+                            ? status[revision.review.decision]
                             : revision.reviewStatus === 'awaiting_review'
-                              ? 'Awaiting review'
-                              : 'Review details unavailable'}
+                              ? copy.awaiting
+                              : copy.missingReview}
                         </span>
                       </Button>
                     </li>
@@ -184,25 +188,25 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
                     disabled={busy || !online}
                     onClick={() => void load(page.nextCursor!, generation.current)}
                   >
-                    Load older submissions
+                    {copy.older}
                   </Button>
                 )}
               </nav>
-              <section className="history-snapshot" aria-label="Selected saved report">
+              <section className="history-snapshot" aria-label={copy.selected}>
                 <div className="section-heading">
                   <h3>{versionLabel(selected)}</h3>
-                  <Badge className="status">Read only</Badge>
+                  <Badge className="status">{copy.readOnly}</Badge>
                 </div>
                 <p className="muted">
-                  Submitted {timeLabel(selected.snapshot.report.submittedAt)} by{' '}
+                  {inspection.submitted} {timeLabel(selected.snapshot.report.submittedAt)}{' '}
+                  {report.by}{' '}
                   {selected.snapshot.assignee.id === selected.snapshot.report.submittedBy
                     ? selected.snapshot.assignee.name
                     : selected.snapshot.report.submittedBy}
                 </p>
                 {selected.source === 'saved_snapshot' && (
                   <Alert role="status" className="banner notice">
-                    Recovered from the saved order. The original submission version and assignment
-                    details were not retained.
+                    {copy.legacy}
                   </Alert>
                 )}
                 <h4>
@@ -210,7 +214,7 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
                 </h4>
                 <dl className="history-meta">
                   <div>
-                    <dt>Site</dt>
+                    <dt>{inspection.site}</dt>
                     <dd>
                       {selected.snapshot.site.name}
                       <small>{selected.snapshot.site.address}</small>
@@ -218,25 +222,26 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
                   </div>
                   <div>
                     <dt>
-                      {selected.source === 'submission' ? 'Due at submission' : 'Saved due date'}
+                      {selected.source === 'submission' ? copy.dueAtSubmission : copy.savedDue}
                     </dt>
                     <dd>
-                      {dateLabel(selected.snapshot.dueDate)} · {selected.snapshot.priority}
+                      {dateLabel(selected.snapshot.dueDate, dateLocale)} ·{' '}
+                      {inspection.priority[selected.snapshot.priority]}
                     </dd>
                   </div>
                 </dl>
-                <h4>Field brief</h4>
+                <h4>{inspection.brief}</h4>
                 <p className="preserve-lines">
-                  {selected.snapshot.instructions || 'No additional instructions.'}
+                  {selected.snapshot.instructions || report.noInstructions}
                 </p>
-                <h4>Inspection summary</h4>
+                <h4>{inspection.summary}</h4>
                 <p className="preserve-lines">{selected.snapshot.report.summary}</p>
-                <Table aria-label="Saved checklist answers">
+                <Table aria-label={copy.answers}>
                   <caption className="sr-only">{selected.snapshot.template.name}</caption>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Checklist / notes</TableHead>
-                      <TableHead>Result</TableHead>
+                      <TableHead>{copy.checklistNotes}</TableHead>
+                      <TableHead>{report.result}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -251,29 +256,33 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
                         <TableCell
                           className={`preserve-lines ${answer.value === 'fail' ? 'amber' : 'muted'}`}
                         >
-                          {answerLabel(answer)}
+                          {answer.value === 'text' || answer.value === 'number'
+                            ? answerLabel(answer)
+                            : inspection.results[answer.value]}
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-                <h4>Manager review</h4>
+                <h4>{report.review}</h4>
                 {selected.review ? (
                   <>
                     <p>
-                      <strong>{labels[selected.review.decision]}</strong> by{' '}
+                      <strong>{status[selected.review.decision]}</strong> {report.by}{' '}
                       {selected.review.reviewedBy} · {timeLabel(selected.review.reviewedAt)}
                     </p>
-                    <p className="preserve-lines">{selected.review.note || 'No review note.'}</p>
+                    <p className="preserve-lines">{selected.review.note || report.noReview}</p>
                   </>
                 ) : (
                   <p className="muted">
                     {selected.reviewStatus === 'awaiting_review'
-                      ? 'Awaiting manager review.'
-                      : 'Review details unavailable. Earlier feedback was not retained before report history was introduced.'}
+                      ? copy.awaitingManager
+                      : copy.missingReviewDetail}
                   </p>
                 )}
-                <h4>Photos ({selected.snapshot.report.photos.length})</h4>
+                <h4>
+                  {copy.photos} ({selected.snapshot.report.photos.length})
+                </h4>
                 {selected.snapshot.report.photos.length > 0 ? (
                   online ? (
                     <div className="photos">
@@ -284,10 +293,7 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <img
-                            src={client.photoUrl(photo.id)}
-                            alt={`Saved report photo ${index + 1}`}
-                          />
+                          <img src={client.photoUrl(photo.id)} alt={`${copy.photo} ${index + 1}`} />
                           {photo.itemId && (
                             <p>{reportItemLabel(selected.snapshot.template, photo.itemId)}</p>
                           )}
@@ -295,17 +301,17 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
                       ))}
                     </div>
                   ) : (
-                    <p className="muted">Connect to view saved report photos.</p>
+                    <p className="muted">{copy.photosOffline}</p>
                   )
                 ) : (
-                  <p className="muted">No photos attached.</p>
+                  <p className="muted">{copy.noPhotos}</p>
                 )}
               </section>
             </div>
           )}
         </DialogContent>
       </Dialog>
-      {!online && <p className="muted">Connect to view report history.</p>}
+      {!online && <p className="muted">{copy.openOffline}</p>}
     </section>
   );
 }

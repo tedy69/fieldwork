@@ -9,6 +9,7 @@ import { TrayIcon } from '@phosphor-icons/react/dist/csr/Tray';
 import { BuildingsIcon } from '@phosphor-icons/react/dist/csr/Buildings';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
 import { SignOutIcon } from '@phosphor-icons/react/dist/csr/SignOut';
+import { SignInIcon } from '@phosphor-icons/react/dist/csr/SignIn';
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus';
 import { ListDashesIcon } from '@phosphor-icons/react/dist/csr/ListDashes';
 import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
@@ -46,11 +47,13 @@ import { workerWorkspaceCopy } from './worker-workspace-copy';
 export default function Workspace({
   user,
   logout,
+  signInAgain,
   language,
   onLanguageChange,
 }: {
   user: User;
   logout: () => void;
+  signInAgain: () => void;
   language: Locale;
   onLanguageChange: (language: Locale) => void;
 }) {
@@ -80,6 +83,7 @@ export default function Workspace({
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>('');
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [notice, setNotice] = useState('');
   async function refresh() {
     setBusy(true);
@@ -92,8 +96,13 @@ export default function Workspace({
         orders.push(...(await client.orders(offset)).data);
       setCatalog(catalog);
       await repo.cacheOrders(orders);
+      setSessionExpired(false);
     } catch (error) {
-      setError(error instanceof ApiError ? error.message : null);
+      if (user.role === 'worker' && error instanceof ApiError && error.status === 401) {
+        setSessionExpired(true);
+      } else {
+        setError(error instanceof ApiError ? error.message : null);
+      }
     } finally {
       setState(await repo.read());
       setBusy(false);
@@ -174,6 +183,22 @@ export default function Workspace({
               : notebook.assignments;
     document.title = `${title} · Fieldwork`;
   }, [view, order?.reference, user.role, copy.orders, notebook]);
+  const sessionRecovery = sessionExpired ? (
+    <Alert role="region" aria-label={notebook.syncSignIn} className="banner session-recovery">
+      <div role="alert">
+        <strong>{notebook.syncSignIn}</strong>
+        <p>{notebook.sessionDrafts}</p>
+      </div>
+      <Button variant="outline" disabled={busy || !online} onClick={signInAgain}>
+        <SignInIcon aria-hidden="true" />
+        {notebook.signInAgain}
+      </Button>
+    </Alert>
+  ) : null;
+  const recoveryInReport =
+    view === 'orders' &&
+    order &&
+    state.outbox.some((item) => item.orderId === order.id && item.state === 'pending');
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main" lang={locale}>
@@ -311,8 +336,11 @@ export default function Workspace({
           </div>
         </div>
         <main id="main" tabIndex={-1} lang={locale}>
-          {error !== '' && <Alert className="banner error">{error ?? copy.unavailable}</Alert>}
-          {notice && (
+          {!recoveryInReport && sessionRecovery}
+          {!sessionExpired && error !== '' && (
+            <Alert className="banner error">{error ?? copy.unavailable}</Alert>
+          )}
+          {!sessionExpired && notice && (
             <Alert role="status" className="banner notice">
               {notice}
               <IconButton label={copy.dismiss} variant="ghost" onClick={() => setNotice('')}>
@@ -369,7 +397,9 @@ export default function Workspace({
                           item.orderId}
                       </h2>
                       <p>{item.input.summary}</p>
-                      {item.error && <p className="error">{item.error}</p>}
+                      {item.error && (!sessionExpired || item.state === 'blocked') && (
+                        <p className="error">{item.error}</p>
+                      )}
                       <p className="muted">
                         {notebook.photoCount(item.input.photos.length)} · {notebook.savedAt}{' '}
                         {new Date(item.createdAt).toLocaleString(dateLocale)}
@@ -390,11 +420,19 @@ export default function Workspace({
                               setView('orders');
                               setNotice(copy.retainedDraft);
                             } catch (error) {
-                              setError(
-                                error instanceof ApiError && error.status === 404
-                                  ? copy.unavailableOrder
-                                  : `${message(error)} ${copy.retainedReport}`,
-                              );
+                              if (
+                                user.role === 'worker' &&
+                                error instanceof ApiError &&
+                                error.status === 401
+                              ) {
+                                setSessionExpired(true);
+                              } else {
+                                setError(
+                                  error instanceof ApiError && error.status === 404
+                                    ? copy.unavailableOrder
+                                    : `${message(error)} ${copy.retainedReport}`,
+                                );
+                              }
                             } finally {
                               setBusy(false);
                             }
@@ -418,6 +456,7 @@ export default function Workspace({
               state={state}
               online={online}
               locale={locale}
+              queuedRecovery={recoveryInReport ? sessionRecovery : null}
               onBack={() => setSelected(null)}
               onRefresh={refresh}
               onNotice={setNotice}

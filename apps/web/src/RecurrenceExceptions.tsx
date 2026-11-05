@@ -48,6 +48,7 @@ export default function RecurrenceExceptions({
   candidate,
   dueDate,
   closureDates,
+  byDate,
   disabled,
   onCandidate,
   onChange,
@@ -56,6 +57,7 @@ export default function RecurrenceExceptions({
   candidate: string;
   dueDate: string;
   closureDates?: string[];
+  byDate: boolean;
   disabled: boolean;
   onCandidate: (date: string) => void;
   onChange: (dates: string[]) => void;
@@ -86,8 +88,9 @@ export default function RecurrenceExceptions({
         {candidate && <span className="muted"> · Date not added</span>}
       </summary>
       <p className="muted">
-        Add holidays or site closures. The batch still creates the chosen number of orders,
-        extending the schedule when needed.
+        {byDate
+          ? 'Add holidays or site closures. Skipped dates within the range reduce the order count.'
+          : 'Add holidays or site closures. The batch still creates the chosen number of orders, extending the schedule when needed.'}
       </p>
       {closureDates?.length ? (
         <>

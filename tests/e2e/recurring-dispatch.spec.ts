@@ -160,6 +160,74 @@ test('manager previews calendar dates, validates the batch, and assigns real wor
   expect(errors).toEqual([]);
 });
 
+test('manager ends a recurring batch on an inclusive date and retries the exact saved schedule', async ({
+  page,
+}) => {
+  const title = 'Recurring end date QA';
+  const manager = await managerClient();
+  await page.setViewportSize({ width: 320, height: 820 });
+  await login(page);
+  await page.getByRole('button', { name: 'Assign recurring work', exact: true }).click();
+  await fillBatch(page, title);
+  const dialog = dialogFor(page);
+  await dialog.getByRole('combobox', { name: 'Repeat', exact: true }).selectOption('daily');
+  const ends = dialog.getByRole('combobox', { name: 'Ends', exact: true });
+  await ends.selectOption('date');
+  const endDate = dialog.getByLabel('End date', { exact: true });
+  await expect(dialog.getByRole('button', { name: /Assign.*work orders/ })).toBeDisabled();
+  await endDate.fill('2026-12-27');
+  await expect(dates(page)).toHaveCount(0);
+  await endDate.fill('2027-03-01');
+  await expect(dates(page)).toHaveCount(0);
+  await endDate.fill('2026-12-31');
+  const calendar = dialog.getByRole('button', { name: 'Choose end date', exact: true });
+  await calendar.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog', { name: 'Choose end date', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(calendar).toBeFocused();
+  await expect(dates(page)).toHaveCount(4);
+  await dialog.getByText('Skip dates (optional)', { exact: true }).click();
+  await dialog.getByLabel('Date to skip', { exact: true }).fill('2026-12-29');
+  await dialog.getByRole('button', { name: 'Add date', exact: true }).click();
+  const preview = ['2026-12-28', '2026-12-30', '2026-12-31'];
+  const previewDates = () =>
+    dates(page).evaluateAll((nodes) => nodes.map((node) => node.getAttribute('datetime')));
+  await expect.poll(previewDates).toEqual(preview);
+  for (const width of [320, 768, 1440]) {
+    await page.setViewportSize({ width, height: 820 });
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true,
+    );
+  }
+
+  await ends.selectOption('count');
+  await expect(dialog.getByLabel('Occurrences', { exact: true })).toHaveValue('3');
+  await ends.selectOption('date');
+  await expect(endDate).toHaveValue('2026-12-31');
+  const payloads: CreateOrderSeries[] = [];
+  await page.route(endpoint, async (route) => {
+    payloads.push(route.request().postDataJSON());
+    if (payloads.length === 1) {
+      await route.fetch();
+      await route.abort('failed');
+    } else {
+      await route.continue();
+    }
+  });
+  await dialog.getByRole('button', { name: 'Assign 3 work orders', exact: true }).click();
+  const retry = dialog.getByRole('button', { name: 'Retry saved batch', exact: true });
+  await expect(retry).toBeEnabled();
+  await expect.poll(previewDates).toEqual(preview);
+  await retry.click();
+  await expect(dialog).toHaveCount(0);
+  expect(payloads[0]).toMatchObject({ occurrences: 3, skipDates: ['2026-12-29'] });
+  expect(payloads[1]).toEqual(payloads[0]);
+  const saved = await manager.searchOrders({ q: title });
+  expect(saved.total).toBe(3);
+  expect(saved.data.map((order) => order.dueDate).sort()).toEqual(preview);
+});
+
 test('a lost creation response survives reload, offline recovery, and another account before duplicate-safe retry', async ({
   page,
   context,

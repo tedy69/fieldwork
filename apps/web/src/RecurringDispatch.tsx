@@ -4,6 +4,7 @@ import { CalendarPlusIcon } from '@phosphor-icons/react/dist/csr/CalendarPlus';
 import {
   CreateOrderSeriesSchema,
   recurrenceDates,
+  recurrenceDatesThrough,
   type Catalog,
   type CreateOrderSeries,
   type OrderSeriesReceipt,
@@ -19,6 +20,7 @@ import RecurrenceExceptions, { SkippedDates } from './RecurrenceExceptions';
 import { Button } from './components/ui/button';
 import { Form } from './components/ui/form';
 import { Input } from './components/ui/input';
+import { DatePicker } from './components/ui/date-picker';
 import { Label } from './components/ui/label';
 import {
   NativeSelect as Select,
@@ -39,14 +41,18 @@ function datesFor(
   frequency: Recurrence['frequency'],
   occurrences: number,
   skipDates?: string[],
+  through?: string,
 ) {
   try {
-    return recurrenceDates({ dueDate, frequency, occurrences, skipDates });
+    const schedule = { dueDate, frequency, skipDates };
+    return through === undefined
+      ? recurrenceDates({ ...schedule, occurrences })
+      : recurrenceDatesThrough(schedule, through);
   } catch {
     return [];
   }
 }
-function DatePreview({ dates }: { dates: string[] }) {
+function DatePreview({ dates, byDate = false }: { dates: string[]; byDate?: boolean }) {
   return (
     <section className="recurrence-preview" aria-label="Scheduled dates">
       <h3 aria-live="polite">
@@ -69,7 +75,11 @@ function DatePreview({ dates }: { dates: string[] }) {
           ))}
         </ol>
       ) : (
-        <p className="muted">Choose a first date and 2–52 occurrences within a four-digit year.</p>
+        <p className="muted">
+          {byDate
+            ? 'Choose an end date that gives 2–52 work orders.'
+            : 'Choose a first date and 2–52 occurrences within a four-digit year.'}
+        </p>
       )}
     </section>
   );
@@ -223,6 +233,8 @@ function RecurringDialog({
     pending?.frequency ?? 'weekly',
   );
   const [occurrences, setOccurrences] = useState(pending?.occurrences ?? 4);
+  const [endMode, setEndMode] = useState<'count' | 'date'>('count');
+  const [endDate, setEndDate] = useState('');
   const [skipDates, setSkipDates] = useState(pending?.skipDates ?? []);
   const [skipDate, setSkipDate] = useState('');
   const draft = useRef<CreateOrderSeries | null>(pending);
@@ -236,7 +248,13 @@ function RecurringDialog({
   }, [error, pending, busy]);
   const activeDates = pending
     ? datesFor(pending.dueDate, pending.frequency, pending.occurrences, pending.skipDates)
-    : datesFor(dueDate, frequency, occurrences, skipDates);
+    : datesFor(
+        dueDate,
+        frequency,
+        occurrences,
+        skipDates,
+        endMode === 'date' ? endDate : undefined,
+      );
   async function send(input: CreateOrderSeries, reserve: boolean) {
     setBusy(true);
     setError('');
@@ -274,7 +292,7 @@ function RecurringDialog({
       dueDate,
       priority: data.get('priority'),
       frequency,
-      occurrences,
+      occurrences: activeDates.length,
       ...(skipDates.length ? { skipDates } : {}),
     });
     if (!parsed.success) {
@@ -381,6 +399,7 @@ function RecurringDialog({
                     setSiteId(pending.siteId);
                     setFrequency(pending.frequency);
                     setOccurrences(pending.occurrences);
+                    setEndMode('count');
                     setSkipDates(pending.skipDates ?? []);
                     setSkipDate('');
                     await onClear(pending.mutationId);
@@ -411,7 +430,7 @@ function RecurringDialog({
                 onDateChange={setDueDate}
                 onSiteChange={setSiteId}
               />
-              <div className="form-grid">
+              <div className="form-grid recurring-schedule-fields">
                 <Label>
                   Repeat
                   <Select
@@ -430,23 +449,48 @@ function RecurringDialog({
                   </Select>
                 </Label>
                 <Label>
-                  Occurrences
-                  <Input
-                    type="number"
-                    required
-                    min={2}
-                    max={52}
-                    step={1}
-                    value={Number.isNaN(occurrences) ? '' : occurrences}
-                    onChange={(event) => setOccurrences(event.target.valueAsNumber)}
-                  />
+                  Ends
+                  <Select
+                    value={endMode}
+                    onChange={(event) =>
+                      setEndMode(event.target.value === 'date' ? 'date' : 'count')
+                    }
+                  >
+                    <Option value="count">After a count</Option>
+                    <Option value="date">On a date</Option>
+                  </Select>
                 </Label>
+                {endMode === 'date' ? (
+                  <Label>
+                    End date
+                    <DatePicker
+                      calendarLabel="Choose end date"
+                      value={endDate}
+                      onValueChange={setEndDate}
+                      required
+                    />
+                  </Label>
+                ) : (
+                  <Label>
+                    Occurrences
+                    <Input
+                      type="number"
+                      required
+                      min={2}
+                      max={52}
+                      step={1}
+                      value={Number.isNaN(occurrences) ? '' : occurrences}
+                      onChange={(event) => setOccurrences(event.target.valueAsNumber)}
+                    />
+                  </Label>
+                )}
               </div>
               <RecurrenceExceptions
                 dates={skipDates}
                 candidate={skipDate}
                 dueDate={dueDate}
                 closureDates={siteClosures}
+                byDate={endMode === 'date'}
                 disabled={busy}
                 onCandidate={setSkipDate}
                 onChange={setSkipDates}
@@ -458,7 +502,7 @@ function RecurringDialog({
                 Skip dates.
               </p>
             )}
-            <DatePreview dates={activeDates} />
+            <DatePreview dates={activeDates} byDate={endMode === 'date'} />
             {skipDates.some((date) => date <= dueDate) && (
               <FieldError>
                 Skipped dates must be after the first due date. Remove them or change the first

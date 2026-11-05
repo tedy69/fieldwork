@@ -28,6 +28,12 @@ The web selector, recovered request and batch ledger use **Weekdays (Mon–Fri)*
 
 A new batch returns 201 with `{ id, createdAt, frequency, orders }`. Each order has its own ID, reference, version 1, ASSIGNED status, and site/worker/checklist snapshots. The series definition, original receipt, all orders, membership, and assignment events commit together. Invalid catalog choices return 422 `INVALID_ASSIGNMENT`; malformed recurrence returns 422 `VALIDATION`. Missing sessions and worker accounts cannot create batches.
 
+## End on a date
+
+Choose **On a date** under **Ends**, then enter an end date or use its calendar. The preview includes an occurrence on that date if it falls on the schedule. Skipped visits inside the range reduce the count. For example, a daily batch from December 28 through December 31 with December 29 skipped creates three orders.
+
+The preview must contain 2–52 work orders. The web app saves the calculated count and the original skip list in the existing batch request. Recovery shows the same scheduled dates and retries the saved request.
+
 ## Skip holidays or site closures
 
 Open **Skip dates (optional)** in the assignment form. Choose a date, then use **Add date**. Remove a date with its named trash button. A date left in the input must be added or cleared before assigning. The preview shows the actual order dates before the write. The recovery view and saved batch details retain the selected exclusions.

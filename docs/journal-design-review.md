@@ -16,6 +16,8 @@ Report history and the printable report use the worker's language while preservi
 
 The week and month planners follow the worker's language for dates, counts, and navigation. Chromium verifies day selection by keyboard, an active search, 320px and desktop layouts, and offline navigation across a year boundary.
 
+Site maps use named zoom and recenter icons and show opt-in and recovery guidance in the worker's language. Chromium verifies the disclosure before any tile request, retry after a tile error, keyboard zoom, and offline coordinates.
+
 Rescheduling from a recurring batch uses the same calendar icon and date field as an order. Planned and current dates remain side by side on desktop and stack on narrow screens. Chromium verifies keyboard entry and Escape, focus after saving, conflict recovery with the proposed date intact, offline controls, and 320px reflow.
 
 Quarterly recurrence adds one choice to Repeat and uses the existing date preview and recovery panel. Chromium verifies keyboard entry, shorter-month dates, a 320px layout, and recovery of a saved request after the response is lost.

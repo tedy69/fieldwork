@@ -1,8 +1,14 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import type { Map as LeafletMap, TileLayer } from 'leaflet';
 import type { Coordinates, MapProvider } from '@fieldwork/contracts';
+import type { Locale } from '@fieldwork/strings';
+import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus';
+import { MinusIcon } from '@phosphor-icons/react/dist/csr/Minus';
+import { CrosshairIcon } from '@phosphor-icons/react/dist/csr/Crosshair';
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
 import { Alert } from './components/ui/alert';
+import { workerMapCopy } from './worker-map-copy';
 import 'leaflet/dist/leaflet.css';
 
 export default function SiteMap({
@@ -10,19 +16,22 @@ export default function SiteMap({
   provider,
   name,
   beforeReload,
+  locale = 'en',
 }: {
   coordinates: Coordinates;
   provider: MapProvider;
   name: string;
   beforeReload: () => Promise<void>;
+  locale?: Locale;
 }) {
+  const copy = workerMapCopy[locale];
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<LeafletMap | null>(null);
   const tiles = useRef<TileLayer | null>(null);
   const [zoom, setZoom] = useState(Math.min(15, provider.maxZoom));
   const [loading, setLoading] = useState(true);
   const [ready, setReady] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<'tiles' | 'tools' | { detail: string } | null>(null);
   const [toolError, setToolError] = useState(false);
   const [reloading, setReloading] = useState(false);
   const lifetime = useRef(0);
@@ -34,7 +43,7 @@ export default function SiteMap({
     setLoading(true);
     setReady(false);
     setZoom(Math.min(15, provider.maxZoom));
-    setError('');
+    setError(null);
     setToolError(false);
     setReloading(false);
     void import('leaflet')
@@ -72,7 +81,7 @@ export default function SiteMap({
         layer.on('tileerror', () => {
           if (!cancelled) {
             setLoading(false);
-            setError('Some map tiles could not load. Retry the visible area or hide the map.');
+            setError('tiles');
           }
         });
         layer.addTo(instance);
@@ -97,9 +106,7 @@ export default function SiteMap({
         if (!cancelled) {
           setLoading(false);
           setToolError(true);
-          setError(
-            'Map tools could not load. Reload this page to try again. Your saved work is kept.',
-          );
+          setError('tools');
         }
       });
     return () => {
@@ -129,8 +136,7 @@ export default function SiteMap({
   return (
     <div className="site-map-view">
       <p className="muted" id={helpId}>
-        The amber point marks the saved site. Focus the map to pan with arrow keys or zoom with +
-        and −.
+        {copy.instructions}
       </p>
       <div className="site-map-frame">
         <div
@@ -138,7 +144,7 @@ export default function SiteMap({
           className="site-map-canvas"
           tabIndex={0}
           role="region"
-          aria-label={`Map of ${name}`}
+          aria-label={copy.map(name)}
           aria-describedby={helpId}
           onKeyDown={keyboard}
         />
@@ -148,22 +154,25 @@ export default function SiteMap({
           </a>
         </p>
       </div>
-      <div className="site-map-controls" role="group" aria-label="Map controls">
-        <Button
+      <div className="site-map-controls" role="group" aria-label={copy.controls}>
+        <IconButton
+          label={copy.zoomIn}
           className="quiet"
           disabled={!ready || zoom >= provider.maxZoom || toolError}
           onClick={() => map.current?.zoomIn(1, { animate: false })}
         >
-          Zoom in
-        </Button>
-        <Button
+          <PlusIcon aria-hidden="true" />
+        </IconButton>
+        <IconButton
+          label={copy.zoomOut}
           className="quiet"
           disabled={!ready || zoom <= 0 || toolError}
           onClick={() => map.current?.zoomOut(1, { animate: false })}
         >
-          Zoom out
-        </Button>
-        <Button
+          <MinusIcon aria-hidden="true" />
+        </IconButton>
+        <IconButton
+          label={copy.recenter}
           className="quiet"
           disabled={!ready || toolError}
           onClick={() =>
@@ -174,20 +183,26 @@ export default function SiteMap({
             )
           }
         >
-          Recenter map
-        </Button>
+          <CrosshairIcon aria-hidden="true" />
+        </IconButton>
         <span className="muted" role="status">
-          Zoom {zoom}
+          {copy.zoom} {zoom}
         </span>
       </div>
       {loading && (
         <p className="muted" role="status">
-          Loading map tiles…
+          {copy.loading}
         </p>
       )}
       {error && (
         <Alert className="error">
-          <p>{error}</p>
+          <p>
+            {error === 'tiles'
+              ? copy.tilesFailed
+              : error === 'tools'
+                ? copy.toolsFailed
+                : error.detail}
+          </p>
           {toolError ? (
             <Button
               className="quiet"
@@ -200,26 +215,26 @@ export default function SiteMap({
                   if (current === lifetime.current) window.location.reload();
                 } catch (error) {
                   if (current === lifetime.current)
-                    setError(
-                      error instanceof Error ? error.message : 'Save your work before reloading.',
-                    );
+                    setError({
+                      detail: error instanceof Error ? error.message : copy.saveBeforeReload,
+                    });
                 } finally {
                   if (current === lifetime.current) setReloading(false);
                 }
               }}
             >
-              {reloading ? 'Checking saved work…' : 'Reload page'}
+              {reloading ? copy.checkWork : copy.reload}
             </Button>
           ) : (
             <Button
               className="quiet"
               onClick={() => {
-                setError('');
+                setError(null);
                 setLoading(true);
                 tiles.current?.redraw();
               }}
             >
-              Retry map tiles
+              {copy.retryTiles}
             </Button>
           )}
         </Alert>

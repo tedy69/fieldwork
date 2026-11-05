@@ -39,6 +39,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Checklist-wide photo requirements, web/Expo guidance, offline draft protection, and server enforcement.
 - [x] Photo evidence for individual checklist items, with offline attachments and labeled report history.
 - [x] Repeatable Android smoke test for item photos, offline restart, and duplicate-safe reconnect.
+- [x] Repeatable iOS smoke test for draft retention, offline restart, and duplicate-safe reconnect.
 - [x] Text-response checklist fields on web and Expo, including mixed API templates, offline drafts and saved report exports.
 - [x] Numeric checklist readings on web and Expo, with partial offline input, zero/negative decimals, type validation and saved report exports.
 - [x] Mixed checklist creation on web, with a response type per question and a bulk entry shortcut.

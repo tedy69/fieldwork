@@ -1,0 +1,24 @@
+appId: host.exp.Exponent
+name: Confirm one saved inspection after iOS reconnect
+---
+- scrollUntilVisible:
+    element: Sync now
+    direction: UP
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- extendedWaitUntil:
+    visible: Everything is up to date
+    timeout: 15000
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- tapOn: 'Assignments \([0-9]+\)'
+- scrollUntilVisible:
+    element: ${ORDER_NAME}
+    centerElement: true
+- tapOn: ${ORDER_NAME}
+- scrollUntilVisible:
+    element: ${SUMMARY}
+    centerElement: true
+- assertVisible: ${SUMMARY}

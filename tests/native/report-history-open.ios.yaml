@@ -1,0 +1,36 @@
+appId: host.exp.Exponent
+name: Open a saved revision while editing an inspection
+---
+- scrollUntilVisible:
+    element: Sinkronkan sekarang
+    direction: UP
+- tapOn:
+    text: Sinkronkan sekarang
+    point: 10%,50%
+- scrollUntilVisible:
+    element: ${ORDER_NAME}
+    centerElement: true
+- tapOn: ${ORDER_NAME}
+- scrollUntilVisible:
+    element:
+      id: inspection-summary
+    centerElement: true
+- tapOn:
+    id: inspection-summary
+- inputText: Draft tetap ada
+- tapOn: Selesai mengedit
+- scrollUntilVisible:
+    element: Riwayat laporan
+    direction: UP
+- tapOn: Riwayat laporan
+- extendedWaitUntil:
+    visible:
+      id: report-history-version-22
+    timeout: 15000
+- tapOn:
+    id: report-history-version-22
+- assertVisible: Check 11
+- scrollUntilVisible:
+    element: Gauge visit 11
+    centerElement: true
+- tapOn: Kembali ke riwayat laporan

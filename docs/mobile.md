@@ -56,6 +56,14 @@ Run `npm exec -- tsx tests/native/offline-report.ios.ts <simulator-id>`. The run
 
 Run `npm exec -- tsx tests/native/blocked-report.ios.ts <simulator-id>` from the same starting screen to test a blocked report. The runner reschedules the assignment after the worker starts a draft, verifies the outbox survives an API outage and reassignment, and checks that the original answers sync once after access is restored.
 
+## Browse report history
+
+Open the named history icon on an inspection with a saved report. Select a version to read its answers, summary, photos, and review feedback. The screen keeps loaded revisions visible if an older page fails, and retry uses the same page. Loaded history stays in the open screen. The inspection and its draft remain available after closing it.
+
+Start on **Tugas saya** in Indonesian with a fresh worker session to run `npm exec -- tsx tests/native/report-history.ios.ts <simulator-id>`. The synthetic fixture verifies first-page reading, a failed second page, reconnect and retry, and return to the original draft.
+
+When an assignment has coordinates, Expo shows them next to the site address with a map pin. The coordinates come from the saved assignment and can be selected as text while offline. Run `npm exec -- tsx tests/native/site-coordinates.ios.ts <simulator-id>` from **My assignments** in English to verify a saved coordinate pair in both languages after an API outage and a catalog edit.
+
 ## Start
 
 The assignment list has a named funnel beside Search. Pick a status to narrow the saved list, or choose **All statuses** to clear the status while keeping the search. The selected status and result count stay visible when the choices are closed.

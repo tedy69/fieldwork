@@ -1,0 +1,35 @@
+appId: host.exp.Exponent
+name: Read a saved location snapshot offline in both languages
+---
+- tapOn: ${ORDER_NAME}
+- scrollUntilVisible:
+    element: Latitude 0 · Longitude -106.8
+    centerElement: true
+- assertVisible: Latitude 0 · Longitude -106.8
+- scrollUntilVisible:
+    element: Back to assignments
+    direction: UP
+- tapOn: Back to assignments
+- scrollUntilVisible:
+    element: Bahasa Indonesia
+    direction: UP
+- tapOn: Bahasa Indonesia
+- scrollUntilVisible:
+    element: ${ORDER_NAME_ID}
+    centerElement: true
+- tapOn: ${ORDER_NAME_ID}
+- scrollUntilVisible:
+    element: Lintang 0 · Bujur -106.8
+    centerElement: true
+- assertVisible: Lintang 0 · Bujur -106.8
+- scrollUntilVisible:
+    element: Kembali ke daftar tugas
+    direction: UP
+- tapOn: Kembali ke daftar tugas
+- scrollUntilVisible:
+    element: 'Buka FW-001: Morning safety walkthrough'
+    direction: UP
+- tapOn: 'Buka FW-001: Morning safety walkthrough'
+- scrollUntilVisible:
+    element: North pump station
+- assertNotVisible: Lintang.*

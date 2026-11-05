@@ -1,0 +1,13 @@
+appId: host.exp.Exponent
+name: Cache a synthetic site assignment
+---
+- scrollUntilVisible:
+    element: Sync now
+    direction: UP
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- scrollUntilVisible:
+    element: ${ORDER_NAME}
+    centerElement: true
+- assertVisible: ${ORDER_NAME}

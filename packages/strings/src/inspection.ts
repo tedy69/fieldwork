@@ -3,6 +3,8 @@ import type { Locale } from './index';
 const english = {
   back: 'Back to assignments',
   site: 'Site',
+  coordinates: (latitude: number, longitude: number) =>
+    `Latitude ${latitude} · Longitude ${longitude}`,
   assignee: 'Assigned to',
   duePriority: 'Due / priority',
   priority: { routine: 'routine', urgent: 'urgent' },
@@ -73,6 +75,7 @@ export const inspectionCopy: Record<Locale, typeof english> = {
   id: {
     back: 'Kembali ke daftar tugas',
     site: 'Lokasi',
+    coordinates: (latitude, longitude) => `Lintang ${latitude} · Bujur ${longitude}`,
     assignee: 'Ditugaskan kepada',
     duePriority: 'Tenggat / prioritas',
     priority: { routine: 'rutin', urgent: 'mendesak' },

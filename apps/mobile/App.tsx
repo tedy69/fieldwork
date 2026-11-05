@@ -27,12 +27,12 @@ import {
   Trash,
   GearSix,
   Globe,
+  MapPin,
 } from './notebook-icons';
 import {
   blankDraft,
   ReportInputSchema,
   MAX_REPORT_PHOTOS,
-  answerLabel,
   availableSitePhotoSlots,
   checklistItemLabel,
   completedAnswers,
@@ -75,6 +75,8 @@ import {
 } from './notebook-ui';
 import { colors, radius, size, spacing } from './theme';
 import WorkspacePage from './workspace-page';
+import ReportHistoryAction from './report-history';
+import SavedReport from './saved-report';
 
 type Session = { user: User; token: string; baseUrl: string };
 type SignInProblem =
@@ -584,14 +586,12 @@ function Inspection({
   }
   return (
     <>
-      <Button
-        title={copy.back}
-        icon={ArrowLeft}
-        iconOnly
-        variant="ghost"
-        onPress={back}
-        style={styles.leadingAction}
-      />
+      <View style={styles.inspectionTools}>
+        <Button title={copy.back} icon={ArrowLeft} iconOnly variant="ghost" onPress={back} />
+        {order.report && (
+          <ReportHistoryAction order={order} baseUrl={baseUrl} token={token} locale={locale} />
+        )}
+      </View>
       <View style={styles.introduction}>
         <Copy variant="reference" muted>
           {order.reference}
@@ -610,6 +610,19 @@ function Inspection({
           <Copy muted variant="caption">
             {order.site.address}
           </Copy>
+          {order.site.coordinates && (
+            <View style={styles.siteCoordinates}>
+              <View accessible={false} importantForAccessibility="no-hide-descendants">
+                <MapPin size={18} color={colors.muted} />
+              </View>
+              <Copy muted variant="caption" style={styles.flex}>
+                {copy.coordinates(
+                  order.site.coordinates.latitude,
+                  order.site.coordinates.longitude,
+                )}
+              </Copy>
+            </View>
+          )}
         </View>
         <View style={styles.row}>
           <View style={styles.introduction}>
@@ -853,38 +866,13 @@ function Inspection({
           </View>
         </>
       ) : order.report ? (
-        <Panel>
-          <SectionHeading
-            title={copy.report}
-            detail={`${copy.submitted} ${new Date(order.report.submittedAt).toLocaleString(locale === 'id' ? 'id-ID' : undefined)}`}
-          />
-          {order.report.answers.map((answer) => (
-            <View key={answer.itemId} style={styles.checkItem}>
-              <Copy variant="label">{reportItemLabel(order.template, answer.itemId)}</Copy>
-              <Copy style={answer.value === 'fail' ? { color: colors.amber } : undefined}>
-                {answer.value === 'text' || answer.value === 'number'
-                  ? answerLabel(answer)
-                  : copy.results[answer.value]}
-              </Copy>
-              {answer.note ? <Copy muted>{answer.note}</Copy> : null}
-            </View>
-          ))}
-          <SectionHeading title={copy.reportSummary} />
-          <Copy>{order.report.summary}</Copy>
-          {order.report.photos.map((photo) => (
-            <View key={photo.id}>
-              <Image
-                accessibilityLabel={copy.submittedPhoto}
-                source={{
-                  uri: `${baseUrl}/api/v1/photos/${photo.id}`,
-                  headers: { Authorization: `Bearer ${token}` },
-                }}
-                style={styles.photo}
-              />
-              {photo.itemId && <Copy muted>{reportItemLabel(order.template, photo.itemId)}</Copy>}
-            </View>
-          ))}
-        </Panel>
+        <SavedReport
+          report={order.report}
+          template={order.template}
+          baseUrl={baseUrl}
+          token={token}
+          locale={locale}
+        />
       ) : null}
     </>
   );
@@ -953,7 +941,8 @@ const styles = StyleSheet.create({
   },
   introduction: { gap: spacing.sm },
   headerIdentity: { flexGrow: 1, flexShrink: 1, minWidth: 0, gap: spacing.xs },
-  leadingAction: { alignSelf: 'flex-start' },
+  inspectionTools: { flexDirection: 'row', justifyContent: 'space-between' },
+  siteCoordinates: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs },
   headerLarge: { flexDirection: 'column', alignItems: 'stretch' },
   header: {
     zIndex: 2,
@@ -988,12 +977,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
-  },
-  checkItem: {
-    paddingBottom: spacing.lg,
-    borderBottomColor: colors.line,
-    borderBottomWidth: 1,
-    gap: spacing.sm,
   },
   photoAction: { flex: 1, minWidth: 120 },
   submitBar: {

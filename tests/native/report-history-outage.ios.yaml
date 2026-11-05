@@ -1,0 +1,16 @@
+appId: host.exp.Exponent
+name: Keep loaded revision history during an API outage
+---
+- scrollUntilVisible:
+    element: Muat laporan sebelumnya
+    centerElement: true
+- tapOn: Muat laporan sebelumnya
+- scrollUntilVisible:
+    element: Coba muat riwayat lagi
+    centerElement: true
+- scrollUntilVisible:
+    element:
+      id: report-history-version-22
+    direction: UP
+- assertVisible:
+    id: report-history-version-22

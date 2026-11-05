@@ -200,7 +200,12 @@ function AuthenticatedApp({
     );
   return (
     <MapSettingsProvider key={user.id}>
-      <Workspace user={user} logout={logout} />
+      <Workspace
+        user={user}
+        logout={logout}
+        language={locale}
+        onLanguageChange={onLanguageChange}
+      />
     </MapSettingsProvider>
   );
 }

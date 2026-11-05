@@ -60,7 +60,7 @@ test('invitation and password reset share the sign-in language and preserve form
   await expect(page.getByLabel('Email', { exact: true })).toHaveValue(email);
   await password.fill(replacement);
   await page.getByRole('button', { name: 'Masuk', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'My assignments', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tugas saya', exact: true })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await page.goto(`/#reset=${reset.token}`);
   await expect(

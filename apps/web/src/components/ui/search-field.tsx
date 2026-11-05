@@ -7,11 +7,13 @@ export function SearchField({
   value,
   onValueChange,
   inputRef,
+  clearLabel = 'Clear search',
   ...props
 }: Omit<ComponentProps<'input'>, 'value' | 'onChange' | 'type' | 'ref'> & {
   value: string;
   onValueChange: (value: string) => void;
   inputRef?: RefObject<HTMLInputElement | null>;
+  clearLabel?: string;
 }) {
   const fallback = useRef<HTMLInputElement>(null);
   const input = inputRef ?? fallback;
@@ -28,7 +30,7 @@ export function SearchField({
         <Button
           type="button"
           variant="ghost"
-          aria-label="Clear search"
+          aria-label={clearLabel}
           onClick={(event) => {
             event.preventDefault();
             onValueChange('');

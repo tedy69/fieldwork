@@ -47,9 +47,9 @@ test('switches sign-in language by keyboard and retains it across an offline rel
   await expect(page.getByRole('alert')).toContainText('Tidak bisa masuk.');
   await context.setOffline(false);
   await submit.click();
-  await expect(page.getByRole('heading', { name: 'My assignments', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tugas saya', exact: true })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.getByRole('button', { name: 'Keluar', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Buka catatan kerja Anda' })).toBeVisible();
   await page.setViewportSize({ width: 1440, height: 1000 });
   await expect(page.getByText('Jurnal kerja lapangan', { exact: true })).toBeVisible();

@@ -1,6 +1,8 @@
 /*! Composed from shadcn/ui Calendar and Radix Popover. MIT: /licenses/shadcn-ui-MIT.txt. */
 import { useId, useLayoutEffect, useRef, useState, type ComponentProps } from 'react';
 import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
+import { id as indonesian } from 'react-day-picker/locale';
+import type { Locale } from '@fieldwork/strings';
 import { Input } from './input';
 import { Button } from './button';
 import { Calendar } from './calendar';
@@ -16,6 +18,7 @@ type DatePickerProps = Omit<
   defaultValue?: string;
   onValueChange: (value: string) => void;
   calendarLabel: string;
+  locale?: Locale;
 };
 
 export function DatePicker({
@@ -23,12 +26,17 @@ export function DatePicker({
   defaultValue = '',
   onValueChange,
   calendarLabel,
+  locale = 'en',
   disabled,
   className,
   'aria-describedby': describedBy,
   'aria-invalid': ariaInvalid,
   ...props
 }: DatePickerProps) {
+  const invalidText =
+    locale === 'id'
+      ? 'Masukkan tanggal yang valid dengan format YYYY-MM-DD.'
+      : 'Enter a real date as YYYY-MM-DD.';
   const [internal, setInternal] = useState(defaultValue);
   const current = value ?? internal;
   const selected = parseLocalDate(current);
@@ -38,10 +46,10 @@ export function DatePicker({
   const input = useRef<HTMLInputElement>(null);
   const help = useId();
   useLayoutEffect(() => {
-    input.current?.setCustomValidity(invalid ? 'Enter a real date as YYYY-MM-DD.' : '');
+    input.current?.setCustomValidity(invalid ? invalidText : '');
     // Form clears its previous error attributes on input; keep our own error associated.
     if (invalid) input.current?.setAttribute('aria-invalid', 'true');
-  }, [current, invalid]);
+  }, [current, invalid, invalidText]);
 
   function change(next: string) {
     setInternal(next);
@@ -93,6 +101,7 @@ export function DatePicker({
             className="ui-date-popover"
             collisionPadding={4}
             role="dialog"
+            lang={locale}
             aria-label={calendarLabel}
             onOpenAutoFocus={(event) => {
               event.preventDefault();
@@ -104,6 +113,15 @@ export function DatePicker({
             onEscapeKeyDown={(event) => event.stopPropagation()}
           >
             <Calendar
+              locale={locale === 'id' ? indonesian : undefined}
+              labels={
+                locale === 'id'
+                  ? {
+                      labelNext: () => 'Bulan berikutnya',
+                      labelPrevious: () => 'Bulan sebelumnya',
+                    }
+                  : undefined
+              }
               mode="single"
               required
               selected={selected}
@@ -120,7 +138,7 @@ export function DatePicker({
             />
             <div className="ui-date-actions">
               <Button type="button" variant="ghost" onClick={() => choose(new Date())}>
-                Today
+                {locale === 'id' ? 'Hari ini' : 'Today'}
               </Button>
               <Button
                 type="button"
@@ -128,7 +146,7 @@ export function DatePicker({
                 disabled={!current}
                 onClick={() => choose(undefined)}
               >
-                Clear date
+                {locale === 'id' ? 'Hapus tanggal' : 'Clear date'}
               </Button>
             </div>
           </PopoverContent>
@@ -136,7 +154,7 @@ export function DatePicker({
       </div>
       {invalid && (
         <p className="ui-date-error error" id={help} role="alert">
-          Enter a real date as YYYY-MM-DD.
+          {invalidText}
         </p>
       )}
     </div>

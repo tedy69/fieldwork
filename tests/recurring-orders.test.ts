@@ -9,6 +9,7 @@ import { seed } from '../apps/api/src/seed';
 import { openStore } from '../apps/api/src/store';
 import {
   recurrenceDates,
+  recurrenceDatesThrough,
   type CreateOrderSeries,
   OrderSeriesReceiptSchema,
 } from '@fieldwork/contracts';
@@ -77,6 +78,32 @@ describe('calendar recurrence', () => {
     expect(() =>
       recurrenceDates({ dueDate: '9999-12-31', frequency: 'daily', occurrences: 2 }),
     ).toThrow();
+  });
+  it('ends on an inclusive date without extending past a skipped visit', () => {
+    const schedule = {
+      dueDate: '2028-01-31',
+      frequency: 'monthly' as const,
+      skipDates: ['2028-03-31'],
+    };
+    expect(recurrenceDatesThrough(schedule, '2028-04-30')).toEqual([
+      '2028-01-31',
+      '2028-02-29',
+      '2028-04-30',
+    ]);
+    expect(recurrenceDatesThrough(schedule, '2028-04-29')).toEqual(['2028-01-31', '2028-02-29']);
+    expect(recurrenceDatesThrough(schedule, '2028-02-28')).toEqual([]);
+  });
+
+  it('bounds count-by-date previews and handles the last supported year', () => {
+    const daily = { dueDate: '2028-01-01', frequency: 'daily' as const };
+    expect(recurrenceDatesThrough(daily, '2028-02-21')).toHaveLength(52);
+    expect(recurrenceDatesThrough(daily, '2028-02-22')).toEqual([]);
+    expect(recurrenceDatesThrough(daily, '2027-12-31')).toEqual([]);
+    expect(() => recurrenceDatesThrough(daily, '2028-02-30')).toThrow();
+    expect(recurrenceDatesThrough({ ...daily, dueDate: '9999-12-30' }, '9999-12-31')).toEqual([
+      '9999-12-30',
+      '9999-12-31',
+    ]);
   });
 });
 

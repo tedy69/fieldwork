@@ -1036,6 +1036,9 @@ main#main {
   gap: 15px;
   margin: 17px 0;
 }
+.form-grid.recurring-schedule-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
 .recurring-dispatch {
   max-width: 100%;
 }
@@ -1566,7 +1569,8 @@ main#main {
   .review-actions button {
     width: 100%;
   }
-  .form-grid {
+  .form-grid,
+  .form-grid.recurring-schedule-fields {
     grid-template-columns: 1fr;
   }
   .dialog {

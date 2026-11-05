@@ -1,6 +1,6 @@
 # Recurring assignments
 
-Managers can create a finite batch of daily, weekday, weekly, two-week or monthly assignments through `POST /api/v1/work-order-series` or `client.createOrderSeries(input)`. Each occurrence becomes an ordinary work order immediately, visible in the existing list, search, planner, and worker sync. Managers use **Assign recurring work** beside ordinary assignment in the web dispatch desk. A selected planner date becomes the first date. The form previews every occurrence before creating the batch.
+Managers can create a finite batch of daily, weekday, weekly, two-week, monthly or quarterly assignments through `POST /api/v1/work-order-series` or `client.createOrderSeries(input)`. Each occurrence becomes an ordinary work order immediately, visible in the existing list, search, planner, and worker sync. Managers use **Assign recurring work** beside ordinary assignment in the web dispatch desk. A selected planner date becomes the first date. The form previews every occurrence before creating the batch.
 
 ## Contract
 
@@ -19,6 +19,8 @@ Use the ordinary assignment fields (`title`, `instructions`, `siteId`, `template
 Weekday schedules include public holidays. They are a Monday–Friday calendar rule, not a locale-specific business-day or holiday calendar. For example, a seven-occurrence batch starting Friday 2026-12-25 produces Dec 25, 28, 29, 30, 31, Jan 1, and Jan 4. Those dates are synthetic planning examples.
 
 `monthly` repeats on the original day of each month. If that day is unavailable, the occurrence uses that month's last day. For example, Jan 31, 2027 produces Jan 31, Feb 28, Mar 31, Apr 30. Jan 30 produces Jan 30, Feb 28, Mar 30. Starting Feb 28 repeats on the 28th; this is an original-day rule rather than an end-of-month mode. Weekend and holiday dates remain included. The selector explains the shorter-month behavior before assignment, and recovered batches retain the same rule and preview.
+
+`quarterly` advances three calendar months from each scheduled month and uses the same original-day rule. Choose **Every three months** for seasonal inspections. Starting Aug 31, 2026 produces Aug 31, Nov 30, Feb 28, and May 31. If a date is skipped, the next occurrence stays on the same three-month schedule.
 
 Counts must be integers from 2 through 52, including the first occurrence. Dates use UTC calendar arithmetic without a time-of-day or daylight-saving adjustment. Every generated date, including monthly advances and weekend skips, must fit a four-digit year. Past dates are allowed, as with ordinary assignments. The exported `recurrenceDates` helper validates the same schedule for a client preview. `RecurrenceFrequencySchema` defines the supported values across requests, receipts, and batch summaries.
 

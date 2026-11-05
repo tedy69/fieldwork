@@ -6,6 +6,8 @@
 
 Rescheduling from a recurring batch uses the same calendar icon and date field as an order. Planned and current dates remain side by side on desktop and stack on narrow screens. Chromium verifies keyboard entry and Escape, focus after saving, conflict recovery with the proposed date intact, offline controls, and 320px reflow.
 
+Quarterly recurrence adds one choice to Repeat and uses the existing date preview and recovery panel. Chromium verifies keyboard entry, shorter-month dates, a 320px layout, and recovery of a saved request after the response is lost.
+
 Per-item photo evidence: the attachment action sits by the required question and uses the existing photo icon, outline button and draft panel. Text names the required and attached states. Captions in drafts and saved reports identify the linked questions. The scoped web gate passes at 320px and 1440px with keyboard setup and upload, removal, offline reload, missing evidence feedback and reconnect. The existing site-photo flow stays available for general evidence.
 
 Two-week recurrence uses one option in the existing Repeat selector. Preview and recovery keep the schedule alongside the selected dates and use the existing light journal controls. The scoped web gate passes at 390px with keyboard entry, skipped dates, failed-save recovery, offline reload and batch browsing. The daily comparison runs at 390px and 1440px.

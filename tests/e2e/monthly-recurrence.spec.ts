@@ -5,15 +5,36 @@ import type { CreateOrderSeries, OrderSeriesReceipt } from '@fieldwork/contracts
 const baseURL = 'http://127.0.0.1:4173';
 const endpoint = '**/api/v1/work-order-series';
 test.use({ timezoneId: 'America/Los_Angeles' });
-for (const width of [390, 1440]) {
-  test(`monthly batches preview, recover offline and retain planned dates at ${width}px`, async ({
+for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
+  [
+    390,
+    'monthly',
+    'Monthly',
+    '2027-01-31',
+    ['2027-01-31', '2027-02-28', '2027-03-31', '2027-04-30'],
+  ],
+  [
+    1440,
+    'monthly',
+    'Monthly',
+    '2027-01-31',
+    ['2027-01-31', '2027-02-28', '2027-03-31', '2027-04-30'],
+  ],
+  [
+    320,
+    'quarterly',
+    'Every three months',
+    '2026-08-31',
+    ['2026-08-31', '2026-11-30', '2027-02-28', '2027-05-31'],
+  ],
+] as const) {
+  test(`${frequency} batches preview, recover offline and retain planned dates at ${width}px`, async ({
     page,
     context,
   }) => {
     const session = await createClient(baseURL).login('manager@fieldwork.local', 'fieldwork-demo');
     const manager = createClient(baseURL, () => session.token);
-    const title = `Synthetic monthly schedule ${width}`;
-    const expectedDates = ['2027-01-31', '2027-02-28', '2027-03-31', '2027-04-30'];
+    const title = `Synthetic ${frequency} schedule ${width}`;
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.setViewportSize({ width, height: 1000 });
@@ -34,14 +55,9 @@ for (const width of [390, 1440]) {
       .locator('time');
     await dialog.getByLabel('Work order title', { exact: true }).fill(title);
     await dialog.getByRole('combobox', { name: 'Assign to', exact: true }).selectOption('worker');
-    await dialog.getByRole('combobox', { name: 'Repeat', exact: true }).selectOption('monthly');
+    await dialog.getByRole('combobox', { name: 'Repeat', exact: true }).selectOption(frequency);
     await dialog.getByLabel('Occurrences', { exact: true }).fill('4');
-    await expect(
-      dialog.getByText(
-        'Repeats on the original day of the month. Shorter months use their last day.',
-        { exact: true },
-      ),
-    ).toBeVisible();
+    await expect(dialog.getByText(/Shorter months use their last day\./)).toBeVisible();
     await dialog.getByLabel('Due date', { exact: true }).fill('9999-12-31');
     await expect(
       dialog.getByRole('heading', { name: 'Choose a valid schedule', exact: true }),
@@ -49,7 +65,7 @@ for (const width of [390, 1440]) {
     await expect(
       dialog.getByRole('button', { name: 'Assign work orders', exact: true }),
     ).toBeDisabled();
-    await dialog.getByLabel('Due date', { exact: true }).fill('2027-01-31');
+    await dialog.getByLabel('Due date', { exact: true }).fill(initialDate);
     expect(
       await dates.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('datetime'))),
     ).toEqual(expectedDates);
@@ -60,7 +76,7 @@ for (const width of [390, 1440]) {
     await expect(dates.first()).toBeVisible();
     await expect(dates.last()).toBeVisible();
     await page.screenshot({
-      path: test.info().outputPath(`monthly-preview-${width}.png`),
+      path: test.info().outputPath(`${frequency}-preview-${width}.png`),
       fullPage: false,
     });
     const requests: CreateOrderSeries[] = [];
@@ -82,7 +98,7 @@ for (const width of [390, 1440]) {
     await context.setOffline(true);
     await page.reload();
     await page.getByRole('button', { name: 'Recover recurring batch', exact: true }).click();
-    await expect(dialog.getByText('Monthly · 4 work orders', { exact: true })).toBeVisible();
+    await expect(dialog.getByText(`${repeatLabel} · 4 work orders`, { exact: true })).toBeVisible();
     expect(
       await dates.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('datetime'))),
     ).toEqual(expectedDates);
@@ -105,13 +121,13 @@ for (const width of [390, 1440]) {
       name: `View batch ${receipt!.id}: ${title}`,
       exact: true,
     });
-    await expect(row).toContainText('Monthly');
+    await expect(row).toContainText(repeatLabel);
     await row.click();
     const firstRow = viewer
       .getByRole('region', { name: 'Selected recurring batch', exact: true })
       .locator('.series-orders > li')
       .first();
-    await expect(firstRow.locator('time').first()).toHaveAttribute('datetime', '2027-01-31');
+    await expect(firstRow.locator('time').first()).toHaveAttribute('datetime', initialDate);
     await expect(firstRow.locator('time').last()).toHaveAttribute('datetime', '2027-02-02');
     await firstRow
       .getByRole('button', { name: `Open batch order ${first.reference}: ${title}`, exact: true })
@@ -119,7 +135,7 @@ for (const width of [390, 1440]) {
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
     expect(errors).toEqual([]);
     await page.screenshot({
-      path: test.info().outputPath(`monthly-order-${width}.png`),
+      path: test.info().outputPath(`${frequency}-order-${width}.png`),
       fullPage: true,
     });
   });

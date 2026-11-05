@@ -66,11 +66,13 @@ When an assignment has coordinates, Expo shows them next to the site address wit
 
 ## Start
 
-The assignment list has a named funnel beside Search. Pick a status to narrow the saved list, or choose **All statuses** to clear the status while keeping the search. The selected status and result count stay visible when the choices are closed.
+The assignment list has a named funnel beside Search. Pick a status or **Overdue** to narrow the saved list, or choose **All assignments** to clear the filter while keeping the search. The filter and result count stay visible when the choices are closed. Overdue follows the device's local date and excludes approved work.
 
 When sync requires a new session, **Sign in again** opens the sign-in form with the current server and account filled in. Drafts and queued reports remain on the device. Start with a fresh worker session in English to run `npm exec -- tsx tests/native/session-recovery.ios.ts <simulator-id>` against the synthetic fixture. The runner revokes the session through password reset, checks that the report stays in the outbox, and verifies one saved revision after signing back in.
 
 To verify the filter, start on **My assignments** in English with the synthetic fixture cached, an empty search, and the filter closed. Run `npm exec -- tsx tests/native/assignment-status-filter.ios.ts <simulator-id>`. The runner temporarily disables the fixture API and checks the empty state, search, inspection navigation, and the language switch.
+
+Run `npm exec -- tsx tests/native/overdue-filter.ios.ts <simulator-id>` from the same starting screen. The runner checks that an overdue assignment remains searchable during an outage and that approved and future assignments stay out of the filter.
 
 Run the API, then `npm run mobile`. Use a compatible Expo Go client for SDK 58 or create a development build. Enter a worker account and server URL on the sign-in screen.
 

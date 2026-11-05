@@ -466,6 +466,15 @@ export const WorkOrderSchema = z.object({
     .nullable(),
 });
 export type WorkOrder = z.infer<typeof WorkOrderSchema>;
+
+export function localDate(now = new Date()) {
+  return `${String(now.getFullYear()).padStart(4, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+export function isOverdue(order: Pick<WorkOrder, 'dueDate' | 'status'>, today: string) {
+  return order.status !== 'APPROVED' && order.dueDate < today;
+}
+
 export const ReportSnapshotSchema = WorkOrderSchema.omit({
   status: true,
   version: true,

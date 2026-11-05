@@ -1,6 +1,12 @@
-import { useMemo, useState, type RefObject } from 'react';
-import { FlatList, Keyboard, Pressable, StyleSheet, View } from 'react-native';
-import { StatusSchema, type User, type WorkOrder } from '@fieldwork/contracts';
+import { useEffect, useMemo, useState, type RefObject } from 'react';
+import { AppState, FlatList, Keyboard, Pressable, StyleSheet, View } from 'react-native';
+import {
+  isOverdue,
+  localDate,
+  StatusSchema,
+  type User,
+  type WorkOrder,
+} from '@fieldwork/contracts';
 import type { State } from '@fieldwork/offline';
 import { languageNames, notebookCopy, signInCopy, type Locale } from '@fieldwork/strings';
 import { Brand, Button, Copy, Field, Notice, Panel, StatusBadge } from './notebook-ui';
@@ -17,7 +23,8 @@ import {
 
 type QueueItem = State['outbox'][number];
 type Entry = { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: QueueItem };
-const statuses = [null, ...StatusSchema.options];
+export type AssignmentFilter = WorkOrder['status'] | 'overdue' | null;
+const filters: AssignmentFilter[] = [null, 'overdue', ...StatusSchema.options];
 
 export type NotebookProblem = { kind: 'session' } | { kind: 'message'; text: string };
 
@@ -60,8 +67,8 @@ export default function WorkspacePage({
   onViewChange,
   search,
   onSearchChange,
-  statusFilter,
-  onStatusFilterChange,
+  assignmentFilter,
+  onAssignmentFilterChange,
   scrollPosition,
 }: {
   state: State;
@@ -79,25 +86,46 @@ export default function WorkspacePage({
   onViewChange: (view: 'assignments' | 'outbox') => void;
   search: string;
   onSearchChange: (search: string) => void;
-  statusFilter: WorkOrder['status'] | null;
-  onStatusFilterChange: (status: WorkOrder['status'] | null) => void;
+  assignmentFilter: AssignmentFilter;
+  onAssignmentFilterChange: (filter: AssignmentFilter) => void;
   scrollPosition: RefObject<number>;
 }) {
   const copy = notebookCopy[locale];
   const alternate = locale === 'en' ? 'id' : 'en';
   const dateLocale = locale === 'id' ? 'id-ID' : undefined;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [today, setToday] = useState(localDate);
+  useEffect(() => {
+    if (view !== 'assignments' || assignmentFilter !== 'overdue') return;
+    const update = () => setToday(localDate());
+    update();
+    const interval = setInterval(update, 60_000);
+    const listener = AppState.addEventListener('change', (state) => {
+      if (state === 'active') update();
+    });
+    return () => {
+      clearInterval(interval);
+      listener.remove();
+    };
+  }, [assignmentFilter, view]);
+  const filterLabel = (filter: AssignmentFilter) =>
+    filter === 'overdue' ? copy.overdue : filter ? copy.status[filter] : copy.allAssignments;
   const query = search.trim().toLowerCase();
   const entries = useMemo<Entry[]>(() => {
     if (view === 'outbox') return state.outbox.map((item) => ({ kind: 'queued', item }));
     return state.orders
-      .filter(
-        (order) =>
-          (!statusFilter || order.status === statusFilter) &&
-          `${order.reference} ${order.title} ${order.site.name}`.toLowerCase().includes(query),
-      )
+      .filter((order) => {
+        const matches =
+          assignmentFilter === 'overdue'
+            ? isOverdue(order, today)
+            : !assignmentFilter || order.status === assignmentFilter;
+        return (
+          matches &&
+          `${order.reference} ${order.title} ${order.site.name}`.toLowerCase().includes(query)
+        );
+      })
       .map((order) => ({ kind: 'order', order }));
-  }, [state.orders, state.outbox, query, statusFilter, view]);
+  }, [state.orders, state.outbox, query, assignmentFilter, today, view]);
   return (
     <FlatList
       data={entries}
@@ -181,12 +209,12 @@ export default function WorkspacePage({
                   />
                 </View>
                 <Button
-                  title={copy.filterStatus}
+                  title={copy.filterAssignments}
                   icon={FunnelSimple}
                   iconOnly
                   variant="outline"
                   expanded={filtersOpen}
-                  selected={Boolean(statusFilter)}
+                  selected={Boolean(assignmentFilter)}
                   onPress={() => {
                     Keyboard.dismiss();
                     setFiltersOpen((open) => !open);
@@ -195,21 +223,21 @@ export default function WorkspacePage({
               </View>
               {filtersOpen && (
                 <View style={styles.statusChoices}>
-                  {statuses.map((status) => (
+                  {filters.map((filter) => (
                     <Button
-                      key={status ?? 'all'}
-                      title={status ? copy.status[status] : copy.allStatuses}
+                      key={filter ?? 'all'}
+                      title={filterLabel(filter)}
                       variant="outline"
-                      selected={status === statusFilter}
+                      selected={filter === assignmentFilter}
                       style={styles.statusChoice}
-                      onPress={() => onStatusFilterChange(status)}
+                      onPress={() => onAssignmentFilterChange(filter)}
                     />
                   ))}
                 </View>
               )}
-              {statusFilter && (
+              {assignmentFilter && (
                 <Copy variant="caption" muted accessibilityLiveRegion="polite">
-                  {copy.filteredCount(copy.status[statusFilter], entries.length)}
+                  {copy.filteredCount(filterLabel(assignmentFilter), entries.length)}
                 </Copy>
               )}
             </View>
@@ -313,7 +341,7 @@ export default function WorkspacePage({
               ? copy.upToDate
               : busy
                 ? copy.loading
-                : query || statusFilter
+                : query || assignmentFilter
                   ? copy.noMatch
                   : copy.noAssignments
           }
@@ -322,8 +350,8 @@ export default function WorkspacePage({
             ? copy.outboxEmpty
             : busy
               ? copy.loadingHint
-              : statusFilter
-                ? copy.noStatusMatchHint
+              : assignmentFilter
+                ? copy.noFilterMatchHint
                 : query
                   ? copy.noMatchHint
                   : copy.noAssignmentsHint}

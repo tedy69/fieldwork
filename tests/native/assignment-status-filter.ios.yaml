@@ -4,7 +4,7 @@ name: Filter cached assignments by status on iOS
 - scrollUntilVisible:
     element: My assignments
     direction: UP
-- tapOn: Filter assignments by status
+- tapOn: Filter assignments
 - tapOn:
     text: Approved
     index: 0
@@ -18,7 +18,7 @@ name: Filter cached assignments by status on iOS
 - tapOn:
     text: Assigned
     index: 0
-- tapOn: Filter assignments by status
+- tapOn: Filter assignments
 - tapOn:
     id: assignment-search
 - inputText: Weekly
@@ -43,8 +43,8 @@ name: Filter cached assignments by status on iOS
 - scrollUntilVisible:
     element: Ditugaskan · 1 ditampilkan
 - assertVisible: Ditugaskan · 1 ditampilkan
-- tapOn: Saring tugas berdasarkan status
-- tapOn: Semua status
+- tapOn: Saring tugas
+- tapOn: Semua tugas
 - assertNotVisible: Ditugaskan · 1 ditampilkan
 - assertVisible:
     id: assignment-search

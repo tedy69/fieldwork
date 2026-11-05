@@ -143,6 +143,8 @@ export default function WorkspacePage({
       })
       .map((order) => ({ kind: 'order', order }));
   }, [state.orders, state.outbox, query, assignmentFilter, today, view]);
+  const queuedReports = state.outbox.length;
+  const queuedLabel = copy.pending(queuedReports);
   return (
     <FlatList
       data={entries}
@@ -200,7 +202,7 @@ export default function WorkspacePage({
               onPress={() => onViewChange('assignments')}
             />
             <Button
-              title={`${copy.outboxTab} (${state.outbox.length})`}
+              title={`${copy.outboxTab} (${queuedReports})`}
               icon={Tray}
               variant="ghost"
               selected={view === 'outbox'}
@@ -259,15 +261,16 @@ export default function WorkspacePage({
               )}
             </View>
           )}
-          {view === 'assignments' && state.outbox.length > 0 && (
-            <Notice title={copy.pending(state.outbox.length)}>
-              <Copy muted>{copy.pendingHint}</Copy>
-              <Button
-                title={copy.openOutbox}
-                variant="outline"
-                onPress={() => onViewChange('outbox')}
-              />
-            </Notice>
+          {view === 'assignments' && queuedReports > 0 && (
+            <Button
+              title={queuedLabel}
+              accessibilityLabel={`${copy.openOutbox}. ${queuedLabel}`}
+              icon={Tray}
+              variant="outline"
+              style={styles.pendingAction}
+              testID="open-queued-reports"
+              onPress={() => onViewChange('outbox')}
+            />
           )}
         </View>
       }
@@ -435,6 +438,7 @@ const styles = StyleSheet.create({
   searchField: { flex: 1, minWidth: 0 },
   statusChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   statusChoice: { maxWidth: '100%' },
+  pendingAction: { backgroundColor: colors.raised, justifyContent: 'flex-start' },
   order: {
     padding: spacing.xl,
     marginBottom: spacing.md,

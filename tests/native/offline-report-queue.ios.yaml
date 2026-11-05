@@ -34,9 +34,16 @@ name: Restore and queue an inspection offline on iOS
     direction: UP
 - tapOn: Back to assignments
 - scrollUntilVisible:
-    element: 'Outbox \(1\)'
+    element:
+      id: open-queued-reports
     direction: UP
-- tapOn: 'Outbox \(1\)'
+    centerElement: true
+- assertVisible:
+    id: open-queued-reports
+    text: Open outbox. 1 report queued
+- tapOn:
+    id: open-queued-reports
+- assertVisible: ${SUMMARY}
 - stopApp
 - launchApp
 - openLink: ${METRO_URL}

@@ -76,6 +76,7 @@ it('lists original assignment metadata without exposing mutation IDs, input bodi
       {
         id: batch.id,
         title: 'Recurring overview fixture',
+        siteName: 'North pump station',
         frequency: 'weekly',
         occurrences: 3,
         firstDueDate: '2026-12-28',
@@ -94,6 +95,7 @@ it('lists original assignment metadata without exposing mutation IDs, input bodi
     'id',
     'lastDueDate',
     'occurrences',
+    'siteName',
     'title',
   ]);
 });
@@ -204,6 +206,26 @@ it('combines frequency and text before counting, validating cursors, and paging'
     'INVALID_CURSOR',
   );
   expect((await read(filter, worker)).statusCode).toBe(403);
+});
+
+it('finds a batch by the saved site name using literal normalized search', async () => {
+  const site = await fixture.app.inject({
+    method: 'POST',
+    url: '/api/v1/sites',
+    headers: bearer(manager),
+    payload: { name: 'South Gate 100%', address: 'Synthetic address' },
+  });
+  expect(site.statusCode).toBe(201);
+  const matching = await create({ siteId: site.json().id });
+  await create({ frequency: 'daily' });
+  const filter = '?q=south+gate+100%25&frequency=weekly';
+  const page = OrderSeriesPageSchema.parse((await read(filter)).json());
+  expect(page).toMatchObject({
+    total: 1,
+    data: [{ id: matching.id, siteName: 'South Gate 100%' }],
+  });
+  expect((await read('?q=synthetic+address')).json().total).toBe(0);
+  expect((await read('?q=south+gate+100%25&frequency=daily')).json().total).toBe(0);
 });
 
 it('reads batches created by another current manager without changing any saved records', async () => {

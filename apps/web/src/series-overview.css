@@ -65,6 +65,17 @@
 .series-detail .muted {
   font-size: 13px;
 }
+.series-site {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.series-site svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
 .series-orders {
   display: grid;
   gap: 16px;

@@ -99,7 +99,11 @@ for (const width of [390, 1440]) {
         responseType: 'number',
         readingRule: { unit: 'bar', min: -12.5, max: 0 },
       },
-      { label: 'Temperature', responseType: 'number', readingRule: { unit: '°C', min: 0 } },
+      {
+        label: 'Temperature',
+        responseType: 'number',
+        readingRule: { unit: '°C', min: 0, max: 1e80 },
+      },
     ]);
     const order = await manager.createOrder({
       title: `Reading notebook QA ${width}`,
@@ -127,6 +131,9 @@ for (const width of [390, 1440]) {
     const pressure = page.getByLabel('Reading: Pressure (bar)', { exact: true });
     const temperature = page.getByLabel('Reading: Temperature (°C)', { exact: true });
     await expect(pressure).toHaveAccessibleDescription('Enter a reading from -12.5 to 0 bar.');
+    await expect(temperature).toHaveAccessibleDescription(
+      `Enter a reading from 0 to 1${'0'.repeat(80)} °C.`,
+    );
     await pressure.fill('-');
     await expect(pressure).toHaveAttribute('aria-invalid', 'true');
     await expect(
@@ -134,6 +141,7 @@ for (const width of [390, 1440]) {
     ).toBeVisible();
     await temperature.fill('0');
     await page.getByLabel('Inspection summary', { exact: true }).fill('Synthetic meter readings.');
+    await expect(page.getByText('Draft saved on this device', { exact: true })).toBeVisible();
     await context.setOffline(true);
     await page.reload();
     await open();
@@ -164,6 +172,7 @@ for (const width of [390, 1440]) {
     await expect(page.getByLabel('Notes: Pressure', { exact: true })).toBeFocused();
     await pressure.scrollIntoViewIfNeeded();
     await page.screenshot({ path: test.info().outputPath(`numeric-field-${width}.png`) });
+    if (width === 390) await page.setViewportSize({ width: 320, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );

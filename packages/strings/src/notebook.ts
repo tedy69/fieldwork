@@ -10,6 +10,8 @@ const english = {
   sync: 'Sync now',
   syncing: 'Syncing…',
   syncError: 'Sync needs attention',
+  syncUnavailable: 'Could not sync. You can still use saved assignments. Try again when connected.',
+  notebookReadFailed: 'Could not open saved assignments on this device. Try syncing again.',
   syncSignIn: 'Sign in to sync',
   sessionDrafts: 'Drafts and queued reports stay on this device.',
   signInAgain: 'Sign in again',
@@ -73,6 +75,10 @@ export const notebookCopy: Record<Locale, typeof english> = {
     sync: 'Sinkronkan sekarang',
     syncing: 'Menyinkronkan…',
     syncError: 'Sinkronisasi perlu diperiksa',
+    syncUnavailable:
+      'Sinkronisasi gagal. Tugas tersimpan tetap bisa dibuka. Sambungkan ke internet, lalu coba lagi.',
+    notebookReadFailed:
+      'Tugas tersimpan tidak dapat dibuka di perangkat ini. Coba sinkronkan lagi.',
     syncSignIn: 'Masuk untuk sinkronisasi',
     sessionDrafts: 'Draf dan laporan dalam antrean tetap tersimpan di perangkat ini.',
     signInAgain: 'Masuk kembali',

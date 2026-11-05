@@ -35,7 +35,8 @@ type Entry = { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: Queue
 export type AssignmentFilter = WorkOrder['status'] | 'overdue' | 'today' | null;
 const filters: AssignmentFilter[] = [null, 'overdue', 'today', ...StatusSchema.options];
 
-export type NotebookProblem = { kind: 'session' } | { kind: 'message'; text: string };
+export type NotebookProblem =
+  'session' | 'syncUnavailable' | 'notebookReadFailed' | 'recoveryUnavailable' | 'recoveryFailed';
 
 export function NotebookNotice({
   error,
@@ -47,14 +48,14 @@ export function NotebookNotice({
   onSignInAgain: () => void;
 }) {
   const copy = notebookCopy[locale];
-  return error.kind === 'session' ? (
+  return error === 'session' ? (
     <Notice error title={copy.syncSignIn}>
       <Copy muted>{copy.sessionDrafts}</Copy>
       <Button title={copy.signInAgain} icon={SignIn} variant="outline" onPress={onSignInAgain} />
     </Notice>
   ) : (
     <Notice error title={copy.syncError}>
-      {error.text}
+      {copy[error]}
     </Notice>
   );
 }
@@ -286,11 +287,13 @@ export default function WorkspacePage({
                 {copy.photoCount(item.input.photos.length)} · {copy.savedAt}{' '}
                 {new Date(item.createdAt).toLocaleString(dateLocale)}
               </Copy>
-              {item.error && (
-                <Notice error title={copy.reportError}>
-                  {item.error}
-                </Notice>
-              )}
+              {item.error &&
+                (item.state === 'blocked' ||
+                  (error !== 'session' && error !== 'syncUnavailable')) && (
+                  <Notice error title={copy.reportError}>
+                    {item.error}
+                  </Notice>
+                )}
               {item.state === 'blocked' ? (
                 <Button
                   title={copy.openLatest}

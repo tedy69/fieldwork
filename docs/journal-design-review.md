@@ -76,6 +76,8 @@ Web session recovery uses the same sign-in icon and retention copy as the Expo n
 
 Due today uses the existing status controls and the named native funnel. Browser checks use the Jakarta and Los Angeles time zones, cross local midnight offline, and verify that the selected filter follows the date. An iOS simulator run checks the localized filter at the largest Dynamic Type setting with a compact brand and stacked notebook tabs.
 
+The native notebook shows one localized sync notice during a server outage and keeps queued work visible. The iOS and Android synthetic fixtures verify the language switch during the same outage. The iOS flow also verifies that a successful retry clears the notice and preserves the active filter.
+
 Android native execution and its platform limits are recorded in [verification](verification.md). This report does not certify iOS execution, physical cameras, full screen-reader traversal or app-store readiness. No performance score is claimed.
 
 ## Antislop Delivery Gate

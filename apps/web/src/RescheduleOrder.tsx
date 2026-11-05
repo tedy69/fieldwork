@@ -5,7 +5,7 @@ import { Form } from './components/ui/form';
 import { DatePicker } from './components/ui/date-picker';
 import { Label } from './components/ui/label';
 import { FieldError } from './components/ui/field';
-import { useRef, useState, type FormEvent } from 'react';
+import { useId, useRef, useState, type FormEvent } from 'react';
 import type { WorkOrder } from '@fieldwork/contracts';
 import { client, dateLabel, message } from './lib';
 import './reschedule.css';
@@ -15,11 +15,17 @@ export default function RescheduleOrder({
   online,
   onSaved,
   onNotice,
+  batch,
 }: {
   order: WorkOrder;
   online: boolean;
   onSaved: (order: WorkOrder) => Promise<void>;
   onNotice: (notice: string) => void;
+  batch?: {
+    locked: boolean;
+    onBusyChange: (busy: boolean) => void;
+    onRestoreFocus: () => void;
+  };
 }) {
   const [editing, setEditing] = useState(false);
   const [dueDate, setDueDate] = useState(order.dueDate);
@@ -27,18 +33,32 @@ export default function RescheduleOrder({
   const [error, setError] = useState('');
   const [needsReload, setNeedsReload] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
+  const formId = useId();
+  const locked = Boolean(busy || batch?.locked);
+
+  function focusAfterUpdate() {
+    if (!batch) {
+      document.getElementById('main')?.focus();
+      return;
+    }
+    requestAnimationFrame(() => {
+      if (trigger.current && !trigger.current.disabled) trigger.current.focus();
+      else batch.onRestoreFocus();
+    });
+  }
 
   function cancel() {
     setEditing(false);
     setDueDate(order.dueDate);
     if (!needsReload) setError('');
-    if (trigger.current?.disabled) document.getElementById('main')?.focus();
+    if (trigger.current?.disabled) focusAfterUpdate();
     else trigger.current?.focus();
   }
   async function save(event: FormEvent) {
     event.preventDefault();
-    if (!online || busy || needsReload || dueDate === order.dueDate) return;
+    if (!online || locked || needsReload || !dueDate || dueDate === order.dueDate) return;
     setBusy('saving');
+    batch?.onBusyChange(true);
     setError('');
     try {
       const updated = await client.rescheduleOrder(order.id, {
@@ -48,59 +68,65 @@ export default function RescheduleOrder({
       await onSaved(updated);
       onNotice(`${order.reference} is now due ${dateLabel(updated.dueDate)}.`);
       setEditing(false);
-      document.getElementById('main')?.focus();
+      focusAfterUpdate();
     } catch (error) {
       setError(`${message(error)} Reload this order before trying again.`);
       setNeedsReload(true);
     } finally {
       setBusy(null);
+      batch?.onBusyChange(false);
     }
   }
   async function reload() {
+    if (!online || locked) return;
     setBusy('reloading');
+    batch?.onBusyChange(true);
     setError('');
     try {
       const updated = await client.order(order.id);
       await onSaved(updated);
       onNotice(`${order.reference} reloaded. Current due date: ${dateLabel(updated.dueDate)}.`);
       setNeedsReload(false);
-      document.getElementById('main')?.focus();
+      focusAfterUpdate();
     } catch (error) {
       setError(message(error));
     } finally {
       setBusy(null);
+      batch?.onBusyChange(false);
     }
   }
   return (
     <section className="schedule" aria-label="Assignment schedule">
       <IconButton
-        label="Change due date"
+        label={batch ? `Change due date for ${order.reference}` : 'Change due date'}
         ref={trigger}
         className="quiet"
         aria-expanded={editing}
-        aria-controls="schedule-form"
-        disabled={!online || Boolean(busy)}
+        aria-controls={editing ? formId : undefined}
+        disabled={!online || locked}
         onClick={() => (editing ? cancel() : setEditing(true))}
       >
         <CalendarBlankIcon aria-hidden="true" />
       </IconButton>
-      {!online && <p className="muted">Connect to change the due date.</p>}
+      {!online && !batch && <p className="muted">Connect to change the due date.</p>}
       {editing && (
         <Form
           noValidate
-          id="schedule-form"
+          id={formId}
           aria-label="Change due date"
           onSubmit={save}
           onKeyDown={(event) => {
-            if (event.key === 'Escape' && !busy) {
+            if (event.key === 'Escape' && !locked) {
               event.preventDefault();
               cancel();
             }
           }}
         >
-          <p className="muted">
-            Current due date: {dateLabel(order.dueDate)}. Saved reports stay unchanged.
-          </p>
+          {!batch && (
+            <p className="muted">
+              Current due date: {dateLabel(order.dueDate)}. Saved reports stay unchanged.
+            </p>
+          )}
           <Label>
             New due date
             <DatePicker
@@ -108,7 +134,7 @@ export default function RescheduleOrder({
               autoFocus
               required
               value={dueDate}
-              disabled={Boolean(busy)}
+              disabled={locked}
               onValueChange={setDueDate}
             />
           </Label>
@@ -116,20 +142,18 @@ export default function RescheduleOrder({
           <div className="schedule-actions">
             <Button
               className="primary"
-              disabled={
-                !online || Boolean(busy) || needsReload || !dueDate || dueDate === order.dueDate
-              }
+              disabled={!online || locked || needsReload || !dueDate || dueDate === order.dueDate}
             >
               {busy === 'saving' ? 'Saving…' : 'Save due date'}
             </Button>
-            <Button type="button" className="quiet" disabled={Boolean(busy)} onClick={cancel}>
+            <Button type="button" className="quiet" disabled={locked} onClick={cancel}>
               Cancel
             </Button>
             {needsReload && (
               <Button
                 type="button"
                 className="quiet"
-                disabled={!online || Boolean(busy)}
+                disabled={!online || locked}
                 onClick={() => void reload()}
               >
                 {busy === 'reloading' ? 'Reloading…' : 'Reload order'}

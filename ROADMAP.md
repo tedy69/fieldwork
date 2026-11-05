@@ -26,7 +26,8 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Web server search with combined filters, incremental result loading, fresh authorization on opening, and preserved offline drafts.
 - [x] Bounded recurring assignment API and SDK with daily/weekly dates, atomic creation, and durable retry receipts.
 - [x] Web recurring assignment creation with a date preview, planner date preset, and durable recovery after uncertain writes.
-- [x] Read-only recurring batch overview, paginated API/SDK, planned/current order comparison, and fresh individual-order opening.
+- [x] Recurring batch overview with paginated API/SDK, planned/current order comparison, and fresh individual-order opening.
+- [x] Reschedule one unfinished order from its recurring batch while keeping the planned date visible.
 - [x] Optional coordinates on new sites/assignments and opt-in web maps with configurable raster tiles, attribution, keyboard controls, and offline-readable coordinates.
 - [x] Manager coordinate editing for existing sites, with conflict recovery, explicit clearing, and unchanged inspection snapshots.
 - [x] Weekday-only recurring batches with Monday–Friday previews, saved-request recovery, and batch browsing.

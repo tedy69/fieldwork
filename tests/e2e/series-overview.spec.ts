@@ -99,6 +99,7 @@ test('manager compares planned and current orders, pages with retry, and uses ke
   ).toEqual(['2026-12-28', '2027-02-01']);
   await expect(occurrences.first()).toContainText('Jordan Lee');
   await expect(occurrences.nth(1)).toContainText('To review');
+  await expect(occurrences.nth(1).getByRole('button', { name: /Change due date/ })).toHaveCount(0);
   await manager.rescheduleOrder(batch.orders[0].id, { baseVersion: 3, dueDate: '2027-02-02' });
   await selected.getByRole('button', { name: 'Refresh batch details', exact: true }).click();
   await expect(occurrences.first().locator('time').last()).toHaveAttribute(
@@ -140,6 +141,80 @@ test('manager compares planned and current orders, pages with retry, and uses ke
   await page.keyboard.press('Escape');
   await expect(page.locator('#main')).toBeFocused();
   expect(errors).toEqual([]);
+});
+
+test('manager reschedules one batch order with stale data and keeps the original plan', async ({
+  page,
+}) => {
+  const {
+    manager,
+    batches: [batch],
+  } = await fixture('Batch due date QA');
+  const [order, sibling] = batch.orders;
+  await login(page);
+  await page.getByRole('button', { name: 'Recurring batches', exact: true }).click();
+  const dialog = dialogFor(page);
+  await option(page, batch).click();
+  const row = dialog.locator('.series-orders > li').first();
+  const change = row.getByRole('button', { name: `Change due date for ${order.reference}` });
+  const date = row.getByRole('textbox', { name: 'New due date', exact: true });
+  const save = row.getByRole('button', { name: 'Save due date' });
+  await change.focus();
+  await page.keyboard.press('Enter');
+  await expect(date).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
+  await expect(change).toBeFocused();
+  await change.click();
+  await date.fill('2027-02-05');
+
+  await manager.rescheduleOrder(order.id, { baseVersion: order.version, dueDate: '2027-02-01' });
+  await save.click();
+  await expect(row.getByText(/Reload this order before trying again/)).toBeVisible();
+  await expect(date).toHaveValue('2027-02-05');
+  await expect(save).toBeDisabled();
+  await row.getByRole('button', { name: 'Reload order', exact: true }).click();
+  await expect(row.locator('time').first()).toHaveAttribute('datetime', order.dueDate);
+  await expect(row.locator('time').last()).toHaveAttribute('datetime', '2027-02-01');
+  await expect(date).toHaveValue('2027-02-05');
+  await page.setViewportSize({ width: 320, height: 800 });
+  expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+
+  const endpoint = `**/api/v1/work-orders/${order.id}/schedule`;
+  let release!: () => void;
+  const wait = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(endpoint, async (route) => {
+    await wait;
+    await route.continue();
+  });
+  try {
+    await save.click();
+    await expect(row.getByRole('button', { name: 'Saving…' })).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Refresh batches' })).toBeDisabled();
+  } finally {
+    release();
+  }
+  await expect(row.locator('time').last()).toHaveAttribute('datetime', '2027-02-05');
+  await expect(row.locator('time').first()).toHaveAttribute('datetime', order.dueDate);
+  await expect(change).toBeFocused();
+  await expect(dialog.getByText(`${order.reference} is now due`, { exact: false })).toBeVisible();
+  const detail = await manager.orderSeriesDetail(batch.id);
+  expect(
+    detail.orders.map(({ plannedDueDate, order: current }) => [plannedDueDate, current.dueDate]),
+  ).toEqual([
+    [order.dueDate, '2027-02-05'],
+    [sibling.dueDate, sibling.dueDate],
+  ]);
+  await page.context().setOffline(true);
+  await expect(change).toBeDisabled();
+  await page.keyboard.press('Escape');
+  await expect(
+    page.getByRole('button', { name: `Open ${order.reference}: ${order.title}` }).locator('time'),
+  ).toHaveAttribute('datetime', '2027-02-05');
 });
 
 test('batch loading and details handle empty, unavailable, superseded, and dismissed responses', async ({

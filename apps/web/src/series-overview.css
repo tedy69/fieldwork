@@ -79,6 +79,23 @@
 .series-orders .status {
   justify-self: start;
 }
+.series-order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+.series-order-actions .schedule {
+  min-width: 0;
+  margin: 0;
+}
+.series-order-actions .schedule:has(form) {
+  flex-basis: 100%;
+}
+.series-order-actions .schedule form {
+  margin-top: 8px;
+  padding-left: 12px;
+}
 .series-detail > h3 {
   overflow-wrap: anywhere;
 }

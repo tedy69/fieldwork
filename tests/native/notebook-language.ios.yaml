@@ -1,0 +1,48 @@
+appId: host.exp.Exponent
+name: Indonesian assignments and outbox on iOS
+---
+# Start on My assignments in English using the synthetic fixture and an empty outbox.
+- assertVisible: My assignments
+- tapOn:
+    id: assignment-search
+- inputText: zzqa
+- tapOn: Done editing
+- assertVisible: No matching assignments
+- scrollUntilVisible:
+    element: Bahasa Indonesia
+    direction: UP
+- tapOn: Bahasa Indonesia
+- assertVisible: Tidak ada tugas yang cocok
+- scrollUntilVisible:
+    element:
+      id: assignment-search
+    direction: UP
+- assertVisible:
+    id: assignment-search
+    text: zzqa
+- tapOn:
+    id: assignment-search
+- eraseText: 4
+- tapOn: Selesai mengedit
+- scrollUntilVisible:
+    element: 'Buka FW-001: Morning safety walkthrough'
+    centerElement: true
+- assertVisible: 'Buka FW-001: Morning safety walkthrough'
+- scrollUntilVisible:
+    element: 'Antrean \(0\)'
+    direction: UP
+- tapOn: 'Antrean \(0\)'
+- assertVisible: Antrean sinkronisasi
+- assertVisible: Semua laporan sudah tersinkron
+- stopApp
+- launchApp
+- openLink: ${METRO_URL}
+- extendedWaitUntil:
+    visible: Tugas saya
+    timeout: 30000
+- tapOn: 'Antrean \(0\)'
+- scrollUntilVisible:
+    element: English
+    direction: UP
+- tapOn: English
+- assertVisible: Sync outbox

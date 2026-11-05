@@ -525,11 +525,15 @@ export const RecurrenceFrequencySchema = z.enum([
   'weekdays',
   'monthly',
   'month-end',
+  'month-end-weekday',
   'quarterly',
 ]);
-function lastDayOfMonth(date: Date) {
+function lastDayOfMonth(date: Date, weekdaysOnly: boolean) {
   const end = new Date(date);
   end.setUTCMonth(end.getUTCMonth() + 1, 0);
+  if (weekdaysOnly) {
+    while (end.getUTCDay() === 0 || end.getUTCDay() === 6) end.setUTCDate(end.getUTCDate() - 1);
+  }
   return end.getUTCDate();
 }
 
@@ -538,11 +542,12 @@ function advanceRecurrence(
   frequency: z.infer<typeof RecurrenceFrequencySchema>,
   originalDay: number,
 ) {
-  if (frequency === 'monthly' || frequency === 'month-end' || frequency === 'quarterly') {
+  const anchored = frequency === 'monthly' || frequency === 'quarterly';
+  if (anchored || frequency === 'month-end' || frequency === 'month-end-weekday') {
     const months = frequency === 'quarterly' ? 3 : 1;
     date.setUTCMonth(date.getUTCMonth() + months, 1);
-    const lastDay = lastDayOfMonth(date);
-    date.setUTCDate(frequency === 'month-end' ? lastDay : Math.min(originalDay, lastDay));
+    const lastDay = lastDayOfMonth(date, frequency === 'month-end-weekday');
+    date.setUTCDate(anchored ? Math.min(originalDay, lastDay) : lastDay);
     return;
   }
   const days = { daily: 1, weekdays: 1, weekly: 7, biweekly: 14 }[frequency];
@@ -612,10 +617,14 @@ export const RecurrenceSchema = z
         message: 'Choose a Monday–Friday first date for weekday repeats.',
         path: ['dueDate'],
       });
-    if (input.frequency === 'month-end' && first.getUTCDate() !== lastDayOfMonth(first))
+    const weekdayEnd = input.frequency === 'month-end-weekday';
+    if (
+      (input.frequency === 'month-end' || weekdayEnd) &&
+      first.getUTCDate() !== lastDayOfMonth(first, weekdayEnd)
+    )
       context.addIssue({
         code: 'custom',
-        message: 'Choose the last day of a month for the first visit.',
+        message: `Choose the last ${weekdayEnd ? 'weekday' : 'day'} of a month for the first visit.`,
         path: ['dueDate'],
       });
     if (!scheduledDates(input))

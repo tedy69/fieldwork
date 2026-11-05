@@ -53,6 +53,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Repeatable Android smoke test for item photos, offline restart, and duplicate-safe reconnect.
 - [x] Repeatable iOS smoke test for draft retention, offline restart, and duplicate-safe reconnect.
 - [x] Expo outbox recovery that keeps blocked reports through outages and reassignment, with an iOS conflict smoke test.
+- [x] Offline assignment status filters in Expo that combine with search and follow the worker's language.
 - [x] Text-response checklist fields on web and Expo, including mixed API templates, offline drafts and saved report exports.
 - [x] Numeric checklist readings on web and Expo, with partial offline input, zero/negative decimals, type validation and saved report exports.
 - [x] Mixed checklist creation on web, with a response type per question and a bulk entry shortcut.

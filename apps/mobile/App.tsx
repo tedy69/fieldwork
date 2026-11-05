@@ -319,6 +319,7 @@ function Notebook({
   const [selected, setSelected] = useState<string | null>(null);
   const [notebookView, setNotebookView] = useState<'assignments' | 'outbox'>('assignments');
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<WorkOrder['status'] | null>(null);
   const listOffset = useRef(0);
   useEffect(() => {
     notebookScroll.current?.scrollTo({ y: 0, animated: false });
@@ -393,6 +394,11 @@ function Notebook({
         onSearchChange={(search) => {
           listOffset.current = 0;
           setSearch(search);
+        }}
+        statusFilter={statusFilter}
+        onStatusFilterChange={(status) => {
+          listOffset.current = 0;
+          setStatusFilter(status);
         }}
         scrollPosition={listOffset}
         onResolve={async (orderId, mutationId) => {

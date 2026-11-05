@@ -22,17 +22,20 @@ import {
   blankDraft,
   checklistItemLabel,
   completedAnswers,
+  parseReading,
   readingBounds,
   readingInputError,
   reportAnswers,
   reportItemLabel,
+  reportPhotoError,
   type Draft,
   type Photo,
   type User,
   type WorkOrder,
 } from '@fieldwork/contracts';
 import type { State, OfflineRepository } from '@fieldwork/offline';
-import { client, labels, dateLabel, message } from './lib';
+import { inspectionCopy, notebookCopy, signInCopy, type Locale } from '@fieldwork/strings';
+import { client, dateLabel, message } from './lib';
 import { Empty, PanelHeader, ActionGroup } from './components';
 import ReportPrint from './ReportPrint';
 import RescheduleOrder from './RescheduleOrder';
@@ -40,6 +43,7 @@ import ReassignOrder from './ReassignOrder';
 import ReportHistory from './ReportHistory';
 import SiteLocation from './SiteLocation';
 import DraftExport from './DraftExport';
+import { workerInspectionCopy } from './worker-inspection-copy';
 export default function OrderDetail({
   user,
   order,
@@ -47,6 +51,7 @@ export default function OrderDetail({
   repo,
   state,
   online,
+  locale = 'en',
   onBack,
   onRefresh,
   onNotice,
@@ -57,10 +62,15 @@ export default function OrderDetail({
   repo: OfflineRepository;
   state: State;
   online: boolean;
+  locale?: Locale;
   onBack: () => void;
   onRefresh: () => Promise<void>;
   onNotice: (notice: string) => void;
 }) {
+  const copy = inspectionCopy[locale];
+  const web = workerInspectionCopy[locale];
+  const status = notebookCopy[locale].status;
+  const dateLocale = locale === 'id' ? 'id-ID' : undefined;
   const [draft, setDraft] = useState<Draft>(state.drafts[order.id] ?? blankDraft(order));
   const currentDraft = useRef(draft);
   const pendingWrites = useRef(0);
@@ -86,9 +96,7 @@ export default function OrderDetail({
     try {
       await repo.saveDraft(order.id, next);
     } catch {
-      setError(
-        'Your draft could not be saved. Free device storage and try again before leaving this page.',
-      );
+      setError(web.saveFailed);
     } finally {
       pendingWrites.current -= 1;
       setSaving(pendingWrites.current > 0);
@@ -101,15 +109,14 @@ export default function OrderDetail({
     setError('');
     try {
       const existing = currentDraft.current.photos;
-      if (existing.length + files.length > MAX_REPORT_PHOTOS)
-        throw new Error('Attach up to 3 photos.');
+      if (existing.length + files.length > MAX_REPORT_PHOTOS) throw new Error(web.photoLimit);
       if (itemId && existing.some((photo) => photo.itemId === itemId)) return;
       if (!itemId && files.length > availableSitePhotoSlots(order.template, existing))
-        throw new Error('Keep a photo slot available for each question that requires one.');
+        throw new Error(web.photoSpace);
       const added: Photo[] = [];
       for (const file of Array.from(files)) {
         if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 2_000_000)
-          throw new Error('Choose JPEG, PNG, or WebP photos smaller than 2 MB.');
+          throw new Error(web.photoFormat);
         const data = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve(String(reader.result).split(',')[1]);
@@ -136,7 +143,7 @@ export default function OrderDetail({
     if (attaching.current) return;
     setError('');
     if (completed !== order.template.items.length) {
-      setError('Complete every checklist item before submitting.');
+      setError(web.incomplete);
       return;
     }
     setBusy(true);
@@ -148,8 +155,10 @@ export default function OrderDetail({
         baseVersion: order.version,
       });
       await repo.saveDraft(order.id, draft);
+      const photoError = reportPhotoError(order.template, input.photos, copy.photoErrors);
+      if (photoError) throw new Error(photoError.message);
       await repo.enqueue(order.id, input);
-      onNotice('Report saved to your outbox. It will sync when the server is available.');
+      onNotice(web.sentToOutbox);
       await onRefresh();
     } catch (error) {
       setError(message(error));
@@ -176,7 +185,7 @@ export default function OrderDetail({
   }
   return (
     <article className="detail">
-      <IconButton className="quiet back" label="Back to work orders" onClick={onBack}>
+      <IconButton className="quiet back" label={web.back} onClick={onBack}>
         <ArrowLeftIcon aria-hidden="true" />
       </IconButton>
       <div className="detail-heading">
@@ -188,73 +197,75 @@ export default function OrderDetail({
           <h1>{order.title}</h1>
         </div>
         <Badge className={`status status-${order.status.toLowerCase()}`}>
-          {labels[order.status]}
+          {status[order.status]}
         </Badge>
       </div>
       <dl className="order-meta">
         <div>
-          <dt>Site</dt>
+          <dt>{copy.site}</dt>
           <dd>
             {order.site.name}
             <small>{order.site.address}</small>
           </dd>
         </div>
         <div>
-          <dt>Assigned to</dt>
+          <dt>{copy.assignee}</dt>
           <dd>{order.assignee.name}</dd>
         </div>
         <div>
-          <dt>Due / priority</dt>
+          <dt>{copy.duePriority}</dt>
           <dd>
-            {dateLabel(order.dueDate)} · {order.priority}
+            {dateLabel(order.dueDate, dateLocale)} · {copy.priority[order.priority]}
           </dd>
         </div>
       </dl>
       <div className="inspection-layout">
         <div className="inspection-content">
           <Card className="brief">
-            <h2>Field brief</h2>
-            <p>{order.instructions || 'Complete the checklist and describe your findings.'}</p>
+            <h2>{copy.brief}</h2>
+            <p>{order.instructions || copy.defaultInstructions}</p>
           </Card>
           {order.review && (
             <Alert role="status" className="banner notice">
               <strong>
-                {labels[order.review.decision]} by {order.review.reviewedBy}
+                {web.reviewer(status[order.review.decision], order.review.reviewedBy)}
               </strong>
-              <p>{order.review.note || 'The inspection report has been accepted.'}</p>
+              <p>{order.review.note || copy.accepted}</p>
             </Alert>
           )}
           {queued && (
             <Alert role="status" className="banner notice">
-              <strong>
-                {queued.state === 'blocked'
-                  ? 'Sync needs your attention'
-                  : 'Report queued on this device'}
-              </strong>
-              <p>
-                {queued.error ??
-                  'Your checklist, notes, and photos are saved. Open the outbox for sync details.'}
-              </p>
+              <strong>{queued.state === 'blocked' ? copy.queueBlocked : copy.queued}</strong>
+              <p>{queued.error ?? web.queuedHint}</p>
             </Alert>
           )}
           {user.role === 'worker' && (state.drafts[order.id] || queued) && (
-            <DraftExport orderId={order.id} repo={repo} disabled={saving || busy} />
+            <DraftExport orderId={order.id} repo={repo} disabled={saving || busy} locale={locale} />
           )}
           {editable && (
-            <Form noValidate className="inspection-form" onSubmit={submit}>
+            <Form
+              noValidate
+              className="inspection-form"
+              onSubmit={submit}
+              validationCopy={signInCopy[locale].web}
+            >
               <div className="section-heading">
-                <h2>Inspection checklist</h2>
+                <h2>{copy.checklist}</h2>
                 <span className="muted" role="status">
-                  {saving ? 'Saving locally…' : 'Draft saved on this device'}
+                  {saving ? copy.savingLocally : copy.draftSaved}
                 </span>
               </div>
               <p className="inspection-progress" role="status">
-                <strong>{completed}</strong> of {order.template.items.length} checks recorded
+                <strong>{completed}</strong> {web.progress(order.template.items.length)}
               </p>
               {order.template.items.map((item, index) => {
                 const answer = draft.answers.find((answer) => answer.itemId === item.id)!;
-                const readingError = readingInputError(item, answer.reading);
-                const bounds = readingBounds(item);
+                const bounds = readingBounds(item, copy.bounds);
+                const readingError = readingInputError(item, answer.reading)
+                  ? bounds && parseReading(answer.reading) !== null
+                    ? copy.invalidBounds(bounds)
+                    : copy.invalidNumber
+                  : undefined;
                 const hasPhoto = draft.photos.some((photo) => photo.itemId === item.id);
                 return (
                   <FieldSet className="checklist-item" key={item.id}>
@@ -264,9 +275,11 @@ export default function OrderDetail({
                     </FieldLegend>
                     {item.responseType === 'text' ? (
                       <Label>
-                        <span className="sr-only">Response: {item.label}</span>
+                        <span className="sr-only">
+                          {copy.response}: {item.label}
+                        </span>
                         <Textarea
-                          aria-label={`Response: ${item.label}`}
+                          aria-label={`${copy.response}: ${item.label}`}
                           required
                           maxLength={1000}
                           rows={3}
@@ -286,9 +299,11 @@ export default function OrderDetail({
                     ) : item.responseType === 'number' ? (
                       <>
                         <Label>
-                          <span className="sr-only">Reading: {checklistItemLabel(item)}</span>
+                          <span className="sr-only">
+                            {copy.reading}: {checklistItemLabel(item)}
+                          </span>
                           <Input
-                            aria-label={`Reading: ${checklistItemLabel(item)}`}
+                            aria-label={`${copy.reading}: ${checklistItemLabel(item)}`}
                             required
                             maxLength={100}
                             value={answer.reading ?? ''}
@@ -312,7 +327,7 @@ export default function OrderDetail({
                           <FieldError id={`reading-help-${item.id}`}>{readingError}</FieldError>
                         ) : bounds ? (
                           <p id={`reading-help-${item.id}`} className="muted">
-                            Enter a reading {bounds}.
+                            {copy.readingHint(bounds)}
                           </p>
                         ) : null}
                       </>
@@ -340,15 +355,17 @@ export default function OrderDetail({
                             className={answer.value === value ? 'answer selected' : 'answer'}
                           >
                             <RadioGroupItem id={`answer-${item.id}-${value}`} value={value} />
-                            {value === 'pass' ? 'Pass' : value === 'fail' ? 'Issue found' : 'N/A'}
+                            {copy.results[value]}
                           </Label>
                         ))}
                       </RadioGroup>
                     )}
                     <Label className="item-note">
-                      <span className="sr-only">Notes: {item.label}</span>
+                      <span className="sr-only">
+                        {web.notes}: {item.label}
+                      </span>
                       <Input
-                        placeholder="Add a note (optional)"
+                        placeholder={copy.notePlaceholder}
                         value={answer.note}
                         maxLength={1000}
                         onChange={(event) =>
@@ -365,19 +382,21 @@ export default function OrderDetail({
                     </Label>
                     {item.requiresPhoto && (
                       <div className="item-photo-evidence">
-                        <p className="muted">{hasPhoto ? 'Photo attached' : 'Photo required'}</p>
+                        <p className="muted">
+                          {hasPhoto ? copy.photoAttached : copy.photoRequired}
+                        </p>
                         {!hasPhoto && (
                           <Button
                             type="button"
                             variant="outline"
-                            aria-label={`Add photo for ${checklistItemLabel(item)}`}
+                            aria-label={web.addPhotoFor(checklistItemLabel(item))}
                             disabled={busy || draft.photos.length >= MAX_REPORT_PHOTOS}
                             onClick={() => {
                               photoItem.current = item.id;
                               itemPhotoInput.current?.click();
                             }}
                           >
-                            <ImageSquareIcon aria-hidden="true" /> Add photo
+                            <ImageSquareIcon aria-hidden="true" /> {web.addPhoto}
                           </Button>
                         )}
                       </div>
@@ -386,40 +405,36 @@ export default function OrderDetail({
                 );
               })}
               <Label className="report-summary">
-                Inspection summary
+                {copy.summary}
                 <Textarea
                   className="resize-none"
-                  aria-label="Inspection summary"
+                  aria-label={copy.summary}
                   required
                   maxLength={4000}
                   rows={4}
-                  placeholder="Describe the condition of the site and any follow-up work."
+                  placeholder={web.summaryHint}
                   value={draft.summary}
                   onChange={(event) => void save({ ...draft, summary: event.target.value })}
                 />
               </Label>
               <section className="photo-section">
                 <h2>
-                  Site photos{' '}
+                  {copy.photos}{' '}
                   <span className="muted">
                     {draft.photos.length}/{MAX_REPORT_PHOTOS}
                   </span>
                 </h2>
-                {order.template.requiresPhoto && (
-                  <p className="muted">
-                    At least one site photo is required for each submission, including corrections.
-                  </p>
-                )}
+                {order.template.requiresPhoto && <p className="muted">{copy.photosRequired}</p>}
                 <div className="photos">
                   {draft.photos.map((photo, index) => (
                     <div key={photo.id}>
                       <img
-                        alt={`Site attachment ${index + 1}`}
+                        alt={`${web.attachment} ${index + 1}`}
                         src={`data:${photo.mimeType};base64,${photo.data}`}
                       />
                       {photo.itemId && <p>{reportItemLabel(order.template, photo.itemId)}</p>}
                       <IconButton
-                        label={`Remove photo ${index + 1}`}
+                        label={`${copy.removePhoto} ${index + 1}`}
                         variant="ghost"
                         disabled={busy}
                         onClick={() =>
@@ -451,31 +466,28 @@ export default function OrderDetail({
                       }}
                     />
                     {sitePhotoSlots === 0 && draft.photos.length < MAX_REPORT_PHOTOS && (
-                      <p className="muted">
-                        Remaining photo slots are reserved for checklist questions.
-                      </p>
+                      <p className="muted">{copy.reservedPhotos}</p>
                     )}
                     {draft.photos.length === MAX_REPORT_PHOTOS &&
                       !order.template.items.every(
                         (item) =>
                           !item.requiresPhoto ||
                           draft.photos.some((photo) => photo.itemId === item.id),
-                      ) && (
-                        <p className="muted">Remove a photo to make room for required evidence.</p>
-                      )}
+                      ) && <p className="muted">{web.freeSpace}</p>}
                   </>
                 )}
-                <FileUpload onFiles={photos} disabled={busy || sitePhotoSlots === 0} busy={busy} />
+                <FileUpload
+                  onFiles={photos}
+                  disabled={busy || sitePhotoSlots === 0}
+                  busy={busy}
+                  locale={locale}
+                />
               </section>
               {error && <FieldError>{error}</FieldError>}
               <div className="submit-bar">
-                <p>Your report stays on this device until the server confirms it.</p>
+                <p>{copy.retention}</p>
                 <Button className="primary" disabled={busy || saving}>
-                  {busy
-                    ? 'Saving report…'
-                    : navigator.onLine
-                      ? 'Submit inspection'
-                      : 'Save report for sync'}
+                  {busy ? copy.savingReport : navigator.onLine ? web.submit : web.saveOffline}
                 </Button>
               </div>
             </Form>
@@ -483,9 +495,9 @@ export default function OrderDetail({
           {order.report && !editable && (
             <Card className="report">
               <div className="section-heading">
-                <h2>Inspection report</h2>
+                <h2>{copy.report}</h2>
                 <span className="muted">
-                  Submitted {new Date(order.report.submittedAt).toLocaleString()}
+                  {copy.submitted} {new Date(order.report.submittedAt).toLocaleString(dateLocale)}
                 </span>
               </div>
               <ul className="report-checklist">
@@ -495,13 +507,15 @@ export default function OrderDetail({
                     <span
                       className={`preserve-lines ${answer.value === 'fail' ? 'amber' : 'muted'}`}
                     >
-                      {answerLabel(answer)}
+                      {answer.value === 'text' || answer.value === 'number'
+                        ? answerLabel(answer)
+                        : copy.results[answer.value]}
                     </span>
                     {answer.note && <p>{answer.note}</p>}
                   </li>
                 ))}
               </ul>
-              <h3>Summary</h3>
+              <h3>{copy.reportSummary}</h3>
               <p className="preserve-lines">{order.report.summary}</p>
               {order.report.photos.length > 0 && (
                 <div className="photos">
@@ -514,7 +528,7 @@ export default function OrderDetail({
                     >
                       <img
                         src={client.photoUrl(photo.id)}
-                        alt={`Submitted site photo ${index + 1}`}
+                        alt={`${copy.submittedPhoto} ${index + 1}`}
                       />
                       {photo.itemId && <p>{reportItemLabel(order.template, photo.itemId)}</p>}
                     </a>
@@ -564,7 +578,7 @@ export default function OrderDetail({
             />
           )}
         </div>
-        <aside className="inspection-context" aria-label="Order tools and location">
+        <aside className="inspection-context" aria-label="Order tools and location" lang="en">
           <Card className="order-tools">
             <PanelHeader title="Order tools" />
             {user.role === 'manager' &&

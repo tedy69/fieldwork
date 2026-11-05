@@ -308,7 +308,7 @@ export default function Workspace({
             />
           </div>
         </div>
-        <main id="main" tabIndex={-1} lang={order ? 'en' : locale}>
+        <main id="main" tabIndex={-1} lang={locale}>
           {error !== '' && <Alert className="banner error">{error ?? copy.unavailable}</Alert>}
           {notice && (
             <Alert role="status" className="banner notice">
@@ -415,6 +415,7 @@ export default function Workspace({
               repo={repo}
               state={state}
               online={online}
+              locale={locale}
               onBack={() => setSelected(null)}
               onRefresh={refresh}
               onNotice={setNotice}

@@ -1,0 +1,67 @@
+import type { Locale } from '@fieldwork/strings';
+
+const english = {
+  back: 'Back to work orders',
+  progress: (total: number) => `of ${total} checks recorded`,
+  reviewer: (status: string, name: string) => `${status} by ${name}`,
+  queuedHint: 'Your checklist, notes, and photos are saved. Open the outbox for sync details.',
+  saveFailed:
+    'Your draft could not be saved. Free device storage and try again before leaving this page.',
+  photoLimit: 'Attach up to 3 photos.',
+  photoSpace: 'Keep a photo slot available for each question that requires one.',
+  photoFormat: 'Choose JPEG, PNG, or WebP photos smaller than 2 MB.',
+  incomplete: 'Complete every checklist item before submitting.',
+  sentToOutbox: 'Report saved to your outbox. It will sync when the server is available.',
+  notes: 'Notes',
+  addPhoto: 'Add photo',
+  addPhotoFor: (question: string) => `Add photo for ${question}`,
+  summaryHint: 'Describe the condition of the site and any follow-up work.',
+  attachment: 'Site attachment',
+  freeSpace: 'Remove a photo to make room for required evidence.',
+  submit: 'Submit inspection',
+  saveOffline: 'Save report for sync',
+  upload: {
+    title: 'Site photo attachments',
+    saving: 'Saving photos on this device…',
+    drop: 'Drop site photos here',
+    formats: 'JPEG, PNG, or WebP. Up to 3 photos, 2 MB each.',
+    retention: 'Photos stay in your draft until you submit the inspection.',
+    input: 'Attach site photos',
+    choose: 'Choose photos',
+  },
+};
+
+export const workerInspectionCopy: Record<Locale, typeof english> = {
+  en: english,
+  id: {
+    back: 'Kembali ke daftar tugas',
+    progress: (total) => `dari ${total} pemeriksaan dicatat`,
+    reviewer: (status, name) => `${status} oleh ${name}`,
+    queuedHint:
+      'Daftar periksa, catatan, dan foto sudah tersimpan. Buka Antrean untuk melihat status sinkronisasi.',
+    saveFailed:
+      'Draf tidak bisa disimpan. Kosongkan ruang penyimpanan dan coba lagi sebelum meninggalkan halaman ini.',
+    photoLimit: 'Lampirkan maksimal 3 foto.',
+    photoSpace: 'Sisakan satu tempat foto untuk setiap pertanyaan yang memerlukannya.',
+    photoFormat: 'Pilih foto JPEG, PNG, atau WebP berukuran kurang dari 2 MB.',
+    incomplete: 'Lengkapi semua pertanyaan sebelum mengirim laporan.',
+    sentToOutbox: 'Laporan tersimpan di antrean dan akan dikirim saat server tersedia.',
+    notes: 'Catatan',
+    addPhoto: 'Tambahkan foto',
+    addPhotoFor: (question) => `Tambahkan foto untuk ${question}`,
+    summaryHint: 'Jelaskan kondisi lokasi dan tindak lanjutnya.',
+    attachment: 'Lampiran foto lokasi',
+    freeSpace: 'Hapus satu foto agar ada ruang untuk foto yang wajib.',
+    submit: 'Kirim laporan inspeksi',
+    saveOffline: 'Simpan laporan untuk sinkronisasi',
+    upload: {
+      title: 'Lampiran foto lokasi',
+      saving: 'Menyimpan foto di perangkat…',
+      drop: 'Tarik foto lokasi ke sini',
+      formats: 'JPEG, PNG, atau WebP. Maksimal 3 foto, masing-masing 2 MB.',
+      retention: 'Foto tetap tersimpan di draf sampai laporan dikirim.',
+      input: 'Lampirkan foto lokasi',
+      choose: 'Pilih foto',
+    },
+  },
+};

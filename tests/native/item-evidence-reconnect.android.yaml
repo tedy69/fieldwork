@@ -1,0 +1,25 @@
+appId: host.exp.exponent
+name: Sync an item photo after reconnect
+---
+- scrollUntilVisible:
+    element: Sync now
+    direction: UP
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- extendedWaitUntil:
+    visible: Everything is up to date
+    timeout: 15000
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- tapOn: 'Assignments \([0-9]+\)'
+- scrollUntilVisible:
+    element: ${ORDER_NAME}
+    centerElement: true
+- tapOn: ${ORDER_NAME}
+- scrollUntilVisible:
+    element: Submitted site photo
+    centerElement: true
+- assertVisible: Submitted site photo
+- assertVisible: Check valve

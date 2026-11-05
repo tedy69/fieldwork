@@ -48,6 +48,8 @@ Continue with `journal-photo.android.yaml` to attach/remove/reattach its synthet
 
 After sign-in, run `ADB=<adb-path> bash tests/native/icon-actions.android.sh <emulator-id>` to exercise named sync/navigation icons, touch-and-hold feedback, back navigation, selected answers, summary editing, keyboard dismissal, library photo attachment/removal and sign-out. The runner keeps assertions and actions in two Maestro flows and uses normal Android keyboard input for the synthetic summary, avoiding [Maestro's Android typing issue](https://github.com/mobile-dev-inc/Maestro/issues/2718). Expo Go's floating Tools bubble can be dragged away from the tested controls. This flow changes only dedicated synthetic drafts and media. Root `icon-native-*.png` captures are ignored by Git.
 
+For the item photo smoke test, use a dedicated Android emulator with the same synthetic API and Metro setup. Start signed in as the fixture worker on **My assignments** with an empty outbox. Run `ADB=<adb-path> npm exec -- tsx tests/native/item-evidence.android.ts <emulator-id>`. Set `METRO_URL` or `FIELDWORK_DESIGN_TEST_PORT` if your fixture uses different defaults. The runner creates a synthetic assignment, switches the fixture API offline, and checks the photo and report across two restarts. It restores the API before reconnecting and verifies exactly one server revision with the photo linked to its question.
+
 ## Start
 
 Run the API, then `npm run mobile`. Use a compatible Expo Go client for SDK 58 or create a development build. Enter a worker account and server URL on the sign-in screen.

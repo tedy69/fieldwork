@@ -1,0 +1,45 @@
+appId: host.exp.exponent
+name: Restore and queue an item photo offline
+---
+- back
+- stopApp
+- launchApp
+- openLink: ${METRO_URL}
+- extendedWaitUntil:
+    visible: My assignments
+    timeout: 30000
+- scrollUntilVisible:
+    element: ${ORDER_NAME}
+    centerElement: true
+- tapOn: ${ORDER_NAME}
+- scrollUntilVisible:
+    element: Photo attached
+    centerElement: true
+- assertVisible: Photo attached
+- scrollUntilVisible:
+    element: Site photo 1
+    centerElement: true
+- assertVisible: Site photo 1
+- scrollUntilVisible:
+    element: Save and sync inspection
+    centerElement: true
+- tapOn: Save and sync inspection
+- extendedWaitUntil:
+    visible: Report saved
+    timeout: 15000
+- tapOn: OK
+- scrollUntilVisible:
+    element: Back to assignments
+    direction: UP
+- tapOn: Back to assignments
+- scrollUntilVisible:
+    element: 'Outbox \(1\)'
+    direction: UP
+- tapOn: 'Outbox \(1\)'
+- stopApp
+- launchApp
+- openLink: ${METRO_URL}
+- extendedWaitUntil:
+    visible: My assignments
+    timeout: 30000
+- tapOn: 'Outbox \(1\)'

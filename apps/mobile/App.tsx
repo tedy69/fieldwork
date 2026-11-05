@@ -19,7 +19,15 @@ import * as Crypto from 'expo-crypto';
 import Storage from 'expo-sqlite/kv-store';
 import * as ImagePicker from 'expo-image-picker';
 import { StatusBar } from 'expo-status-bar';
-import { ArrowClockwise, ArrowLeft, Camera, ImageSquare, Trash, GearSix } from './notebook-icons';
+import {
+  ArrowClockwise,
+  ArrowLeft,
+  Camera,
+  ImageSquare,
+  Trash,
+  GearSix,
+  Globe,
+} from './notebook-icons';
 import {
   blankDraft,
   ReportInputSchema,
@@ -36,7 +44,14 @@ import {
   type User,
   type WorkOrder,
 } from '@fieldwork/contracts';
-import { createClient } from '@fieldwork/sdk';
+import { ApiError, createClient } from '@fieldwork/sdk';
+import {
+  languageNames,
+  savedLocale,
+  signInCopy,
+  signInError,
+  type Locale,
+} from '@fieldwork/strings';
 import {
   createOfflineRepository,
   emptyState,
@@ -59,8 +74,18 @@ import { colors, radius, size, spacing } from './theme';
 import WorkspacePage from './workspace-page';
 
 type Session = { user: User; token: string; baseUrl: string };
+type SignInProblem =
+  { local: 'invalidServer' | 'workerOnly' | 'unlockFailed' } | { api?: ApiError; detail: string };
 const errorText = (error: unknown) =>
   error instanceof Error ? error.message : 'Unable to complete this action.';
+function serverOrigin(value: string) {
+  try {
+    const url = new URL(value.trim());
+    return ['http:', 'https:'].includes(url.protocol) ? url.origin : null;
+  } catch {
+    return null;
+  }
+}
 export default function App() {
   const emailInput = useRef<React.ComponentRef<typeof TextInput>>(null);
   const passwordInput = useRef<React.ComponentRef<typeof TextInput>>(null);
@@ -72,32 +97,53 @@ export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [serverExpanded, setServerExpanded] = useState(false);
-  const [error, setError] = useState('');
+  const [locale, setLocale] = useState(() => {
+    try {
+      return savedLocale(Storage.getItemSync('fieldwork.locale'));
+    } catch {
+      return 'en' as const;
+    }
+  });
+  const [error, setError] = useState<SignInProblem | null>(null);
   const [busy, setBusy] = useState(false);
+  const copy = signInCopy[locale];
+  const alternate: Locale = locale === 'en' ? 'id' : 'en';
   useEffect(() => {
     SecureStore.getItemAsync('fieldwork-session')
       .then((value) => {
         if (value) setSession(JSON.parse(value));
       })
-      .catch(() => setError('Could not unlock the saved session. Sign in again.'))
+      .catch(() => setError({ local: 'unlockFailed' }))
       .finally(() => setReady(true));
   }, []);
-  async function login() {
-    setBusy(true);
-    setError('');
+  function changeLanguage() {
+    setLocale(alternate);
     try {
-      const url = new URL(baseUrl.trim());
-      if (!['http:', 'https:'].includes(url.protocol))
-        throw new Error('Use an HTTP or HTTPS server address.');
-      const result = await createClient(url.origin).login(email.trim(), password);
-      if (result.user.role !== 'worker')
-        throw new Error('Use a field worker account here. Managers use the web dispatch desk.');
-      const session = { ...result, baseUrl: url.origin };
+      Storage.setItemSync('fieldwork.locale', alternate);
+    } catch {
+      // The current session can still use the selected language.
+    }
+  }
+  async function login() {
+    const origin = serverOrigin(baseUrl);
+    if (!origin) {
+      setError({ local: 'invalidServer' });
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await createClient(origin).login(email.trim(), password);
+      if (result.user.role !== 'worker') {
+        setError({ local: 'workerOnly' });
+        return;
+      }
+      const session = { ...result, baseUrl: origin };
       await SecureStore.setItemAsync('fieldwork-session', JSON.stringify(session));
       setSession(session);
       setPassword('');
     } catch (error) {
-      setError(errorText(error));
+      setError({ api: error instanceof ApiError ? error : undefined, detail: errorText(error) });
     } finally {
       setBusy(false);
     }
@@ -127,16 +173,25 @@ export default function App() {
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="interactive"
             >
-              <Brand />
+              <View style={styles.loginHeader}>
+                <Brand />
+                <Button
+                  title={languageNames[alternate]}
+                  icon={Globe}
+                  variant="ghost"
+                  onPress={changeLanguage}
+                />
+              </View>
               <View style={styles.introduction}>
                 <Copy accessibilityRole="header" variant="title">
-                  Sign in to Fieldwork
+                  {copy.native.heading}
                 </Copy>
               </View>
               <Panel>
                 {serverExpanded && (
                   <Field
-                    label="Server address"
+                    label={copy.native.serverAddress}
+                    actionLabels={copy}
                     value={baseUrl}
                     onChangeText={setBaseUrl}
                     autoCapitalize="none"
@@ -146,11 +201,12 @@ export default function App() {
                     submitBehavior="submit"
                     onSubmitEditing={() => emailInput.current?.focus()}
                     autoCorrect={false}
-                    hint="On a physical device, use your server's LAN address or HTTPS URL."
+                    hint={copy.native.serverHint}
                   />
                 )}
                 <Field
-                  label="Email"
+                  label={copy.email}
+                  actionLabels={copy}
                   testID="login-email"
                   inputRef={emailInput}
                   value={email}
@@ -163,10 +219,11 @@ export default function App() {
                   returnKeyType="next"
                   submitBehavior="submit"
                   onSubmitEditing={() => passwordInput.current?.focus()}
-                  placeholder="you@your-team.com"
+                  placeholder={copy.emailExample}
                 />
                 <Field
-                  label="Password"
+                  label={copy.password}
+                  actionLabels={copy}
                   testID="login-password"
                   inputRef={passwordInput}
                   returnKeyType="go"
@@ -179,12 +236,14 @@ export default function App() {
                   autoComplete="current-password"
                 />
                 {error ? (
-                  <Notice error title="Could not open the notebook">
-                    {error}
+                  <Notice error title={copy.native.errorTitle}>
+                    {'local' in error
+                      ? copy.native[error.local]
+                      : signInError(locale, error.api, error.detail)}
                   </Notice>
                 ) : null}
                 <Button
-                  title={busy || !ready ? 'Opening notebook…' : 'Sign in'}
+                  title={busy || !ready ? copy.native.opening : copy.signIn}
                   onPress={() => void login()}
                   disabled={busy || !ready || !email || !password}
                 />
@@ -192,10 +251,10 @@ export default function App() {
               <View style={styles.introduction}>
                 <View style={styles.row}>
                   <Copy variant="caption" muted>
-                    Server
+                    {copy.native.server}
                   </Copy>
                   <Button
-                    title={serverExpanded ? 'Hide server settings' : 'Change server'}
+                    title={serverExpanded ? copy.native.hideServer : copy.native.changeServer}
                     icon={GearSix}
                     iconOnly
                     variant="ghost"
@@ -208,7 +267,7 @@ export default function App() {
                 </Copy>
               </View>
               <Copy variant="caption" muted>
-                Open your manager's invitation or reset link in a browser, then sign in here.
+                {copy.native.help}
               </Copy>
             </ScrollView>
           )}
@@ -832,6 +891,13 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: size.content,
     alignSelf: 'center',
+  },
+  loginHeader: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
   content: {
     padding: spacing.xl,

@@ -1,8 +1,16 @@
-import { useId, useRef, useState, type ComponentProps, type SubmitEvent } from 'react';
+import { useEffect, useId, useRef, useState, type ComponentProps, type SubmitEvent } from 'react';
 import { Alert } from './alert';
 
 type Control = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-export function Form({ children, onSubmit, onInput, ...props }: ComponentProps<'form'>) {
+export function Form({
+  children,
+  onSubmit,
+  onInput,
+  validationCopy,
+  ...props
+}: ComponentProps<'form'> & {
+  validationCopy?: { validationHeading: string; required: string; invalidEmail: string };
+}) {
   const summary = useId();
   const invalid = useRef<Control[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
@@ -19,6 +27,9 @@ export function Form({ children, onSubmit, onInput, ...props }: ComponentProps<'
     invalid.current = [];
     setErrors([]);
   }
+  useEffect(() => {
+    if (invalid.current.length) clear();
+  }, [validationCopy]);
   function submit(event: SubmitEvent<HTMLFormElement>) {
     clear();
     const fields = Array.from(event.currentTarget.elements).filter(
@@ -43,7 +54,10 @@ export function Form({ children, onSubmit, onInput, ...props }: ComponentProps<'
             field.getAttribute('aria-label') ||
             field.labels?.[0]?.textContent?.trim() ||
             'This field';
-          if (field.validity.valueMissing) return `${label}: enter a value.`;
+          if (field.validity.valueMissing)
+            return `${label}: ${validationCopy?.required ?? 'enter a value.'}`;
+          if (field.validity.typeMismatch && field.type === 'email' && validationCopy)
+            return `${label}: ${validationCopy.invalidEmail}`;
           if (field.validity.typeMismatch)
             return `${label}: enter a valid ${field.type === 'email' ? 'email address' : 'value'}.`;
           if (field.validity.rangeUnderflow)
@@ -72,7 +86,7 @@ export function Form({ children, onSubmit, onInput, ...props }: ComponentProps<'
     >
       {errors.length > 0 && (
         <Alert id={summary} className="form-validation error">
-          <strong>Check these fields</strong>
+          <strong>{validationCopy?.validationHeading ?? 'Check these fields'}</strong>
           <ul>
             {errors.map((error, index) => (
               <li key={index}>{error}</li>

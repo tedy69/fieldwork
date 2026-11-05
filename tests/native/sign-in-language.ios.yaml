@@ -1,0 +1,35 @@
+appId: host.exp.Exponent
+name: Indonesian sign-in on iOS
+---
+# Use a dedicated simulator signed out of the synthetic fixture.
+- assertVisible: Sign in to Fieldwork
+- tapOn: Bahasa Indonesia
+- assertVisible: Masuk ke Fieldwork
+- tapOn: Ubah server
+- assertVisible: Alamat server
+- tapOn: Sembunyikan pengaturan server
+- tapOn:
+    id: login-email
+- inputText: worker@fieldwork.local
+- tapOn: Selesai mengedit
+- tapOn:
+    id: login-password
+- inputText: wrong-demo-password
+- tapOn: Selesai mengedit
+- tapOn: Tampilkan kata sandi
+- assertVisible:
+    id: login-password
+    text: wrong-demo-password
+- tapOn: Sembunyikan kata sandi
+- tapOn: Masuk
+- extendedWaitUntil:
+    visible: Email atau kata sandi salah.
+    timeout: 15000
+- stopApp
+- launchApp
+- openLink: ${METRO_URL}
+- extendedWaitUntil:
+    visible: Masuk ke Fieldwork
+    timeout: 30000
+- tapOn: English
+- assertVisible: Sign in to Fieldwork

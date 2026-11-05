@@ -153,6 +153,11 @@ export function Field({
   hideLabel = false,
   inputRef,
   secureTextEntry = false,
+  actionLabels = {
+    doneEditing: 'Done editing',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
+  },
   style,
   ...props
 }: TextInputProps & {
@@ -160,6 +165,7 @@ export function Field({
   hint?: string;
   hideLabel?: boolean;
   inputRef?: React.Ref<React.ComponentRef<typeof TextInput>>;
+  actionLabels?: { doneEditing: string; showPassword: string; hidePassword: string };
 }) {
   const [focused, setFocused] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -173,7 +179,7 @@ export function Field({
           </Copy>
           {focused && (
             <Button
-              title="Done editing"
+              title={actionLabels.doneEditing}
               icon={KeyboardIcon}
               iconOnly
               variant="ghost"
@@ -203,7 +209,7 @@ export function Field({
         {secureTextEntry && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={revealed ? 'Hide password' : 'Show password'}
+            accessibilityLabel={revealed ? actionLabels.hidePassword : actionLabels.showPassword}
             accessibilityState={{ selected: revealed }}
             onPress={() => setRevealed(!revealed)}
             onFocus={() => setRevealFocused(true)}

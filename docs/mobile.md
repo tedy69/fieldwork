@@ -81,6 +81,8 @@ The sign-in screen can switch between **English** and **Bahasa Indonesia**. The 
 
 The globe beside Sync changes the language for assignments and the outbox while keeping the current search. It uses the same saved language as sign-in. Run `notebook-language.ios.yaml` from **My assignments** in English with the synthetic fixture and an empty outbox to verify search, the outbox, and restart persistence.
 
+Inspection forms and saved reports follow the same language. For `inspection-language.ios.yaml`, assign a fresh synthetic order with a photo-required check named **Check valve** and a numeric **Pressure** question bounded from -10 to 10 bar. Start on **My assignments** in English. Set `ORDER_LABEL` to the Indonesian action label `Buka <reference>: <title>`, `READING_ID` to `inspection-reading-<question-id>`, and `METRO_URL` to the Expo project. The flow checks invalid and valid readings, a draft across restart, and the localized missing-photo message.
+
 The iOS simulator does not emulate a real camera or cellular conditions. JavaScript export, simulator smoke tests, physical-device acceptance, and store release are separate checks; record them accurately in docs/verification.md.
 
 ## Storage and synchronization

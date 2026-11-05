@@ -1,0 +1,77 @@
+appId: host.exp.Exponent
+name: Indonesian inspection fields and draft recovery on iOS
+---
+# Start on My assignments in English. Use a fresh synthetic order with
+# a photo-required Check valve question and Pressure bounded from -10 to 10 bar.
+- assertVisible: My assignments
+- tapOn: Bahasa Indonesia
+- tapOn: Sinkronkan sekarang
+- scrollUntilVisible:
+    element: ${ORDER_LABEL}
+    centerElement: true
+- tapOn: ${ORDER_LABEL}
+- scrollUntilVisible:
+    element: Daftar periksa inspeksi
+- scrollUntilVisible:
+    element: 'Check valve: Lolos'
+    centerElement: true
+- tapOn: 'Check valve: Lolos'
+- scrollUntilVisible:
+    element: Pilih foto untuk Check valve
+    centerElement: true
+- assertVisible: Foto wajib
+- scrollUntilVisible:
+    element:
+      id: ${READING_ID}
+    centerElement: true
+- tapOn:
+    id: ${READING_ID}
+- inputText: '-12.5'
+- tapOn: Selesai mengedit
+- assertVisible: Hasil pengukuran harus antara -10 dan 10 bar.
+- tapOn:
+    id: ${READING_ID}
+- eraseText: 5
+- inputText: '-2.5'
+- tapOn: Selesai mengedit
+- assertVisible: Masukkan hasil pengukuran antara -10 dan 10 bar.
+- scrollUntilVisible:
+    element:
+      id: inspection-summary
+    centerElement: true
+- tapOn:
+    id: inspection-summary
+- inputText: Cek katup
+- tapOn: Selesai mengedit
+- stopApp
+- launchApp
+- openLink: ${METRO_URL}
+- extendedWaitUntil:
+    visible: Tugas saya
+    timeout: 30000
+- scrollUntilVisible:
+    element: ${ORDER_LABEL}
+    centerElement: true
+- tapOn: ${ORDER_LABEL}
+- scrollUntilVisible:
+    element:
+      id: ${READING_ID}
+    centerElement: true
+- assertVisible:
+    id: ${READING_ID}
+    text: '-2.5'
+- scrollUntilVisible:
+    element:
+      id: inspection-summary
+    centerElement: true
+- assertVisible:
+    id: inspection-summary
+    text: Cek katup
+- scrollUntilVisible:
+    element: Simpan dan sinkronkan inspeksi
+    centerElement: true
+- tapOn: Simpan dan sinkronkan inspeksi
+- scrollUntilVisible:
+    element: Lampirkan foto untuk Check valve.
+    direction: UP
+- assertVisible: Lampirkan foto untuk Check valve.

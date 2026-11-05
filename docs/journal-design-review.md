@@ -14,6 +14,8 @@ The web worker inspection follows the same language choice. Chromium verifies th
 
 Report history and the printable report use the worker's language while preserving the saved answers and manager feedback. Chromium verifies keyboard focus, loaded history during an outage, and an offline print containing the latest saved revision.
 
+The week and month planners follow the worker's language for dates, counts, and navigation. Chromium verifies day selection by keyboard, an active search, 320px and desktop layouts, and offline navigation across a year boundary.
+
 Rescheduling from a recurring batch uses the same calendar icon and date field as an order. Planned and current dates remain side by side on desktop and stack on narrow screens. Chromium verifies keyboard entry and Escape, focus after saving, conflict recovery with the proposed date intact, offline controls, and 320px reflow.
 
 Quarterly recurrence adds one choice to Repeat and uses the existing date preview and recovery panel. Chromium verifies keyboard entry, shorter-month dates, a 320px layout, and recovery of a saved request after the response is lost.

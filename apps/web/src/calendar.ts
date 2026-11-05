@@ -10,8 +10,8 @@ export function weekDates(date: string) {
   return Array.from({ length: 7 }, (_, index) => addDays(monday, index));
 }
 
-export function calendarLabel(date: string, full = false) {
-  return new Date(`${date}T12:00:00Z`).toLocaleDateString(undefined, {
+export function calendarLabel(date: string, full = false, locale?: string) {
+  return new Date(`${date}T12:00:00Z`).toLocaleDateString(locale, {
     timeZone: 'UTC',
     ...(full ? { year: 'numeric' as const } : { weekday: 'short' as const }),
     month: 'short',
@@ -32,8 +32,8 @@ export function monthDates(date: string) {
   return Array.from({ length: last.getUTCDate() }, (_, index) => addDays(first, index));
 }
 
-export function monthLabel(date: string) {
-  return new Date(`${date}T12:00:00Z`).toLocaleDateString(undefined, {
+export function monthLabel(date: string, locale?: string) {
+  return new Date(`${date}T12:00:00Z`).toLocaleDateString(locale, {
     timeZone: 'UTC',
     month: 'long',
     year: 'numeric',

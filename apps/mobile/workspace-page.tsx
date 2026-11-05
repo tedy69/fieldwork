@@ -18,6 +18,7 @@ import {
 } from '@fieldwork/contracts';
 import type { State } from '@fieldwork/offline';
 import { languageNames, notebookCopy, signInCopy, type Locale } from '@fieldwork/strings';
+import { assignmentDate } from './assignment-date';
 import { Brand, Button, Copy, Field, Notice, Panel, StatusBadge } from './notebook-ui';
 import { colors, radius, spacing } from './theme';
 import {
@@ -318,11 +319,12 @@ export default function WorkspacePage({
           );
         }
         const { order } = entry;
+        const due = assignmentDate(order.dueDate, locale);
         return (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`${copy.open} ${order.reference}: ${order.title}`}
-            accessibilityHint={`${copy.due} ${order.dueDate}. ${copy.status[order.status]}.`}
+            accessibilityHint={`${copy.due} ${due}. ${copy.status[order.status]}.`}
             onPress={() => onOpen(order.id)}
             style={({ pressed }) => [styles.order, pressed && styles.orderPressed]}
           >
@@ -345,7 +347,7 @@ export default function WorkspacePage({
             <Copy muted>{order.site.name}</Copy>
             <View style={styles.metadata}>
               <Copy muted variant="caption">
-                {copy.due} {order.dueDate}
+                {copy.due} {due}
               </Copy>
               <StatusBadge status={order.status} locale={locale} />
             </View>

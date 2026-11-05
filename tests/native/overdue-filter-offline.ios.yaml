@@ -40,6 +40,7 @@ name: Find assignments due today or overdue while offline
     centerElement: true
 - tapOn: ${LATE}
 - assertVisible: Overdue QA past
+- assertVisible: Jan 1, 2026 · routine
 - tapOn: Back to assignments
 - scrollUntilVisible:
     element: Overdue · 1 shown
@@ -57,3 +58,9 @@ name: Find assignments due today or overdue while offline
 - scrollUntilVisible:
     element: Lewat tenggat · 1 ditampilkan
 - assertVisible: Lewat tenggat · 1 ditampilkan
+- scrollUntilVisible:
+    element: ${LATE_ID}
+    centerElement: true
+- tapOn: ${LATE_ID}
+- assertVisible: 1 Jan 2026 · rutin
+- tapOn: Kembali ke daftar tugas

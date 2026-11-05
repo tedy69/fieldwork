@@ -37,7 +37,7 @@ export default function SavedReport({
         </View>
       ))}
       <SectionHeading title={copy.reportSummary} />
-      <Copy>{report.summary}</Copy>
+      <Copy testID="saved-report-summary">{report.summary}</Copy>
       {report.photos.map((photo) => (
         <View key={photo.id}>
           <Image

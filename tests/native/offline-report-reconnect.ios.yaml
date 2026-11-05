@@ -19,6 +19,9 @@ name: Confirm one saved inspection after iOS reconnect
     centerElement: true
 - tapOn: ${ORDER_NAME}
 - scrollUntilVisible:
-    element: ${SUMMARY}
-    centerElement: true
-- assertVisible: ${SUMMARY}
+    element:
+      id: saved-report-summary
+    visibilityPercentage: 50
+- assertVisible:
+    id: saved-report-summary
+    text: ${SUMMARY}

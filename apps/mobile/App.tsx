@@ -357,9 +357,15 @@ function Notebook({
     });
     return () => listener.remove();
   }, [selected]);
+  async function loadNotebook() {
+    try {
+      setState(await repo.read());
+    } catch {
+      setError((current) => (current === 'session' ? current : 'notebookReadFailed'));
+    }
+  }
   async function sync() {
     setBusy(true);
-    setError(null);
     try {
       await repo.flush();
       const first = await client.orders();
@@ -367,26 +373,18 @@ function Notebook({
       for (let offset = first.limit; offset < first.total; offset += first.limit)
         orders.push(...(await client.orders(offset)).data);
       await repo.cacheOrders(orders);
+      setError(null);
     } catch (error) {
-      setError(
-        error instanceof ApiError && error.status === 401
-          ? { kind: 'session' }
-          : { kind: 'message', text: `${errorText(error)} Saved inspections are still available.` },
-      );
+      if (error instanceof ApiError && error.status === 401) setError('session');
+      else setError((current) => (current === 'session' ? current : 'syncUnavailable'));
     } finally {
-      setState(await repo.read());
+      await loadNotebook();
       setBusy(false);
     }
   }
   useEffect(() => {
-    const update = () => {
-      void repo
-        .read()
-        .then(setState)
-        .catch((error) => setError({ kind: 'message', text: errorText(error) }));
-    };
-    update();
-    const unsubscribe = repo.subscribe(update);
+    void loadNotebook();
+    const unsubscribe = repo.subscribe(() => void loadNotebook());
     void sync();
     const listener = AppState.addEventListener('change', (state) => {
       if (state === 'active') void sync();
@@ -431,24 +429,20 @@ function Notebook({
         scrollPosition={listOffset}
         onResolve={async (orderId, mutationId) => {
           setBusy(true);
-          setError(null);
-          const recovery = notebookCopy[locale];
           try {
             const latest = await client.order(orderId);
             await repo.reopenBlocked(latest, mutationId);
             setState(await repo.read());
             setSelected(orderId);
+            setError(null);
           } catch (error) {
+            const status = error instanceof ApiError ? error.status : undefined;
             setError(
-              error instanceof ApiError && error.status === 401
-                ? { kind: 'session' }
-                : {
-                    kind: 'message',
-                    text:
-                      error instanceof ApiError && (error.status === 403 || error.status === 404)
-                        ? recovery.recoveryUnavailable
-                        : recovery.recoveryFailed,
-                  },
+              status === 401
+                ? 'session'
+                : status === 403 || status === 404
+                  ? 'recoveryUnavailable'
+                  : 'recoveryFailed',
             );
           } finally {
             setBusy(false);

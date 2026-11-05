@@ -2,6 +2,15 @@ appId: host.exp.Exponent
 name: Find assignments due today or overdue while offline
 ---
 - scrollUntilVisible:
+    element: Sync now
+    direction: UP
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- extendedWaitUntil:
+    visible: Could not sync. You can still use saved assignments. Try again when connected.
+    timeout: 15000
+- scrollUntilVisible:
     element: Filter assignments
     direction: UP
 - tapOn: Filter assignments
@@ -42,6 +51,9 @@ name: Find assignments due today or overdue while offline
     element: Bahasa Indonesia
     direction: UP
 - tapOn: Bahasa Indonesia
+- scrollUntilVisible:
+    element: Sinkronisasi gagal. Tugas tersimpan tetap bisa dibuka. Sambungkan ke internet, lalu coba lagi.
+- assertVisible: Sinkronisasi gagal. Tugas tersimpan tetap bisa dibuka. Sambungkan ke internet, lalu coba lagi.
 - scrollUntilVisible:
     element: Lewat tenggat · 1 ditampilkan
 - assertVisible: Lewat tenggat · 1 ditampilkan

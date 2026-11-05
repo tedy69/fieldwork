@@ -27,6 +27,7 @@ import {
   Trash,
   GearSix,
   Globe,
+  MapPin,
 } from './notebook-icons';
 import {
   blankDraft,
@@ -609,6 +610,19 @@ function Inspection({
           <Copy muted variant="caption">
             {order.site.address}
           </Copy>
+          {order.site.coordinates && (
+            <View style={styles.siteCoordinates}>
+              <View accessible={false} importantForAccessibility="no-hide-descendants">
+                <MapPin size={18} color={colors.muted} />
+              </View>
+              <Copy muted variant="caption" style={styles.flex}>
+                {copy.coordinates(
+                  order.site.coordinates.latitude,
+                  order.site.coordinates.longitude,
+                )}
+              </Copy>
+            </View>
+          )}
         </View>
         <View style={styles.row}>
           <View style={styles.introduction}>
@@ -928,6 +942,7 @@ const styles = StyleSheet.create({
   introduction: { gap: spacing.sm },
   headerIdentity: { flexGrow: 1, flexShrink: 1, minWidth: 0, gap: spacing.xs },
   inspectionTools: { flexDirection: 'row', justifyContent: 'space-between' },
+  siteCoordinates: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs },
   headerLarge: { flexDirection: 'column', alignItems: 'stretch' },
   header: {
     zIndex: 2,

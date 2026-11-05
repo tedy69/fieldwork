@@ -94,6 +94,8 @@ Navigation keeps short visible labels, as do assignment, submission, review and 
 
 Native screens use the same warm canvas and white records, with 48-point actions, 16-point body text and 30-point task headings. Android retains its back behavior and native keyboard. Both platforms retain safe areas, font scaling, password reveal, return-key behavior, Done editing and keyboard avoidance. Large text wraps actions and answer choices instead of clipping. The inspection scrolls naturally; a fixed control never covers the final field.
 
+The decorative wordmark and version badge scale up to 150%. Assignment and outbox tabs stack when the system text scale exceeds 140%, so their labels can wrap across the full width.
+
 ## State and evidence
 
 Loading, empty, filtered-empty, stale, failed, offline, queued and blocked states remain distinct. A new palette does not alter contracts, permission checks, account creation, acknowledgments, draft persistence or mutation IDs. The application still has one workspace per server.

@@ -74,7 +74,7 @@ When sync requires a new session, **Sign in again** opens the sign-in form with 
 
 To verify the filter, start on **My assignments** in English with the synthetic fixture cached, an empty search, and the filter closed. Run `npm exec -- tsx tests/native/assignment-status-filter.ios.ts <simulator-id>`. The runner temporarily disables the fixture API and checks the empty state, search, inspection navigation, and the language switch.
 
-Run `npm exec -- tsx tests/native/overdue-filter.ios.ts <simulator-id>` from the same starting screen. The runner checks that an overdue assignment remains searchable during an outage and that approved and future assignments stay out of the filter.
+Run `npm exec -- tsx tests/native/overdue-filter.ios.ts <simulator-id>` from the same starting screen with the simulator using your computer’s time zone. The runner checks that Due today and Overdue work during an outage and show only the matching open assignments.
 
 Run the API, then `npm run mobile`. Use a compatible Expo Go client for SDK 58 or create a development build. Enter a worker account and server URL on the sign-in screen.
 

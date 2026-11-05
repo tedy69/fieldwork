@@ -1,10 +1,25 @@
 appId: host.exp.Exponent
-name: Find only the late unfinished assignment while offline
+name: Find assignments due today or overdue while offline
 ---
 - scrollUntilVisible:
     element: Filter assignments
     direction: UP
 - tapOn: Filter assignments
+- tapOn:
+    text: Due today
+    index: 0
+- scrollUntilVisible:
+    element: Due today · 1 shown
+- assertVisible: Due today · 1 shown
+- scrollUntilVisible:
+    element: ${TODAY}
+    centerElement: true
+- assertVisible: ${TODAY}
+- scrollUntilVisible:
+    element:
+      text: Overdue
+      index: 0
+    direction: UP
 - tapOn:
     text: Overdue
     index: 0

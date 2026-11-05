@@ -74,6 +74,8 @@ The journal browser checks exercise 320, 390, 768, 1024 and 1440px widths, OS da
 
 Web session recovery uses the same sign-in icon and retention copy as the Expo notebook. The amber notice sits beside a queued inspection or above the outbox and uses the existing sign-in form with the worker email filled in. Browser tests use an actual password reset at 320px and 1440px, including Indonesian copy, keyboard recovery and a single acknowledgement of the original queued report.
 
+Due today uses the existing status controls and the named native funnel. Browser checks use the Jakarta and Los Angeles time zones, cross local midnight offline, and verify that the selected filter follows the date. An iOS simulator run checks the localized filter at the largest Dynamic Type setting with a compact brand and stacked notebook tabs.
+
 Android native execution and its platform limits are recorded in [verification](verification.md). This report does not certify iOS execution, physical cameras, full screen-reader traversal or app-store readiness. No performance score is claimed.
 
 ## Antislop Delivery Gate

@@ -36,8 +36,10 @@ export function Copy({
 export function Brand() {
   return (
     <View style={ui.brand}>
-      <Copy variant="brand">Fieldwork</Copy>
-      <Copy variant="reference" muted style={ui.version}>
+      <Copy variant="brand" maxFontSizeMultiplier={1.5}>
+        Fieldwork
+      </Copy>
+      <Copy variant="reference" muted maxFontSizeMultiplier={1.5} style={ui.version}>
         v0.1
       </Copy>
     </View>

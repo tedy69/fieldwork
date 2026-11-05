@@ -1,0 +1,38 @@
+appId: host.exp.Exponent
+name: Sign in from the outbox and sync the retained report
+---
+- scrollUntilVisible:
+    element: Sign in again
+    direction: UP
+- tapOn:
+    text: Sign in again
+    point: 25%,50%
+- extendedWaitUntil:
+    visible:
+      id: login-email
+    timeout: 15000
+- assertVisible:
+    id: login-email
+    text: worker@fieldwork.local
+- tapOn:
+    id: login-password
+- inputText: fieldwork-demo
+- tapOn: Done editing
+- tapOn: Sign in
+- tapOn:
+    text: Not Now
+    optional: true
+- extendedWaitUntil:
+    visible: My assignments
+    timeout: 15000
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- scrollUntilVisible:
+    element: ${ORDER_NAME}
+    centerElement: true
+- tapOn: ${ORDER_NAME}
+- scrollUntilVisible:
+    element: ${SUMMARY}
+    centerElement: true
+- assertVisible: ${SUMMARY}

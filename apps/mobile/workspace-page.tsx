@@ -11,12 +11,37 @@ import {
   FunnelSimple,
   Globe,
   Tray,
+  SignIn,
   SignOut,
 } from './notebook-icons';
 
 type QueueItem = State['outbox'][number];
 type Entry = { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: QueueItem };
 const statuses = [null, ...StatusSchema.options];
+
+export type NotebookProblem = { kind: 'session' } | { kind: 'message'; text: string };
+
+export function NotebookNotice({
+  error,
+  locale,
+  onSignInAgain,
+}: {
+  error: NotebookProblem;
+  locale: Locale;
+  onSignInAgain: () => void;
+}) {
+  const copy = notebookCopy[locale];
+  return error.kind === 'session' ? (
+    <Notice error title={copy.syncSignIn}>
+      <Copy muted>{copy.sessionDrafts}</Copy>
+      <Button title={copy.signInAgain} icon={SignIn} variant="outline" onPress={onSignInAgain} />
+    </Notice>
+  ) : (
+    <Notice error title={copy.syncError}>
+      {error.text}
+    </Notice>
+  );
+}
 
 /** Native list pages keep local browsing separate from the repository's write operations. */
 export default function WorkspacePage({
@@ -30,6 +55,7 @@ export default function WorkspacePage({
   onOpen,
   onResolve,
   onLogout,
+  onSignInAgain,
   view,
   onViewChange,
   search,
@@ -43,11 +69,12 @@ export default function WorkspacePage({
   locale: Locale;
   onLanguageChange: (locale: Locale) => void;
   busy: boolean;
-  error: string;
+  error: NotebookProblem | null;
   onSync: () => void;
   onOpen: (id: string) => void;
   onResolve: (orderId: string, mutationId: string) => Promise<void>;
   onLogout: () => void;
+  onSignInAgain: () => void;
   view: 'assignments' | 'outbox';
   onViewChange: (view: 'assignments' | 'outbox') => void;
   search: string;
@@ -136,11 +163,7 @@ export default function WorkspacePage({
               onPress={() => onViewChange('outbox')}
             />
           </View>
-          {error ? (
-            <Notice error title={copy.syncError}>
-              {error}
-            </Notice>
-          ) : null}
+          {error && <NotebookNotice error={error} locale={locale} onSignInAgain={onSignInAgain} />}
           {view === 'assignments' && (
             <View style={styles.searchTools}>
               <View style={styles.searchRow}>

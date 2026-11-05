@@ -1,0 +1,25 @@
+appId: host.exp.Exponent
+name: Record an inspection before the session expires
+---
+- scrollUntilVisible:
+    element: My assignments
+    direction: UP
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- scrollUntilVisible:
+    element: ${ORDER_NAME}
+    centerElement: true
+- tapOn: ${ORDER_NAME}
+- scrollUntilVisible:
+    element: 'Check valve: pass'
+    centerElement: true
+- tapOn: 'Check valve: pass'
+- scrollUntilVisible:
+    element:
+      id: inspection-summary
+    centerElement: true
+- tapOn:
+    id: inspection-summary
+- inputText: ${SUMMARY}
+- tapOn: Done editing

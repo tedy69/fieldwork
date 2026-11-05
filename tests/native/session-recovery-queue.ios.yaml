@@ -1,0 +1,28 @@
+appId: host.exp.Exponent
+name: Keep the report queued with an expired session
+---
+- scrollUntilVisible:
+    element: Save and sync inspection
+    centerElement: true
+- tapOn: Save and sync inspection
+- extendedWaitUntil:
+    visible: Report saved
+    timeout: 15000
+- tapOn: OK
+- scrollUntilVisible:
+    element: Back to assignments
+    direction: UP
+- tapOn: Back to assignments
+- scrollUntilVisible:
+    element: 'Outbox \([1-9][0-9]*\)'
+    direction: UP
+- tapOn:
+    text: 'Outbox \([1-9][0-9]*\)'
+    point: 25%,50%
+- extendedWaitUntil:
+    visible: Sync outbox
+    timeout: 15000
+- scrollUntilVisible:
+    element: ${SUMMARY}
+    centerElement: true
+- assertVisible: ${SUMMARY}

@@ -74,7 +74,7 @@ import {
   StatusBadge,
 } from './notebook-ui';
 import { colors, radius, size, spacing } from './theme';
-import WorkspacePage from './workspace-page';
+import WorkspacePage, { NotebookNotice, type NotebookProblem } from './workspace-page';
 import ReportHistoryAction from './report-history';
 import SavedReport from './saved-report';
 
@@ -94,6 +94,7 @@ function serverOrigin(value: string) {
 export default function App() {
   const emailInput = useRef<React.ComponentRef<typeof TextInput>>(null);
   const passwordInput = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const sessionClosing = useRef(false);
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
   const [baseUrl, setBaseUrl] = useState(
@@ -154,12 +155,25 @@ export default function App() {
     }
   }
   async function logout() {
-    if (session)
+    if (!session || sessionClosing.current) return;
+    sessionClosing.current = true;
+    try {
       void createClient(session.baseUrl, () => session.token)
         .logout()
         .catch(() => {});
-    await SecureStore.deleteItemAsync('fieldwork-session');
-    setSession(null);
+      await SecureStore.deleteItemAsync('fieldwork-session');
+      setSession(null);
+    } finally {
+      sessionClosing.current = false;
+    }
+  }
+  async function signInAgain() {
+    if (!session) return;
+    setBaseUrl(session.baseUrl);
+    setEmail(session.user.email);
+    setPassword('');
+    setError(null);
+    await logout();
   }
   return (
     <SafeAreaProvider>
@@ -174,6 +188,7 @@ export default function App() {
               key={session.user.id}
               session={session}
               logout={logout}
+              signInAgain={signInAgain}
               locale={locale}
               onLanguageChange={changeLanguage}
             />
@@ -290,11 +305,13 @@ export default function App() {
 function Notebook({
   session,
   logout,
+  signInAgain,
   locale,
   onLanguageChange,
 }: {
   session: Session;
   logout: () => Promise<void>;
+  signInAgain: () => Promise<void>;
   locale: Locale;
   onLanguageChange: (locale: Locale) => void;
 }) {
@@ -326,7 +343,7 @@ function Notebook({
   useEffect(() => {
     notebookScroll.current?.scrollTo({ y: 0, animated: false });
   }, [selected]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<NotebookProblem | null>(null);
   const [busy, setBusy] = useState(true);
   useEffect(() => {
     const listener = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -338,7 +355,7 @@ function Notebook({
   }, [selected]);
   async function sync() {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       await repo.flush();
       const first = await client.orders();
@@ -347,7 +364,11 @@ function Notebook({
         orders.push(...(await client.orders(offset)).data);
       await repo.cacheOrders(orders);
     } catch (error) {
-      setError(`${errorText(error)} Saved inspections are still available.`);
+      setError(
+        error instanceof ApiError && error.status === 401
+          ? { kind: 'session' }
+          : { kind: 'message', text: `${errorText(error)} Saved inspections are still available.` },
+      );
     } finally {
       setState(await repo.read());
       setBusy(false);
@@ -358,7 +379,7 @@ function Notebook({
       void repo
         .read()
         .then(setState)
-        .catch((error) => setError(errorText(error)));
+        .catch((error) => setError({ kind: 'message', text: errorText(error) }));
     };
     update();
     const unsubscribe = repo.subscribe(update);
@@ -387,6 +408,7 @@ function Notebook({
           setSelected(id);
         }}
         onLogout={() => void logout()}
+        onSignInAgain={() => void signInAgain()}
         view={notebookView}
         onViewChange={(view) => {
           listOffset.current = 0;
@@ -405,7 +427,7 @@ function Notebook({
         scrollPosition={listOffset}
         onResolve={async (orderId, mutationId) => {
           setBusy(true);
-          setError('');
+          setError(null);
           const recovery = notebookCopy[locale];
           try {
             const latest = await client.order(orderId);
@@ -414,9 +436,15 @@ function Notebook({
             setSelected(orderId);
           } catch (error) {
             setError(
-              error instanceof ApiError && (error.status === 403 || error.status === 404)
-                ? recovery.recoveryUnavailable
-                : recovery.recoveryFailed,
+              error instanceof ApiError && error.status === 401
+                ? { kind: 'session' }
+                : {
+                    kind: 'message',
+                    text:
+                      error instanceof ApiError && (error.status === 403 || error.status === 404)
+                        ? recovery.recoveryUnavailable
+                        : recovery.recoveryFailed,
+                  },
             );
           } finally {
             setBusy(false);
@@ -448,11 +476,9 @@ function Notebook({
         />
       </View>
       <View style={styles.content}>
-        {error ? (
-          <Notice error title={copy.syncError}>
-            {error}
-          </Notice>
-        ) : null}
+        {error && (
+          <NotebookNotice error={error} locale={locale} onSignInAgain={() => void signInAgain()} />
+        )}
         <Inspection
           key={`${order.id}:${order.version}`}
           order={order}

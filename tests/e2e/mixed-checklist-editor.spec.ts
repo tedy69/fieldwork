@@ -101,6 +101,7 @@ test('a manager configures a mixed checklist and a worker can use the saved ques
     await worker.getByLabel('Response: Equipment serial', { exact: true }).fill('PUMP-42');
     await worker.getByLabel('Reading: Pressure', { exact: true }).fill('0');
     await expect(worker.getByText(/of 3 checks recorded/)).toContainText('3 of 3');
+    await expect(worker.getByText('Draft saved on this device', { exact: true })).toBeVisible();
     await workerContext.setOffline(true);
     await worker.reload();
     await open();

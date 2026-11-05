@@ -31,7 +31,21 @@ export function checklistItems(data: FormData): CreateItem[] {
   const choice = responseChoice(data.get('responseType'));
   return (labels.length ? labels : bulkLabels(data)).map((label, index) => {
     const type = labels.length ? responseChoice(types[index] ?? null) : choice;
-    return type ? { label: String(label), responseType: type } : String(label);
+    if (!type) return String(label);
+    const item = { label: String(label), responseType: type };
+    if (type !== 'number' || !labels.length) return item;
+    const unit = String(data.get(`item-${index}-unit`) ?? '').trim();
+    const min = String(data.get(`item-${index}-min`) ?? '');
+    const max = String(data.get(`item-${index}-max`) ?? '');
+    if (!unit && !min && !max) return item;
+    return {
+      ...item,
+      readingRule: {
+        ...(unit && { unit }),
+        ...(min && { min: Number(min) }),
+        ...(max && { max: Number(max) }),
+      },
+    };
   });
 }
 
@@ -40,21 +54,92 @@ function ResponseSelect({
   label,
   initial = '',
   disabled,
+  onChoice,
 }: {
   name: string;
   label: string;
   initial?: ResponseChoice;
   disabled: boolean;
+  onChoice?: (choice: ResponseChoice) => void;
 }) {
   return (
     <Label>
       Response type
-      <NativeSelect name={name} aria-label={label} defaultValue={initial} disabled={disabled}>
+      <NativeSelect
+        name={name}
+        aria-label={label}
+        defaultValue={initial}
+        disabled={disabled}
+        onChange={(event) => onChoice?.(responseChoice(event.currentTarget.value))}
+      >
         <NativeSelectOption value="">Pass / issue / N/A</NativeSelectOption>
         <NativeSelectOption value="text">Text response</NativeSelectOption>
         <NativeSelectOption value="number">Numeric reading</NativeSelectOption>
       </NativeSelect>
     </Label>
+  );
+}
+
+function ItemResponse({
+  initial,
+  index,
+  busy,
+}: {
+  initial: ResponseChoice;
+  index: number;
+  busy: boolean;
+}) {
+  const [type, setType] = useState(initial);
+  const [minimum, setMinimum] = useState<number>();
+  const disabled = busy || type !== 'number';
+  return (
+    <>
+      <ResponseSelect
+        name="itemType"
+        label={`Item ${index + 1} response type`}
+        initial={initial}
+        disabled={busy}
+        onChoice={setType}
+      />
+      <div hidden={type !== 'number'}>
+        <Label>
+          Unit (optional)
+          <Input
+            name={`item-${index}-unit`}
+            aria-label={`Item ${index + 1} unit`}
+            maxLength={24}
+            disabled={disabled}
+          />
+        </Label>
+        <div className="form-grid">
+          <Label>
+            Minimum (optional)
+            <Input
+              name={`item-${index}-min`}
+              aria-label={`Item ${index + 1} minimum`}
+              type="number"
+              step="any"
+              disabled={disabled}
+              onChange={(event) => {
+                const value = event.currentTarget.valueAsNumber;
+                setMinimum(Number.isFinite(value) ? value : undefined);
+              }}
+            />
+          </Label>
+          <Label>
+            Maximum (optional)
+            <Input
+              name={`item-${index}-max`}
+              aria-label={`Item ${index + 1} maximum`}
+              type="number"
+              step="any"
+              min={minimum}
+              disabled={disabled}
+            />
+          </Label>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -149,12 +234,7 @@ export default function ChecklistItemsEditor({ busy }: { busy: boolean }) {
               <TrashIcon aria-hidden="true" />
             </IconButton>
           </div>
-          <ResponseSelect
-            name="itemType"
-            label={`Item ${index + 1} response type`}
-            initial={row.type}
-            disabled={busy}
-          />
+          <ItemResponse initial={row.type} index={index} busy={busy} />
         </fieldset>
       ))}
       <Button

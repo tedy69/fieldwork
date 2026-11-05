@@ -1,4 +1,4 @@
-import { type WorkOrder, answerLabel } from '@fieldwork/contracts';
+import { type WorkOrder, answerLabel, reportItemLabel } from '@fieldwork/contracts';
 
 function cell(value: string | number) {
   const text = String(value);
@@ -33,7 +33,6 @@ export function reportCsv(orders: WorkOrder[]) {
   for (const order of orders) {
     if (!order.report) continue;
     const report = order.report;
-    const items = new Map(order.template.items.map((item) => [item.id, item.label]));
     for (const answer of report.answers)
       rows.push([
         order.reference,
@@ -50,7 +49,7 @@ export function reportCsv(orders: WorkOrder[]) {
         order.review?.note ?? '',
         order.review?.reviewedAt ?? '',
         order.review?.reviewedBy ?? '',
-        items.get(answer.itemId) ?? answer.itemId,
+        reportItemLabel(order.template, answer.itemId),
         answer.value === 'text' || answer.value === 'number' ? answerLabel(answer) : answer.value,
         answer.note,
         report.photos.length,

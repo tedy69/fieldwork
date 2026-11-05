@@ -9,6 +9,7 @@ import { seed } from '../apps/api/src/seed';
 import { createClient } from '@fieldwork/sdk';
 import {
   AnswerSchema,
+  CreateTemplateSchema,
   DraftSchema,
   ReportInputSchema,
   answerComplete,
@@ -16,6 +17,8 @@ import {
   blankDraft,
   parseReading,
   reportAnswers,
+  completedAnswers,
+  type ChecklistItem,
 } from '@fieldwork/contracts';
 import {
   createOfflineRepository,
@@ -49,11 +52,13 @@ beforeEach(async () => {
 afterEach(async () => {
   await fixture.app.close();
 });
-async function assignment() {
+async function assignment(readingRule?: ChecklistItem['readingRule']) {
   const template = await manager.createTemplate('Synthetic meter visit', [
     'Check access',
     { label: 'Equipment serial', responseType: 'text' },
-    { label: 'Temperature (C)', responseType: 'number' },
+    readingRule
+      ? { label: 'Temperature', responseType: 'number', readingRule }
+      : { label: 'Temperature (C)', responseType: 'number' },
   ]);
   const order = await manager.createOrder({
     title: 'Numeric response fixture',
@@ -160,8 +165,66 @@ describe('numeric checklist readings', () => {
     expect((await manager.reportHistory(order.id)).total).toBe(0);
     expect((await manager.order(order.id)).version).toBe(1);
   });
+  it('rejects numeric rules on other item types and unusable bounds before creating templates', async () => {
+    const before = (await manager.catalog()).templates;
+    for (const item of [
+      { label: 'Wrong type', responseType: 'text' as const, readingRule: { unit: 'bar' } },
+      { label: 'Inverted range', responseType: 'number' as const, readingRule: { min: 2, max: 0 } },
+      { label: 'Unenterable bound', responseType: 'number' as const, readingRule: { min: 1e100 } },
+    ]) {
+      await expect(manager.createTemplate('Invalid rule', [item])).rejects.toMatchObject({
+        status: 422,
+        code: 'VALIDATION',
+      });
+    }
+    expect(
+      CreateTemplateSchema.safeParse({
+        name: 'Nonfinite',
+        items: [{ label: 'Reading', responseType: 'number', readingRule: { max: Infinity } }],
+      }).success,
+    ).toBe(false);
+    expect((await manager.catalog()).templates).toEqual(before);
+  });
+  it('keeps the out-of-range draft, rejects bypass attempts, and accepts the same intent at the inclusive limit', async () => {
+    const { order, draft, input } = await assignment({ unit: '°C', min: -10, max: 0 });
+    const repo = createOfflineRepository(memory(), (id, report) => worker.submitReport(id, report));
+    await repo.cacheOrder(order);
+    await repo.saveDraft(order.id, draft);
+    expect(completedAnswers(order.template, draft.answers)).toBe(2);
+    await expect(repo.enqueue(order.id, input)).rejects.toThrow(
+      'Reading must be from -10 to 0 °C.',
+    );
+    expect((await repo.read()).drafts[order.id]).toEqual(draft);
+    expect((await repo.read()).outbox).toEqual([]);
+    await expect(worker.submitReport(order.id, input)).rejects.toMatchObject({
+      status: 422,
+      code: 'READING_RANGE',
+    });
+    const above = {
+      ...input,
+      answers: input.answers.map((answer) =>
+        answer.value === 'number' ? { ...answer, reading: 0.1 } : answer,
+      ),
+    };
+    await expect(worker.submitReport(order.id, above)).rejects.toMatchObject({
+      status: 422,
+      code: 'READING_RANGE',
+    });
+    expect((await manager.order(order.id)).version).toBe(order.version);
+    expect((await manager.reportHistory(order.id)).total).toBe(0);
+    draft.answers[2].reading = '-10.00';
+    expect(completedAnswers(order.template, draft.answers)).toBe(3);
+    const valid = { ...input, answers: reportAnswers(draft.answers) };
+    await repo.saveDraft(order.id, draft);
+    await repo.enqueue(order.id, valid);
+    await repo.flush();
+    expect((await repo.read()).outbox).toEqual([]);
+    const saved = await worker.submitReport(order.id, valid);
+    expect(saved.report?.answers[2].reading).toBe(-10);
+    expect((await manager.reportHistory(order.id)).total).toBe(1);
+  });
   it('keeps raw draft precision and exact numeric queue input after a lost acknowledgement', async () => {
-    const { order, draft, input } = await assignment();
+    const { order, draft, input } = await assignment({ unit: '°C', min: -20 });
     const storage = memory();
     const send = vi
       .fn()
@@ -195,7 +258,7 @@ describe('numeric checklist readings', () => {
     ).rejects.toMatchObject({ status: 422, code: 'IDEMPOTENCY_MISMATCH' });
   });
   it('keeps partial drafts and blocks stale-version numeric reports without data loss', async () => {
-    const { order, draft, input } = await assignment();
+    const { order, draft, input } = await assignment({ max: 0 });
     const storage = memory();
     const repo = createOfflineRepository(storage, (id, report) => worker.submitReport(id, report));
     await repo.cacheOrder(order);
@@ -232,7 +295,7 @@ describe('numeric checklist readings', () => {
     seed(fixture.store);
     manager = client((await client().login('manager@fieldwork.local', 'fieldwork-demo')).token);
     worker = client((await client().login('worker@fieldwork.local', 'fieldwork-demo')).token);
-    const { order, input } = await assignment();
+    const { order, input } = await assignment({ unit: '°C', min: -12.5, max: 0 });
     const first = await worker.submitReport(order.id, input);
     await manager.review(order.id, first.version, 'CHANGES_REQUESTED', 'Check the reading.');
     await worker.submitReport(order.id, {
@@ -251,9 +314,15 @@ describe('numeric checklist readings', () => {
       expect(history.total).toBe(2);
       expect(history.data[0].snapshot.report.answers[2].reading).toBe(0);
       expect(history.data[1].snapshot.report.answers[2].reading).toBe(-12.5);
+      expect(history.data[0].snapshot.template.items[2].readingRule).toEqual({
+        unit: '°C',
+        min: -12.5,
+        max: 0,
+      });
       const latest = await manager.order(order.id);
       expect(reportCsv([first])).toContain('"\t-12.5"');
       expect(reportCsv([latest])).toContain('"0"');
+      expect(reportCsv([latest])).toContain('"Temperature (°C)","0"');
       expect(reportCsv([latest])).not.toContain('"number"');
     } finally {
       await fixture.app.close();

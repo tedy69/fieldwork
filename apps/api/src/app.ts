@@ -8,6 +8,7 @@ import { existsSync } from 'node:fs';
 import { z, ZodError } from 'zod';
 import {
   answersMatchTemplate,
+  reportReadingError,
   CreateOrderSchema,
   CreateSiteSchema,
   CreateTemplateSchema,
@@ -539,6 +540,8 @@ export async function buildApp(options: AppOptions) {
           'CHECKLIST',
           'Answer every checklist item exactly once with its required response type.',
         );
+      const readingError = reportReadingError(order.template, input.answers);
+      if (readingError) fail(422, 'READING_RANGE', readingError);
       if (order.template.requiresPhoto && input.photos.length === 0)
         fail(422, 'PHOTO_REQUIRED', PHOTO_REQUIRED_MESSAGE);
       for (const photo of input.photos) {

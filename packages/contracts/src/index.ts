@@ -194,14 +194,67 @@ export const MapProviderSchema = z
 export type MapProvider = z.infer<typeof MapProviderSchema>;
 export const MapSettingsSchema = z.object({ provider: MapProviderSchema.nullable() });
 export const ResponseTypeSchema = z.enum(['check', 'text', 'number']);
-export const ItemSchema = z.object({
-  id: z.string(),
-  label: z.string(),
-  responseType: ResponseTypeSchema.optional(),
+function decimalReading(value: number): string {
+  const [mantissa, exponent] = Math.abs(value).toString().split('e');
+  if (!exponent) return String(value);
+  const [whole, fraction = ''] = mantissa.split('.');
+  const digits = whole + fraction;
+  const point = whole.length + Number(exponent);
+  const decimal =
+    point <= 0
+      ? `0.${'0'.repeat(-point)}${digits}`
+      : point >= digits.length
+        ? digits.padEnd(point, '0')
+        : `${digits.slice(0, point)}.${digits.slice(point)}`;
+  return value < 0 ? `-${decimal}` : decimal;
+}
+const ReadingBoundSchema = z.number().refine((value) => decimalReading(value).length <= 100, {
+  message: 'Use a limit that fits in 100 decimal characters.',
 });
+const ReadingRuleSchema = z
+  .object({
+    unit: z
+      .string()
+      .trim()
+      .min(1)
+      .max(24)
+      .regex(/^[^\u0000-\u001f\u007f]+$/u)
+      .optional(),
+    min: ReadingBoundSchema.optional(),
+    max: ReadingBoundSchema.optional(),
+  })
+  .strict()
+  .refine(({ min, max }) => min === undefined || max === undefined || min <= max, {
+    path: ['max'],
+    message: 'Maximum must be at least the minimum.',
+  });
+const ItemResponseFields = {
+  responseType: ResponseTypeSchema.optional(),
+  readingRule: ReadingRuleSchema.optional(),
+};
+function validItemResponse(item: {
+  responseType?: z.infer<typeof ResponseTypeSchema>;
+  readingRule?: unknown;
+}) {
+  return !item.readingRule || item.responseType === 'number';
+}
+const readingRuleIssue = {
+  path: ['readingRule'],
+  message: 'Units and limits are available only for numeric readings.',
+};
+const ItemSchemaBase = z.object({ id: z.string(), label: z.string(), ...ItemResponseFields });
+export const ItemSchema = ItemSchemaBase.refine(validItemResponse, readingRuleIssue);
+export type ChecklistItem = z.infer<typeof ItemSchema>;
 export const CreateItemSchema = z.union([
   z.string().trim().min(2).max(250),
-  z.object({ label: z.string().trim().min(2).max(250), responseType: ResponseTypeSchema }).strict(),
+  z
+    .object({
+      label: z.string().trim().min(2).max(250),
+      ...ItemResponseFields,
+      responseType: ResponseTypeSchema,
+    })
+    .strict()
+    .refine(validItemResponse, readingRuleIssue),
 ]);
 export const TemplateSchema = z.object({
   id: z.string(),
@@ -254,6 +307,41 @@ export function answerLabel(answer: z.infer<typeof AnswerSchema>): string {
   if (answer.value === 'text') return answer.text!;
   if (answer.value === 'number') return String(answer.reading);
   return answer.value === 'pass' ? 'Pass' : answer.value === 'fail' ? 'Issue found' : 'N/A';
+}
+export function checklistItemLabel(item: ChecklistItem): string {
+  return item.readingRule?.unit ? `${item.label} (${item.readingRule.unit})` : item.label;
+}
+export function reportItemLabel(template: z.infer<typeof TemplateSchema>, itemId: string): string {
+  const item = template.items.find((entry) => entry.id === itemId);
+  return item ? checklistItemLabel(item) : itemId;
+}
+export function readingBounds(item: ChecklistItem): string | undefined {
+  const { min, max, unit } = item.readingRule ?? {};
+  if (min === undefined && max === undefined) return undefined;
+  const range =
+    min === undefined
+      ? `at most ${decimalReading(max!)}`
+      : max === undefined
+        ? `at least ${decimalReading(min)}`
+        : `from ${decimalReading(min)} to ${decimalReading(max)}`;
+  return unit ? `${range} ${unit}` : range;
+}
+function readingRangeError(item: ChecklistItem, reading: number): string | undefined {
+  const { min, max } = item.readingRule ?? {};
+  if ((min !== undefined && reading < min) || (max !== undefined && reading > max))
+    return `Reading must be ${readingBounds(item)}.`;
+}
+export function reportReadingError(
+  template: z.infer<typeof TemplateSchema>,
+  answers: z.infer<typeof AnswerSchema>[],
+): string | undefined {
+  for (const item of template.items) {
+    if (!item.readingRule) continue;
+    const reading = answers.find((entry) => entry.itemId === item.id)?.reading;
+    if (reading === undefined) continue;
+    const error = readingRangeError(item, reading);
+    if (error) return `${checklistItemLabel(item)}: ${error}`;
+  }
 }
 export function answersMatchTemplate(
   template: z.infer<typeof TemplateSchema>,
@@ -578,6 +666,29 @@ export function parseReading(value: string | undefined): number | null {
 export function answerComplete(answer: Draft['answers'][number]): boolean {
   if (answer.value === 'number') return parseReading(answer.reading) !== null;
   return answer.value === 'text' ? Boolean(answer.text?.trim()) : Boolean(answer.value);
+}
+export function readingInputError(
+  item: ChecklistItem,
+  input: string | undefined,
+): string | undefined {
+  if (!input) return undefined;
+  const reading = parseReading(input);
+  return reading === null
+    ? 'Enter a number, such as 12.5 or -3.'
+    : readingRangeError(item, reading);
+}
+export function completedAnswers(
+  template: z.infer<typeof TemplateSchema>,
+  answers: Draft['answers'],
+): number {
+  return template.items.filter((item) => {
+    const answer = answers.find((entry) => entry.itemId === item.id);
+    return (
+      answer &&
+      answerComplete(answer) &&
+      (answer.value !== 'number' || !readingInputError(item, answer.reading))
+    );
+  }).length;
 }
 export function reportAnswers(answers: Draft['answers']): ReportInput['answers'] {
   return z

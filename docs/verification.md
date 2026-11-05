@@ -1,5 +1,11 @@
 # Verification
 
+## Numeric units and limits (2026-11-05)
+
+API and repository tests cover invalid template rules, inclusive limits, out-of-range rejection without a write or queue entry, exact mutation replay, version conflict, SQLite restart, report history and CSV. Five targeted Chromium workflows cover mixed checklist editing, bounds and keyboard focus, responsive layout, invalid input restored offline, export, conflict recovery and saved reports.
+
+On Android 15/API 35 with Expo Go, Maestro and ADB keyboard input verified a bounded pressure question. The app blocked submission for `1.25` against a range of `-2.5` to `0 bar`, restored that draft on restart, and queued a corrected `0` during an API 503. Reconnect and two sync actions produced one revision at order version 2. The saved report showed the unit and API readback confirmed numeric zero. iOS runtime was not exercised.
+
 ## Mixed checklist editor (2026-11-05)
 
 The web workflow covers conversion from bulk entry, keeping the pasted questions and selected type, keyboard focus after add/remove, required-field errors, offline save failure and retry at 320/390/1440px. It verifies the saved mixed template and restores all three types of worker responses after an offline reload. The ten targeted Chromium workflows also cover existing photo, text and numeric checklists. No native code or API contract changes are needed for the editor.

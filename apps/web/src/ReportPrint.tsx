@@ -11,7 +11,7 @@ import {
 } from './components/ui/table';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { type WorkOrder, answerLabel } from '@fieldwork/contracts';
+import { type WorkOrder, answerLabel, reportItemLabel } from '@fieldwork/contracts';
 import { labels } from './lib';
 import './print.css';
 
@@ -107,8 +107,7 @@ export default function ReportPrint({
                 {report.answers.map((answer) => (
                   <TableRow key={answer.itemId}>
                     <TableHead scope="row">
-                      {order.template.items.find((item) => item.id === answer.itemId)?.label ??
-                        answer.itemId}
+                      {reportItemLabel(order.template, answer.itemId)}
                     </TableHead>
                     <TableCell className="print-lines">{answerLabel(answer)}</TableCell>
                     <TableCell className="print-lines">{answer.note}</TableCell>

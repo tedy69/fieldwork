@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { type ReportRevision, answerLabel } from '@fieldwork/contracts';
+import { type ReportRevision, answerLabel, reportItemLabel } from '@fieldwork/contracts';
 import { ClockCounterClockwiseIcon } from '@phosphor-icons/react/dist/csr/ClockCounterClockwise';
 import { client, dateLabel, labels, message } from './lib';
 import { Button } from './components/ui/button';
@@ -244,9 +244,7 @@ export default function ReportHistory({ orderId, online }: { orderId: string; on
                       <TableRow key={answer.itemId}>
                         <TableCell>
                           <strong>
-                            {selected.snapshot.template.items.find(
-                              (item) => item.id === answer.itemId,
-                            )?.label ?? answer.itemId}
+                            {reportItemLabel(selected.snapshot.template, answer.itemId)}
                           </strong>
                           {answer.note && <p className="preserve-lines">{answer.note}</p>}
                         </TableCell>

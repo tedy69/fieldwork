@@ -23,9 +23,13 @@ import { ArrowClockwise, ArrowLeft, Camera, ImageSquare, Trash, GearSix } from '
 import {
   blankDraft,
   ReportInputSchema,
-  answerComplete,
   answerLabel,
+  checklistItemLabel,
+  completedAnswers,
+  readingBounds,
+  readingInputError,
   reportAnswers,
+  reportItemLabel,
   type Draft,
   type User,
   type WorkOrder,
@@ -392,6 +396,7 @@ function Inspection({
   const [preparingPhoto, setPreparingPhoto] = useState(false);
   const queued = state.outbox.find((item) => item.orderId === order.id);
   const editable = ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status) && !queued;
+  const completed = completedAnswers(order.template, draft.answers);
   async function save(value: Draft) {
     currentDraft.current = value;
     setDraft(value);
@@ -535,11 +540,13 @@ function Inspection({
         <>
           <SectionHeading
             title="Inspection checklist"
-            detail={`${draft.answers.filter(answerComplete).length} of ${order.template.items.length} checks recorded · ${saving ? 'Saving locally…' : 'Draft saved on this device'}`}
+            detail={`${completed} of ${order.template.items.length} checks recorded · ${saving ? 'Saving locally…' : 'Draft saved on this device'}`}
           />
           <Panel style={styles.ledger}>
             {order.template.items.map((item, index) => {
               const answer = draft.answers.find((answer) => answer.itemId === item.id)!;
+              const readingError = readingInputError(item, answer.reading);
+              const bounds = readingBounds(item);
               return (
                 <View key={item.id} style={[styles.question, index > 0 && styles.questionDivider]}>
                   <View style={styles.questionHeading}>
@@ -547,7 +554,7 @@ function Inspection({
                       {index + 1}
                     </Copy>
                     <Copy variant="record" style={styles.flex}>
-                      {item.label}
+                      {checklistItemLabel(item)}
                     </Copy>
                   </View>
                   {item.responseType === 'text' ? (
@@ -569,7 +576,8 @@ function Inspection({
                   ) : item.responseType === 'number' ? (
                     <>
                       <Field
-                        label={`Reading: ${item.label}`}
+                        label={`Reading: ${checklistItemLabel(item)}`}
+                        accessibilityHint={bounds ? `Enter a reading ${bounds}.` : undefined}
                         value={answer.reading ?? ''}
                         maxLength={100}
                         autoCorrect={false}
@@ -587,8 +595,10 @@ function Inspection({
                           })
                         }
                       />
-                      {answer.reading && !answerComplete(answer) ? (
-                        <Copy>Enter a number, such as 12.5 or -3.</Copy>
+                      {readingError ? (
+                        <Copy accessibilityLiveRegion="polite">{readingError}</Copy>
+                      ) : bounds ? (
+                        <Copy muted>Enter a reading {bounds}.</Copy>
                       ) : null}
                     </>
                   ) : (
@@ -710,10 +720,7 @@ function Inspection({
                   : 'Save and sync inspection'
               }
               disabled={
-                busy ||
-                saving ||
-                !draft.summary.trim() ||
-                draft.answers.some((answer) => !answerComplete(answer))
+                busy || saving || !draft.summary.trim() || completed !== order.template.items.length
               }
               onPress={() => void submit()}
             />
@@ -727,9 +734,7 @@ function Inspection({
           />
           {order.report.answers.map((answer) => (
             <View key={answer.itemId} style={styles.checkItem}>
-              <Copy variant="label">
-                {order.template.items.find((item) => item.id === answer.itemId)?.label}
-              </Copy>
+              <Copy variant="label">{reportItemLabel(order.template, answer.itemId)}</Copy>
               <Copy style={answer.value === 'fail' ? { color: colors.amber } : undefined}>
                 {answerLabel(answer)}
               </Copy>

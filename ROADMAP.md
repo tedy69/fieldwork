@@ -36,6 +36,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Text-response checklist fields on web and Expo, including mixed API templates, offline drafts and saved report exports.
 - [x] Numeric checklist readings on web and Expo, with partial offline input, zero/negative decimals, type validation and saved report exports.
 - [x] Mixed checklist creation on web, with a response type per question and a bulk entry shortcut.
+- [x] Optional units and inclusive limits for numeric checklist items, with offline guidance and server validation.
 - [x] Worker invitations with one-time expiring links, a paginated manager ledger, revocation, browser password setup, and preserved device notebooks.
 - [x] Worker deactivation and reactivation with manager confirmations, session revocation, active assignment choices, version conflicts, and preserved offline reports.
 - [x] Manager worker-access history with actor/time details, stable pagination, retry/restart, and temporary offline browsing.
@@ -44,7 +45,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 ## Next · Make daily work easier
 
 - Broader scheduling rules, holiday calendars, and editing or retiring future series work.
-- Checklist field configuration: per-item evidence, units and ranges.
+- Per-item photo evidence.
 - Automated native flows on Android and iOS.
 - Application translations, beginning with English and Indonesian.
 

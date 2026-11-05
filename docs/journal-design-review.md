@@ -6,6 +6,8 @@
 
 The Expo assignment filter uses the Phosphor funnel beside the search field. It reveals labeled status choices, with amber marking the selection and a small count beneath the controls. The assignment ledger remains the main content. Expo Go on iOS verified the filter and empty state with the API unavailable, a retained search after opening an inspection, and localized labels. At the largest Dynamic Type setting, long status labels wrap and the controls remain reachable by scrolling.
 
+Expo report history uses the same Phosphor clock as the web action. A separate native screen keeps revision reading away from draft editing. The current and historical reports share the same report layout. The iOS fixture checks the modal safe area and back action, reads two saved versions with their original feedback, retries an older page after an API outage, and returns to the original draft.
+
 The sign-in language switch pairs a globe with the destination language in the existing journal layout. Chromium covers keyboard switching, 320px and desktop layouts, translated validation, and an offline reload. On iOS, the same choice survives restart and translates the server and password controls.
 
 Invitation and password-reset pages share the same globe control and language preference. Chromium verifies keyboard switching, 390px and desktop layouts, preserved password entries, offline feedback, completion, and opening a used link.

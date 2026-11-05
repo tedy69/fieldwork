@@ -15,6 +15,7 @@ export async function openFixture() {
     throw new Error('Use an available synthetic design fixture.');
   const session = await createClient(base).login('manager@fieldwork.local', 'fieldwork-demo');
   return {
+    baseUrl: base,
     manager: createClient(base, () => session.token),
     async setAvailable(available: boolean) {
       const result = await fetch(`${base}/__design-test__/network`, {

@@ -1,0 +1,26 @@
+appId: host.exp.Exponent
+name: Read an older revision and return to the local draft
+---
+- scrollUntilVisible:
+    element: Coba muat riwayat lagi
+    centerElement: true
+- tapOn: Coba muat riwayat lagi
+- scrollUntilVisible:
+    element:
+      id: report-history-version-2
+    centerElement: true
+- tapOn:
+    id: report-history-version-2
+- assertVisible: Check 1
+- scrollUntilVisible:
+    element: Gauge visit 1
+    centerElement: true
+- tapOn: Kembali ke riwayat laporan
+- tapOn: Tutup riwayat laporan
+- scrollUntilVisible:
+    element:
+      id: inspection-summary
+    centerElement: true
+- assertVisible:
+    id: inspection-summary
+    text: Draft tetap ada

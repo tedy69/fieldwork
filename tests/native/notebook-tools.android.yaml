@@ -1,0 +1,74 @@
+appId: host.exp.exponent
+name: Recover a session and use the inspection tools on Android
+---
+- scrollUntilVisible:
+    element: Sync now
+    direction: UP
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- extendedWaitUntil:
+    visible: Sign in to sync
+    timeout: 15000
+- tapOn:
+    text: Sign in again
+    point: 25%,50%
+- extendedWaitUntil:
+    visible:
+      id: login-email
+    timeout: 15000
+- assertVisible:
+    id: login-email
+    text: worker@fieldwork.local
+- tapOn:
+    id: login-password
+- inputText: fieldwork-demo
+- tapOn: Done editing
+- scrollUntilVisible:
+    element: Sign in
+- tapOn: Sign in
+- extendedWaitUntil:
+    visible: 'Assignments \(4\)'
+    timeout: 20000
+- scrollUntilVisible:
+    element: Filter assignments
+    centerElement: true
+- tapOn: Filter assignments
+- tapOn:
+    text: Approved
+    index: 0
+- scrollUntilVisible:
+    element: Approved · 1 shown
+- assertVisible: Approved · 1 shown
+- scrollUntilVisible:
+    element: ${ORDER_NAME}
+    centerElement: true
+- tapOn: ${ORDER_NAME}
+- scrollUntilVisible:
+    element: Latitude 0 · Longitude -106.8
+    centerElement: true
+- assertVisible: Latitude 0 · Longitude -106.8
+- scrollUntilVisible:
+    element: Report history
+    direction: UP
+- tapOn: Report history
+- extendedWaitUntil:
+    visible:
+      id: report-history-version-2
+    timeout: 15000
+- tapOn:
+    id: report-history-version-2
+- assertVisible: Android review 1
+- scrollUntilVisible:
+    element: Android gate report 1
+- assertVisible: Android gate report 1
+- back
+- assertVisible:
+    id: report-history-version-2
+- back
+- assertVisible: Android notebook QA visit
+- back
+- scrollUntilVisible:
+    element: Approved · 1 shown
+    direction: UP
+- assertVisible: Approved · 1 shown

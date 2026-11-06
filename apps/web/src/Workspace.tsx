@@ -14,6 +14,7 @@ import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus';
 import { ListDashesIcon } from '@phosphor-icons/react/dist/csr/ListDashes';
 import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
 import { CalendarDotsIcon } from '@phosphor-icons/react/dist/csr/CalendarDots';
+import { CalendarXIcon } from '@phosphor-icons/react/dist/csr/CalendarX';
 import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { GlobeIcon } from '@phosphor-icons/react/dist/csr/Globe';
 import { IconButton } from './components/ui/icon-button';
@@ -47,7 +48,7 @@ import CreateOrder from './CreateOrderDialog';
 import RecurringDispatch from './RecurringDispatch';
 import SeriesOverview from './SeriesOverview';
 import OrderDetail from './OrderDetail';
-import { isInDueRange, isOverdue, isValidDueRange } from './dates';
+import { isInDueRange, isOverdue, isScheduledOnClosure, isValidDueRange } from './dates';
 import { useLocalDate } from './useLocalDate';
 import WorkspaceExports from './WorkspaceExports';
 import DueDateRange from './DueDateRange';
@@ -92,6 +93,7 @@ export default function Workspace({
   const [dueFrom, setDueFrom] = useState('');
   const [dueThrough, setDueThrough] = useState('');
   const [datesOpen, setDatesOpen] = useState(false);
+  const [closureOnly, setClosureOnly] = useState(false);
   const today = useLocalDate();
   const [plannerView, setPlannerView] = useState<'list' | 'week' | 'month'>('list');
   const planner = plannerView !== 'list';
@@ -200,8 +202,20 @@ export default function Workspace({
     URGENT: notebook.urgentWork,
     ...notebook.status,
   };
+  const hasSiteClosures =
+    user.role === 'manager' && catalog.sites.some((site) => site.closureDates?.length);
+  const closureVisits = useMemo(() => {
+    const visits = new Set<string>();
+    if (!hasSiteClosures) return visits;
+    const closures = new Map(catalog.sites.map((site) => [site.id, site.closureDates]));
+    for (const order of state.orders) {
+      if (isScheduledOnClosure(order, closures.get(order.site.id))) visits.add(order.id);
+    }
+    return visits;
+  }, [catalog.sites, hasSiteClosures, state.orders]);
   const matching = state.orders.filter(
     (order) =>
+      (!closureOnly || closureVisits.has(order.id)) &&
       (filter === 'ALL' ||
         (filter === 'OVERDUE'
           ? isOverdue(order, today)
@@ -685,6 +699,18 @@ export default function Workspace({
                     />
                     <p className="status-scroll-hint">{copy.moreStatuses}</p>
                   </div>
+                  {(hasSiteClosures || closureOnly) && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="closure-visit-filter"
+                      aria-pressed={closureOnly}
+                      onClick={() => setClosureOnly((selected) => !selected)}
+                    >
+                      <CalendarXIcon aria-hidden="true" />
+                      {dispatch.closureVisits}
+                    </Button>
+                  )}
                   {!planner && (
                     <DueDateRange
                       open={datesOpen}
@@ -745,6 +771,9 @@ export default function Workspace({
                           openInspection(order.id, `#${CSS.escape(event.currentTarget.id)}`)
                         }
                         aria-label={`${notebook.open} ${order.reference}: ${order.title}`}
+                        aria-describedby={
+                          closureVisits.has(order.id) ? `closure-${order.id}` : undefined
+                        }
                       >
                         <div>
                           <div className="reference">
@@ -769,6 +798,14 @@ export default function Workspace({
                             <time dateTime={order.dueDate}>
                               {dateLabel(order.dueDate, dateLocale)}
                             </time>
+                            {closureVisits.has(order.id) && (
+                              <span className="closure-visit-icon" title={dispatch.siteClosed}>
+                                <CalendarXIcon aria-hidden="true" />
+                                <span id={`closure-${order.id}`} className="sr-only">
+                                  {dispatch.siteClosed}
+                                </span>
+                              </span>
+                            )}
                           </span>
                           {isOverdue(order, today) && (
                             <span className="overdue-label">{copy.overdue}</span>
@@ -786,34 +823,38 @@ export default function Workspace({
                     title={
                       !loaded
                         ? copy.loading
-                        : planner
-                          ? plannerDay
-                            ? copy.noDay
-                            : plannerView === 'month'
-                              ? copy.noMonth
-                              : copy.noWeek
-                          : dueFrom || dueThrough
-                            ? copy.noDate
-                            : dateFilterEmpty
-                              ? dateFilterEmpty.title
-                              : search || filter !== 'ALL'
-                                ? copy.noMatch
-                                : copy.empty
+                        : closureOnly
+                          ? dispatch.noClosureVisits
+                          : planner
+                            ? plannerDay
+                              ? copy.noDay
+                              : plannerView === 'month'
+                                ? copy.noMonth
+                                : copy.noWeek
+                            : dueFrom || dueThrough
+                              ? copy.noDate
+                              : dateFilterEmpty
+                                ? dateFilterEmpty.title
+                                : search || filter !== 'ALL'
+                                  ? copy.noMatch
+                                  : copy.empty
                     }
                     description={
                       !loaded
                         ? copy.loadingHint
-                        : planner
-                          ? copy.plannerHint(plannerView === 'month' ? 'month' : 'week')
-                          : dueFrom || dueThrough
-                            ? copy.dateHint
-                            : dateFilterEmpty
-                              ? dateFilterEmpty.description
-                              : user.role === 'manager'
-                                ? dispatch.emptyHint
-                                : locale === 'id' && (search || filter !== 'ALL')
-                                  ? copy.trySearch
-                                  : copy.emptyHint
+                        : closureOnly
+                          ? dispatch.changeClosureFilters
+                          : planner
+                            ? copy.plannerHint(plannerView === 'month' ? 'month' : 'week')
+                            : dueFrom || dueThrough
+                              ? copy.dateHint
+                              : dateFilterEmpty
+                                ? dateFilterEmpty.description
+                                : user.role === 'manager'
+                                  ? dispatch.emptyHint
+                                  : locale === 'id' && (search || filter !== 'ALL')
+                                    ? copy.trySearch
+                                    : copy.emptyHint
                     }
                   />
                 )}

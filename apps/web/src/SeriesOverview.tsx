@@ -21,7 +21,7 @@ import { languageTags, notebookCopy, type Locale } from '@fieldwork/strings';
 import { client, labels as orderLabels, message } from './lib';
 import { calendarLabel } from './calendar';
 import { downloadCsv, formatCsv } from './csv';
-import { isOverdue } from './dates';
+import { isOverdue, isScheduledOnClosure } from './dates';
 import { frequencyLabels, recurrenceSummary } from './recurrence-labels';
 import { seriesOverviewCopy } from './series-overview-copy';
 import { SkippedDates } from './RecurrenceExceptions';
@@ -49,13 +49,6 @@ type LoadedBatch = OrderSeriesDetail & { loadedAt: string };
 type Visit = OrderSeriesDetail['orders'][number];
 type VisitFilter = keyof typeof seriesOverviewCopy.en.filters;
 
-function fallsOnClosure(order: WorkOrder, closureDates: string[]) {
-  return (
-    (order.status === 'ASSIGNED' || order.status === 'CHANGES_REQUESTED') &&
-    closureDates.includes(order.dueDate)
-  );
-}
-
 function matchesVisit(
   { order, plannedDueDate }: Visit,
   filter: VisitFilter,
@@ -68,7 +61,7 @@ function matchesVisit(
     case 'overdue':
       return isOverdue(order, today);
     case 'closures':
-      return fallsOnClosure(order, closureDates);
+      return isScheduledOnClosure(order, closureDates);
     case 'rescheduled':
       return order.dueDate !== plannedDueDate;
     case 'review':
@@ -681,7 +674,7 @@ export default function SeriesOverview({
                         <Badge className={`status status-${order.status.toLowerCase()}`}>
                           {labels[order.status]}
                         </Badge>
-                        {fallsOnClosure(order, closureDates) && (
+                        {isScheduledOnClosure(order, closureDates) && (
                           <Badge className="series-closure-label">
                             <CalendarXIcon aria-hidden="true" />
                             {copy.siteClosed}

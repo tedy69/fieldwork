@@ -41,7 +41,7 @@ import SeriesOverview from './SeriesOverview';
 import OrderDetail from './OrderDetail';
 import { isInDueRange, isOverdue, isValidDueRange } from './dates';
 import { useLocalDate } from './useLocalDate';
-import ReportExport from './ReportExport';
+import WorkspaceExports from './WorkspaceExports';
 import DueDateRange from './DueDateRange';
 import WeekPlanner from './WeekPlanner';
 import MonthPlanner from './MonthPlanner';
@@ -760,7 +760,9 @@ export default function Workspace({
                   <span>{copy.orderCount(visible.length, state.orders.length)}</span>
                   <span>{copy.queuedCount(state.outbox.length)}</span>
                 </footer>
-                {user.role === 'manager' && <ReportExport orders={visible} onNotice={setNotice} />}
+                {user.role === 'manager' && (
+                  <WorkspaceExports orders={visible} onNotice={setNotice} />
+                )}
               </Card>
             </>
           )}

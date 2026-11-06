@@ -43,9 +43,11 @@ test('managers download filtered reports online and offline, with an actionable 
   const context = await browser.newContext({
     baseURL,
     acceptDownloads: true,
+    timezoneId: 'Asia/Jakarta',
     viewport: { width: 1440, height: 1000 },
   });
   const page = await context.newPage();
+  await page.clock.setFixedTime(new Date('2026-10-21T12:00:00Z'));
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
@@ -104,6 +106,25 @@ test('managers download filtered reports online and offline, with an actionable 
     true,
   );
   await page.screenshot({ path: test.info().outputPath('csv-mobile.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Next 7 days', exact: true }).click();
+  const schedule = page.getByRole('button', { name: 'Export work orders (2)', exact: true });
+  await schedule.focus();
+  const scheduleReady = page.waitForEvent('download');
+  await page.keyboard.press('Enter');
+  const scheduleDownload = await scheduleReady;
+  expect(scheduleDownload.suggestedFilename()).toBe('fieldwork-schedule-2026-10-21.csv');
+  const scheduleCsv = readFileSync((await scheduleDownload.path())!, 'utf8');
+  expect(scheduleCsv).toContain(
+    '"Reference","Work order","Site","Assigned to","Due date","Priority","Status"',
+  );
+  expect(scheduleCsv).toContain('"CSV QA pending"');
+  expect(scheduleCsv).toContain('"\t=CSV QA pump"');
+  expect(scheduleCsv).not.toContain('CSV QA valve');
+  expect(scheduleCsv).not.toContain('東京 checked.');
+  await expect(
+    page.getByRole('status').filter({ hasText: 'CSV prepared for 2 work orders.' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'All orders', exact: true }).click();
   await page.evaluate(() => {
     URL.createObjectURL = () => {
       throw new Error('Download unavailable');
@@ -119,12 +140,13 @@ test('managers download filtered reports online and offline, with an actionable 
   await context.close();
 });
 
-test('workers do not see the manager report export control', async ({ page }) => {
+test('workers do not see the manager CSV export controls', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Email', { exact: true }).fill('worker@fieldwork.local');
   await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'My assignments', exact: true })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Report export' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'CSV exports' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Export reports/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Export work orders/ })).toHaveCount(0);
 });

@@ -79,10 +79,28 @@ test('inspection progress describes actual locally retained answers and is not a
   await page.reload();
   await expect(row).toHaveAccessibleDescription('Draft saved on this device');
   await expect(row.locator('.draft-mark svg[aria-hidden=true]')).toBeVisible();
+  const drafts = page.getByRole('button', { name: 'Drafts', exact: true });
+  await drafts.press('Enter');
+  await expect(drafts).toHaveAttribute('aria-pressed', 'true');
+  const rows = page.locator('.order-row');
+  await expect(rows).toHaveCount(1);
+  const search = page.getByRole('searchbox', { name: 'Search work orders' });
+  await search.fill('No matching synthetic draft');
+  await expect(rows).toHaveCount(0);
+  await search.fill('FW-001');
+  await expect(rows).toHaveCount(1);
   await row.press('Enter');
   await expect(progress).toHaveText('1 of 4 checks recorded');
   await expect(page.getByRole('radio', { name: 'Pass', exact: true }).first()).toBeChecked();
   await expect(page.locator('.detail-heading .status')).toHaveText('Assigned');
+  await page.getByRole('button', { name: 'Back to work orders', exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).press('Enter');
+  await expect(page.getByRole('button', { name: 'Draf', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await page.getByRole('button', { name: 'Hapus filter tugas', exact: true }).press('Enter');
+  await expect(page.getByRole('searchbox', { name: 'Cari tugas' })).toHaveValue('FW-001');
 });
 
 test('inspection Back restores the work list and keyboard focus', async ({ page }) => {

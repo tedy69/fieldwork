@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { WorkerAccount } from '@fieldwork/contracts';
 import { languageTags, type Locale } from '@fieldwork/strings';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
@@ -55,6 +55,12 @@ export default function WorkerPasswordReset({
       generation.current++;
     };
   }, [worker.user.id]);
+  useLayoutEffect(() => {
+    if (fresh) {
+      link.current?.focus();
+      link.current?.select();
+    }
+  }, [fresh]);
   async function load() {
     if (!online || writing.current) return;
     const request = ++generation.current;
@@ -114,12 +120,6 @@ export default function WorkerPasswordReset({
         setReset(created.reset);
         setFresh({ id: created.reset.id, url: passwordResetLink(location.origin, created.token) });
         setNotice(copyText.created);
-        requestAnimationFrame(() => {
-          if (link.current?.dataset.resetId === created.reset.id) {
-            link.current.focus();
-            link.current.select();
-          }
-        });
       } else {
         const revoked = await client.revokePasswordReset(current.user.id, reset!.id);
         const latest = await client.passwordReset(current.user.id);
@@ -235,7 +235,6 @@ export default function WorkerPasswordReset({
                 {copyText.link}
                 <Input
                   ref={link}
-                  data-reset-id={fresh.id}
                   readOnly
                   value={fresh.url}
                   onFocus={(event) => event.currentTarget.select()}

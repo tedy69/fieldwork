@@ -3,6 +3,7 @@ import { IconButton } from './components/ui/icon-button';
 import { CalendarPlusIcon } from '@phosphor-icons/react/dist/csr/CalendarPlus';
 import {
   CreateOrderSeriesSchema,
+  RecurrenceFrequencySchema,
   recurrenceDates,
   recurrenceDatesThrough,
   type Catalog,
@@ -446,16 +447,11 @@ function RecurringDialog({
                       setFrequency(event.target.value as Recurrence['frequency'])
                     }
                   >
-                    <Option value="daily">Daily</Option>
-                    <Option value="weekly">Weekly</Option>
-                    <Option value="biweekly">{recurrenceLabels.biweekly}</Option>
-                    <Option value="weekdays">Weekdays (Mon–Fri)</Option>
-                    <Option value="monthly">{recurrenceLabels.monthly}</Option>
-                    <Option value="month-end">{recurrenceLabels['month-end']}</Option>
-                    <Option value="month-end-weekday">
-                      {recurrenceLabels['month-end-weekday']}
-                    </Option>
-                    <Option value="quarterly">{recurrenceLabels.quarterly}</Option>
+                    {RecurrenceFrequencySchema.options.map((option) => (
+                      <Option key={option} value={option}>
+                        {recurrenceLabels[option]}
+                      </Option>
+                    ))}
                   </Select>
                 </Label>
                 <Label>
@@ -511,6 +507,9 @@ function RecurringDialog({
                 Choose a Monday–Friday first date. Holidays stay scheduled unless you add them to
                 Skip dates.
               </p>
+            )}
+            {frequency === 'weekends' && (
+              <p className="muted">Choose Saturday or Sunday for the first visit.</p>
             )}
             <DatePreview dates={activeDates} byDate={endMode === 'date'} />
             {skipDates.some((date) => date <= dueDate) && (

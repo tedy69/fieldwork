@@ -109,6 +109,49 @@ test('weekday preview rejects weekend starts and creates the exact dates shown i
   expect(errors).toEqual([]);
 });
 
+test('weekend repeats preview only Saturdays and Sundays and respect a skipped visit', async ({
+  page,
+}) => {
+  const title = 'Weekend calendar QA';
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  await page.getByRole('button', { name: 'Assign recurring work', exact: true }).click();
+  await fill(page, title);
+  const form = dialog(page);
+  await form.getByRole('combobox', { name: 'Repeat', exact: true }).selectOption('weekends');
+  await expect(form.getByText('Choose Saturday or Sunday for the first visit.')).toBeVisible();
+  await expect(
+    form.getByRole('button', { name: 'Assign work orders', exact: true }),
+  ).toBeDisabled();
+  await form.getByLabel('Due date', { exact: true }).fill('2026-12-26');
+  await form.getByLabel('Occurrences', { exact: true }).fill('3');
+  await form.getByText('Skip dates (optional)', { exact: true }).click();
+  await form.getByLabel('Date to skip', { exact: true }).fill('2026-12-27');
+  await form.getByRole('button', { name: 'Add date', exact: true }).click();
+  await expect(dates(page)).toHaveCount(3);
+  const plannedDates = ['2026-12-26', '2027-01-02', '2027-01-03'];
+  expect(
+    await dates(page).evaluateAll((nodes) => nodes.map((node) => node.getAttribute('datetime'))),
+  ).toEqual(plannedDates);
+  expect(await form.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+  const response = page.waitForResponse(
+    (r) => r.url().endsWith('/work-order-series') && r.request().method() === 'POST',
+  );
+  await form.getByRole('button', { name: 'Assign 3 work orders', exact: true }).click();
+  const saved = await response;
+  expect(saved.status()).toBe(201);
+  const receipt: OrderSeriesReceipt = await saved.json();
+  expect(receipt.orders.map((order) => order.dueDate)).toEqual(plannedDates);
+  await expect(form).toHaveCount(0);
+  await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
+  await page.getByRole('button', { name: 'Recurring batches', exact: true }).click();
+  const ledger = page.getByRole('dialog', { name: 'Recurring batches', exact: true });
+  await ledger.getByRole('combobox', { name: 'Frequency', exact: true }).selectOption('weekends');
+  await expect(
+    ledger.getByRole('button', { name: `View batch ${receipt.id}: ${title}`, exact: true }),
+  ).toContainText('Weekends (Sat–Sun)');
+});
+
 test('weekday recovery survives an offline reload and replays the original request without duplicate assignments', async ({
   page,
   context,
@@ -152,17 +195,18 @@ test('weekday recovery survives an offline reload and replays the original reque
     await dates(page).evaluateAll((nodes) => nodes.map((node) => node.getAttribute('datetime'))),
   ).toEqual(planned);
   await context.setOffline(false);
-  await page.route(endpoint, async (route) => {
-    requests.push(route.request().postDataJSON());
-    await route.continue();
-  });
   await expect(
     dialog(page).getByRole('button', { name: 'Retry saved batch', exact: true }),
   ).toBeEnabled();
+  const confirmation = page.waitForResponse(
+    (r) => r.url().endsWith('/work-order-series') && r.request().method() === 'POST',
+  );
   await dialog(page).getByRole('button', { name: 'Retry saved batch', exact: true }).click();
+  const retry = await confirmation;
   await expect(dialog(page)).toHaveCount(0);
-  expect(requests).toHaveLength(2);
-  expect(requests[1]).toEqual(requests[0]);
+  expect(retry.status()).toBe(200);
+  expect(requests).toHaveLength(1);
+  expect(retry.request().postDataJSON()).toEqual(requests[0]);
   expect(requests[0].frequency).toBe('weekdays');
   expect((await manager.searchOrders({ q: 'Weekday recovery QA' })).total).toBe(7);
 });

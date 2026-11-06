@@ -546,16 +546,22 @@ export const RecurrenceFrequencySchema = z.enum([
   'weekly',
   'biweekly',
   'weekdays',
+  'weekends',
   'monthly',
   'month-end',
   'month-end-weekday',
   'quarterly',
 ]);
+function isWeekend(date: Date) {
+  const day = date.getUTCDay();
+  return day === 0 || day === 6;
+}
+
 function lastDayOfMonth(date: Date, weekdaysOnly: boolean) {
   const end = new Date(date);
   end.setUTCMonth(end.getUTCMonth() + 1, 0);
   if (weekdaysOnly) {
-    while (end.getUTCDay() === 0 || end.getUTCDay() === 6) end.setUTCDate(end.getUTCDate() - 1);
+    while (isWeekend(end)) end.setUTCDate(end.getUTCDate() - 1);
   }
   return end.getUTCDate();
 }
@@ -573,10 +579,12 @@ function advanceRecurrence(
     date.setUTCDate(anchored ? Math.min(originalDay, lastDay) : lastDay);
     return;
   }
-  const days = { daily: 1, weekdays: 1, weekly: 7, biweekly: 14 }[frequency];
+  const days = { daily: 1, weekdays: 1, weekends: 1, weekly: 7, biweekly: 14 }[frequency];
   date.setUTCDate(date.getUTCDate() + days);
-  if (frequency === 'weekdays')
-    while (date.getUTCDay() === 0 || date.getUTCDay() === 6) date.setUTCDate(date.getUTCDate() + 1);
+  if (frequency === 'weekdays' || frequency === 'weekends') {
+    const weekendsOnly = frequency === 'weekends';
+    while (isWeekend(date) !== weekendsOnly) date.setUTCDate(date.getUTCDate() + 1);
+  }
 }
 export const SkippedDatesSchema = z
   .array(z.iso.date())
@@ -634,10 +642,16 @@ export const RecurrenceSchema = z
           'Skipped dates must be after the first due date. Change the first date to skip it.',
         path: ['skipDates'],
       });
-    if (input.frequency === 'weekdays' && (first.getUTCDay() === 0 || first.getUTCDay() === 6))
+    if (input.frequency === 'weekdays' && isWeekend(first))
       context.addIssue({
         code: 'custom',
         message: 'Choose a Monday–Friday first date for weekday repeats.',
+        path: ['dueDate'],
+      });
+    if (input.frequency === 'weekends' && !isWeekend(first))
+      context.addIssue({
+        code: 'custom',
+        message: 'Choose a Saturday or Sunday first date for weekend repeats.',
         path: ['dueDate'],
       });
     const weekdayEnd = input.frequency === 'month-end-weekday';

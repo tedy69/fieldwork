@@ -341,6 +341,32 @@ describe('recurring assignments', () => {
       expect(counts()).toEqual(before);
     },
   );
+  it('schedules weekend visits across a year, skips a closure, and replays one saved batch', async () => {
+    const payload = {
+      ...input(),
+      dueDate: '2026-12-26',
+      frequency: 'weekends',
+      occurrences: 4,
+      skipDates: ['2027-01-03'],
+    };
+    const before = counts();
+    expect((await create({ ...payload, dueDate: '2026-12-25' })).statusCode).toBe(422);
+    expect(counts()).toEqual(before);
+    const created = await create(payload);
+    expect(created.statusCode).toBe(201);
+    const receipt = OrderSeriesReceiptSchema.parse(created.json());
+    expect(receipt.orders.map((order) => order.dueDate)).toEqual([
+      '2026-12-26',
+      '2026-12-27',
+      '2027-01-02',
+      '2027-01-09',
+    ]);
+    expect(receipt.frequency).toBe('weekends');
+    const retry = await create(payload);
+    expect(retry.statusCode).toBe(200);
+    expect(retry.json()).toEqual(receipt);
+    expect(counts()).toEqual([7, 4, 1, 4]);
+  });
   it('rejects a changed session account before creating or replaying a batch', async () => {
     const payload = { ...input(), expectedActorId: 'manager' };
     expect((await create(payload)).statusCode).toBe(201);

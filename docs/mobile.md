@@ -84,6 +84,8 @@ Run `ADB=<adb-path> npm exec -- tsx tests/native/upcoming-filter.android.ts <emu
 
 Assignment rows and inspection details display the due date in the notebook language. The stored calendar day stays the same across time zones. Report and sync timestamps use the notebook language and the device's time zone. Run `notebook-timestamps.ios.yaml` from **My assignments** in English after syncing the synthetic fixture to check both timestamp formats.
 
+The copy icon beside an inspection reference copies only that number and works from saved assignments offline. The reference stays selectable for manual copying. From **My assignments** in English on a dedicated iOS simulator with the synthetic fixture cached, run `maestro --device <simulator-id> test tests/native/copy-reference.ios.yaml`. Confirm that `xcrun simctl pbpaste <simulator-id>` prints `FW-001` after the flow. On Android, paste the copied reference into assignment search to check the same value.
+
 Run the API, then `npm run mobile`. Use a compatible Expo Go client for SDK 58 or create a development build. Enter a worker account and server URL on the sign-in screen.
 
 - iOS simulator: `http://localhost:3001`.

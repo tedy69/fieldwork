@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   Alert,
   AppState,
   BackHandler,
@@ -18,12 +19,15 @@ import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
 import Storage from 'expo-sqlite/kv-store';
 import * as ImagePicker from 'expo-image-picker';
+import { setStringAsync } from 'expo-clipboard';
 import { getLocales } from 'expo-localization';
 import { StatusBar } from 'expo-status-bar';
 import {
   ArrowClockwise,
   ArrowLeft,
   Camera,
+  Check,
+  CopyReference,
   ImageSquare,
   Trash,
   GearSix,
@@ -524,10 +528,18 @@ function Inspection({
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [preparingPhoto, setPreparingPhoto] = useState(false);
+  const [referenceCopy, setReferenceCopy] = useState<'copied' | 'failed'>();
   const queued = state.outbox.find((item) => item.orderId === order.id);
   const editable = ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status) && !queued;
   const completed = completedAnswers(order.template, draft.answers);
   const sitePhotoSlots = availableSitePhotoSlots(order.template, draft.photos);
+  async function copyReference() {
+    const copied = await setStringAsync(order.reference).catch(() => false);
+    setReferenceCopy(copied ? 'copied' : 'failed');
+    AccessibilityInfo.announceForAccessibility(
+      copied ? copy.referenceCopied : copy.referenceCopyFailed,
+    );
+  }
   async function save(value: Draft) {
     currentDraft.current = value;
     setDraft(value);
@@ -620,9 +632,20 @@ function Inspection({
         )}
       </View>
       <View style={styles.introduction}>
-        <Copy variant="reference" muted>
-          {order.reference}
-        </Copy>
+        <View style={styles.referenceRow}>
+          <Copy variant="reference" muted>
+            {order.reference}
+          </Copy>
+          <Button
+            title={referenceCopy === 'copied' ? copy.referenceCopied : copy.copyReference}
+            accessibilityLabel={copy.copyReference}
+            icon={referenceCopy === 'copied' ? Check : CopyReference}
+            iconOnly
+            variant="ghost"
+            onPress={() => void copyReference()}
+          />
+        </View>
+        {referenceCopy === 'failed' && <Copy muted>{copy.referenceCopyFailed}</Copy>}
         <Copy accessibilityRole="header" variant="title">
           {order.title}
         </Copy>
@@ -967,6 +990,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   introduction: { gap: spacing.sm },
+  referenceRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
   headerIdentity: { flexGrow: 1, flexShrink: 1, minWidth: 0, gap: spacing.xs },
   inspectionTools: { flexDirection: 'row', justifyContent: 'space-between' },
   siteCoordinates: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs },

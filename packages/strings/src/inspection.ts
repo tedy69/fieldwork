@@ -2,6 +2,9 @@ import type { Locale } from './index';
 
 const english = {
   back: 'Back to assignments',
+  copyReference: 'Copy work order reference',
+  referenceCopied: 'Work order reference copied.',
+  referenceCopyFailed: 'Could not copy the reference. Select it to copy manually.',
   site: 'Site',
   coordinates: (latitude: number, longitude: number) =>
     `Latitude ${latitude} · Longitude ${longitude}`,
@@ -74,6 +77,9 @@ export const inspectionCopy: Record<Locale, typeof english> = {
   en: english,
   id: {
     back: 'Kembali ke daftar tugas',
+    copyReference: 'Salin nomor tugas',
+    referenceCopied: 'Nomor tugas disalin.',
+    referenceCopyFailed: 'Nomor tugas tidak bisa disalin. Pilih nomornya untuk menyalin.',
     site: 'Lokasi',
     coordinates: (latitude, longitude) => `Lintang ${latitude} · Bujur ${longitude}`,
     assignee: 'Ditugaskan kepada',

@@ -18,6 +18,7 @@ import type { User, WorkOrder } from '@fieldwork/contracts';
 import { notebookCopy, type Locale } from '@fieldwork/strings';
 import ActionSearchBar, { type CommandItem } from './components/kokonutui/action-search-bar';
 import { workerWorkspaceCopy } from './worker-workspace-copy';
+import { managerDispatchCopy } from './manager-dispatch-copy';
 import { workerFinderCopy } from './worker-finder-copy';
 import './kokonut.css';
 
@@ -62,10 +63,10 @@ export default function WorkFinder({
         ? [
             {
               id: 'resources',
-              label: 'Sites & checklists',
+              label: managerDispatchCopy[locale].resources,
               group: workspace.workspace,
               icon: <BuildingsIcon />,
-              keywords: ['catalog', 'templates'],
+              keywords: locale === 'id' ? ['katalog', 'templat'] : ['catalog', 'templates'],
             },
           ]
         : []),

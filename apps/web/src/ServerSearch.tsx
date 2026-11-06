@@ -281,12 +281,12 @@ export default function ServerSearch({
             </Label>
             {user.role === 'manager' && (
               <Label>
-                Field worker
+                {copy.worker}
                 <Select
                   value={filters.assigneeId}
                   onChange={(event) => change({ assigneeId: event.target.value })}
                 >
-                  <Option value="">All field workers</Option>
+                  <Option value="">{copy.anyWorker}</Option>
                   {workers
                     .filter((worker) => worker.role === 'worker')
                     .map((worker) => (

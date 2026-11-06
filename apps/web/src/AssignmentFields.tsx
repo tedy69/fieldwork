@@ -1,4 +1,5 @@
 import type { Catalog, CreateOrder } from '@fieldwork/contracts';
+import type { Locale } from '@fieldwork/strings';
 import { Input } from './components/ui/input';
 import { DatePicker } from './components/ui/date-picker';
 import { Textarea } from './components/ui/textarea';
@@ -8,22 +9,26 @@ import {
 } from './components/ui/native-select';
 import { Label } from './components/ui/label';
 import { localDate } from './dates';
+import { managerDispatchCopy } from './manager-dispatch-copy';
 
 export default function AssignmentFields({
   catalog,
+  locale = 'en',
   initial,
   onDateChange,
   onSiteChange,
 }: {
   catalog: Catalog;
+  locale?: Locale;
   initial?: Partial<CreateOrder>;
   onDateChange?: (date: string) => void;
   onSiteChange?: (siteId: string) => void;
 }) {
+  const copy = managerDispatchCopy[locale];
   return (
     <>
       <Label>
-        Work order title
+        {copy.title}
         <Input
           name="title"
           autoFocus
@@ -31,14 +36,14 @@ export default function AssignmentFields({
           minLength={3}
           maxLength={140}
           defaultValue={initial?.title}
-          placeholder="e.g. Inspect the north access gate"
+          placeholder={copy.titleHint}
         />
       </Label>
       <Label>
-        Site
+        {copy.site}
         <Select
           name="siteId"
-          aria-label="Site"
+          aria-label={copy.site}
           required
           defaultValue={initial?.siteId}
           onChange={(event) => onSiteChange?.(event.currentTarget.value)}
@@ -52,10 +57,10 @@ export default function AssignmentFields({
       </Label>
       <div className="form-grid">
         <Label>
-          Assign to
+          {copy.assignee}
           <Select
             name="assigneeId"
-            aria-label="Assign to"
+            aria-label={copy.assignee}
             required
             defaultValue={initial?.assigneeId}
           >
@@ -69,10 +74,11 @@ export default function AssignmentFields({
           </Select>
         </Label>
         <Label>
-          Due date
+          {copy.due}
           <DatePicker
             name="dueDate"
-            calendarLabel="Choose due date"
+            calendarLabel={copy.calendar}
+            locale={locale}
             required
             defaultValue={initial?.dueDate ?? localDate()}
             onValueChange={(value) => onDateChange?.(value)}
@@ -81,10 +87,10 @@ export default function AssignmentFields({
       </div>
       <div className="form-grid">
         <Label>
-          Checklist
+          {copy.checklist}
           <Select
             name="templateId"
-            aria-label="Checklist"
+            aria-label={copy.checklist}
             required
             defaultValue={initial?.templateId}
           >
@@ -92,33 +98,33 @@ export default function AssignmentFields({
               <Option key={template.id} value={template.id}>
                 {template.name}
                 {template.requiresPhoto || template.items.some((item) => item.requiresPhoto)
-                  ? ' · Photo required'
+                  ? ` · ${copy.photoRequired}`
                   : ''}
               </Option>
             ))}
           </Select>
         </Label>
         <Label>
-          Priority
+          {copy.priority}
           <Select
             name="priority"
-            aria-label="Priority"
+            aria-label={copy.priority}
             defaultValue={initial?.priority ?? 'routine'}
           >
-            <Option value="routine">Routine</Option>
-            <Option value="urgent">Urgent</Option>
+            <Option value="routine">{copy.routine}</Option>
+            <Option value="urgent">{copy.urgent}</Option>
           </Select>
         </Label>
       </div>
       <Label>
-        Instructions
+        {copy.instructions}
         <Textarea
           className="resize-none"
           name="instructions"
           rows={3}
           maxLength={4000}
           defaultValue={initial?.instructions}
-          placeholder="What should the worker check?"
+          placeholder={copy.instructionsHint}
         />
       </Label>
     </>

@@ -82,11 +82,12 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates, boundary]
       .locator('time');
     await dialog.getByLabel('Work order title', { exact: true }).fill(title);
     await dialog.getByRole('combobox', { name: 'Assign to', exact: true }).selectOption('worker');
-    await dialog.getByRole('combobox', { name: 'Repeat', exact: true }).selectOption(frequency);
+    const repeat = dialog.getByRole('combobox', { name: 'Repeat', exact: true });
+    await repeat.selectOption(frequency);
     await dialog.getByLabel('Occurrences', { exact: true }).fill('4');
-    await expect(
-      dialog.getByText(boundary?.guidance ?? /Shorter months use their last day\./),
-    ).toBeVisible();
+    const guidance = boundary?.guidance ?? /Shorter months use their last day\./;
+    await expect(repeat).toHaveAccessibleDescription(guidance);
+    await expect(dialog.getByText(guidance)).toBeVisible();
     await dialog
       .getByLabel('Due date', { exact: true })
       .fill(boundary?.invalidDate ?? '9999-12-31');

@@ -85,6 +85,62 @@ test('Kokonut workspace keeps the palette and supports keyboard filters across d
   expect(errors).toEqual([]);
 });
 
+test('a narrow inspection stays under the pointer while keyboard focus clears the bottom bar', async ({
+  page,
+  baseURL,
+}) => {
+  const api = createClient(baseURL!);
+  const account = await api.login('manager@fieldwork.local', 'fieldwork-demo');
+  const manager = createClient(baseURL!, () => account.token);
+  const order = await manager.createOrder({
+    title: 'Narrow pointer inspection QA',
+    instructions: 'Synthetic focus fixture.',
+    siteId: 'north',
+    templateId: 'routine',
+    assigneeId: 'worker',
+    dueDate: '2026-12-28',
+    priority: 'routine',
+  });
+  await page.setViewportSize({ width: 320, height: 720 });
+  await login(page, 'worker');
+  await expect(page.getByRole('button', { name: 'Sync now', exact: true })).toBeEnabled();
+  const search = page.getByRole('searchbox', { name: 'Search work orders' });
+  await search.fill(order.reference);
+  const row = page.getByRole('button', { name: `Open ${order.reference}: ${order.title}` });
+  const navigation = page.getByRole('navigation', { name: 'Workspace' });
+  const navTop = (await navigation.boundingBox())!.y;
+  const positionRow = () =>
+    row.evaluate((element, top) => {
+      window.scrollBy(0, element.getBoundingClientRect().bottom - top - 12);
+    }, navTop);
+
+  await page.keyboard.press('Tab');
+  await positionRow();
+  await row.evaluate((element) => element.focus({ preventScroll: true }));
+  await expect(row).toBeFocused();
+  await expect
+    .poll(() => row.evaluate((element) => element.getBoundingClientRect().bottom))
+    .toBeLessThanOrEqual(navTop);
+
+  await search.focus();
+  await positionRow();
+  const rect = (await row.boundingBox())!;
+  const pointerY = navTop - 3;
+  expect(rect.y).toBeLessThan(pointerY);
+  expect(rect.y + rect.height).toBeGreaterThan(navTop);
+  await page.mouse.move(rect.x + rect.width / 2, pointerY);
+  await page.mouse.down();
+  // Let focus handlers run before releasing over the same part of the row.
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+  await page.mouse.up();
+  await expect(page.getByRole('heading', { name: order.title, exact: true })).toBeVisible();
+});
+
 const png =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jq1sAAAAASUVORK5CYII=';
 

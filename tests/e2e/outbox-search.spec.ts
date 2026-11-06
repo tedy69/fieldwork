@@ -107,6 +107,9 @@ test('offline outbox search keeps queued reports separate from assignment search
   await expect(page.getByRole('searchbox', { name: 'Cari laporan dalam antrean' })).toBeFocused();
   await expect(cards).toHaveCount(2);
   await page.getByRole('button', { name: 'Tutup pemberitahuan', exact: true }).press('Enter');
+  await expect(page.getByRole('main')).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('searchbox', { name: 'Cari laporan dalam antrean' })).toBeFocused();
   await expect(
     page.getByText('Laporan tersimpan di antrean dan akan dikirim saat server tersedia.', {
       exact: true,

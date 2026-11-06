@@ -383,7 +383,14 @@ export default function Workspace({
       {!sessionExpired && noticeIsCurrent && notice && (
         <Alert role="status" className="banner notice" lang={locale}>
           {notice}
-          <IconButton label={copy.dismiss} variant="ghost" onClick={() => setNotice(null)}>
+          <IconButton
+            label={copy.dismiss}
+            variant="ghost"
+            onClick={() => {
+              setNotice(null);
+              document.getElementById('main')?.focus({ preventScroll: true });
+            }}
+          >
             <XIcon aria-hidden="true" />
           </IconButton>
         </Alert>

@@ -22,7 +22,7 @@ import {
   type User,
   type WorkOrder,
 } from '@fieldwork/contracts';
-import type { State } from '@fieldwork/offline';
+import { searchQueuedReports, type State } from '@fieldwork/offline';
 import {
   inspectionCopy,
   languageNames,
@@ -47,7 +47,8 @@ import {
 } from './notebook-icons';
 
 type QueueItem = State['outbox'][number];
-type Entry = { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: QueueItem };
+type Entry =
+  { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: QueueItem; order?: WorkOrder };
 const dateFilters = ['overdue', 'today', 'next'] as const;
 type DateFilter = (typeof dateFilters)[number];
 export type AssignmentFilter =
@@ -192,7 +193,11 @@ export default function WorkspacePage({
     [state.orders, state.drafts, queuedOrders],
   );
   const entries = useMemo<Entry[]>(() => {
-    if (view === 'outbox') return state.outbox.map((item) => ({ kind: 'queued', item }));
+    if (view === 'outbox')
+      return searchQueuedReports(state.orders, state.outbox, query).map((entry) => ({
+        kind: 'queued',
+        ...entry,
+      }));
     const through = assignmentFilter === 'next' ? nextSevenDaysEnd(today) : today;
     const orders = state.orders.filter((order) => {
       if (!`${order.reference} ${order.title} ${order.site.name}`.toLowerCase().includes(query))
@@ -219,6 +224,15 @@ export default function WorkspacePage({
     return orders.map((order) => ({ kind: 'order', order }));
   }, [state.orders, state.outbox, queuedOrders, savedDrafts, query, assignmentFilter, today, view]);
   const queuedReports = state.outbox.length;
+  const clearSearch = search ? (
+    <Button
+      title={copy.clearSearch}
+      icon={X}
+      iconOnly
+      variant="ghost"
+      onPress={() => onSearchChange('')}
+    />
+  ) : undefined;
   const queuedLabel = copy.pending(queuedReports);
   return (
     <FlatList
@@ -294,6 +308,19 @@ export default function WorkspacePage({
               retrying={busy}
             />
           )}
+          {view === 'outbox' && (queuedReports > 0 || search) ? (
+            <Field
+              label={copy.searchOutbox}
+              placeholder={copy.searchOutboxHint}
+              actionLabels={signInCopy[locale]}
+              value={search}
+              onChangeText={onSearchChange}
+              autoCapitalize="none"
+              autoCorrect={false}
+              testID="outbox-search"
+              trailingAction={clearSearch}
+            />
+          ) : null}
           {view === 'assignments' && (
             <View style={styles.searchTools}>
               <View style={styles.searchRow}>
@@ -307,17 +334,7 @@ export default function WorkspacePage({
                     autoCapitalize="none"
                     autoCorrect={false}
                     testID="assignment-search"
-                    trailingAction={
-                      search ? (
-                        <Button
-                          title={copy.clearSearch}
-                          icon={X}
-                          iconOnly
-                          variant="ghost"
-                          onPress={() => onSearchChange('')}
-                        />
-                      ) : undefined
-                    }
+                    trailingAction={clearSearch}
                   />
                 </View>
                 <Button
@@ -387,13 +404,19 @@ export default function WorkspacePage({
       }
       renderItem={({ item: entry }) => {
         if (entry.kind === 'queued') {
-          const { item } = entry;
-          const order = state.orders.find((order) => order.id === item.orderId);
+          const { item, order } = entry;
           return (
             <Panel style={styles.queueCard}>
-              <Copy variant="caption" style={{ color: colors.amber }}>
-                {item.state === 'blocked' ? copy.needsAttention : copy.awaitingConfirmation}
-              </Copy>
+              <View style={styles.metadata}>
+                {order && (
+                  <Copy variant="reference" muted>
+                    {order.reference}
+                  </Copy>
+                )}
+                <Copy variant="caption" style={{ color: colors.amber }}>
+                  {item.state === 'blocked' ? copy.needsAttention : copy.awaitingConfirmation}
+                </Copy>
+              </View>
               <Copy accessibilityRole="header" variant="record">
                 {order?.title ?? copy.savedInspection}
               </Copy>
@@ -480,7 +503,9 @@ export default function WorkspacePage({
         <Notice
           title={
             view === 'outbox'
-              ? copy.upToDate
+              ? queuedReports > 0
+                ? copy.noQueuedMatch
+                : copy.upToDate
               : busy
                 ? copy.loading
                 : query || assignmentFilter
@@ -489,7 +514,9 @@ export default function WorkspacePage({
           }
         >
           {view === 'outbox'
-            ? copy.outboxEmpty
+            ? queuedReports > 0
+              ? copy.noQueuedMatchHint
+              : copy.outboxEmpty
             : busy
               ? copy.loadingHint
               : assignmentFilter

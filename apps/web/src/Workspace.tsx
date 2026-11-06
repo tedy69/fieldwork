@@ -35,7 +35,7 @@ import {
   type OrderSeriesDetail,
 } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
-import { emptyState, type State } from '@fieldwork/offline';
+import { emptyState, searchQueuedReports, type State } from '@fieldwork/offline';
 import {
   inspectionCopy,
   languageNames,
@@ -95,6 +95,11 @@ export default function Workspace({
   const [filter, setFilter] = useState('ALL');
   const statusFilterToolbar = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState('');
+  const [outboxSearch, setOutboxSearch] = useState('');
+  const queuedReports = useMemo(
+    () => searchQueuedReports(state.orders, state.outbox, outboxSearch),
+    [state.orders, state.outbox, outboxSearch],
+  );
   const [dueFrom, setDueFrom] = useState('');
   const [dueThrough, setDueThrough] = useState('');
   const [datesOpen, setDatesOpen] = useState(false);
@@ -560,18 +565,36 @@ export default function Workspace({
             <>
               <PageHeading title={notebook.outbox} description={copy.outboxIntro} />
               <div className="outbox-list">
+                {(state.outbox.length > 0 || outboxSearch) && (
+                  <div className="outbox-search">
+                    <SearchField
+                      aria-label={notebook.searchOutbox}
+                      clearLabel={notebook.clearSearch}
+                      value={outboxSearch}
+                      onValueChange={setOutboxSearch}
+                      placeholder={notebook.searchOutboxHint}
+                    />
+                  </div>
+                )}
                 {state.outbox.length === 0 ? (
                   <Empty title={notebook.upToDate} description={copy.outboxEmpty} />
+                ) : queuedReports.length === 0 ? (
+                  <div role="status">
+                    <Empty
+                      title={notebook.noQueuedMatch}
+                      description={notebook.noQueuedMatchHint}
+                    />
+                  </div>
                 ) : (
-                  state.outbox.map((item) => (
+                  queuedReports.map(({ item, order }) => (
                     <Card className="outbox-item" key={item.input.mutationId}>
-                      <span className="eyebrow">
-                        {item.state === 'blocked' ? copy.blocked : copy.waiting}
-                      </span>
-                      <h2>
-                        {state.orders.find((order) => order.id === item.orderId)?.title ??
-                          item.orderId}
-                      </h2>
+                      <div className="outbox-meta">
+                        {order && <span className="reference">{order.reference}</span>}
+                        <span className="eyebrow">
+                          {item.state === 'blocked' ? copy.blocked : copy.waiting}
+                        </span>
+                      </div>
+                      <h2>{order?.title ?? item.orderId}</h2>
                       <p>{item.input.summary}</p>
                       {item.error && (!sessionExpired || item.state === 'blocked') && (
                         <p className="error">{item.error}</p>

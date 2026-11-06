@@ -346,6 +346,7 @@ function Notebook({
   const [selected, setSelected] = useState<string | null>(null);
   const [notebookView, setNotebookView] = useState<'assignments' | 'outbox'>('assignments');
   const [search, setSearch] = useState('');
+  const [outboxSearch, setOutboxSearch] = useState('');
   const [assignmentFilter, setAssignmentFilter] = useState<AssignmentFilter>(null);
   const listOffset = useRef(0);
   useEffect(() => {
@@ -420,10 +421,11 @@ function Notebook({
           listOffset.current = 0;
           setNotebookView(view);
         }}
-        search={search}
+        search={notebookView === 'outbox' ? outboxSearch : search}
         onSearchChange={(search) => {
           listOffset.current = 0;
-          setSearch(search);
+          if (notebookView === 'outbox') setOutboxSearch(search);
+          else setSearch(search);
         }}
         assignmentFilter={assignmentFilter}
         onAssignmentFilterChange={(filter) => {

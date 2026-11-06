@@ -18,6 +18,8 @@ Use the ordinary assignment fields (`title`, `instructions`, `siteId`, `template
 
 Choose **Weekends (Sat–Sun)** to schedule each Saturday and Sunday. The first visit must fall on a weekend. Use **Weekly** from a Saturday or Sunday to schedule just that day each week.
 
+Choose **Selected days** for a schedule such as Monday and Thursday. Include the day of the first visit in the selection. The API accepts the selected days in `repeatDays` using `mon` through `sun`. Skipped dates apply to the selected days as usual.
+
 Weekday schedules include public holidays. They are a Monday–Friday calendar rule, not a locale-specific business-day or holiday calendar. For example, a seven-occurrence batch starting Friday 2026-12-25 produces Dec 25, 28, 29, 30, 31, Jan 1, and Jan 4. Those dates are synthetic planning examples.
 
 `monthly` repeats on the original day of each month. If that day is unavailable, the occurrence uses that month's last day. For example, Jan 31, 2027 produces Jan 31, Feb 28, Mar 31, Apr 30. Jan 30 produces Jan 30, Feb 28, Mar 30. Starting Feb 28 repeats on the 28th; this is an original-day rule rather than an end-of-month mode. Weekend and holiday dates remain included. The selector explains the shorter-month behavior before assignment, and recovered batches retain the same rule and preview.

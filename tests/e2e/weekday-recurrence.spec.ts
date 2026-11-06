@@ -152,6 +152,78 @@ test('weekend repeats preview only Saturdays and Sundays and respect a skipped v
   ).toContainText('Weekends (Sat–Sun)');
 });
 
+test('selected repeat days survive a lost response and can be confirmed without duplicates', async ({
+  page,
+  context,
+}) => {
+  const title = 'Selected days calendar QA';
+  await page.setViewportSize({ width: 320, height: 844 });
+  await login(page);
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await page.getByRole('button', { name: 'Assign recurring work', exact: true }).click();
+  await fill(page, title);
+  const form = dialog(page);
+  await form.getByRole('combobox', { name: 'Repeat', exact: true }).selectOption('selected-days');
+  await form.getByLabel('Due date', { exact: true }).fill('2026-12-28');
+  await form.getByRole('combobox', { name: 'Ends', exact: true }).selectOption('date');
+  await form.getByLabel('End date', { exact: true }).fill('2027-01-07');
+  const days = form.getByRole('group', { name: 'Repeat days', exact: true });
+  await days.getByRole('button', { name: 'Thursday', exact: true }).click();
+  await expect(
+    form.getByRole('button', { name: 'Assign work orders', exact: true }),
+  ).toBeDisabled();
+  const monday = days.getByRole('button', { name: 'Monday', exact: true });
+  await monday.focus();
+  await page.keyboard.press('Space');
+  await expect(monday).toHaveAttribute('aria-pressed', 'true');
+  await form.getByText('Skip dates (optional)', { exact: true }).click();
+  await form.getByLabel('Date to skip', { exact: true }).fill('2026-12-31');
+  await form.getByRole('button', { name: 'Add date', exact: true }).click();
+  await expect(dates(page)).toHaveCount(3);
+  expect(
+    await dates(page).evaluateAll((nodes) => nodes.map((node) => node.getAttribute('datetime'))),
+  ).toEqual(['2026-12-28', '2027-01-04', '2027-01-07']);
+  expect(await form.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+  await days.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: test.info().outputPath('selected-days-phone.png') });
+
+  let original: CreateOrderSeries | undefined;
+  await page.route(endpoint, async (route) => {
+    original = route.request().postDataJSON();
+    await route.fetch();
+    await route.abort('failed');
+  });
+  await form.getByRole('button', { name: 'Assign 3 work orders', exact: true }).click();
+  await expect(form.getByText('Mon, Thu · 3 work orders', { exact: true })).toBeVisible();
+  await form.getByRole('button', { name: 'Close', exact: true }).click();
+  await page.unroute(endpoint);
+  await context.setOffline(true);
+  await page.reload();
+  await page.getByRole('button', { name: 'Recover recurring batch', exact: true }).click();
+  await expect(form.getByText('Mon, Thu · 3 work orders', { exact: true })).toBeVisible();
+  const retry = form.getByRole('button', { name: 'Retry saved batch', exact: true });
+  await expect(retry).toBeDisabled();
+  await context.setOffline(false);
+  const confirmation = page.waitForResponse(
+    (r) => r.url().endsWith('/work-order-series') && r.request().method() === 'POST',
+  );
+  await retry.click();
+  const response = await confirmation;
+  expect(response.status()).toBe(200);
+  expect(response.request().postDataJSON()).toEqual(original);
+  const receipt: OrderSeriesReceipt = await response.json();
+  expect(receipt.repeatDays).toEqual(['mon', 'thu']);
+  await expect(form).toHaveCount(0);
+  await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
+  await page.getByRole('button', { name: 'Recurring batches', exact: true }).click();
+  const ledger = page.getByRole('dialog', { name: 'Recurring batches', exact: true });
+  await expect(
+    ledger.getByRole('button', { name: `View batch ${receipt.id}: ${title}`, exact: true }),
+  ).toContainText('Mon, Thu');
+});
+
 test('weekday recovery survives an offline reload and replays the original request without duplicate assignments', async ({
   page,
   context,

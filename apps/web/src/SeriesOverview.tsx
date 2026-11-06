@@ -16,7 +16,7 @@ import { client, labels, message } from './lib';
 import { calendarLabel } from './calendar';
 import { downloadCsv, formatCsv } from './csv';
 import { isOverdue } from './dates';
-import { recurrenceLabels } from './recurrence-labels';
+import { recurrenceLabels, recurrenceSummary } from './recurrence-labels';
 import { SkippedDates } from './RecurrenceExceptions';
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
@@ -443,7 +443,7 @@ export default function SeriesOverview({
                           </span>
                         )}
                         <span className="muted">
-                          {recurrenceLabels[batch.frequency]} · {batch.occurrences} orders ·{' '}
+                          {recurrenceSummary(batch)} · {batch.occurrences} orders ·{' '}
                           {batch.assignee.name}
                         </span>
                         <span className="muted">

@@ -4,18 +4,20 @@ import { CalendarPlusIcon } from '@phosphor-icons/react/dist/csr/CalendarPlus';
 import {
   CreateOrderSeriesSchema,
   RecurrenceFrequencySchema,
+  RepeatDaySchema,
   recurrenceDates,
   recurrenceDatesThrough,
   type Catalog,
   type CreateOrderSeries,
   type OrderSeriesReceipt,
   type Recurrence,
+  type RepeatDay,
 } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { pendingSeriesFor, PendingDispatchError } from './pending-series';
 import { client, message } from './lib';
 import { localDate } from './dates';
-import { recurrenceLabels } from './recurrence-labels';
+import { recurrenceLabels, recurrenceSummary, repeatDayLabels } from './recurrence-labels';
 import AssignmentFields from './AssignmentFields';
 import RecurrenceExceptions, { SkippedDates } from './RecurrenceExceptions';
 import { Button } from './components/ui/button';
@@ -28,7 +30,7 @@ import {
   NativeSelectOption as Option,
 } from './components/ui/native-select';
 import { Alert } from './components/ui/alert';
-import { FieldError, FieldSet } from './components/ui/field';
+import { FieldError, FieldLegend, FieldSet } from './components/ui/field';
 import {
   Dialog,
   DialogContent,
@@ -37,17 +39,10 @@ import {
   DialogHeader,
 } from './components/ui/dialog';
 
-function datesFor(
-  dueDate: string,
-  frequency: Recurrence['frequency'],
-  occurrences: number,
-  skipDates?: string[],
-  through?: string,
-) {
+function datesFor(schedule: Recurrence, through?: string) {
   try {
-    const schedule = { dueDate, frequency, skipDates };
     return through === undefined
-      ? recurrenceDates({ ...schedule, occurrences })
+      ? recurrenceDates(schedule)
       : recurrenceDatesThrough(schedule, through);
   } catch {
     return [];
@@ -233,6 +228,7 @@ function RecurringDialog({
   const [frequency, setFrequency] = useState<Recurrence['frequency']>(
     pending?.frequency ?? 'weekly',
   );
+  const [repeatDays, setRepeatDays] = useState<RepeatDay[]>(pending?.repeatDays ?? []);
   const [occurrences, setOccurrences] = useState(pending?.occurrences ?? 4);
   const [endMode, setEndMode] = useState<'count' | 'date'>('count');
   const [endDate, setEndDate] = useState('');
@@ -247,15 +243,23 @@ function RecurringDialog({
   useEffect(() => {
     if (error && pending && !busy) retry.current?.focus();
   }, [error, pending, busy]);
-  const activeDates = pending
-    ? datesFor(pending.dueDate, pending.frequency, pending.occurrences, pending.skipDates)
-    : datesFor(
-        dueDate,
-        frequency,
-        occurrences,
-        skipDates,
-        endMode === 'date' ? endDate : undefined,
-      );
+  const schedule = pending ?? {
+    dueDate,
+    frequency,
+    occurrences,
+    skipDates,
+    repeatDays: frequency === 'selected-days' ? repeatDays : undefined,
+  };
+  const activeDates = datesFor(
+    {
+      dueDate: schedule.dueDate,
+      frequency: schedule.frequency,
+      occurrences: schedule.occurrences,
+      skipDates: schedule.skipDates,
+      repeatDays: schedule.repeatDays,
+    },
+    !pending && endMode === 'date' ? endDate : undefined,
+  );
   async function send(input: CreateOrderSeries, reserve: boolean) {
     setBusy(true);
     setError('');
@@ -295,6 +299,7 @@ function RecurringDialog({
       frequency,
       occurrences: activeDates.length,
       ...(skipDates.length ? { skipDates } : {}),
+      ...(frequency === 'selected-days' ? { repeatDays } : {}),
     });
     if (!parsed.success) {
       setError('Check the assignment fields and choose 2–52 valid dates.');
@@ -376,7 +381,7 @@ function RecurringDialog({
             </Alert>
             <h3>{pending.title}</h3>
             <p className="muted">
-              {recurrenceLabels[pending.frequency]} · {pending.occurrences} work orders
+              {recurrenceSummary(pending)} · {pending.occurrences} work orders
             </p>
             <DatePreview dates={activeDates} />
             <SkippedDates dates={pending.skipDates} />
@@ -405,6 +410,7 @@ function RecurringDialog({
                     setDueDate(pending.dueDate);
                     setSiteId(pending.siteId);
                     setFrequency(pending.frequency);
+                    setRepeatDays(pending.repeatDays ?? []);
                     setOccurrences(pending.occurrences);
                     setEndMode('count');
                     setSkipDates(pending.skipDates ?? []);
@@ -491,6 +497,32 @@ function RecurringDialog({
                   </Label>
                 )}
               </div>
+              {frequency === 'selected-days' && (
+                <FieldSet>
+                  <FieldLegend>Repeat days</FieldLegend>
+                  <div className="repeat-day-options">
+                    {RepeatDaySchema.options.map((day) => (
+                      <Button
+                        key={day}
+                        type="button"
+                        variant="outline"
+                        aria-label={repeatDayLabels[day]}
+                        aria-pressed={repeatDays.includes(day)}
+                        onClick={() =>
+                          setRepeatDays((days) =>
+                            days.includes(day)
+                              ? days.filter((entry) => entry !== day)
+                              : [...days, day],
+                          )
+                        }
+                      >
+                        {repeatDayLabels[day].slice(0, 3)}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="muted">Include the day of the first visit.</p>
+                </FieldSet>
+              )}
               <RecurrenceExceptions
                 dates={skipDates}
                 candidate={skipDate}

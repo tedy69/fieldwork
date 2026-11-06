@@ -367,6 +367,34 @@ describe('recurring assignments', () => {
     expect(retry.json()).toEqual(receipt);
     expect(counts()).toEqual([7, 4, 1, 4]);
   });
+  it('stores selected days once and treats a reordered retry as the same request', async () => {
+    const payload = {
+      ...input(),
+      frequency: 'selected-days',
+      repeatDays: ['thu', 'mon'],
+      skipDates: ['2026-12-31'],
+    };
+    const before = counts();
+    for (const repeatDays of [undefined, ['thu'], ['mon', 'mon']])
+      expect((await create({ ...payload, repeatDays })).statusCode).toBe(422);
+    expect(counts()).toEqual(before);
+    const created = await create(payload);
+    expect(created.statusCode).toBe(201);
+    const receipt = OrderSeriesReceiptSchema.parse(created.json());
+    expect(receipt.repeatDays).toEqual(['mon', 'thu']);
+    expect(receipt.orders.map((order) => order.dueDate)).toEqual([
+      '2026-12-28',
+      '2027-01-04',
+      '2027-01-07',
+    ]);
+    const retry = await create({ ...payload, repeatDays: ['mon', 'thu'] });
+    expect(retry.statusCode).toBe(200);
+    expect(retry.json()).toEqual(receipt);
+    const conflict = await create({ ...payload, repeatDays: ['mon', 'fri'] });
+    expect(conflict.statusCode).toBe(422);
+    expect(conflict.json().error.code).toBe('MUTATION_REUSED');
+    expect(counts()).toEqual([6, 3, 1, 3]);
+  });
   it('rejects a changed session account before creating or replaying a batch', async () => {
     const payload = { ...input(), expectedActorId: 'manager' };
     expect((await create(payload)).statusCode).toBe(201);

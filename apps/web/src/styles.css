@@ -1063,6 +1063,22 @@ main#main {
   padding: 0;
   margin: 0;
 }
+.repeat-day-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
+  gap: 8px;
+  margin: 8px 0;
+}
+.repeat-day-options .ui-button.ui-button-outline {
+  min-width: 0;
+  padding-inline: 6px;
+  white-space: nowrap;
+}
+.repeat-day-options .ui-button[aria-pressed='true'] {
+  background: var(--surface-raised);
+  border-color: var(--amber);
+  font-weight: 700;
+}
 .recurrence-preview {
   margin: 18px 0;
   padding: 16px;

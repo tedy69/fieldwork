@@ -53,6 +53,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Manager coordinate editing for existing sites, with conflict recovery, explicit clearing, and unchanged inspection snapshots.
 - [x] Weekday-only recurring batches with Monday–Friday previews, saved-request recovery, and batch browsing.
 - [x] Weekend-only recurring batches with Saturday–Sunday previews and skipped dates.
+- [x] Weekly batches on selected days with date previews and saved-request recovery.
 - [x] Monthly recurring batches with original-day anchoring, shorter-month handling, date previews, saved-request recovery, and batch browsing.
 - [x] Month-end recurring batches that stay on each month's last day, with date previews and saved-request recovery.
 - [x] Recurring batches on the last weekday of each month, with weekend adjustment and saved-request recovery.

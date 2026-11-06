@@ -197,12 +197,24 @@ test('manager filters current batch visits offline and keeps focus when an order
   await expect(rows).toHaveCount(1);
   await expect(rows.first()).toContainText(late.reference);
   await expect(selected.getByText('1 of 2 visits', { exact: true })).toBeVisible();
+  await filter.selectOption('rescheduled');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first().locator('time').first()).toHaveAttribute('datetime', late.dueDate);
+  await expect(rows.first().locator('time').last()).toHaveAttribute('datetime', '2027-01-09');
   expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
   await context.setOffline(false);
   await refresh.focus();
   await page.keyboard.press('Enter');
   await expect(refresh).toBeEnabled();
-  await expect(filter).toHaveValue('upcoming');
+  await expect(filter).toHaveValue('rescheduled');
+  await rows
+    .first()
+    .getByRole('button', { name: `Change due date for ${late.reference}` })
+    .click();
+  await selected.getByLabel('New due date', { exact: true }).fill(late.dueDate);
+  await selected.getByRole('button', { name: 'Save due date', exact: true }).click();
+  await expect(filter).toBeFocused();
+  await expect(rows).toHaveCount(0);
   await option(page, other).click();
   await expect(filter).toHaveValue('all');
   await expect(rows).toHaveCount(2);

@@ -80,7 +80,7 @@ Use **Search batches** to find a saved batch by title, original worker or site n
 
 In a web work order, use the copy icon beside its reference to paste that number into the batch search.
 
-Use **Show visits** to narrow a loaded batch. Upcoming field work includes unfinished assignments due today or later. Overdue follows the work-order list and uses the current due date and the device's local date. The filter works offline and stays selected when you refresh the same batch.
+Use **Show visits** to narrow a loaded batch. Upcoming field work includes unfinished assignments due today or later. Overdue follows the work-order list and uses the current due date and the device's local date. **Rescheduled** shows visits whose current due date differs from the planned date. The filter works offline and stays selected when you refresh the same batch.
 
 **Export batch visits as CSV** downloads the visits in the current filter, including both due dates and the current worker and status. The export works from loaded batch data while offline. It contains schedule rows without inspection report content.
 

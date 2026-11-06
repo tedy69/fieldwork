@@ -91,4 +91,6 @@ test('worker To do filter keeps queued, submitted and approved work out of the o
   await expect(
     page.getByRole('button', { name: `Buka ${assigned.reference}: ${assigned.title}` }),
   ).not.toHaveAccessibleDescription('Draf tersimpan di perangkat ini');
+  await page.getByRole('button', { name: 'Draf', exact: true }).press('Enter');
+  await expect(rows).toHaveCount(0);
 });

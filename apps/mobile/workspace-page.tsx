@@ -50,12 +50,14 @@ type QueueItem = State['outbox'][number];
 type Entry = { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: QueueItem };
 const dateFilters = ['overdue', 'today', 'next'] as const;
 type DateFilter = (typeof dateFilters)[number];
-export type AssignmentFilter = WorkOrder['status'] | DateFilter | 'urgent' | 'toDo' | null;
+export type AssignmentFilter =
+  WorkOrder['status'] | DateFilter | 'urgent' | 'toDo' | 'drafts' | null;
 const filters: AssignmentFilter[] = [
   null,
   ...dateFilters,
   'urgent',
   'toDo',
+  'drafts',
   ...StatusSchema.options,
 ];
 
@@ -165,6 +167,7 @@ export default function WorkspacePage({
     next: copy.nextSevenDays,
     urgent: copy.urgentWork,
     toDo: copy.toDo,
+    drafts: copy.drafts,
     ...copy.status,
   };
   const filterLabel = (filter: AssignmentFilter) =>
@@ -174,28 +177,47 @@ export default function WorkspacePage({
     () => new Set(state.outbox.map((item) => item.orderId)),
     [state.outbox],
   );
+  const savedDrafts = useMemo(
+    () =>
+      new Set(
+        state.orders
+          .filter(
+            (order) =>
+              awaitsInspection(order) &&
+              !queuedOrders.has(order.id) &&
+              hasDraftContent(state.drafts[order.id]),
+          )
+          .map((order) => order.id),
+      ),
+    [state.orders, state.drafts, queuedOrders],
+  );
   const entries = useMemo<Entry[]>(() => {
     if (view === 'outbox') return state.outbox.map((item) => ({ kind: 'queued', item }));
     const through = assignmentFilter === 'next' ? nextSevenDaysEnd(today) : today;
     const orders = state.orders.filter((order) => {
-      const matches =
-        assignmentFilter === 'overdue'
-          ? isOverdue(order, today)
-          : assignmentFilter === 'urgent'
-            ? isUrgentOpenOrder(order)
-            : assignmentFilter === 'toDo'
-              ? awaitsInspection(order) && !queuedOrders.has(order.id)
-              : assignmentFilter === 'today' || assignmentFilter === 'next'
-                ? isOpenDueBetween(order, today, through)
-                : !assignmentFilter || order.status === assignmentFilter;
-      return (
-        matches &&
-        `${order.reference} ${order.title} ${order.site.name}`.toLowerCase().includes(query)
-      );
+      if (!`${order.reference} ${order.title} ${order.site.name}`.toLowerCase().includes(query))
+        return false;
+      switch (assignmentFilter) {
+        case null:
+          return true;
+        case 'overdue':
+          return isOverdue(order, today);
+        case 'urgent':
+          return isUrgentOpenOrder(order);
+        case 'toDo':
+          return awaitsInspection(order) && !queuedOrders.has(order.id);
+        case 'drafts':
+          return savedDrafts.has(order.id);
+        case 'today':
+        case 'next':
+          return isOpenDueBetween(order, today, through);
+        default:
+          return order.status === assignmentFilter;
+      }
     });
     if (assignmentFilter === 'next') orders.sort(compareOrdersByDueDate);
     return orders.map((order) => ({ kind: 'order', order }));
-  }, [state.orders, state.outbox, queuedOrders, query, assignmentFilter, today, view]);
+  }, [state.orders, state.outbox, queuedOrders, savedDrafts, query, assignmentFilter, today, view]);
   const queuedReports = state.outbox.length;
   const queuedLabel = copy.pending(queuedReports);
   return (
@@ -317,6 +339,7 @@ export default function WorkspacePage({
                     <Button
                       key={filter ?? 'all'}
                       title={filterLabel(filter)}
+                      icon={filter === 'drafts' ? PencilSimple : undefined}
                       variant="outline"
                       selected={filter === assignmentFilter}
                       style={styles.statusChoice}
@@ -412,8 +435,7 @@ export default function WorkspacePage({
         const { order } = entry;
         const due = assignmentDate(order.dueDate, locale);
         const queued = queuedOrders.has(order.id);
-        const savedDraft =
-          awaitsInspection(order) && !queued && hasDraftContent(state.drafts[order.id]);
+        const savedDraft = savedDrafts.has(order.id);
         const draftHint = savedDraft ? ` ${inspectionCopy[locale].draftSaved}.` : '';
         return (
           <Pressable

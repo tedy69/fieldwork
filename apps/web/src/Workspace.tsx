@@ -227,6 +227,7 @@ export default function Workspace({
     NEXT_SEVEN_DAYS: notebook.nextSevenDays,
     URGENT: notebook.urgentWork,
     TO_DO: notebook.toDo,
+    DRAFTS: notebook.drafts,
     ...notebook.status,
   };
   const hasSiteClosures =
@@ -260,23 +261,31 @@ export default function Workspace({
     [state.orders, state.drafts, queuedOrders, user.role],
   );
   const draftLabel = inspectionCopy[locale].draftSaved;
-  const matching = state.orders.filter(
-    (order) =>
-      (!closureOnly || closureVisits.has(order.id)) &&
-      (filter === 'ALL' ||
-        (filter === 'OVERDUE'
-          ? isOverdue(order, today)
-          : filter === 'URGENT'
-            ? isUrgentOpenOrder(order)
-            : filter === 'TO_DO'
-              ? awaitsInspection(order) && !queuedOrders.has(order.id)
-              : dateWindow
-                ? isOpenDueBetween(order, today, windowEnd)
-                : order.status === filter)) &&
+  const query = search.toLowerCase();
+  const matching = state.orders.filter((order) => {
+    const matchesSearch =
       `${order.title} ${order.site.name} ${order.reference} ${order.assignee.name}`
         .toLowerCase()
-        .includes(search.toLowerCase()),
-  );
+        .includes(query);
+    if (!matchesSearch || (closureOnly && !closureVisits.has(order.id))) return false;
+    switch (filter) {
+      case 'ALL':
+        return true;
+      case 'OVERDUE':
+        return isOverdue(order, today);
+      case 'URGENT':
+        return isUrgentOpenOrder(order);
+      case 'TO_DO':
+        return awaitsInspection(order) && !queuedOrders.has(order.id);
+      case 'DRAFTS':
+        return savedDrafts.has(order.id);
+      case 'DUE_TODAY':
+      case 'NEXT_SEVEN_DAYS':
+        return isOpenDueBetween(order, today, windowEnd);
+      default:
+        return order.status === filter;
+    }
+  });
   const period = plannerView === 'month' ? monthDates(plannerAnchor) : weekDates(plannerAnchor);
   const closedDays = new Set(
     matching
@@ -776,14 +785,22 @@ export default function Workspace({
                           'NEXT_SEVEN_DAYS',
                           'URGENT',
                           'TO_DO',
+                          'DRAFTS',
                           'ASSIGNED',
                           'SUBMITTED',
                           'APPROVED',
                           'CHANGES_REQUESTED',
                         ] as const
                       )
-                        .filter((id) => id !== 'TO_DO' || user.role === 'worker')
-                        .map((id) => ({ id, title: filterLabels[id] }))}
+                        .filter(
+                          (id) => user.role === 'worker' || (id !== 'TO_DO' && id !== 'DRAFTS'),
+                        )
+                        .map((id) => ({
+                          id,
+                          title: filterLabels[id],
+                          icon:
+                            id === 'DRAFTS' ? <PencilSimpleIcon aria-hidden="true" /> : undefined,
+                        }))}
                     />
                     {filter !== 'ALL' && (
                       <IconButton

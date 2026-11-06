@@ -60,6 +60,18 @@ test('offline outbox search keeps queued reports separate from assignment search
   await search.fill(first.reference.toLowerCase());
   await expect(cards).toHaveCount(1);
   await expect(cards).toContainText(reports[0].summary);
+  const openSaved = cards.getByRole('button', { name: 'Open saved assignment', exact: true });
+  await expect(openSaved).toHaveAccessibleDescription(first.title);
+  await openSaved.press('Enter');
+  await expect(page.getByRole('heading', { name: first.title, exact: true })).toBeFocused();
+  await expect(page.getByText('Report queued on this device', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save report for sync', exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByRole('button', { name: 'Back to sync outbox', exact: true }).press('Enter');
+  await expect(openSaved).toBeFocused();
+  await expect(search).toHaveValue(first.reference.toLowerCase());
+  await expect(cards).toHaveCount(1);
   await search.fill('LATCH');
   await expect(cards).toHaveCount(1);
   await expect(cards).toContainText(second.title);

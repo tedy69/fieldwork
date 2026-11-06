@@ -778,6 +778,9 @@ main#main {
 .outbox-item h2 {
   margin-top: 12px;
 }
+.outbox-open {
+  margin-bottom: 12px;
+}
 .outbox-list {
   margin-top: 30px;
 }

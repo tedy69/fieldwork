@@ -12,6 +12,7 @@ import {
 import {
   awaitsInspection,
   compareOrdersByDueDate,
+  hasDraftContent,
   isOpenDueBetween,
   isUrgentOpenOrder,
   nextSevenDaysEnd,
@@ -23,6 +24,7 @@ import {
 } from '@fieldwork/contracts';
 import type { State } from '@fieldwork/offline';
 import {
+  inspectionCopy,
   languageNames,
   languageTags,
   notebookCopy,
@@ -37,6 +39,7 @@ import {
   ClipboardText,
   FunnelSimple,
   Globe,
+  PencilSimple,
   Tray,
   SignIn,
   SignOut,
@@ -408,11 +411,15 @@ export default function WorkspacePage({
         }
         const { order } = entry;
         const due = assignmentDate(order.dueDate, locale);
+        const queued = queuedOrders.has(order.id);
+        const savedDraft =
+          awaitsInspection(order) && !queued && hasDraftContent(state.drafts[order.id]);
+        const draftHint = savedDraft ? ` ${inspectionCopy[locale].draftSaved}.` : '';
         return (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`${copy.open} ${order.reference}: ${order.title}`}
-            accessibilityHint={`${copy.due} ${due}. ${copy.status[order.status]}.`}
+            accessibilityHint={`${copy.due} ${due}. ${copy.status[order.status]}.${draftHint}`}
             onPress={() => onOpen(order.id)}
             style={({ pressed }) => [styles.order, pressed && styles.orderPressed]}
           >
@@ -425,10 +432,15 @@ export default function WorkspacePage({
                   {copy.urgent}
                 </Copy>
               )}
-              {queuedOrders.has(order.id) && (
+              {queued && (
                 <Copy variant="caption" style={{ color: colors.amber }}>
                   {copy.queued}
                 </Copy>
+              )}
+              {savedDraft && (
+                <View accessible={false} importantForAccessibility="no-hide-descendants">
+                  <PencilSimple size={16} color={colors.muted} />
+                </View>
               )}
             </View>
             <Copy variant="record">{order.title}</Copy>

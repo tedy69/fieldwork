@@ -885,6 +885,18 @@ export const DraftSchema = z.object({
   photos: z.array(PhotoSchema).max(MAX_REPORT_PHOTOS),
 });
 export type Draft = z.infer<typeof DraftSchema>;
+export function hasDraftContent(draft: Draft | undefined) {
+  return Boolean(
+    draft &&
+    (draft.summary.trim() ||
+      draft.photos.length ||
+      draft.answers.some(
+        ({ note, value, text, reading }) =>
+          note.trim() ||
+          (value === 'text' ? text?.trim() : value === 'number' ? reading?.trim() : value),
+      )),
+  );
+}
 export function parseReading(value: string | undefined): number | null {
   const text = value?.trim() ?? '';
   if (text.length > 100 || !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(text)) return null;

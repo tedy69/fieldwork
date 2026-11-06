@@ -15,6 +15,7 @@ import {
   answerComplete,
   answerLabel,
   blankDraft,
+  hasDraftContent,
   parseReading,
   reportAnswers,
   completedAnswers,
@@ -27,6 +28,20 @@ import {
   type StorageAdapter,
 } from '@fieldwork/offline';
 import { reportCsv } from '../apps/web/src/reportCsv';
+
+it('counts partial readings as draft content without marking empty typed answers', () => {
+  const draft = DraftSchema.parse({
+    answers: [
+      { itemId: 'reading', value: 'number', note: '', reading: '' },
+      { itemId: 'text', value: 'text', note: '', text: ' ' },
+    ],
+    summary: ' ',
+    photos: [],
+  });
+  expect(hasDraftContent(draft)).toBe(false);
+  draft.answers[0].reading = '-';
+  expect(hasDraftContent(draft)).toBe(true);
+});
 
 let fixture: Awaited<ReturnType<typeof buildApp>>;
 const fetcher: typeof fetch = async (url, init) => {

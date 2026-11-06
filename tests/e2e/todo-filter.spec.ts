@@ -88,4 +88,7 @@ test('worker To do filter keeps queued, submitted and approved work out of the o
   await page.getByRole('button', { name: 'Hapus filter tugas', exact: true }).press('Enter');
   await expect(page.getByRole('searchbox', { name: 'Cari tugas' })).toHaveValue(prefix);
   await expect(rows).toHaveCount(4);
+  await expect(
+    page.getByRole('button', { name: `Buka ${assigned.reference}: ${assigned.title}` }),
+  ).not.toHaveAccessibleDescription('Draf tersimpan di perangkat ini');
 });

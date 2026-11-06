@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError } from '@fieldwork/sdk';
 import { languageTags, signInCopy, type Locale } from '@fieldwork/strings';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
@@ -57,6 +57,12 @@ export default function WorkerInvitations({ online, locale }: { online: boolean;
       generation.current++;
     };
   }, [open]);
+  useLayoutEffect(() => {
+    if (freshLink) {
+      linkInput.current?.focus();
+      linkInput.current?.select();
+    }
+  }, [freshLink]);
   function changeOpen(next: boolean) {
     if (!next && writing.current) return;
     generation.current++;
@@ -131,12 +137,6 @@ export default function WorkerInvitations({ online, locale }: { online: boolean;
       form.reset();
       setNotice(copyText.created);
       created = true;
-      requestAnimationFrame(() => {
-        if (linkInput.current?.dataset.invitationId === receipt.invitation.id) {
-          linkInput.current.focus();
-          linkInput.current.select();
-        }
-      });
     } catch (error) {
       if (current === generation.current) {
         const definitive =
@@ -269,7 +269,6 @@ export default function WorkerInvitations({ online, locale }: { online: boolean;
               {copyText.link}
               <Input
                 ref={linkInput}
-                data-invitation-id={freshLink.invitation.id}
                 readOnly
                 value={freshLink.url}
                 onFocus={(event) => event.currentTarget.select()}

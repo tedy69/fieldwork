@@ -23,6 +23,7 @@ import { Label } from './components/ui/label';
 import { Avatar, AvatarFallback } from './components/ui/avatar';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type SetStateAction } from 'react';
 import {
+  awaitsInspection,
   compareOrdersByDueDate,
   isOpenDueBetween,
   isUrgentOpenOrder,
@@ -223,6 +224,7 @@ export default function Workspace({
     DUE_TODAY: notebook.dueToday,
     NEXT_SEVEN_DAYS: notebook.nextSevenDays,
     URGENT: notebook.urgentWork,
+    TO_DO: notebook.toDo,
     ...notebook.status,
   };
   const hasSiteClosures =
@@ -236,6 +238,10 @@ export default function Workspace({
     }
     return visits;
   }, [catalog.sites, hasSiteClosures, state.orders]);
+  const queuedOrders = useMemo(
+    () => new Set(state.outbox.map((item) => item.orderId)),
+    [state.outbox],
+  );
   const matching = state.orders.filter(
     (order) =>
       (!closureOnly || closureVisits.has(order.id)) &&
@@ -244,9 +250,11 @@ export default function Workspace({
           ? isOverdue(order, today)
           : filter === 'URGENT'
             ? isUrgentOpenOrder(order)
-            : dateWindow
-              ? isOpenDueBetween(order, today, windowEnd)
-              : order.status === filter)) &&
+            : filter === 'TO_DO'
+              ? awaitsInspection(order) && !queuedOrders.has(order.id)
+              : dateWindow
+                ? isOpenDueBetween(order, today, windowEnd)
+                : order.status === filter)) &&
       `${order.title} ${order.site.name} ${order.reference} ${order.assignee.name}`
         .toLowerCase()
         .includes(search.toLowerCase()),
@@ -266,9 +274,7 @@ export default function Workspace({
   );
   if (planner || nextWeek) visible.sort(compareOrdersByDueDate);
   const reviewCount = state.orders.filter((order) => order.status === 'SUBMITTED').length;
-  const assignedCount = state.orders.filter(
-    (order) => order.status === 'ASSIGNED' || order.status === 'CHANGES_REQUESTED',
-  ).length;
+  const assignedCount = state.orders.filter(awaitsInspection).length;
   useEffect(() => {
     const title =
       view === 'resources'
@@ -751,12 +757,15 @@ export default function Workspace({
                           'DUE_TODAY',
                           'NEXT_SEVEN_DAYS',
                           'URGENT',
+                          'TO_DO',
                           'ASSIGNED',
                           'SUBMITTED',
                           'APPROVED',
                           'CHANGES_REQUESTED',
                         ] as const
-                      ).map((id) => ({ id, title: filterLabels[id] }))}
+                      )
+                        .filter((id) => id !== 'TO_DO' || user.role === 'worker')
+                        .map((id) => ({ id, title: filterLabels[id] }))}
                     />
                     {filter !== 'ALL' && (
                       <IconButton
@@ -865,7 +874,7 @@ export default function Workspace({
                             {order.priority === 'urgent' && (
                               <span className="urgent">{notebook.urgent}</span>
                             )}
-                            {state.outbox.some((item) => item.orderId === order.id) && (
+                            {queuedOrders.has(order.id) && (
                               <span className="urgent">{notebook.queued}</span>
                             )}
                           </div>

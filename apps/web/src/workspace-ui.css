@@ -736,7 +736,7 @@ form > .ui-field-label {
 .work-board .list-footer {
   padding-block: 16px;
 }
-.work-board .report-export {
+.work-board .workspace-exports {
   margin: 0;
   padding-block: 14px;
   border: 0;

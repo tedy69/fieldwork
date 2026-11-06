@@ -269,6 +269,18 @@ describe('recurring assignments', () => {
       ],
     ],
     [
+      'month-start-weekday',
+      [
+        '2026-08-03',
+        '2026-09-01',
+        '2026-10-01',
+        '2026-11-02',
+        '2026-12-01',
+        '2027-01-01',
+        '2027-02-01',
+      ],
+    ],
+    [
       'monthly',
       [
         '2026-12-31',
@@ -310,12 +322,10 @@ describe('recurring assignments', () => {
         detail.json().orders.map((order: { plannedDueDate: string }) => order.plannedDueDate),
       ).toEqual(receipt.orders.map((order) => order.dueDate));
       const list = await fixture.app.inject({
-        url: '/api/v1/work-order-series',
+        url: `/api/v1/work-order-series?frequency=${frequency}`,
         headers: bearer(manager),
       });
-      expect(
-        list.json().data.find((batch: { id: string }) => batch.id === receipt.id).frequency,
-      ).toBe(frequency);
+      expect(list.json().data).toMatchObject([{ id: receipt.id, frequency }]);
       for (const order of receipt.orders)
         expect(
           (
@@ -549,6 +559,8 @@ describe('recurring assignments', () => {
   it.each([
     { frequency: 'semiweekly' },
     { frequency: 'monthly', dueDate: '9999-12-01' },
+    { frequency: 'month-start-weekday', dueDate: '2026-08-01' },
+    { frequency: 'month-start-weekday', dueDate: '2026-08-04' },
     { frequency: 'biweekly', dueDate: '9999-12-25' },
     { frequency: 'quarterly', dueDate: '9999-10-01' },
     { occurrences: 0 },
@@ -584,7 +596,7 @@ describe('recurring assignments', () => {
     },
   );
 
-  it.each(['weekly', 'monthly'] as const)(
+  it.each(['weekly', 'monthly', 'month-start-weekday'] as const)(
     'retains %s receipts through restart and upgrades schema 2 without changing existing data',
     async (frequency) => {
       const directory = mkdtempSync(join(tmpdir(), 'fieldwork-series-'));
@@ -611,7 +623,11 @@ describe('recurring assignments', () => {
           .map((row) => row.version),
       ).toEqual([1, 2, 3, 4, 5, 6]);
       manager = await login('manager');
-      const payload = { ...input(), frequency };
+      const payload = {
+        ...input(),
+        frequency,
+        ...(frequency === 'month-start-weekday' && { dueDate: '2026-08-03' }),
+      };
       const receipt = (await create(payload)).json();
       await fixture.app.close();
       fixture = await buildApp({ databasePath: path, rateLimits: false });

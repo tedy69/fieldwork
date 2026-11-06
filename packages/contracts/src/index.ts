@@ -561,6 +561,7 @@ export const RecurrenceFrequencySchema = z.enum([
   'weekends',
   'selected-days',
   'monthly',
+  'month-start-weekday',
   'month-end',
   'month-end-weekday',
   'quarterly',
@@ -582,6 +583,13 @@ function isWeekend(date: Date) {
   return day === 0 || day === 6;
 }
 
+function firstWeekdayOfMonth(date: Date) {
+  const start = new Date(date);
+  start.setUTCDate(1);
+  while (isWeekend(start)) start.setUTCDate(start.getUTCDate() + 1);
+  return start.getUTCDate();
+}
+
 function lastDayOfMonth(date: Date, weekdaysOnly: boolean) {
   const end = new Date(date);
   end.setUTCMonth(end.getUTCMonth() + 1, 0);
@@ -597,6 +605,11 @@ function advanceRecurrence(
   originalDay: number,
   repeatDays: RepeatDay[] | undefined,
 ) {
+  if (frequency === 'month-start-weekday') {
+    date.setUTCMonth(date.getUTCMonth() + 1, 1);
+    date.setUTCDate(firstWeekdayOfMonth(date));
+    return;
+  }
   const anchored = frequency === 'monthly' || frequency === 'quarterly';
   if (anchored || frequency === 'month-end' || frequency === 'month-end-weekday') {
     const months = frequency === 'quarterly' ? 3 : 1;
@@ -705,6 +718,15 @@ export const RecurrenceSchema = z
       context.addIssue({
         code: 'custom',
         message: 'Choose a Saturday or Sunday first date for weekend repeats.',
+        path: ['dueDate'],
+      });
+    if (
+      input.frequency === 'month-start-weekday' &&
+      first.getUTCDate() !== firstWeekdayOfMonth(first)
+    )
+      context.addIssue({
+        code: 'custom',
+        message: 'Choose the first weekday of a month for the first visit.',
         path: ['dueDate'],
       });
     const weekdayEnd = input.frequency === 'month-end-weekday';

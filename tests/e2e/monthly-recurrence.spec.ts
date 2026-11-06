@@ -5,13 +5,14 @@ import type { CreateOrderSeries, OrderSeriesReceipt } from '@fieldwork/contracts
 const baseURL = 'http://127.0.0.1:4173';
 const endpoint = '**/api/v1/work-order-series';
 test.use({ timezoneId: 'America/Los_Angeles' });
-for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
+for (const [width, frequency, repeatLabel, initialDate, expectedDates, boundary] of [
   [
     390,
     'monthly',
     'Monthly',
     '2027-01-31',
     ['2027-01-31', '2027-02-28', '2027-03-31', '2027-04-30'],
+    null,
   ],
   [
     1440,
@@ -19,6 +20,7 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
     'Monthly',
     '2027-01-31',
     ['2027-01-31', '2027-02-28', '2027-03-31', '2027-04-30'],
+    null,
   ],
   [
     320,
@@ -26,6 +28,15 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
     'Every three months',
     '2026-08-31',
     ['2026-08-31', '2026-11-30', '2027-02-28', '2027-05-31'],
+    null,
+  ],
+  [
+    320,
+    'month-start-weekday',
+    'First weekday of month',
+    '2026-08-03',
+    ['2026-08-03', '2026-09-01', '2026-10-01', '2026-11-02'],
+    { invalidDate: '2026-08-01', guidance: /Start on the first Monday through Friday/ },
   ],
   [
     320,
@@ -33,6 +44,7 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
     'Last day of month',
     '2028-02-29',
     ['2028-02-29', '2028-03-31', '2028-04-30', '2028-05-31'],
+    { invalidDate: '2028-02-28', guidance: /Choose the last day of a month/ },
   ],
   [
     320,
@@ -40,6 +52,7 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
     'Last weekday of month',
     '2026-10-30',
     ['2026-10-30', '2026-11-30', '2026-12-31', '2027-01-29'],
+    { invalidDate: '2026-10-31', guidance: /Choose the last Monday through Friday/ },
   ],
 ] as const) {
   test(`${frequency} batches preview, recover offline and retain planned dates at ${width}px`, async ({
@@ -71,20 +84,12 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
     await dialog.getByRole('combobox', { name: 'Assign to', exact: true }).selectOption('worker');
     await dialog.getByRole('combobox', { name: 'Repeat', exact: true }).selectOption(frequency);
     await dialog.getByLabel('Occurrences', { exact: true }).fill('4');
-    const monthEnd = frequency === 'month-end';
-    const weekdayEnd = frequency === 'month-end-weekday';
     await expect(
-      dialog.getByText(
-        monthEnd
-          ? /Choose the last day of a month/
-          : weekdayEnd
-            ? /Choose the last Monday through Friday/
-            : /Shorter months use their last day\./,
-      ),
+      dialog.getByText(boundary?.guidance ?? /Shorter months use their last day\./),
     ).toBeVisible();
     await dialog
       .getByLabel('Due date', { exact: true })
-      .fill(monthEnd ? '2028-02-28' : weekdayEnd ? '2026-10-31' : '9999-12-31');
+      .fill(boundary?.invalidDate ?? '9999-12-31');
     await expect(
       dialog.getByRole('heading', { name: 'Choose a valid schedule', exact: true }),
     ).toBeVisible();
@@ -92,7 +97,7 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
       dialog.getByRole('button', { name: 'Assign work orders', exact: true }),
     ).toBeDisabled();
     await dialog.getByLabel('Due date', { exact: true }).fill(initialDate);
-    if (monthEnd || weekdayEnd) {
+    if (boundary) {
       await dialog.getByRole('combobox', { name: 'Ends', exact: true }).selectOption('date');
       await dialog.getByLabel('End date', { exact: true }).fill(expectedDates[3]);
     }
@@ -146,7 +151,7 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
     expect((await retried).postDataJSON()).toEqual(input);
     expect((await manager.searchOrders({ q: title })).total).toBe(4);
     const first = receipt!.orders[0];
-    const newDate = monthEnd ? '2028-06-02' : '2027-02-02';
+    const newDate = frequency === 'month-end' ? '2028-06-02' : '2027-02-02';
     await manager.rescheduleOrder(first.id, { baseVersion: 1, dueDate: newDate });
     expect(await manager.createOrderSeries(input!)).toEqual(receipt);
     await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();

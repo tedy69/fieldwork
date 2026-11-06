@@ -123,6 +123,7 @@ export default function Workspace({
   const restoreRetryFocus = useRef(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [notice, setNotice] = useState('');
+  const showPendingReportError = online && !sessionExpired && error?.kind !== 'sync';
   function updateCatalog(update: SetStateAction<Catalog>) {
     catalogGeneration.current++;
     setCatalog(update);
@@ -596,7 +597,7 @@ export default function Workspace({
                       </div>
                       <h2>{order?.title ?? item.orderId}</h2>
                       <p>{item.input.summary}</p>
-                      {item.error && (!sessionExpired || item.state === 'blocked') && (
+                      {item.error && (item.state === 'blocked' || showPendingReportError) && (
                         <p className="error">{item.error}</p>
                       )}
                       <p className="muted">

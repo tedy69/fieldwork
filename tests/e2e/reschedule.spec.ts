@@ -193,7 +193,15 @@ test('rescheduling blocks a stale offline report and preserves its answers, note
   await expect(
     page.getByText('Keep this offline reschedule report.', { exact: true }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Keep draft and open latest order', exact: true }).click();
+  const openLatest = page.getByRole('button', {
+    name: 'Keep draft and open latest order',
+    exact: true,
+  });
+  await context.setOffline(true);
+  await expect(openLatest).toBeDisabled();
+  await expect(page.locator('.outbox-item .error')).toContainText('This work order changed.');
+  await context.setOffline(false);
+  await openLatest.click();
   await expect(page.locator('.order-meta')).toContainText('Oct 24');
   await expect(page.getByLabel('Inspection summary', { exact: true })).toHaveValue(
     'Keep this offline reschedule report.',

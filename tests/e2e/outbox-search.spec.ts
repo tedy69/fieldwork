@@ -55,6 +55,8 @@ test('offline outbox search keeps queued reports separate from assignment search
   const search = page.getByRole('searchbox', { name: 'Search queued reports' });
   const cards = page.locator('.outbox-item');
   await expect(cards).toHaveCount(2);
+  await expect(page.getByRole('region', { name: 'Sync needs attention' })).toBeVisible();
+  await expect(cards.locator('.error')).toHaveCount(0);
   await search.fill(first.reference.toLowerCase());
   await expect(cards).toHaveCount(1);
   await expect(cards).toContainText(reports[0].summary);

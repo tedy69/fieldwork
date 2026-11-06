@@ -34,7 +34,10 @@ test('worker completes an inspection offline, survives reload, syncs photos, and
     await navigator.serviceWorker.ready;
   });
   await field.reload();
-  await field.getByRole('button', { name: /^Open FW-001:/ }).click();
+  const assignment = field.getByRole('button', { name: /^Open FW-001:/ });
+  await expect(assignment).toBeVisible();
+  await expect(field.getByRole('button', { name: 'Sync now', exact: true })).toBeEnabled();
+  await assignment.click();
   for (const radio of await field.getByRole('radio', { name: 'Pass', exact: true }).all())
     await radio.check();
   await field

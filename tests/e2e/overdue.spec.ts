@@ -268,6 +268,7 @@ test('worker filters saved urgent work in Indonesian and keeps search available 
   await page.getByLabel('Email', { exact: true }).fill('worker@fieldwork.local');
   await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'My assignments', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
   const search = page.getByRole('searchbox', { name: 'Cari tugas', exact: true });
   await search.fill(prefix);
@@ -292,4 +293,23 @@ test('worker filters saved urgent work in Indonesian and keeps search available 
   await urgent.click();
   await expect(rows).toHaveCount(1);
   await expect(rows.first()).toContainText(`${prefix} Pending`);
+
+  await page.getByRole('button', { name: 'Rentang tanggal', exact: true }).click();
+  const from = page.getByRole('textbox', { name: 'Tenggat mulai', exact: true });
+  await from.fill('2026-12-28');
+  const clearFilter = page.getByRole('button', { name: 'Hapus filter tugas', exact: true });
+  await expect(clearFilter.locator('svg[aria-hidden=true]')).toBeVisible();
+  expect((await clearFilter.textContent())?.trim()).toBe('');
+  const bounds = await clearFilter.boundingBox();
+  expect(bounds?.width).toBeGreaterThanOrEqual(44);
+  expect(bounds?.height).toBeGreaterThanOrEqual(44);
+  await clearFilter.focus();
+  await page.keyboard.press('Enter');
+  await expect(clearFilter).toHaveCount(0);
+  const all = page.getByRole('button', { name: 'Semua tugas', exact: true });
+  await expect(all).toBeFocused();
+  await expect(all).toHaveAttribute('aria-pressed', 'true');
+  await expect(search).toHaveValue(prefix);
+  await expect(from).toHaveValue('2026-12-28');
+  await expect(rows).toHaveCount(3);
 });

@@ -89,6 +89,7 @@ export default function Workspace({
   const { view, orderId, returnFocus } = destination;
   const navigation = useRef<HTMLElement>(null);
   const [filter, setFilter] = useState('ALL');
+  const statusFilterToolbar = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState('');
   const [dueFrom, setDueFrom] = useState('');
   const [dueThrough, setDueThrough] = useState('');
@@ -677,7 +678,7 @@ export default function Workspace({
                   </Label>
                 </div>
                 <div className="board-filters">
-                  <div className="list-toolbar">
+                  <div className="list-toolbar" ref={statusFilterToolbar}>
                     <SmoothTab
                       className="status-filters"
                       label={copy.filter}
@@ -697,6 +698,21 @@ export default function Workspace({
                         ] as const
                       ).map((id) => ({ id, title: filterLabels[id] }))}
                     />
+                    {filter !== 'ALL' && (
+                      <IconButton
+                        className="clear-status-filter"
+                        label={copy.clearFilter}
+                        variant="ghost"
+                        onClick={() => {
+                          setFilter('ALL');
+                          statusFilterToolbar.current
+                            ?.querySelector<HTMLButtonElement>('.status-filters button')
+                            ?.focus();
+                        }}
+                      >
+                        <XIcon aria-hidden="true" />
+                      </IconButton>
+                    )}
                     <p className="status-scroll-hint">{copy.moreStatuses}</p>
                   </div>
                   {(hasSiteClosures || closureOnly) && (

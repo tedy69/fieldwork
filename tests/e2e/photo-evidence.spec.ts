@@ -200,6 +200,9 @@ test('item photos are required individually and keep their labels through offlin
     await addItemPhoto('Check valve', 3);
     await expect(worker.getByText('Draft saved on this device', { exact: true })).toBeVisible();
     await worker.reload();
+    await expect(worker.getByText('Working offline', { exact: true })).toBeVisible();
+    await worker.getByRole('searchbox', { name: 'Search work orders' }).fill(order.reference);
+    await expect(worker.locator('.order-list .order-row')).toHaveCount(1);
     await openOrder(worker, order);
     await expect(worker.getByText('Photo attached', { exact: true })).toHaveCount(2);
     expect(await worker.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(

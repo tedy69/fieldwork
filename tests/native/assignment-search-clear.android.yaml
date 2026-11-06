@@ -1,5 +1,5 @@
 appId: host.exp.exponent
-name: Clear a saved assignment search on Android
+name: Clear search and filters independently on Android
 ---
 - scrollUntilVisible:
     element: My assignments
@@ -13,6 +13,17 @@ name: Clear a saved assignment search on Android
     id: assignment-search
 - inputText: Weekly
 - tapOn: Done editing
+- assertVisible: Assigned · 1 shown
+- tapOn: Clear assignment filter
+- assertNotVisible: Assigned · 1 shown
+- assertVisible:
+    id: assignment-search
+    text: Weekly
+- tapOn: Filter assignments
+- tapOn:
+    text: Assigned
+    index: 0
+- tapOn: Filter assignments
 - assertVisible: Assigned · 1 shown
 - tapOn: Clear search
 - assertNotVisible: Clear search

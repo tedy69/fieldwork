@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type RefObject } from 'react';
 import {
+  AccessibilityInfo,
   AppState,
   FlatList,
   Keyboard,
@@ -231,7 +232,7 @@ export default function WorkspacePage({
           {view === 'assignments' && (
             <View style={styles.searchTools}>
               <View style={styles.searchRow}>
-                <View style={styles.searchField}>
+                <View style={styles.flexItem}>
                   <Field
                     label={copy.search}
                     placeholder={copy.searchHint}
@@ -282,9 +283,26 @@ export default function WorkspacePage({
                 </View>
               )}
               {assignmentFilter && (
-                <Copy variant="caption" muted accessibilityLiveRegion="polite">
-                  {copy.filteredCount(filterLabel(assignmentFilter), entries.length)}
-                </Copy>
+                <View style={styles.filterSummary}>
+                  <Copy
+                    variant="caption"
+                    muted
+                    accessibilityLiveRegion="polite"
+                    style={styles.flexItem}
+                  >
+                    {copy.filteredCount(filterLabel(assignmentFilter), entries.length)}
+                  </Copy>
+                  <Button
+                    title={copy.clearAssignmentFilter}
+                    icon={X}
+                    iconOnly
+                    variant="ghost"
+                    onPress={() => {
+                      onAssignmentFilterChange(null);
+                      AccessibilityInfo.announceForAccessibility(copy.assignmentFilterCleared);
+                    }}
+                  />
+                </View>
               )}
             </View>
           )}
@@ -462,7 +480,8 @@ const styles = StyleSheet.create({
   tab: { flexGrow: 1, flexBasis: 120 },
   searchTools: { gap: spacing.sm },
   searchRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
-  searchField: { flex: 1, minWidth: 0 },
+  flexItem: { flex: 1, minWidth: 0 },
+  filterSummary: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   statusChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   statusChoice: { maxWidth: '100%' },
   pendingAction: { backgroundColor: colors.raised, justifyContent: 'flex-start' },

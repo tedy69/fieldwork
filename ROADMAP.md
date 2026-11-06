@@ -41,6 +41,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] CSV exports for filtered manager report lists, including saved offline reports.
 - [x] CSV exports for the filtered manager work schedule, including offline assignments.
 - [x] All-day calendar exports for filtered manager schedules and planner days, including offline.
+- [x] Personal calendar exports from the web worker's week and month planners.
 - [x] Inclusive due-date ranges in the web list, combined with search, status filters, and offline records.
 - [x] Printable saved inspection reports in the web app, including offline access and browser PDF output.
 - [x] Web weekly planner with daily workloads, offline browsing, and date-preset new assignments.

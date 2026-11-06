@@ -218,6 +218,65 @@ test('manager downloads only filtered planner visits as all-day calendar events 
   await expect(page.getByRole('button', { name: 'Ekspor kalender (0)' })).toBeDisabled();
 });
 
+test('worker calendar exports only their own filtered planner day offline', async ({
+  page,
+  context,
+}) => {
+  const base = 'http://127.0.0.1:4173';
+  const api = createClient(base);
+  const managerSession = await api.login('manager@fieldwork.local', 'fieldwork-demo');
+  const workerSession = await api.login('worker@fieldwork.local', 'fieldwork-demo');
+  const manager = createClient(base, () => managerSession.token);
+  const worker = createClient(base, () => workerSession.token);
+  const create = (name: string, dueDate: string, assigneeId = 'worker') =>
+    manager.createOrder({
+      title: `Personal calendar QA ${name}`,
+      instructions: 'Synthetic calendar fixture.',
+      siteId: 'north',
+      templateId: 'routine',
+      assigneeId,
+      dueDate,
+      priority: 'routine',
+    });
+  const today = await create('today', '2026-10-22');
+  const next = await create('next day', '2026-10-23');
+  const privateOrder = await create('another worker', '2026-10-22', 'worker-2');
+  const submitted = await create('submitted', '2026-10-22');
+  await worker.submitReport(submitted.id, {
+    mutationId: crypto.randomUUID(),
+    baseVersion: submitted.version,
+    answers: submitted.template.items.map((item) => ({ itemId: item.id, value: 'pass', note: '' })),
+    summary: 'Synthetic completed visit.',
+    photos: [],
+  });
+  await page.setViewportSize({ width: 320, height: 850 });
+  await page.clock.setFixedTime(new Date('2026-10-22T12:00:00Z'));
+  await page.goto('/');
+  await page.getByLabel('Email', { exact: true }).fill('worker@fieldwork.local');
+  await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.getByRole('searchbox', { name: 'Search work orders' }).fill('Personal calendar QA');
+  await expect(page.locator('.order-row')).toHaveCount(3);
+  await expect(page.getByRole('button', { name: /^Export calendar/ })).toHaveCount(0);
+  await context.setOffline(true);
+  await expect(page.getByText('Working offline', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Week planner', exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'To do', exact: true }).press('Enter');
+  await page
+    .getByRole('button', { name: 'Thu, Oct 22 1 work order · Today', exact: true })
+    .press('Enter');
+  const exports = page.getByRole('region', { name: 'Work order exports' });
+  await expect(exports.getByRole('button')).toHaveCount(1);
+  const calendar = exports.getByRole('button', { name: 'Export calendar (1)', exact: true });
+  const ready = page.waitForEvent('download');
+  await calendar.press('Enter');
+  const file = readFileSync((await (await ready).path())!, 'utf8');
+  expect(file).toContain(`UID:${today.id}\r\n`);
+  expect(file).toContain('DTSTART;VALUE=DATE:20261022');
+  for (const other of [next, privateOrder, submitted]) expect(file).not.toContain(other.id);
+  await expect(page.getByText('Calendar prepared for 1 work order.')).toBeVisible();
+});
+
 test('workers do not see the manager export controls', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Email', { exact: true }).fill('worker@fieldwork.local');

@@ -17,15 +17,17 @@ import { managerDispatchCopy } from './manager-dispatch-copy';
 export default function WorkspaceExports({
   orders,
   locale,
+  includeCsv,
   onNotice,
 }: {
   orders: WorkOrder[];
   locale: Locale;
+  includeCsv: boolean;
   onNotice: (notice: string) => void;
 }) {
   const copy = managerDispatchCopy[locale];
   const [error, setError] = useState('');
-  const reportCount = orders.filter((order) => order.report).length;
+  const reportCount = includeCsv ? orders.filter((order) => order.report).length : 0;
   function download(kind: 'schedule' | 'reports' | 'calendar') {
     setError('');
     onNotice('');
@@ -62,16 +64,18 @@ export default function WorkspaceExports({
   }
   return (
     <section className="workspace-exports" aria-label={copy.exports}>
-      <p className="export-note muted">{copy.exportView}</p>
+      {includeCsv && <p className="export-note muted">{copy.exportView}</p>}
       <ActionGroup>
-        <Button
-          className="quiet"
-          aria-label={copy.exportSchedule(orders.length)}
-          onClick={() => download('schedule')}
-          disabled={orders.length === 0}
-        >
-          <TableIcon aria-hidden="true" /> {copy.schedule} ({orders.length})
-        </Button>
+        {includeCsv && (
+          <Button
+            className="quiet"
+            aria-label={copy.exportSchedule(orders.length)}
+            onClick={() => download('schedule')}
+            disabled={orders.length === 0}
+          >
+            <TableIcon aria-hidden="true" /> {copy.schedule} ({orders.length})
+          </Button>
+        )}
         <Button
           className="quiet"
           aria-label={copy.exportCalendar(orders.length)}
@@ -80,14 +84,16 @@ export default function WorkspaceExports({
         >
           <CalendarDotsIcon aria-hidden="true" /> {copy.calendarFile} ({orders.length})
         </Button>
-        <Button
-          className="quiet"
-          aria-label={copy.exportReports(reportCount)}
-          onClick={() => download('reports')}
-          disabled={reportCount === 0}
-        >
-          <ClipboardTextIcon aria-hidden="true" /> {copy.reports} ({reportCount})
-        </Button>
+        {includeCsv && (
+          <Button
+            className="quiet"
+            aria-label={copy.exportReports(reportCount)}
+            onClick={() => download('reports')}
+            disabled={reportCount === 0}
+          >
+            <ClipboardTextIcon aria-hidden="true" /> {copy.reports} ({reportCount})
+          </Button>
+        )}
       </ActionGroup>
       {error && <FieldError>{error}</FieldError>}
     </section>

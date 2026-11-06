@@ -25,7 +25,7 @@ name: Filter cached assignments by status on iOS
 - tapOn: Filter assignments
 - tapOn:
     id: assignment-search
-- inputText: Weekly
+- inputText: fw003
 - tapOn: Done editing
 - assertVisible: Assigned · 1 shown
 - scrollUntilVisible:
@@ -39,7 +39,7 @@ name: Filter cached assignments by status on iOS
     direction: UP
 - assertVisible:
     id: assignment-search
-    text: Weekly
+    text: fw003
 - scrollUntilVisible:
     element: Bahasa Indonesia
     direction: UP
@@ -54,7 +54,7 @@ name: Filter cached assignments by status on iOS
 - assertNotVisible: Ditugaskan · 1 ditampilkan
 - assertVisible:
     id: assignment-search
-    text: Weekly
+    text: fw003
 - tapOn: Saring tugas
 - tapOn:
     text: Ditugaskan

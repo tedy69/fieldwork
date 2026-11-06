@@ -11,14 +11,25 @@ name: Clear search and filters independently on Android
 - tapOn: Filter assignments
 - tapOn:
     id: assignment-search
-- inputText: Weekly
+- inputText: fw003
 - tapOn: Done editing
 - assertVisible: Assigned · 1 shown
+- scrollUntilVisible:
+    element: 'Open FW-003: Weekly equipment inspection'
+    centerElement: true
+- tapOn: 'Open FW-003: Weekly equipment inspection'
+- assertVisible: Weekly equipment inspection
+- tapOn: Back to assignments
+- scrollUntilVisible:
+    element: Clear assignment filter
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
 - tapOn: Clear assignment filter
 - assertNotVisible: Assigned · 1 shown
 - assertVisible:
     id: assignment-search
-    text: Weekly
+    text: fw003
 - tapOn: Filter assignments
 - tapOn:
     text: Assigned

@@ -30,7 +30,7 @@ import {
 } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { emptyState, type State } from '@fieldwork/offline';
-import { languageNames, notebookCopy, type Locale } from '@fieldwork/strings';
+import { languageNames, languageTags, notebookCopy, type Locale } from '@fieldwork/strings';
 import { repositoryFor } from './storage';
 import { client, message, dateLabel } from './lib';
 import { PageHeading, Empty, ActionGroup } from './components';
@@ -67,7 +67,7 @@ export default function Workspace({
   const alternate = locale === 'id' ? 'en' : 'id';
   const copy = workerWorkspaceCopy[locale];
   const notebook = notebookCopy[locale];
-  const dateLocale = locale === 'id' ? 'id-ID' : undefined;
+  const dateLocale = languageTags[locale];
   const repo = useMemo(() => repositoryFor(user.id, client), [user.id]);
   const [state, setState] = useState<State>(emptyState);
   const [catalog, setCatalog] = useState<Catalog>({ users: [], sites: [], templates: [] });
@@ -557,7 +557,7 @@ export default function Workspace({
                   <span className="muted">{copy.lastSync}</span>
                   <strong>
                     {state.lastSynced
-                      ? new Date(state.lastSynced).toLocaleTimeString(dateLocale ?? [], {
+                      ? new Date(state.lastSynced).toLocaleTimeString(dateLocale, {
                           hour: '2-digit',
                           minute: '2-digit',
                         })

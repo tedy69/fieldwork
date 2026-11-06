@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { type ReportRevision, answerLabel, reportItemLabel } from '@fieldwork/contracts';
-import { inspectionCopy, notebookCopy, type Locale } from '@fieldwork/strings';
+import { inspectionCopy, languageTags, notebookCopy, type Locale } from '@fieldwork/strings';
 import { ClockCounterClockwiseIcon } from '@phosphor-icons/react/dist/csr/ClockCounterClockwise';
 import { client, dateLabel, message } from './lib';
 import { Button } from './components/ui/button';
@@ -41,7 +41,7 @@ export default function ReportHistory({
   const copy = report.history;
   const inspection = inspectionCopy[locale];
   const status = notebookCopy[locale].status;
-  const dateLocale = locale === 'id' ? 'id-ID' : undefined;
+  const dateLocale = languageTags[locale];
   const timeLabel = (time: string) => new Date(time).toLocaleString(dateLocale);
   const versionLabel = (revision: ReportRevision) =>
     revision.submissionVersion === null ? copy.saved : copy.version(revision.submissionVersion);

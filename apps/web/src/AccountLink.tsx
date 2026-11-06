@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
 import { InvitationTokenSchema } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
-import { accountLinkCopy, signInCopy, type Locale } from '@fieldwork/strings';
+import { accountLinkCopy, languageTags, signInCopy, type Locale } from '@fieldwork/strings';
 import { client, message } from './lib';
 import { clearInvitationHash } from './invitation-link';
 import { Button } from './components/ui/button';
@@ -216,9 +216,7 @@ export default function AccountLink({
                   <dt>{copy.linkExpires}</dt>
                   <dd>
                     <time dateTime={preview.expiresAt}>
-                      {new Date(preview.expiresAt).toLocaleString(
-                        locale === 'id' ? 'id-ID' : undefined,
-                      )}
+                      {new Date(preview.expiresAt).toLocaleString(languageTags[locale])}
                     </time>
                   </dd>
                 </dl>

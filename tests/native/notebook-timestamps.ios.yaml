@@ -1,0 +1,26 @@
+appId: host.exp.Exponent
+name: Format the last sync in the selected notebook language
+---
+# Start on My assignments in English with the synthetic fixture synced.
+- assertVisible: My assignments
+- scrollUntilVisible:
+    element: '^Last synced [0-9]{1,2}/[0-9]{1,2}/[0-9]{4},.*[AP]M$'
+    centerElement: true
+- assertVisible: '^Last synced [0-9]{1,2}/[0-9]{1,2}/[0-9]{4},.*[AP]M$'
+- scrollUntilVisible:
+    element: Bahasa Indonesia
+    direction: UP
+- tapOn:
+    text: Bahasa Indonesia
+    point: 25%,50%
+- scrollUntilVisible:
+    element: '^Sinkronisasi terakhir .* [0-9]{1,2}\.[0-9]{2}\.[0-9]{2}$'
+    centerElement: true
+- assertVisible: '^Sinkronisasi terakhir .* [0-9]{1,2}\.[0-9]{2}\.[0-9]{2}$'
+- scrollUntilVisible:
+    element: English
+    direction: UP
+- tapOn:
+    text: English
+    point: 25%,50%
+- assertVisible: My assignments

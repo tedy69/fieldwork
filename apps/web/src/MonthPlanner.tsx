@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import type { WorkOrder } from '@fieldwork/contracts';
-import type { Locale } from '@fieldwork/strings';
+import { languageTags, type Locale } from '@fieldwork/strings';
 import { Button } from './components/ui/button';
 import { IconButton } from './components/ui/icon-button';
 import { CaretLeftIcon } from '@phosphor-icons/react/dist/csr/CaretLeft';
@@ -28,7 +28,7 @@ export default function MonthPlanner({
 }) {
   const dates = monthDates(anchor);
   const copy = workerPlannerCopy[locale];
-  const dateLocale = locale === 'id' ? 'id-ID' : undefined;
+  const dateLocale = languageTags[locale];
   const offset = (new Date(`${dates[0]}T12:00:00Z`).getUTCDay() + 6) % 7;
   const counts = useMemo(() => {
     const totals = new Map<string, number>();

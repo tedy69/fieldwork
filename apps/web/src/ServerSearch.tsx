@@ -6,7 +6,7 @@ import {
   type WorkOrder,
 } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
-import { inspectionCopy, notebookCopy, type Locale } from '@fieldwork/strings';
+import { inspectionCopy, languageTags, notebookCopy, type Locale } from '@fieldwork/strings';
 import { client, labels, dateLabel, message } from './lib';
 import { Button } from './components/ui/button';
 import { IconButton } from './components/ui/icon-button';
@@ -67,7 +67,7 @@ export default function ServerSearch({
   const copy = serverSearchCopy[locale];
   const statuses = locale === 'id' ? notebookCopy.id.status : labels;
   const priorities = inspectionCopy[locale].priority;
-  const dateLocale = locale === 'id' ? 'id-ID' : undefined;
+  const dateLocale = languageTags[locale];
   const [open, setOpen] = useState(false);
   const [filters, setFilters] = useState(emptyFilters);
   const [page, setPage] = useState<Page | null>(null);

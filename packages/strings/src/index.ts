@@ -3,6 +3,7 @@ export { accountLinkCopy } from './account-links';
 export { inspectionCopy } from './inspection';
 export { notebookCopy } from './notebook';
 export const languageNames: Record<Locale, string> = { en: 'English', id: 'Bahasa Indonesia' };
+export const languageTags = { en: 'en-US', id: 'id-ID' } as const;
 
 export function savedLocale(value: string | null, deviceLanguage = 'en'): Locale {
   if (value === 'en' || value === 'id') return value;

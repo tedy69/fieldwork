@@ -1,6 +1,6 @@
 import { Image, StyleSheet, View } from 'react-native';
 import { answerLabel, reportItemLabel, type WorkOrder } from '@fieldwork/contracts';
-import { inspectionCopy, type Locale } from '@fieldwork/strings';
+import { inspectionCopy, languageTags, type Locale } from '@fieldwork/strings';
 import { Copy, Panel, SectionHeading } from './notebook-ui';
 import { colors, radius, size, spacing } from './theme';
 
@@ -18,7 +18,7 @@ export default function SavedReport({
   locale: Locale;
 }) {
   const copy = inspectionCopy[locale];
-  const dateLocale = locale === 'id' ? 'id-ID' : undefined;
+  const dateLocale = languageTags[locale];
   return (
     <Panel>
       <SectionHeading

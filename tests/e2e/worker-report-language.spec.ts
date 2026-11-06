@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { createClient } from '@fieldwork/sdk';
 
 const base = 'http://127.0.0.1:4173';
+test.use({ locale: 'id-ID', timezoneId: 'Asia/Jakarta' });
 
 test('worker reads localized report history and prints the latest saved report offline', async ({
   page,
@@ -42,11 +43,19 @@ test('worker reads localized report history and prints the latest saved report o
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
+  await page.getByRole('button', { name: 'English', exact: true }).click();
   await page.getByLabel('Email', { exact: true }).fill('worker@fieldwork.local');
   await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.getByRole('button', { name: `Open ${order.reference}: ${order.title}` }).click();
+  const submittedAt = latest.report!.submittedAt;
+  const [englishTime, indonesianTime] = await page.evaluate(
+    (time) => ['en-US', 'id-ID'].map((language) => new Date(time).toLocaleString(language)),
+    submittedAt,
+  );
+  await expect(page.getByText(`Submitted ${englishTime}`, { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+  await expect(page.getByText(`Dikirim ${indonesianTime}`, { exact: true })).toBeVisible();
   const history = page.getByRole('button', { name: 'Riwayat laporan', exact: true });
   await history.focus();
   await page.keyboard.press('Enter');

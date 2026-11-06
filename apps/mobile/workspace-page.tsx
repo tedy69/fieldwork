@@ -19,7 +19,13 @@ import {
   type WorkOrder,
 } from '@fieldwork/contracts';
 import type { State } from '@fieldwork/offline';
-import { languageNames, notebookCopy, signInCopy, type Locale } from '@fieldwork/strings';
+import {
+  languageNames,
+  languageTags,
+  notebookCopy,
+  signInCopy,
+  type Locale,
+} from '@fieldwork/strings';
 import { assignmentDate } from './assignment-date';
 import { Brand, Button, Copy, Field, Notice, Panel, StatusBadge } from './notebook-ui';
 import { colors, radius, spacing } from './theme';
@@ -107,7 +113,7 @@ export default function WorkspacePage({
 }) {
   const copy = notebookCopy[locale];
   const alternate = locale === 'en' ? 'id' : 'en';
-  const dateLocale = locale === 'id' ? 'id-ID' : undefined;
+  const dateLocale = languageTags[locale];
   const { fontScale } = useWindowDimensions();
   const largeText = fontScale > 1.4;
   const [filtersOpen, setFiltersOpen] = useState(false);

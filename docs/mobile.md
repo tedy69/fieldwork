@@ -82,7 +82,7 @@ Run `npm exec -- tsx tests/native/overdue-filter.ios.ts <simulator-id>` from the
 
 Run `ADB=<adb-path> npm exec -- tsx tests/native/upcoming-filter.android.ts <emulator-id>` from **My assignments** in English on a dedicated emulator with an empty search and the filters closed. Turn off Expo Go's floating **Tools button** so it cannot cover Sync now. The runner uses the emulator's local date and checks that **Next 7 days** combines with search, excludes approved work, and keeps its results through an outage and reconnect.
 
-Assignment rows and inspection details display the due date in the notebook language. The stored calendar day stays the same across time zones.
+Assignment rows and inspection details display the due date in the notebook language. The stored calendar day stays the same across time zones. Report and sync timestamps use the notebook language and the device's time zone. Run `notebook-timestamps.ios.yaml` from **My assignments** in English after syncing the synthetic fixture to check both timestamp formats.
 
 Run the API, then `npm run mobile`. Use a compatible Expo Go client for SDK 58 or create a development build. Enter a worker account and server URL on the sign-in screen.
 

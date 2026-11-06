@@ -61,7 +61,7 @@ test('invitation and password reset share the sign-in language and preserve form
   await password.fill(replacement);
   await page.getByRole('button', { name: 'Masuk', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Tugas saya', exact: true })).toBeVisible();
-  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'id');
   await page.goto(`/#reset=${reset.token}`);
   await expect(
     page.getByRole('heading', { name: 'Pengaturan ulang kata sandi tidak tersedia' }),

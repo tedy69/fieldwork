@@ -22,6 +22,7 @@ test('manager assigns work and uses saved dispatch in Indonesian at 320px', asyn
   await page.keyboard.press('Enter');
   const main = page.getByRole('main');
   await expect(main).toHaveAttribute('lang', 'id');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'id');
   await expect(page.getByText('Terhubung', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Tugas', exact: true })).toBeVisible();
 

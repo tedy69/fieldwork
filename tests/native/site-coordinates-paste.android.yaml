@@ -1,0 +1,8 @@
+appId: host.exp.exponent
+name: Confirm the exact saved coordinates on Android
+---
+- assertVisible:
+    id: assignment-search
+    text: ${CLIPBOARD_PATTERN}
+- eraseText: 14
+- tapOn: Done editing

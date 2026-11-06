@@ -1,0 +1,11 @@
+appId: host.exp.exponent
+name: Cache a synthetic site assignment on Android
+---
+- scrollUntilVisible:
+    element: Sync now
+    direction: UP
+- tapOn: Sync now
+- scrollUntilVisible:
+    element: ${ORDER_NAME}
+    centerElement: true
+- assertVisible: ${ORDER_NAME}

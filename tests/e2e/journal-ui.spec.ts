@@ -57,11 +57,15 @@ test('inspection progress describes actual locally retained answers and is not a
   page,
   context,
 }) => {
+  await page.setViewportSize({ width: 320, height: 850 });
   await page.goto('/');
   await page.getByLabel('Email', { exact: true }).fill('worker@fieldwork.local');
   await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await page.getByRole('button', { name: /^Open FW-001:/ }).click();
+  const row = page.getByRole('button', { name: /^Open FW-001:/ });
+  await expect(row).toBeVisible();
+  await expect(row).not.toHaveAccessibleDescription('Draft saved on this device');
+  await row.press('Enter');
   const progress = page.locator('.inspection-progress');
   await expect(progress).toHaveText('0 of 4 checks recorded');
   await expect(page.getByText('Draft saved on this device', { exact: true })).toHaveCount(0);
@@ -73,7 +77,9 @@ test('inspection progress describes actual locally retained answers and is not a
   });
   await context.setOffline(true);
   await page.reload();
-  await page.getByRole('button', { name: /^Open FW-001:/ }).click();
+  await expect(row).toHaveAccessibleDescription('Draft saved on this device');
+  await expect(row.locator('.draft-mark svg[aria-hidden=true]')).toBeVisible();
+  await row.press('Enter');
   await expect(progress).toHaveText('1 of 4 checks recorded');
   await expect(page.getByRole('radio', { name: 'Pass', exact: true }).first()).toBeChecked();
   await expect(page.locator('.detail-heading .status')).toHaveText('Assigned');

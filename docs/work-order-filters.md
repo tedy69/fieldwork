@@ -17,3 +17,5 @@ The [weekly planner](week-planner.md) uses its displayed week or selected day in
 Filters stay in place when you open an order and return to the list. Reloading the app or signing out resets them. Filtering does not change due dates, assignments, reports, drafts, or the outbox. Custom date ranges on Expo remain roadmap work.
 
 Workers can choose **To do** on web or Expo to see assignments and requested corrections that still need an inspection. Reports already in the device outbox stay in the outbox. The filter combines with search and works offline.
+
+A pencil in the assignment row marks inspection progress saved on this device. Queued reports use the existing queue label.

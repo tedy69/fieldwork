@@ -746,6 +746,10 @@ form > .ui-field-label {
   width: 16px;
   height: 16px;
 }
+.draft-mark {
+  display: inline-flex;
+  color: var(--muted);
+}
 .planner-closure-legend {
   display: flex;
   align-items: center;

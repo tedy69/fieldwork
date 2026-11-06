@@ -12,6 +12,7 @@ import { SignOutIcon } from '@phosphor-icons/react/dist/csr/SignOut';
 import { SignInIcon } from '@phosphor-icons/react/dist/csr/SignIn';
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus';
 import { ListDashesIcon } from '@phosphor-icons/react/dist/csr/ListDashes';
+import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple';
 import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
 import { CalendarDotsIcon } from '@phosphor-icons/react/dist/csr/CalendarDots';
 import { CalendarXIcon } from '@phosphor-icons/react/dist/csr/CalendarX';
@@ -25,6 +26,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type SetStateAct
 import {
   awaitsInspection,
   compareOrdersByDueDate,
+  hasDraftContent,
   isOpenDueBetween,
   isUrgentOpenOrder,
   nextSevenDaysEnd,
@@ -242,6 +244,22 @@ export default function Workspace({
     () => new Set(state.outbox.map((item) => item.orderId)),
     [state.outbox],
   );
+  const savedDrafts = useMemo(
+    () =>
+      new Set(
+        state.orders
+          .filter(
+            (order) =>
+              user.role === 'worker' &&
+              awaitsInspection(order) &&
+              !queuedOrders.has(order.id) &&
+              hasDraftContent(state.drafts[order.id]),
+          )
+          .map((order) => order.id),
+      ),
+    [state.orders, state.drafts, queuedOrders, user.role],
+  );
+  const draftLabel = inspectionCopy[locale].draftSaved;
   const matching = state.orders.filter(
     (order) =>
       (!closureOnly || closureVisits.has(order.id)) &&
@@ -865,7 +883,11 @@ export default function Workspace({
                         }
                         aria-label={`${notebook.open} ${order.reference}: ${order.title}`}
                         aria-describedby={
-                          closureVisits.has(order.id) ? `closure-${order.id}` : undefined
+                          closureVisits.has(order.id)
+                            ? `closure-${order.id}`
+                            : savedDrafts.has(order.id)
+                              ? `draft-${order.id}`
+                              : undefined
                         }
                       >
                         <div>
@@ -876,6 +898,14 @@ export default function Workspace({
                             )}
                             {queuedOrders.has(order.id) && (
                               <span className="urgent">{notebook.queued}</span>
+                            )}
+                            {savedDrafts.has(order.id) && (
+                              <span className="draft-mark" title={draftLabel}>
+                                <PencilSimpleIcon size={16} aria-hidden="true" />
+                                <span id={`draft-${order.id}`} className="sr-only">
+                                  {draftLabel}
+                                </span>
+                              </span>
                             )}
                           </div>
                           <strong className="order-title">{order.title}</strong>

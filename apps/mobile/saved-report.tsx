@@ -1,7 +1,10 @@
-import { Image, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { AccessibilityInfo, Image, StyleSheet, View } from 'react-native';
+import { setStringAsync } from 'expo-clipboard';
 import { answerLabel, reportItemLabel, type WorkOrder } from '@fieldwork/contracts';
 import { inspectionCopy, languageTags, type Locale } from '@fieldwork/strings';
-import { Copy, Panel, SectionHeading } from './notebook-ui';
+import { Button, Copy, Panel, SectionHeading } from './notebook-ui';
+import { Check, CopyIcon } from './notebook-icons';
 import { colors, radius, size, spacing } from './theme';
 
 export default function SavedReport({
@@ -19,6 +22,15 @@ export default function SavedReport({
 }) {
   const copy = inspectionCopy[locale];
   const dateLocale = languageTags[locale];
+  const [copyResult, setCopyResult] = useState<{ reportId: string; copied: boolean }>();
+  const copied = copyResult?.reportId === report.id ? copyResult.copied : undefined;
+  async function copySummary() {
+    const success = await setStringAsync(report.summary).catch(() => false);
+    setCopyResult({ reportId: report.id, copied: success });
+    AccessibilityInfo.announceForAccessibility(
+      success ? copy.reportSummaryCopied : copy.reportSummaryCopyFailed,
+    );
+  }
   return (
     <Panel>
       <SectionHeading
@@ -36,8 +48,21 @@ export default function SavedReport({
           {answer.note ? <Copy muted>{answer.note}</Copy> : null}
         </View>
       ))}
-      <SectionHeading title={copy.reportSummary} />
+      <View style={styles.summaryHeading}>
+        <SectionHeading title={copy.reportSummary} />
+        {report.summary.trim().length > 0 && (
+          <Button
+            title={copied ? copy.reportSummaryCopied : copy.copyReportSummary}
+            accessibilityLabel={copy.copyReportSummary}
+            icon={copied ? Check : CopyIcon}
+            iconOnly
+            variant="ghost"
+            onPress={() => void copySummary()}
+          />
+        )}
+      </View>
       <Copy testID="saved-report-summary">{report.summary}</Copy>
+      {copied === false && <Copy muted>{copy.reportSummaryCopyFailed}</Copy>}
       {report.photos.map((photo) => (
         <View key={photo.id}>
           <Image
@@ -56,6 +81,12 @@ export default function SavedReport({
 }
 
 const styles = StyleSheet.create({
+  summaryHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
   checkItem: {
     paddingBottom: spacing.lg,
     borderBottomColor: colors.line,

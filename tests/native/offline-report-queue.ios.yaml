@@ -7,6 +7,9 @@ name: Restore and queue an inspection offline on iOS
 - tapOn:
     text: Open
     optional: true
+- tapOn:
+    id: xmark
+    optional: true
 - extendedWaitUntil:
     visible: My assignments
     timeout: 30000
@@ -49,6 +52,9 @@ name: Restore and queue an inspection offline on iOS
 - openLink: ${METRO_URL}
 - tapOn:
     text: Open
+    optional: true
+- tapOn:
+    id: xmark
     optional: true
 - extendedWaitUntil:
     visible: My assignments

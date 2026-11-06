@@ -113,7 +113,9 @@ test('history preserves correction drafts, saved feedback and photos, and works 
     );
   }
   await context.setOffline(true);
-  await expect(dialog.getByRole('status')).toContainText('Loaded text stays available');
+  await expect(
+    dialog.getByRole('status').filter({ hasText: 'Loaded text stays available' }),
+  ).toBeVisible();
   await expect(snapshot).toContainText('Gate needs repair.');
   await expect(
     snapshot.getByText('Connect to view saved report photos.', { exact: true }),

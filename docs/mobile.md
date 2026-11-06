@@ -60,11 +60,15 @@ For the iOS offline report smoke test, use a dedicated simulator with [a matchin
 
 Run `npm exec -- tsx tests/native/offline-report.ios.ts <simulator-id>`. The runner defaults to Metro on port 8082 and the fixture on 4180. Set `METRO_URL` or `FIELDWORK_DESIGN_TEST_PORT` when using different ports. It checks a retained draft and a queued report after separate restarts, restores the fixture API, and verifies one report revision after repeated sync.
 
+The iOS runner also checks the exact saved summary in the simulator pasteboard during an API outage. From **My assignments** in English with an empty search, run `ADB=<adb-path> npm exec -- tsx tests/native/report-summary-copy.android.ts <emulator-id>` to verify the copied summary in the Android notebook.
+
 Run `npm exec -- tsx tests/native/blocked-report.ios.ts <simulator-id>` from the same starting screen to test a blocked report. The runner reschedules the assignment after the worker starts a draft, verifies the outbox survives an API outage and reassignment, and checks that the original answers sync once after access is restored.
 
 ## Browse report history
 
 Open the named history icon on an inspection with a saved report. Select a version to read its answers, summary, photos, and review feedback. The screen keeps loaded revisions visible if an older page fails, and retry uses the same page. Loaded history stays in the open screen. The inspection and its draft remain available after closing it.
+
+The copy icon beside a saved summary copies the text, including from a loaded revision during an outage.
 
 Start on **Tugas saya** in Indonesian with a fresh worker session to run `npm exec -- tsx tests/native/report-history.ios.ts <simulator-id>`. The synthetic fixture verifies first-page reading, a failed second page, reconnect and retry, and return to the original draft.
 

@@ -7,6 +7,7 @@ test.use({ locale: 'id-ID', timezoneId: 'Asia/Jakarta' });
 test('worker reads localized report history and prints the latest saved report offline', async ({
   page,
   context,
+  browserName,
 }) => {
   const managerLogin = await createClient(base).login('manager@fieldwork.local', 'fieldwork-demo');
   const manager = createClient(base, () => managerLogin.token);
@@ -23,7 +24,7 @@ test('worker reads localized report history and prints the latest saved report o
     priority: 'routine',
   });
   const firstSummary = 'Synthetic first report.';
-  const latestSummary = 'Synthetic corrected report.';
+  const latestSummary = 'Synthetic corrected report.\nValve secure.';
   const feedback = 'Synthetic review note.';
   const first = await worker.submitReport(order.id, {
     mutationId: crypto.randomUUID(),
@@ -41,7 +42,9 @@ test('worker reads localized report history and prints the latest saved report o
     photos: [],
   });
 
-  await page.setViewportSize({ width: 390, height: 844 });
+  if (browserName === 'chromium')
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.setViewportSize({ width: 320, height: 844 });
   await page.goto('/');
   await page.getByRole('button', { name: 'English', exact: true }).click();
   await page.getByLabel('Email', { exact: true }).fill('worker@fieldwork.local');
@@ -72,8 +75,41 @@ test('worker reads localized report history and prints the latest saved report o
   await context.setOffline(true);
   await expect(dialog.getByText(/Teks yang sudah dimuat tetap tersedia/)).toBeVisible();
   await expect(snapshot.getByText(firstSummary)).toBeVisible();
+  const historyCopy = snapshot.getByRole('button', {
+    name: 'Salin ringkasan laporan',
+    exact: true,
+  });
+  await historyCopy.press('Enter');
+  await expect(
+    snapshot.getByRole('status').filter({ hasText: 'Ringkasan laporan disalin.' }),
+  ).toHaveCount(1);
+  if (browserName === 'chromium')
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(firstSummary);
   await dialog.getByRole('button', { name: 'Tutup dialog', exact: true }).click();
   await expect(history).toBeDisabled();
+  const copy = page.getByRole('button', { name: 'Salin ringkasan laporan', exact: true });
+  await expect(copy.locator('svg[aria-hidden=true]')).toBeVisible();
+  await copy.press('Enter');
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Ringkasan laporan disalin.' }),
+  ).toHaveCount(1);
+  if (browserName === 'chromium')
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(latestSummary);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator.clipboard, 'writeText', {
+      value: async () => {
+        throw new DOMException('Clipboard access denied', 'NotAllowedError');
+      },
+    });
+  });
+  await copy.press('Enter');
+  await expect(
+    page.getByText('Ringkasan tidak bisa disalin. Pilih teks untuk menyalin.'),
+  ).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page
+    .locator('.report-summary-heading')
+    .screenshot({ path: test.info().outputPath('copy-saved-summary-320.png') });
   await page.evaluate(() => {
     window.print = () => {
       document.documentElement.dataset.printed = 'yes';

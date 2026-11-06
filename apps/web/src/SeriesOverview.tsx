@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { IconButton } from './components/ui/icon-button';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
 import { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight';
+import { CopyIcon } from '@phosphor-icons/react/dist/csr/Copy';
 import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple';
 import { FunnelSimpleIcon } from '@phosphor-icons/react/dist/csr/FunnelSimple';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass';
@@ -69,12 +70,14 @@ export default function SeriesOverview({
   today,
   onCache,
   onOpened,
+  onReuse,
 }: {
   online: boolean;
   locale: Locale;
   today: string;
   onCache: (order: WorkOrder) => Promise<void>;
   onOpened: (id: string) => void;
+  onReuse: (batch: OrderSeriesDetail) => void;
 }) {
   const copy = seriesOverviewCopy[locale];
   const dateLocale = languageTags[locale];
@@ -107,6 +110,7 @@ export default function SeriesOverview({
   const visitSelect = useRef<HTMLSelectElement>(null);
   const restoreVisitFocus = useRef(false);
   const navigated = useRef(false);
+  const reuseAfterClose = useRef<OrderSeriesDetail | null>(null);
   function changeOpen(next: boolean) {
     if (scheduleBusy) return;
     listGeneration.current++;
@@ -327,6 +331,9 @@ export default function SeriesOverview({
           if (navigated.current || !trigger.current?.isConnected || trigger.current.disabled)
             document.getElementById('main')?.focus();
           else trigger.current.focus();
+          const batch = reuseAfterClose.current;
+          reuseAfterClose.current = null;
+          if (batch) onReuse(batch);
         }}
       >
         <DialogHeader>
@@ -532,7 +539,20 @@ export default function SeriesOverview({
             )}
             {detail && (
               <>
-                <h3>{detail.title}</h3>
+                <div className="series-detail-heading">
+                  <h3>{detail.title}</h3>
+                  <IconButton
+                    label={copy.reuse}
+                    className="quiet"
+                    disabled={!online || detailBusy || changingOrder}
+                    onClick={() => {
+                      reuseAfterClose.current = detail;
+                      changeOpen(false);
+                    }}
+                  >
+                    <CopyIcon aria-hidden="true" />
+                  </IconButton>
+                </div>
                 <SkippedDates dates={detail.skipDates} locale={locale} />
                 <p className="muted">
                   {copy.origin(

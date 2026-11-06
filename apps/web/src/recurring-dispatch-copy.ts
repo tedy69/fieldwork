@@ -7,6 +7,8 @@ const english = {
   storeFailed: 'Could not read the saved dispatch. Try loading it again.',
   reloadSaved: 'Reload saved dispatch',
   intro: 'Preview a repeat schedule. Each date becomes an independent work order.',
+  reuse: 'New batch from template',
+  reuseHint: 'Choose a first date. Add any holidays or closures for the new schedule.',
   close: 'Close',
   monthly: 'Repeats on the original day of the month. Shorter months use their last day.',
   monthEnd: 'Choose the last day of a month for the first visit.',
@@ -80,6 +82,8 @@ export const recurringDispatchCopy: Record<Locale, typeof english> = {
     storeFailed: 'Jadwal tersimpan gagal dibaca. Coba muat lagi.',
     reloadSaved: 'Muat ulang jadwal tersimpan',
     intro: 'Tinjau jadwal berulang. Setiap tanggal menjadi satu tugas.',
+    reuse: 'Jadwal baru dari salinan',
+    reuseHint: 'Pilih tanggal awal. Tambahkan hari libur atau tanggal tutup untuk jadwal baru.',
     close: 'Tutup',
     monthly:
       'Berulang pada tanggal awal tiap bulan. Bulan yang lebih pendek memakai hari terakhir.',

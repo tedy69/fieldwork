@@ -794,3 +794,116 @@ test('opening a current batch order awaits persistence and leaves a worker draft
   await workerContext.close();
   await managerContext.close();
 });
+
+test('manager reuses batch settings at 320px with a fresh date and an explicit replacement worker', async ({
+  page,
+  context,
+}) => {
+  const { manager } = await fixture('Batch reuse setup', 0);
+  const email = `batch-reuse-${crypto.randomUUID()}@example.com`;
+  const invite = await manager.createInvitation({ name: 'Synthetic batch worker', email });
+  const { user } = await createClient(baseURL).acceptInvitation(
+    invite.token,
+    'synthetic-batch-password',
+  );
+  const title = `Jadwal salinan ${crypto.randomUUID().slice(0, 8)}`;
+  const original = await manager.createOrderSeries({
+    mutationId: crypto.randomUUID(),
+    title,
+    instructions: 'Periksa gerbang sebelum membuka.',
+    siteId: 'depot',
+    templateId: 'routine',
+    assigneeId: user.id,
+    priority: 'urgent',
+    dueDate: '2026-12-28',
+    frequency: 'selected-days',
+    repeatDays: ['mon', 'wed'],
+    occurrences: 3,
+    skipDates: ['2027-01-06'],
+  });
+  const first = original.orders[0];
+  await manager.reassignOrder(first.id, { baseVersion: first.version, assigneeId: 'worker' });
+  await manager.updateWorkerAccess(user.id, { expectedVersion: 0, enabled: false });
+
+  await page.setViewportSize({ width: 320, height: 840 });
+  await login(page);
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+  const trigger = page.getByRole('button', { name: 'Jadwal berulang', exact: true });
+  const batches = page.getByRole('dialog', { name: 'Jadwal berulang', exact: true });
+  const reuse = batches.getByRole('button', { name: 'Salin pengaturan jadwal', exact: true });
+  async function openBatch() {
+    await trigger.click();
+    await batches.getByRole('button', { name: `Lihat jadwal ${original.id}: ${title}` }).click();
+    await expect(reuse.locator('svg[aria-hidden=true]')).toBeVisible();
+  }
+  await openBatch();
+  await context.setOffline(true);
+  await expect(reuse).toBeDisabled();
+  await context.setOffline(false);
+  await reuse.focus();
+  await page.keyboard.press('Enter');
+  const copied = page.getByRole('dialog', { name: 'Jadwal baru dari salinan', exact: true });
+  const due = copied.getByRole('textbox', { name: 'Tenggat', exact: true });
+  await expect(due).toBeFocused();
+  await expect(batches).toHaveCount(0);
+  await expect(due).toHaveValue('');
+  await page.keyboard.press('Escape');
+  await expect(trigger).toBeFocused();
+
+  await openBatch();
+  await reuse.click();
+  await expect(copied.getByRole('textbox', { name: 'Judul tugas', exact: true })).toHaveValue(
+    title,
+  );
+  await expect(copied.getByRole('textbox', { name: 'Petunjuk', exact: true })).toHaveValue(
+    'Periksa gerbang sebelum membuka.',
+  );
+  await expect(copied.getByRole('combobox', { name: 'Lokasi', exact: true })).toHaveValue('depot');
+  await expect(copied.getByRole('combobox', { name: 'Daftar periksa', exact: true })).toHaveValue(
+    'routine',
+  );
+  await expect(copied.getByRole('combobox', { name: 'Prioritas', exact: true })).toHaveValue(
+    'urgent',
+  );
+  const worker = copied.getByRole('combobox', { name: 'Tugaskan kepada', exact: true });
+  await expect(worker).toHaveValue('');
+  await expect(copied.getByRole('combobox', { name: 'Ulangi', exact: true })).toHaveValue(
+    'selected-days',
+  );
+  for (const day of ['Senin', 'Rabu']) {
+    await expect(copied.getByRole('button', { name: day, exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  }
+  const assign = copied.getByRole('button', { name: /^Buat (?:3 )?tugas$/ });
+  await expect(assign).toBeDisabled();
+  await due.fill('2027-01-04');
+  await expect(copied.locator('.recurrence-preview time')).toHaveCount(3);
+  expect(
+    await copied
+      .locator('.recurrence-preview time')
+      .evaluateAll((dates) => dates.map((date) => date.getAttribute('datetime'))),
+  ).toEqual(['2027-01-04', '2027-01-06', '2027-01-11']);
+  await assign.click();
+  await expect(worker).toBeFocused();
+  await expect(worker).toHaveAttribute('aria-invalid', 'true');
+  expect((await manager.orderSeries({ q: title })).total).toBe(1);
+
+  await worker.selectOption('worker');
+  expect(await copied.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await copied.screenshot({ path: test.info().outputPath('batch-template-phone.png') });
+  await assign.click();
+  await expect(copied).toHaveCount(0);
+  const result = await manager.orderSeries({ q: title });
+  expect(result.total).toBe(2);
+  const newBatch = result.data.find((batch) => batch.id !== original.id)!;
+  const detail = await manager.orderSeriesDetail(newBatch.id);
+  expect(detail.orders.map((visit) => visit.plannedDueDate)).toEqual([
+    '2027-01-04',
+    '2027-01-06',
+    '2027-01-11',
+  ]);
+  expect(detail.assignee.id).toBe('worker');
+  expect((await manager.orderSeriesDetail(original.id)).skipDates).toEqual(['2027-01-06']);
+});

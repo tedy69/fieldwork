@@ -84,6 +84,8 @@ Turn on **Open work** to see batches with at least one visit that has yet to be 
 
 Use **Show visits** to narrow a loaded batch. Upcoming field work includes unfinished assignments due today or later. Overdue follows the work-order list and uses the current due date and the device's local date. **Rescheduled** shows visits whose current due date differs from the planned date. The filter works offline and stays selected when you refresh the same batch.
 
+**Use batch as template** opens a new schedule with the original worker, assignment details, repeat rule, and visit count filled in. Choose a first date and add any holidays or closures for the new schedule. If a site, worker, or checklist is unavailable, select a current one. An unconfirmed saved request opens for recovery first.
+
 **Export batch visits as CSV** downloads the visits in the current filter, including both due dates and the current worker and status. The export works from loaded batch data while offline. It contains schedule rows without inspection report content.
 
 Use the calendar action beside an assigned order or an order with changes requested to edit its current due date from this view. The planned date and sibling orders stay as scheduled. If another update arrives first, **Reload order** refreshes the row and keeps the proposed date available for review. The action needs a connection. See [rescheduling](rescheduling.md) for version checks and worker sync behavior.

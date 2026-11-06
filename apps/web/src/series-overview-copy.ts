@@ -39,6 +39,7 @@ const english = {
   origin: (creator: string, date: string, worker: string) =>
     `Created by ${creator} on ${date}. Original worker: ${worker}.`,
   loaded: 'Loaded',
+  reuse: 'Use batch as template',
   visits: 'Show visits',
   filters: {
     all: 'All visits',
@@ -109,6 +110,7 @@ export const seriesOverviewCopy: Record<Locale, typeof english> = {
     origin: (creator, date, worker) =>
       `Dibuat oleh ${creator} pada ${date}. Petugas awal: ${worker}.`,
     loaded: 'Dimuat',
+    reuse: 'Salin pengaturan jadwal',
     visits: 'Tampilkan kunjungan',
     filters: {
       all: 'Semua kunjungan',

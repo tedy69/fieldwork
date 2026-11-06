@@ -713,6 +713,11 @@ form > .ui-field-label {
   max-width: 100%;
   margin: 0;
 }
+.board-filters .list-toolbar:has(.clear-status-filter) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 6px;
+}
 .board-filters .date-filter {
   margin: 0;
   max-width: 100%;
@@ -742,6 +747,7 @@ form > .ui-field-label {
 }
 .status-scroll-hint {
   display: none;
+  grid-column: 1 / -1;
 }
 .status-filters .kokonut-tab.is-selected {
   box-shadow: none;

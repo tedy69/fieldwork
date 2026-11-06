@@ -219,7 +219,10 @@ test('manager previews and recovers recurring assignments in Indonesian', async 
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
   await context.setOffline(true);
   await page.reload();
-  await page.getByRole('button', { name: 'Pulihkan jadwal berulang', exact: true }).click();
+  const recover = page.getByRole('button', { name: 'Pulihkan jadwal berulang', exact: true });
+  await recover.focus();
+  await expect(recover).toBeFocused();
+  await page.keyboard.press('Enter');
   await expect(
     dialog.getByText('Jadwal tersimpan menunggu konfirmasi', { exact: true }),
   ).toBeVisible();

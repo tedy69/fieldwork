@@ -297,6 +297,7 @@ export default function WorkerAccounts({
             key={recovery.user.id}
             worker={recovery}
             online={online}
+            locale={locale}
             onWriting={(active) => {
               writing.current = active;
               setBusy(active ? 'saving' : null);

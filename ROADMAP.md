@@ -92,6 +92,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] English and Indonesian worker account status, access confirmations, and access history.
 - [x] Manager worker-access history with actor/time details, stable pagination, retry/restart, and temporary offline browsing.
 - [x] Manager-assisted worker password recovery with one-hour links, replacement/revocation, browser password confirmation, session revocation, and preserved offline reports.
+- [x] English and Indonesian manager controls for creating, copying, replacing, and revoking password reset links.
 
 ## Next · Make daily work easier
 

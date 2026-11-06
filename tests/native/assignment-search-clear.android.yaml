@@ -1,0 +1,19 @@
+appId: host.exp.exponent
+name: Clear a saved assignment search on Android
+---
+- scrollUntilVisible:
+    element: My assignments
+    direction: UP
+- tapOn: Filter assignments
+- tapOn:
+    text: Assigned
+    index: 0
+- tapOn: Filter assignments
+- tapOn:
+    id: assignment-search
+- inputText: Weekly
+- tapOn: Done editing
+- assertVisible: Assigned · 1 shown
+- tapOn: Clear search
+- assertNotVisible: Clear search
+- assertVisible: Assigned · 3 shown

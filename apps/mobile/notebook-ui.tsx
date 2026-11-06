@@ -156,6 +156,7 @@ export function Field({
   hideLabel = false,
   collapsedLabel = 'Note (optional)',
   inputRef,
+  trailingAction,
   secureTextEntry = false,
   actionLabels = {
     doneEditing: 'Done editing',
@@ -170,6 +171,7 @@ export function Field({
   hideLabel?: boolean;
   collapsedLabel?: string;
   inputRef?: React.Ref<React.ComponentRef<typeof TextInput>>;
+  trailingAction?: ReactNode;
   actionLabels?: { doneEditing: string; showPassword: string; hidePassword: string };
 }) {
   const [focused, setFocused] = useState(false);
@@ -230,6 +232,7 @@ export function Field({
             </View>
           </Pressable>
         )}
+        {trailingAction}
       </View>
       {hint && (
         <Copy variant="caption" muted>

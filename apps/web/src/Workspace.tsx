@@ -417,7 +417,12 @@ export default function Workspace({
         className="main-column"
         onFocus={({ target, currentTarget }) => {
           const nav = navigation.current;
-          if (!nav || !currentTarget.contains(target) || getComputedStyle(nav).position !== 'fixed')
+          if (
+            !nav ||
+            !currentTarget.contains(target) ||
+            !target.matches(':focus-visible') ||
+            getComputedStyle(nav).position !== 'fixed'
+          )
             return;
           requestAnimationFrame(() => {
             if (document.activeElement !== target) return;

@@ -215,8 +215,8 @@ export default function OrderDetail({
             <div className="detail-reference">
               <span className="reference">{order.reference}</span>
               <IconButton
-                label={web.copyReference}
-                tooltip={referenceCopy === 'copied' ? web.referenceCopied : web.copyReference}
+                label={copy.copyReference}
+                tooltip={referenceCopy === 'copied' ? copy.referenceCopied : copy.copyReference}
                 variant="ghost"
                 onClick={() => void copyReference()}
               >
@@ -230,8 +230,8 @@ export default function OrderDetail({
             <span className="muted">{order.template.name}</span>
           </div>
           <div aria-live="polite" className={referenceCopy === 'failed' ? 'muted' : 'sr-only'}>
-            {referenceCopy === 'copied' && web.referenceCopied}
-            {referenceCopy === 'failed' && web.referenceCopyFailed}
+            {referenceCopy === 'copied' && copy.referenceCopied}
+            {referenceCopy === 'failed' && copy.referenceCopyFailed}
           </div>
           <h1>{order.title}</h1>
         </div>

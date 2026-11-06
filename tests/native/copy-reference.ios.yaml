@@ -1,0 +1,15 @@
+appId: host.exp.Exponent
+name: Copy an assignment reference in Indonesian on iOS
+---
+- assertVisible: My assignments
+- tapOn: Bahasa Indonesia
+- assertVisible: Tugas saya
+- scrollUntilVisible:
+    element: 'Buka FW-001: Morning safety walkthrough'
+    centerElement: true
+- tapOn: 'Buka FW-001: Morning safety walkthrough'
+- assertVisible: FW-001
+- tapOn: Salin nomor tugas
+- tapOn: Kembali ke daftar tugas
+- tapOn: English
+- assertVisible: My assignments

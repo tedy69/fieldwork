@@ -75,6 +75,27 @@ name: Find assignments by due date while offline
 - scrollUntilVisible:
     element: Lewat tenggat · 1 ditampilkan
 - assertVisible: Lewat tenggat · 1 ditampilkan
+- tapOn: Hapus filter tugas
+- assertNotVisible: Lewat tenggat · 1 ditampilkan
+- scrollUntilVisible:
+    element:
+      id: assignment-search
+    direction: UP
+- assertVisible:
+    id: assignment-search
+    text: Overdue QA
+- scrollUntilVisible:
+    element: ${FUTURE_ID}
+- assertVisible: ${FUTURE_ID}
+- scrollUntilVisible:
+    element: Saring tugas
+    direction: UP
+- tapOn: Saring tugas
+- tapOn:
+    text: '^Lewat tenggat$'
+    index: 0
+- tapOn: Saring tugas
+- assertVisible: Lewat tenggat · 1 ditampilkan
 - scrollUntilVisible:
     element: ${LATE_ID}
     centerElement: true

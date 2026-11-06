@@ -27,3 +27,27 @@ name: Filter the next seven dates in the cached Android notebook
 - scrollUntilVisible:
     element: ${LAST}
 - assertVisible: ${LAST}
+- scrollUntilVisible:
+    element: Clear assignment filter
+    direction: UP
+- tapOn: Clear assignment filter
+- assertNotVisible: Next 7 days · 2 shown
+- scrollUntilVisible:
+    element:
+      id: assignment-search
+    direction: UP
+- assertVisible:
+    id: assignment-search
+    text: ${SEARCH}
+- scrollUntilVisible:
+    element: ${BEYOND}
+- assertVisible: ${BEYOND}
+- scrollUntilVisible:
+    element: Filter assignments
+    direction: UP
+- tapOn: Filter assignments
+- tapOn:
+    text: Next 7 days
+    index: 0
+- tapOn: Filter assignments
+- assertVisible: Next 7 days · 2 shown

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
 import { IconButton } from './components/ui/icon-button';
 import { CalendarPlusIcon } from '@phosphor-icons/react/dist/csr/CalendarPlus';
 import {
@@ -261,6 +261,14 @@ function RecurringDialog({
   onCreated: (receipt: OrderSeriesReceipt) => Promise<void>;
 }) {
   const copy = recurringDispatchCopy[locale];
+  const repeatHintId = useId();
+  const repeatHints: Partial<Record<Recurrence['frequency'], string>> = {
+    monthly: copy.monthly,
+    'month-start-weekday': copy.monthStartWeekday,
+    'month-end': copy.monthEnd,
+    'month-end-weekday': copy.monthEndWeekday,
+    quarterly: copy.quarterly,
+  };
   const days = weekdayLabels[locale];
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -289,6 +297,7 @@ function RecurringDialog({
   const [frequency, setFrequency] = useState<Recurrence['frequency']>(
     pending?.frequency ?? batchToReuse?.frequency ?? 'weekly',
   );
+  const repeatHint = repeatHints[frequency];
   const [repeatDays, setRepeatDays] = useState<RepeatDay[]>(
     pending?.repeatDays ?? batchToReuse?.repeatDays ?? [],
   );
@@ -431,19 +440,6 @@ function RecurringDialog({
             {copy.close}
           </Button>
         </DialogHeader>
-        {(pending?.frequency ?? frequency) === 'monthly' && <p className="muted">{copy.monthly}</p>}
-        {(pending?.frequency ?? frequency) === 'month-start-weekday' && (
-          <p className="muted">{copy.monthStartWeekday}</p>
-        )}
-        {(pending?.frequency ?? frequency) === 'month-end' && (
-          <p className="muted">{copy.monthEnd}</p>
-        )}
-        {(pending?.frequency ?? frequency) === 'month-end-weekday' && (
-          <p className="muted">{copy.monthEndWeekday}</p>
-        )}
-        {(pending?.frequency ?? frequency) === 'quarterly' && (
-          <p className="muted">{copy.quarterly}</p>
-        )}
         {pending ? (
           <>
             <Alert className="recurrence-recovery">
@@ -517,22 +513,30 @@ function RecurringDialog({
                 onSiteChange={setSiteId}
               />
               <div className="form-grid recurring-schedule-fields">
-                <Label>
-                  {copy.repeat}
-                  <Select
-                    aria-label={copy.repeat}
-                    value={frequency}
-                    onChange={(event) =>
-                      setFrequency(event.target.value as Recurrence['frequency'])
-                    }
-                  >
-                    {RecurrenceFrequencySchema.options.map((option) => (
-                      <Option key={option} value={option}>
-                        {frequencyLabels[locale][option]}
-                      </Option>
-                    ))}
-                  </Select>
-                </Label>
+                <div className="recurrence-repeat">
+                  <Label>
+                    {copy.repeat}
+                    <Select
+                      aria-label={copy.repeat}
+                      aria-describedby={repeatHint ? repeatHintId : undefined}
+                      value={frequency}
+                      onChange={(event) =>
+                        setFrequency(event.target.value as Recurrence['frequency'])
+                      }
+                    >
+                      {RecurrenceFrequencySchema.options.map((option) => (
+                        <Option key={option} value={option}>
+                          {frequencyLabels[locale][option]}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Label>
+                  {repeatHint && (
+                    <p id={repeatHintId} className="muted recurrence-repeat-hint">
+                      {repeatHint}
+                    </p>
+                  )}
+                </div>
                 <Label>
                   {copy.ends}
                   <Select

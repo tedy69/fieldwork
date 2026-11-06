@@ -1084,6 +1084,14 @@ main#main {
 }
 .form-grid.recurring-schedule-fields {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+.recurrence-repeat {
+  min-width: 0;
+}
+.recurrence-repeat-hint {
+  margin: 6px 0 0;
+  font-size: 13px;
 }
 .recurring-dispatch {
   max-width: 100%;

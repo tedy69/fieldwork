@@ -188,7 +188,7 @@ test('manager previews and recovers recurring assignments in Indonesian', async 
   const repeat = dialog.getByRole('combobox', { name: 'Ulangi', exact: true });
   await dialog.getByLabel('Tenggat', { exact: true }).fill('2026-08-03');
   await repeat.selectOption({ label: 'Hari kerja pertama tiap bulan' });
-  await expect(dialog.getByText('Mulai pada hari kerja pertama suatu bulan.')).toBeVisible();
+  await expect(repeat).toHaveAccessibleDescription('Mulai pada hari kerja pertama suatu bulan.');
   await expect(
     dialog.getByRole('region', { name: 'Tanggal terjadwal', exact: true }).locator('time').first(),
   ).toHaveAttribute('datetime', '2026-08-03');

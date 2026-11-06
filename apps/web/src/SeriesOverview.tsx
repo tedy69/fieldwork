@@ -10,6 +10,7 @@ import { MapPinIcon } from '@phosphor-icons/react/dist/csr/MapPin';
 import { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
 import {
   RecurrenceFrequencySchema,
+  type Catalog,
   type OrderSeriesDetail,
   type OrderSeriesQuery,
   type WorkOrder,
@@ -66,6 +67,7 @@ function matchesVisit({ order, plannedDueDate }: Visit, filter: VisitFilter, tod
 
 export default function SeriesOverview({
   online,
+  sites,
   locale,
   today,
   onCache,
@@ -73,6 +75,7 @@ export default function SeriesOverview({
   onReuse,
 }: {
   online: boolean;
+  sites: Catalog['sites'];
   locale: Locale;
   today: string;
   onCache: (order: WorkOrder) => Promise<void>;
@@ -669,6 +672,9 @@ export default function SeriesOverview({
                         {(order.status === 'ASSIGNED' || order.status === 'CHANGES_REQUESTED') && (
                           <RescheduleOrder
                             order={order}
+                            closureDates={
+                              sites.find((site) => site.id === order.site.id)?.closureDates
+                            }
                             locale={locale}
                             online={online}
                             onSaved={saveSchedule}

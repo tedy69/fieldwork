@@ -59,6 +59,7 @@ export default function OrderDetail({
   user,
   order,
   workers,
+  closureDates,
   repo,
   state,
   online,
@@ -71,6 +72,7 @@ export default function OrderDetail({
   user: User;
   order: WorkOrder;
   workers: User[];
+  closureDates?: string[];
   repo: OfflineRepository;
   state: State;
   online: boolean;
@@ -634,6 +636,7 @@ export default function OrderDetail({
                   />
                   <RescheduleOrder
                     order={order}
+                    closureDates={closureDates}
                     online={online}
                     locale={locale}
                     onSaved={async (updated) => {

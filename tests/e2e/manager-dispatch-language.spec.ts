@@ -1,9 +1,16 @@
 import { expect, test } from '@playwright/test';
+import { createClient } from '@fieldwork/sdk';
 
 test('manager assigns work and uses saved dispatch in Indonesian at 320px', async ({
   page,
   context,
 }) => {
+  const baseURL = 'http://127.0.0.1:4173';
+  const session = await createClient(baseURL).login('manager@fieldwork.local', 'fieldwork-demo');
+  const manager = createClient(baseURL, () => session.token);
+  const site = await manager.createSite('Lokasi tutup QA', 'Synthetic site');
+  const closed = '2026-12-29';
+  await manager.updateSiteClosures(site.id, { expectedDates: [], dates: [closed] });
   await page.setViewportSize({ width: 320, height: 840 });
   await page.goto('/');
   await page.getByLabel('Email', { exact: true }).fill('manager@fieldwork.local');
@@ -29,10 +36,19 @@ test('manager assigns work and uses saved dispatch in Indonesian at 320px', asyn
   await page.keyboard.press('Enter');
   const titleText = 'Pemeriksaan gerbang QA';
   await title.fill(titleText);
-  await dialog.getByRole('combobox', { name: 'Lokasi', exact: true }).selectOption('north');
+  const siteField = dialog.getByRole('combobox', { name: 'Lokasi', exact: true });
+  await siteField.selectOption(site.id);
   await dialog.getByRole('combobox', { name: 'Tugaskan kepada' }).selectOption('worker');
   await dialog.getByRole('combobox', { name: 'Daftar periksa' }).selectOption('routine');
-  await dialog.getByLabel('Tenggat', { exact: true }).fill('2026-12-28');
+  const due = dialog.getByLabel('Tenggat', { exact: true });
+  const hint = 'Lokasi tutup pada tanggal ini.';
+  await due.fill(closed);
+  await expect(due).toHaveAccessibleDescription(hint);
+  await expect(dialog.locator('.site-closure-hint svg[aria-hidden=true]')).toBeVisible();
+  await siteField.selectOption('north');
+  await expect(dialog.getByText(hint, { exact: true })).toHaveCount(0);
+  await siteField.selectOption(site.id);
+  await expect(due).toHaveAccessibleDescription(hint);
   await dialog.getByRole('button', { name: 'Pilih tenggat', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Hari ini', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
@@ -55,7 +71,11 @@ test('manager assigns work and uses saved dispatch in Indonesian at 320px', asyn
     dialog.getByText('Tugas gagal dibuat. Periksa koneksi dan coba lagi.'),
   ).toBeVisible();
   await expect(title).toHaveValue(titleText);
+  await expect(due).toHaveValue(closed);
+  await expect(due).toHaveAccessibleDescription(hint);
   await page.unroute(endpoint);
+  await due.fill('2026-12-28');
+  await expect(dialog.getByText(hint, { exact: true })).toHaveCount(0);
   await submit.click();
   await expect(page.getByRole('heading', { name: titleText, exact: true })).toBeVisible();
   await expect(page.getByText(/ditugaskan kepada Sam Rivera/)).toBeVisible();

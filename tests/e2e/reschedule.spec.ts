@@ -318,7 +318,7 @@ test('manager sees site closures when moving an order from the workspace or a re
   const save = visit.getByRole('button', { name: 'Simpan tenggat', exact: true });
   await proposed.fill(closed);
   await expect(proposed).toHaveAccessibleDescription('Lokasi tutup pada tanggal ini.');
-  await expect(visit.locator('.schedule-closure svg[aria-hidden=true]')).toBeVisible();
+  await expect(visit.locator('.site-closure-hint svg[aria-hidden=true]')).toBeVisible();
   await expect(save).toBeEnabled();
   expect(await viewer.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
   await visit.screenshot({ path: test.info().outputPath('closed-reschedule-phone.png') });

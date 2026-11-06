@@ -6,7 +6,7 @@ The action needs a connection. It updates the saved order and the list/planner c
 
 Dates are calendar dates, without a time zone. A past date is allowed when recording an overdue commitment. The current date appears beside the input for comparison. Enter submits, Escape or Cancel closes the edit, and each action has a visible keyboard focus style. Saving or reloading moves focus to the updated order's main content.
 
-The date editor flags a proposed date that falls on the site’s saved closure calendar. Review the date before saving. The hint is also available when editing an individual visit from a recurring batch.
+The date field flags a proposed date on the selected site’s closure calendar. The hint appears when assigning a single visit, moving an order, or editing a visit within a recurring batch.
 
 ## Conflicts and uncertain outcomes
 

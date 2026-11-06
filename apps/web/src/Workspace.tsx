@@ -205,7 +205,7 @@ export default function Workspace({
   useEffect(() => {
     const title =
       view === 'resources'
-        ? 'Sites & checklists'
+        ? dispatch.resources
         : view === 'outbox'
           ? notebook.outbox
           : order
@@ -214,7 +214,7 @@ export default function Workspace({
               ? copy.orders
               : notebook.assignments;
     document.title = `${title} · Fieldwork`;
-  }, [view, order?.reference, user.role, copy.orders, notebook]);
+  }, [view, order?.reference, user.role, copy.orders, notebook, dispatch.resources]);
   const sessionRecovery = sessionExpired ? (
     <Alert role="region" aria-label={notebook.syncSignIn} className="banner session-recovery">
       <div role="alert">
@@ -365,7 +365,7 @@ export default function Workspace({
             />
           </div>
         </div>
-        <main id="main" tabIndex={-1} lang={view === 'resources' ? 'en' : locale}>
+        <main id="main" tabIndex={-1} lang={locale}>
           {!recoveryInReport && sessionRecovery}
           {!sessionExpired && error !== '' && (
             <Alert className="banner error" lang={locale}>
@@ -385,6 +385,7 @@ export default function Workspace({
           {view === 'resources' ? (
             <Resources
               catalog={catalog}
+              locale={locale}
               refresh={refresh}
               online={online}
               onCatalog={setCatalog}

@@ -82,7 +82,7 @@ In a web work order, use the copy icon beside its reference to paste that number
 
 Turn on **Open work** to see batches with at least one visit that has yet to be approved. The filter works with search and frequency.
 
-Use **Show visits** to narrow a loaded batch. Upcoming field work includes unfinished assignments due today or later. Overdue follows the work-order list and uses the current due date and the device's local date. **Rescheduled** shows visits whose current due date differs from the planned date. The filter works offline and stays selected when you refresh the same batch.
+Use **Show visits** to narrow a loaded batch. Upcoming field work includes unfinished assignments due today or later. Overdue follows the work-order list and uses the current due date and the device's local date. **Rescheduled** shows visits whose current due date differs from the planned date. **On a closure date** shows unfinished visits whose current due date falls on the saved site calendar. These filters work offline and stay selected when you refresh the same batch.
 
 **Use batch as template** opens a new schedule with the original worker, assignment details, repeat rule, and visit count filled in. Choose a first date and add any holidays or closures for the new schedule. If a site, worker, or checklist is unavailable, select a current one. An unconfirmed saved request opens for recovery first.
 

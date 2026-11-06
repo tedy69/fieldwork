@@ -52,7 +52,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] English and Indonesian recurring batch browsing, visit filters, and individual rescheduling.
 - [x] Recurring batch search by title, worker, site, ID, or work order reference, with paginated matches and retry.
 - [x] Recurring batch frequency and open-work filters combined with search and pagination.
-- [x] Filters for upcoming, overdue, rescheduled, submitted, and approved visits in a loaded recurring batch.
+- [x] Filters for upcoming, overdue, rescheduled, closed-site, submitted, and approved visits in a loaded recurring batch.
 - [x] Offline CSV export of filtered batch visits with planned and current dates.
 - [x] Reschedule one unfinished order from its recurring batch while keeping the planned date visible.
 - [x] Reuse a recurring batch with a new first date, preview, and the standard duplicate-safe save.

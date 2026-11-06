@@ -27,7 +27,7 @@ import {
   ArrowLeft,
   Camera,
   Check,
-  CopyReference,
+  CopyIcon,
   ImageSquare,
   Trash,
   GearSix,
@@ -528,11 +528,23 @@ function Inspection({
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [preparingPhoto, setPreparingPhoto] = useState(false);
+  const [coordinatesCopy, setCoordinatesCopy] = useState<'copied' | 'failed'>();
+  const coordinates = order.site.coordinates;
   const [referenceCopy, setReferenceCopy] = useState<'copied' | 'failed'>();
   const queued = state.outbox.find((item) => item.orderId === order.id);
   const editable = ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status) && !queued;
   const completed = completedAnswers(order.template, draft.answers);
   const sitePhotoSlots = availableSitePhotoSlots(order.template, draft.photos);
+  async function copyCoordinates() {
+    if (!coordinates) return;
+    const copied = await setStringAsync(`${coordinates.latitude}, ${coordinates.longitude}`).catch(
+      () => false,
+    );
+    setCoordinatesCopy(copied ? 'copied' : 'failed');
+    AccessibilityInfo.announceForAccessibility(
+      copied ? copy.coordinatesCopied : copy.coordinatesCopyFailed,
+    );
+  }
   async function copyReference() {
     const copied = await setStringAsync(order.reference).catch(() => false);
     setReferenceCopy(copied ? 'copied' : 'failed');
@@ -639,7 +651,7 @@ function Inspection({
           <Button
             title={referenceCopy === 'copied' ? copy.referenceCopied : copy.copyReference}
             accessibilityLabel={copy.copyReference}
-            icon={referenceCopy === 'copied' ? Check : CopyReference}
+            icon={referenceCopy === 'copied' ? Check : CopyIcon}
             iconOnly
             variant="ghost"
             onPress={() => void copyReference()}
@@ -660,18 +672,28 @@ function Inspection({
           <Copy muted variant="caption">
             {order.site.address}
           </Copy>
-          {order.site.coordinates && (
-            <View style={styles.siteCoordinates}>
-              <View accessible={false} importantForAccessibility="no-hide-descendants">
-                <MapPin size={18} color={colors.muted} />
+          {coordinates && (
+            <>
+              <View style={styles.siteCoordinates}>
+                <View accessible={false} importantForAccessibility="no-hide-descendants">
+                  <MapPin size={18} color={colors.muted} />
+                </View>
+                <Copy muted variant="caption" style={styles.flex}>
+                  {copy.coordinates(coordinates.latitude, coordinates.longitude)}
+                </Copy>
+                <Button
+                  title={
+                    coordinatesCopy === 'copied' ? copy.coordinatesCopied : copy.copyCoordinates
+                  }
+                  accessibilityLabel={copy.copyCoordinates}
+                  icon={coordinatesCopy === 'copied' ? Check : CopyIcon}
+                  iconOnly
+                  variant="ghost"
+                  onPress={() => void copyCoordinates()}
+                />
               </View>
-              <Copy muted variant="caption" style={styles.flex}>
-                {copy.coordinates(
-                  order.site.coordinates.latitude,
-                  order.site.coordinates.longitude,
-                )}
-              </Copy>
-            </View>
+              {coordinatesCopy === 'failed' && <Copy muted>{copy.coordinatesCopyFailed}</Copy>}
+            </>
           )}
         </View>
         <View style={styles.row}>
@@ -993,7 +1015,7 @@ const styles = StyleSheet.create({
   referenceRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
   headerIdentity: { flexGrow: 1, flexShrink: 1, minWidth: 0, gap: spacing.xs },
   inspectionTools: { flexDirection: 'row', justifyContent: 'space-between' },
-  siteCoordinates: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs },
+  siteCoordinates: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   headerLarge: { flexDirection: 'column', alignItems: 'stretch' },
   header: {
     zIndex: 2,

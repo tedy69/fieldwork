@@ -2,8 +2,6 @@ import type { Locale } from '@fieldwork/strings';
 
 const english = {
   location: 'Site location',
-  latitude: 'Latitude',
-  longitude: 'Longitude',
   outside: 'These coordinates are outside the latitude range supported by this map.',
   offline: 'Reconnect to load map tiles. Coordinates remain available in saved assignments.',
   loadingSettings: 'Loading map settings…',
@@ -36,8 +34,6 @@ export const workerMapCopy: Record<Locale, typeof english> = {
   en: english,
   id: {
     location: 'Lokasi tugas',
-    latitude: 'Lintang',
-    longitude: 'Bujur',
     outside: 'Koordinat ini berada di luar rentang lintang yang didukung peta.',
     offline: 'Sambungkan kembali untuk memuat peta. Koordinat tetap tersedia di tugas tersimpan.',
     loadingSettings: 'Memuat pengaturan peta…',

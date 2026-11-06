@@ -79,6 +79,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] One-tap clearing of Expo assignment search while retaining the active filter.
 - [x] Expo report history with saved revisions, review feedback, and retry without changing the active draft.
 - [x] Offline site coordinates in Expo inspections, taken from the saved assignment snapshot.
+- [x] Copy saved site coordinates in web and Expo inspections, including offline.
 - [x] Expo sign-in recovery from the notebook and outbox with the current server, account, and local reports retained.
 - [x] Repeatable Android smoke test for Expo sign-in recovery, assignment filters, saved coordinates, report history, and Back navigation.
 - [x] Web worker sign-in recovery in English and Indonesian, with queued reports retained through session expiry.

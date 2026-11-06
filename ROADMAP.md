@@ -35,6 +35,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Due today filter for open work on web and Expo, with offline search and the device’s local date.
 - [x] Next 7 days filter on web and Expo, with offline search and a rolling local date range.
 - [x] Urgent work filter on web and Expo that combines with search and excludes approved orders.
+- [x] To do filter in the web and Expo worker notebooks for new assignments and requested corrections.
 - [x] Localized Expo due dates in saved assignment rows, screen-reader hints, and inspection details.
 - [x] Copy an inspection reference from saved assignments in Expo, including offline.
 - [x] CSV exports for filtered manager report lists, including saved offline reports.

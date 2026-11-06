@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import {
+  awaitsInspection,
   compareOrdersByDueDate,
   isOpenDueBetween,
   isUrgentOpenOrder,
@@ -46,8 +47,14 @@ type QueueItem = State['outbox'][number];
 type Entry = { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: QueueItem };
 const dateFilters = ['overdue', 'today', 'next'] as const;
 type DateFilter = (typeof dateFilters)[number];
-export type AssignmentFilter = WorkOrder['status'] | DateFilter | 'urgent' | null;
-const filters: AssignmentFilter[] = [null, ...dateFilters, 'urgent', ...StatusSchema.options];
+export type AssignmentFilter = WorkOrder['status'] | DateFilter | 'urgent' | 'toDo' | null;
+const filters: AssignmentFilter[] = [
+  null,
+  ...dateFilters,
+  'urgent',
+  'toDo',
+  ...StatusSchema.options,
+];
 
 export type NotebookProblem =
   'session' | 'syncUnavailable' | 'notebookReadFailed' | 'recoveryUnavailable' | 'recoveryFailed';
@@ -154,11 +161,16 @@ export default function WorkspacePage({
     today: copy.dueToday,
     next: copy.nextSevenDays,
     urgent: copy.urgentWork,
+    toDo: copy.toDo,
     ...copy.status,
   };
   const filterLabel = (filter: AssignmentFilter) =>
     filter ? filterLabels[filter] : copy.allAssignments;
   const query = search.trim().toLowerCase();
+  const queuedOrders = useMemo(
+    () => new Set(state.outbox.map((item) => item.orderId)),
+    [state.outbox],
+  );
   const entries = useMemo<Entry[]>(() => {
     if (view === 'outbox') return state.outbox.map((item) => ({ kind: 'queued', item }));
     const through = assignmentFilter === 'next' ? nextSevenDaysEnd(today) : today;
@@ -168,9 +180,11 @@ export default function WorkspacePage({
           ? isOverdue(order, today)
           : assignmentFilter === 'urgent'
             ? isUrgentOpenOrder(order)
-            : assignmentFilter === 'today' || assignmentFilter === 'next'
-              ? isOpenDueBetween(order, today, through)
-              : !assignmentFilter || order.status === assignmentFilter;
+            : assignmentFilter === 'toDo'
+              ? awaitsInspection(order) && !queuedOrders.has(order.id)
+              : assignmentFilter === 'today' || assignmentFilter === 'next'
+                ? isOpenDueBetween(order, today, through)
+                : !assignmentFilter || order.status === assignmentFilter;
       return (
         matches &&
         `${order.reference} ${order.title} ${order.site.name}`.toLowerCase().includes(query)
@@ -178,7 +192,7 @@ export default function WorkspacePage({
     });
     if (assignmentFilter === 'next') orders.sort(compareOrdersByDueDate);
     return orders.map((order) => ({ kind: 'order', order }));
-  }, [state.orders, state.outbox, query, assignmentFilter, today, view]);
+  }, [state.orders, state.outbox, queuedOrders, query, assignmentFilter, today, view]);
   const queuedReports = state.outbox.length;
   const queuedLabel = copy.pending(queuedReports);
   return (
@@ -411,7 +425,7 @@ export default function WorkspacePage({
                   {copy.urgent}
                 </Copy>
               )}
-              {state.outbox.some((item) => item.orderId === order.id) && (
+              {queuedOrders.has(order.id) && (
                 <Copy variant="caption" style={{ color: colors.amber }}>
                   {copy.queued}
                 </Copy>

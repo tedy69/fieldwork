@@ -14,6 +14,9 @@ test('compact actions retain names, touch targets, keyboard hints and real desti
   await expect(page.getByRole('button', { name: 'Sync now', exact: true })).toBeEnabled();
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 844 });
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Sync now', exact: true })).toBeEnabled();
+    await page.mouse.move(0, 0);
     for (const name of [
       'Sync now',
       'Sign out',
@@ -34,7 +37,10 @@ test('compact actions retain names, touch targets, keyboard hints and real desti
       true,
     );
     const finder = page.getByRole('button', { name: 'Find work', exact: true });
-    await finder.focus();
+    await page
+      .getByRole('button', { name: 'Bahasa Indonesia', exact: true })
+      .press(browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab');
+    await expect(finder).toBeFocused();
     await expect(page.getByRole('tooltip')).toContainText('Find work');
     await page.keyboard.press('Escape');
     await expect(page.getByRole('tooltip')).toHaveCount(0);

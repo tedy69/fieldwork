@@ -2,6 +2,7 @@ import type { Locale } from './index';
 
 const english = {
   back: 'Back to assignments',
+  backToOutbox: 'Back to sync outbox',
   copyReference: 'Copy work order reference',
   referenceCopied: 'Work order reference copied.',
   referenceCopyFailed: 'Could not copy the reference. Select it to copy manually.',
@@ -80,6 +81,7 @@ export const inspectionCopy: Record<Locale, typeof english> = {
   en: english,
   id: {
     back: 'Kembali ke daftar tugas',
+    backToOutbox: 'Kembali ke antrean sinkronisasi',
     copyReference: 'Salin nomor tugas',
     referenceCopied: 'Nomor tugas disalin.',
     referenceCopyFailed: 'Nomor tugas tidak bisa disalin. Pilih nomornya untuk menyalin.',

@@ -170,6 +170,7 @@ export default function RecurringDispatch({
   return (
     <div className="recurring-dispatch" lang={locale}>
       <IconButton
+        id="assign-recurring-work"
         label={loading ? copy.checking : pending ? copy.recover : copy.assign}
         showLabel={Boolean(pending)}
         className="quiet"
@@ -413,7 +414,9 @@ function RecurringDialog({
             previousFocus.current.isConnected &&
             !previousFocus.current.matches(':disabled')
               ? previousFocus.current
-              : document.getElementById('main');
+              : completed.current
+                ? (document.getElementById('inspection-title') ?? document.getElementById('main'))
+                : document.getElementById('main');
           target?.focus();
         }}
       >

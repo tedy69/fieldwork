@@ -10,7 +10,6 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  useWindowDimensions,
   type TextInput,
   View,
 } from 'react-native';
@@ -326,9 +325,7 @@ function Notebook({
   locale: Locale;
   onLanguageChange: (locale: Locale) => void;
 }) {
-  const copy = notebookCopy[locale];
   const notebookScroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
-  const { fontScale } = useWindowDimensions();
   const client = useMemo(() => createClient(session.baseUrl, () => session.token), [session]);
   const repo = useMemo(
     () =>
@@ -464,33 +461,25 @@ function Notebook({
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="interactive"
     >
-      <View style={[styles.header, fontScale > 1.4 && styles.headerLarge]}>
-        <View style={styles.headerIdentity}>
-          <Brand />
-          <Copy variant="caption" muted>
-            {session.user.name}
-          </Copy>
-        </View>
-        <Button
-          title={busy ? copy.syncing : copy.sync}
-          icon={ArrowClockwise}
-          iconOnly
-          onPress={() => void sync()}
-          disabled={busy}
-          variant="ghost"
-        />
-      </View>
       <View style={styles.content}>
-        {error && (
-          <NotebookNotice error={error} locale={locale} onSignInAgain={() => void signInAgain()} />
-        )}
         <Inspection
           key={`${order.id}:${order.version}`}
           order={order}
           state={state}
           repo={repo}
           sync={sync}
+          syncing={busy}
           back={() => setSelected(null)}
+          returnTo={notebookView}
+          notice={
+            error && (
+              <NotebookNotice
+                error={error}
+                locale={locale}
+                onSignInAgain={() => void signInAgain()}
+              />
+            )
+          }
           baseUrl={session.baseUrl}
           token={session.token}
           locale={locale}
@@ -504,7 +493,10 @@ function Inspection({
   state,
   repo,
   sync,
+  syncing,
   back,
+  returnTo,
+  notice,
   baseUrl,
   token,
   locale,
@@ -513,20 +505,28 @@ function Inspection({
   state: State;
   repo: OfflineRepository;
   sync: () => Promise<void>;
+  syncing: boolean;
   back: () => void;
+  returnTo: 'assignments' | 'outbox';
+  notice: React.ReactNode;
   baseUrl: string;
   token: string;
   locale: Locale;
 }) {
   const copy = inspectionCopy[locale];
+  const notebook = notebookCopy[locale];
   const labels = signInCopy[locale];
-  const [draft, setDraft] = useState<Draft>(state.drafts[order.id] ?? blankDraft(order));
+  const storedDraft = state.drafts[order.id];
+  const [draft, setDraft] = useState<Draft>(() => storedDraft ?? blankDraft(order));
   const currentDraft = useRef(draft);
-  const pendingWrites = useRef(0);
+  const pendingWrite = useRef<Promise<void> | null>(null);
   const attaching = useRef(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [draftStatus, setDraftStatus] = useState<'untouched' | 'saving' | 'saved' | 'failed'>(
+    storedDraft ? 'saved' : 'untouched',
+  );
+  const saving = draftStatus === 'saving';
   const [preparingPhoto, setPreparingPhoto] = useState(false);
   const [coordinatesCopy, setCoordinatesCopy] = useState<'copied' | 'failed'>();
   const coordinates = order.site.coordinates;
@@ -535,6 +535,8 @@ function Inspection({
   const editable = ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status) && !queued;
   const completed = completedAnswers(order.template, draft.answers);
   const sitePhotoSlots = availableSitePhotoSlots(order.template, draft.photos);
+  const progress = copy.progress(completed, order.template.items.length);
+  const saveMessage = saving ? copy.savingLocally : draftStatus === 'saved' ? copy.draftSaved : '';
   async function copyCoordinates() {
     if (!coordinates) return;
     const copied = await setStringAsync(`${coordinates.latitude}, ${coordinates.longitude}`).catch(
@@ -552,19 +554,25 @@ function Inspection({
       copied ? copy.referenceCopied : copy.referenceCopyFailed,
     );
   }
+  async function persistDraft(value: Draft) {
+    setDraftStatus('saving');
+    const write = repo.saveDraft(order.id, value);
+    pendingWrite.current = write;
+    try {
+      await write;
+      if (pendingWrite.current === write) setDraftStatus('saved');
+      return true;
+    } catch {
+      if (pendingWrite.current === write) setDraftStatus('failed');
+      return false;
+    } finally {
+      if (pendingWrite.current === write) pendingWrite.current = null;
+    }
+  }
   async function save(value: Draft) {
     currentDraft.current = value;
     setDraft(value);
-    pendingWrites.current += 1;
-    setSaving(true);
-    try {
-      await repo.saveDraft(order.id, value);
-    } catch {
-      setError(copy.saveFailed);
-    } finally {
-      pendingWrites.current -= 1;
-      setSaving(pendingWrites.current > 0);
-    }
+    await persistDraft(value);
   }
   async function attach(camera: boolean, itemId?: string) {
     if (attaching.current) return;
@@ -623,7 +631,7 @@ function Inspection({
         mutationId: Crypto.randomUUID(),
         baseVersion: order.version,
       });
-      await repo.saveDraft(order.id, draft);
+      if (!(await persistDraft(draft))) return;
       const photoError = reportPhotoError(order.template, input.photos, copy.photoErrors);
       if (photoError) throw new Error(photoError.message);
       await repo.enqueue(order.id, input);
@@ -637,13 +645,28 @@ function Inspection({
   }
   return (
     <>
-      <View style={styles.inspectionTools}>
-        <Button title={copy.back} icon={ArrowLeft} iconOnly variant="ghost" onPress={back} />
-        {order.report && (
-          <ReportHistoryAction order={order} baseUrl={baseUrl} token={token} locale={locale} />
-        )}
-      </View>
-      <View style={styles.introduction}>
+      <View style={styles.inspectionHeader}>
+        <View style={styles.inspectionTools}>
+          <Button
+            title={returnTo === 'outbox' ? copy.backToOutbox : copy.back}
+            icon={ArrowLeft}
+            variant="ghost"
+            onPress={back}
+          />
+          <View style={styles.headerActions}>
+            {order.report && (
+              <ReportHistoryAction order={order} baseUrl={baseUrl} token={token} locale={locale} />
+            )}
+            <Button
+              title={syncing ? notebook.syncing : notebook.sync}
+              icon={ArrowClockwise}
+              iconOnly
+              onPress={() => void sync()}
+              disabled={syncing}
+              variant="ghost"
+            />
+          </View>
+        </View>
         <View style={styles.referenceRow}>
           <Copy variant="reference" muted>
             {order.reference}
@@ -663,6 +686,7 @@ function Inspection({
         </Copy>
         <StatusBadge status={order.status} locale={locale} />
       </View>
+      {notice}
       <View style={styles.metadata}>
         <View style={styles.introduction}>
           <Copy muted variant="caption">
@@ -731,8 +755,13 @@ function Inspection({
         <>
           <SectionHeading
             title={copy.checklist}
-            detail={`${copy.progress(completed, order.template.items.length)} · ${saving ? copy.savingLocally : copy.draftSaved}`}
+            detail={saveMessage ? `${progress} · ${saveMessage}` : progress}
           />
+          {draftStatus === 'failed' && (
+            <Copy variant="caption" accessibilityLiveRegion="polite" style={styles.draftError}>
+              {copy.saveFailed}
+            </Copy>
+          )}
           <Panel style={styles.ledger}>
             {order.template.items.map((item, index) => {
               const answer = draft.answers.find((answer) => answer.itemId === item.id)!;
@@ -1013,23 +1042,18 @@ const styles = StyleSheet.create({
   },
   introduction: { gap: spacing.sm },
   referenceRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
-  headerIdentity: { flexGrow: 1, flexShrink: 1, minWidth: 0, gap: spacing.xs },
-  inspectionTools: { flexDirection: 'row', justifyContent: 'space-between' },
-  siteCoordinates: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  headerLarge: { flexDirection: 'column', alignItems: 'stretch' },
-  header: {
-    zIndex: 2,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.sidebar,
+  inspectionHeader: { gap: spacing.sm },
+  inspectionTools: {
+    zIndex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.md,
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.xs,
   },
+  headerActions: { flexDirection: 'row', gap: spacing.xs },
+  draftError: { color: colors.error },
+  siteCoordinates: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   ledger: { padding: 0, gap: 0, overflow: 'hidden' },
   metadata: {
     borderWidth: 1,

@@ -777,8 +777,7 @@ test('opening a current batch order awaits persistence and leaves a worker draft
   await openOrder.click();
   expect((await (await fresh).json()).version).toBe(2);
   await expect(dialog).toHaveCount(0);
-  await expect(desk.locator('#main')).toBeFocused();
-  await expect(desk.getByRole('heading', { name: order.title, exact: true })).toBeVisible();
+  await expect(desk.getByRole('heading', { name: order.title, exact: true })).toBeFocused();
   await field.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });

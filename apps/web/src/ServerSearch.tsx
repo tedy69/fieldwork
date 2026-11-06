@@ -229,7 +229,11 @@ export default function ServerSearch({
         }}
         onCloseAutoFocus={(event) => {
           event.preventDefault();
-          if (navigated.current || !trigger.current?.isConnected || trigger.current.disabled)
+          if (navigated.current)
+            (
+              document.getElementById('inspection-title') ?? document.getElementById('main')
+            )?.focus();
+          else if (!trigger.current?.isConnected || trigger.current.disabled)
             document.getElementById('main')?.focus();
           else trigger.current.focus();
         }}

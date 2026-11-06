@@ -121,8 +121,9 @@ test('manager finds real work and pages with Kokonut keyboard navigation and mod
   await input.fill(`${gate.reference}`);
   await dialog.getByRole('option', { name: new RegExp(gate.title) }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: gate.title, exact: true })).toBeVisible();
-  await expect(page.getByRole('main')).toBeFocused();
+  await expect(page.getByRole('heading', { name: gate.title, exact: true })).toBeFocused();
+  await page.getByRole('button', { name: 'Back to work orders' }).click();
+  await expect(workspaceSearch).toBeFocused();
   await page.keyboard.press('Meta+k');
   await input.fill('Sam Rivera');
   await expect(dialog.getByRole('option', { name: new RegExp(gate.title) })).toBeVisible();

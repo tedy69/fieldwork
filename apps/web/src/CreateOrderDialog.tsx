@@ -94,7 +94,7 @@ export default function CreateOrder({
             previousFocus.current instanceof HTMLElement &&
             previousFocus.current.isConnected
               ? previousFocus.current
-              : document.getElementById('main');
+              : (document.getElementById('inspection-title') ?? document.getElementById('main'));
           target?.focus();
         }}
       >

@@ -1,5 +1,6 @@
 import { useRef, useState, type FormEvent } from 'react';
 import type { User, WorkOrder } from '@fieldwork/contracts';
+import type { Locale } from '@fieldwork/strings';
 import { Button } from './components/ui/button';
 import { IconButton } from './components/ui/icon-button';
 import { UserSwitchIcon } from '@phosphor-icons/react/dist/csr/UserSwitch';
@@ -11,21 +12,25 @@ import {
 import { Label } from './components/ui/label';
 import { FieldError } from './components/ui/field';
 import { client, message } from './lib';
+import { managerReviewCopy } from './manager-review-copy';
 import './reschedule.css';
 
 export default function ReassignOrder({
   order,
   workers,
   online,
+  locale,
   onSaved,
   onNotice,
 }: {
   order: WorkOrder;
   workers: User[];
   online: boolean;
+  locale: Locale;
   onSaved: (order: WorkOrder) => Promise<void>;
   onNotice: (notice: string) => void;
 }) {
+  const copy = managerReviewCopy[locale].handover;
   const [editing, setEditing] = useState(false);
   const [assigneeId, setAssigneeId] = useState(order.assignee.id);
   const [busy, setBusy] = useState<'saving' | 'reloading' | null>(null);
@@ -53,11 +58,11 @@ export default function ReassignOrder({
         assigneeId,
       });
       await onSaved(updated);
-      onNotice(`${order.reference} is now assigned to ${updated.assignee.name}.`);
+      onNotice(copy.saved(order.reference, updated.assignee.name));
       setEditing(false);
       document.getElementById('main')?.focus();
     } catch (error) {
-      setError(`${message(error)} Reload this order before trying again.`);
+      setError(`${locale === 'en' ? message(error) : copy.failed} ${copy.reloadHint}`);
       setNeedsReload(true);
     } finally {
       setBusy(null);
@@ -69,19 +74,19 @@ export default function ReassignOrder({
     try {
       const updated = await client.order(order.id);
       await onSaved(updated);
-      onNotice(`${order.reference} reloaded. Current worker: ${updated.assignee.name}.`);
+      onNotice(copy.reloaded(order.reference, updated.assignee.name));
       setNeedsReload(false);
       document.getElementById('main')?.focus();
     } catch (error) {
-      setError(message(error));
+      setError(locale === 'en' ? message(error) : copy.reloadFailed);
     } finally {
       setBusy(null);
     }
   }
   return (
-    <section className="schedule" aria-label="Assignment worker">
+    <section className="schedule" aria-label={copy.region}>
       <IconButton
-        label="Change worker"
+        label={copy.change}
         ref={trigger}
         className="quiet"
         aria-expanded={editing}
@@ -92,17 +97,15 @@ export default function ReassignOrder({
         <UserSwitchIcon aria-hidden="true" />
       </IconButton>
       {!online ? (
-        <p className="muted">Connect to change the worker.</p>
+        <p className="muted">{copy.connect}</p>
       ) : !hasReplacement ? (
-        <p className="muted">
-          Sync the workspace to load workers. Another field worker is required.
-        </p>
+        <p className="muted">{copy.noReplacement}</p>
       ) : null}
       {editing && (
         <Form
           noValidate
           id="assignee-form"
-          aria-label="Change worker"
+          aria-label={copy.change}
           onSubmit={save}
           onKeyDown={(event) => {
             if (event.key === 'Escape' && !busy) {
@@ -112,28 +115,28 @@ export default function ReassignOrder({
           }}
         >
           <p className="muted" id="assignee-handover">
-            Current worker: {order.assignee.name}. Saved reports and review notes stay with this
-            order. Unsent drafts stay on the original worker's device. Coordinate the handover
-            before saving.
+            {copy.intro(order.assignee.name)}
           </p>
           <Label>
-            New field worker
+            {copy.newWorker}
             <Select
               autoFocus
               required
-              aria-label="New field worker"
+              aria-label={copy.newWorker}
               aria-describedby="assignee-handover"
               value={assigneeId}
               disabled={Boolean(busy)}
               onChange={(event) => setAssigneeId(event.target.value)}
             >
               {!choices.some((worker) => worker.id === order.assignee.id) && (
-                <Option value={order.assignee.id}>{order.assignee.name} (current)</Option>
+                <Option value={order.assignee.id}>
+                  {order.assignee.name} ({copy.current})
+                </Option>
               )}
               {choices.map((worker) => (
                 <Option value={worker.id} key={worker.id}>
                   {worker.name}
-                  {worker.id === order.assignee.id ? ' (current)' : ''}
+                  {worker.id === order.assignee.id ? ` (${copy.current})` : ''}
                 </Option>
               ))}
             </Select>
@@ -150,10 +153,10 @@ export default function ReassignOrder({
                 assigneeId === order.assignee.id
               }
             >
-              {busy === 'saving' ? 'Saving…' : 'Save worker'}
+              {busy === 'saving' ? copy.saving : copy.save}
             </Button>
             <Button type="button" className="quiet" disabled={Boolean(busy)} onClick={cancel}>
-              Cancel
+              {copy.cancel}
             </Button>
             {needsReload && (
               <Button
@@ -162,7 +165,7 @@ export default function ReassignOrder({
                 disabled={!online || Boolean(busy)}
                 onClick={() => void reload()}
               >
-                {busy === 'reloading' ? 'Reloading…' : 'Reload order'}
+                {busy === 'reloading' ? copy.reloading : copy.reload}
               </Button>
             )}
           </div>

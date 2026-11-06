@@ -16,6 +16,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] English and Indonesian inspection forms and saved reports in Expo, including reading and photo guidance.
 - [x] English and Indonesian web worker lists and outbox, with localized date filters and draft export.
 - [x] English and Indonesian manager dispatch list, planners, single assignment form, and export controls.
+- [x] English and Indonesian manager report review, worker handover, and due-date editing.
 - [x] English and Indonesian web worker inspection forms and saved reports, with localized photo and reading feedback.
 - [x] English and Indonesian report history and printable reports for web workers.
 - [x] English and Indonesian week and month planners in the web worker notebook.

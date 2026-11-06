@@ -56,6 +56,7 @@ test('worker language keeps filters and an offline report available at 320px', a
   await context.setOffline(true);
   await expect(page.getByText('Bekerja offline', { exact: true })).toBeVisible();
   await idOrder.click();
+  await expect(page.getByRole('button', { name: 'Salin nomor tugas', exact: true })).toBeVisible();
   await page.getByRole('radio', { name: 'Lolos', exact: true }).check();
   const summary = 'Synthetic worker locale draft.';
   await page.getByLabel('Ringkasan inspeksi', { exact: true }).fill(summary);

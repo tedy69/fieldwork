@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 
 test('compact actions retain names, touch targets, keyboard hints and real destinations', async ({
   page,
+  context,
+  browserName,
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -47,6 +49,38 @@ test('compact actions retain names, touch targets, keyboard hints and real desti
     await expect(server).toBeFocused();
   }
   await page.locator('.order-row').first().click();
+  await page.setViewportSize({ width: 320, height: 844 });
+  if (browserName === 'chromium')
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const reference = await page.locator('.detail-reference .reference').innerText();
+  const copyReference = page.getByRole('button', {
+    name: 'Copy work order reference',
+    exact: true,
+  });
+  await expect(copyReference.locator('svg')).toBeVisible();
+  const copyTarget = await copyReference.boundingBox();
+  expect(copyTarget!.width).toBeGreaterThanOrEqual(44);
+  expect(copyTarget!.height).toBeGreaterThanOrEqual(44);
+  await context.setOffline(true);
+  await copyReference.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.detail [aria-live="polite"]').first()).toHaveText(
+    'Work order reference copied.',
+  );
+  if (browserName === 'chromium')
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(reference);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator.clipboard, 'writeText', {
+      value: async () => {
+        throw new DOMException('Clipboard access denied', 'NotAllowedError');
+      },
+    });
+  });
+  await copyReference.click();
+  await expect(
+    page.getByText('Could not copy the reference. Select it to copy manually.'),
+  ).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const back = page.getByRole('button', { name: 'Back to work orders', exact: true });
   await expect(back.locator('svg')).toBeVisible();
   await back.click();

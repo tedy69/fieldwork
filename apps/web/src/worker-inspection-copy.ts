@@ -2,6 +2,9 @@ import type { Locale } from '@fieldwork/strings';
 
 const english = {
   back: 'Back to work orders',
+  copyReference: 'Copy work order reference',
+  referenceCopied: 'Work order reference copied.',
+  referenceCopyFailed: 'Could not copy the reference. Select it to copy manually.',
   progress: (total: number) => `of ${total} checks recorded`,
   reviewer: (status: string, name: string) => `${status} by ${name}`,
   queuedHint: 'Your checklist, notes, and photos are saved. Open the outbox for sync details.',
@@ -35,6 +38,9 @@ export const workerInspectionCopy: Record<Locale, typeof english> = {
   en: english,
   id: {
     back: 'Kembali ke daftar tugas',
+    copyReference: 'Salin nomor tugas',
+    referenceCopied: 'Nomor tugas disalin.',
+    referenceCopyFailed: 'Nomor tugas tidak bisa disalin. Pilih nomornya untuk menyalin.',
     progress: (total) => `dari ${total} pemeriksaan dicatat`,
     reviewer: (status, name) => `${status} oleh ${name}`,
     queuedHint:

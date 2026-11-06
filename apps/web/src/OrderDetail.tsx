@@ -1,6 +1,8 @@
 import { Button } from './components/ui/button';
 import { IconButton } from './components/ui/icon-button';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
+import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check';
+import { CopyIcon } from '@phosphor-icons/react/dist/csr/Copy';
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
 import { ImageSquareIcon } from '@phosphor-icons/react/dist/csr/ImageSquare';
 import { Form } from './components/ui/form';
@@ -84,12 +86,22 @@ export default function OrderDetail({
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [review, setReview] = useState('');
+  const [referenceCopy, setReferenceCopy] = useState<'idle' | 'copied' | 'failed'>('idle');
   const queued = state.outbox.find((item) => item.orderId === order.id);
   const editable =
     user.role === 'worker' && ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status) && !queued;
   const completed = completedAnswers(order.template, draft.answers);
   const sitePhotoSlots = availableSitePhotoSlots(order.template, draft.photos);
   const itemPhotosRequired = order.template.items.some((item) => item.requiresPhoto);
+  async function copyReference() {
+    try {
+      await navigator.clipboard.writeText(order.reference);
+      setReferenceCopy('copied');
+    } catch {
+      setReferenceCopy('failed');
+    }
+  }
+
   async function save(next: Draft) {
     currentDraft.current = next;
     setDraft(next);
@@ -194,8 +206,26 @@ export default function OrderDetail({
       <div className="detail-heading">
         <div>
           <div className="detail-identity">
-            <span className="reference">{order.reference}</span>
+            <div className="detail-reference">
+              <span className="reference">{order.reference}</span>
+              <IconButton
+                label={web.copyReference}
+                tooltip={referenceCopy === 'copied' ? web.referenceCopied : web.copyReference}
+                variant="ghost"
+                onClick={() => void copyReference()}
+              >
+                {referenceCopy === 'copied' ? (
+                  <CheckIcon aria-hidden="true" />
+                ) : (
+                  <CopyIcon aria-hidden="true" />
+                )}
+              </IconButton>
+            </div>
             <span className="muted">{order.template.name}</span>
+          </div>
+          <div aria-live="polite" className={referenceCopy === 'failed' ? 'muted' : 'sr-only'}>
+            {referenceCopy === 'copied' && web.referenceCopied}
+            {referenceCopy === 'failed' && web.referenceCopyFailed}
           </div>
           <h1>{order.title}</h1>
         </div>

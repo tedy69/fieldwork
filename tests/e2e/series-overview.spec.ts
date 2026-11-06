@@ -140,6 +140,11 @@ test('manager combines batch search and frequency across pages and keeps loaded 
   await input.press('Enter');
   await expect(dialog.getByText(/matches for “North pump station”/)).toBeVisible();
   await expect(option(page, daily)).toHaveAccessibleDescription('North pump station');
+  const reference = firstBatch.orders[1].reference;
+  await input.fill(reference);
+  await input.press('Enter');
+  await expect(dialog.getByText(`1 loaded · 1 match for “${reference}”`)).toBeVisible();
+  await expect(option(page, firstBatch)).toBeVisible();
   expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
 });
 

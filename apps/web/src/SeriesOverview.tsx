@@ -330,7 +330,7 @@ export default function SeriesOverview({
                   void loadList(undefined, { frequency });
               }}
               clearLabel="Clear batch search"
-              placeholder="Title, worker, site or ID"
+              placeholder="Name, ID, or reference"
               maxLength={200}
               disabled={!online || changingOrder}
             />
@@ -417,7 +417,7 @@ export default function SeriesOverview({
                       loadedFrequency
                         ? 'Try another frequency or clear the search.'
                         : loadedQuery
-                          ? 'Try another title, worker, site, or batch ID.'
+                          ? 'Try a title, worker, site, batch ID, or work order reference.'
                           : 'Use Assign recurring work in dispatch to schedule a batch.'
                     }
                   />

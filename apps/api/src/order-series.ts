@@ -44,9 +44,13 @@ export function createSeriesQueries(store: Store) {
     if (q) {
       conditions.push(
         `(fieldwork_contains(json_extract(s.input,'$.title') || ' ' || json_extract(s.receipt,'$.orders[0].assignee.name') || ' ' || s.id,?)=1
-          OR fieldwork_contains(${originalSiteName},?)=1)`,
+          OR fieldwork_contains(${originalSiteName},?)=1
+          OR EXISTS (
+            SELECT 1 FROM order_series_members m JOIN work_orders w ON w.id=m.order_id
+            WHERE m.series_id=s.id AND fieldwork_contains(json_extract(w.data,'$.reference'),?)=1
+          ))`,
       );
-      params.push(q, q);
+      params.push(q, q, q);
     }
     if (frequency) {
       conditions.push("json_extract(s.input,'$.frequency')=?");

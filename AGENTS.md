@@ -10,4 +10,4 @@ Read README.md, CONTRIBUTING.md, and docs/architecture.md first. Preserve unrela
 - The API is a single-workspace server. Do not imply organization isolation until it exists and is tested.
 - Demo fixtures must stay synthetic. Never commit tokens, .env files, SQLite databases, generated bundles, or customer data.
 - Follow DESIGN.md for UI work. Test desktop and narrow screens, keyboard use, offline behavior, and errors.
-- Keep PR descriptions short, factual, and focused on the final change and validation.
+- Use the PR template in `.github/PULL_REQUEST_TEMPLATE.md`, including when passing a body file to `gh pr create`. Keep the description short and factual.

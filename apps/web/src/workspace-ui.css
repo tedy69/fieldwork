@@ -813,6 +813,11 @@ form > .ui-field-label {
   align-items: center;
   font-size: 13px;
 }
+.detail-identity .inspection-back {
+  padding-inline: 0 8px;
+  white-space: normal;
+  text-align: start;
+}
 .detail-reference {
   display: flex;
   align-items: center;

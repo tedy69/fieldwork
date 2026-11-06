@@ -64,7 +64,9 @@ export default function OrderDetail({
   state,
   online,
   locale = 'en',
+  workspaceFeedback,
   queuedRecovery,
+  returnLabel,
   onBack,
   onRefresh,
   onNotice,
@@ -77,7 +79,9 @@ export default function OrderDetail({
   state: State;
   online: boolean;
   locale?: Locale;
+  workspaceFeedback?: ReactNode;
   queuedRecovery?: ReactNode;
+  returnLabel?: string;
   onBack: () => void;
   onRefresh: () => Promise<void>;
   onNotice: (notice: string) => void;
@@ -87,15 +91,19 @@ export default function OrderDetail({
   const manager = managerReviewCopy[locale];
   const status = notebookCopy[locale].status;
   const dateLocale = languageTags[locale];
-  const [draft, setDraft] = useState<Draft>(state.drafts[order.id] ?? blankDraft(order));
+  const storedDraft = state.drafts[order.id];
+  const [draft, setDraft] = useState<Draft>(() => storedDraft ?? blankDraft(order));
   const currentDraft = useRef(draft);
-  const pendingWrites = useRef(0);
+  const pendingWrite = useRef<Promise<void> | null>(null);
   const attaching = useRef(false);
   const itemPhotoInput = useRef<HTMLInputElement>(null);
   const photoItem = useRef<string | undefined>(undefined);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [draftStatus, setDraftStatus] = useState<'untouched' | 'saving' | 'saved' | 'failed'>(
+    storedDraft ? 'saved' : 'untouched',
+  );
+  const saving = draftStatus === 'saving';
   const [review, setReview] = useState('');
   const [referenceCopy, setReferenceCopy] = useState<'idle' | 'copied' | 'failed'>('idle');
   const queued = state.outbox.find((item) => item.orderId === order.id);
@@ -113,20 +121,25 @@ export default function OrderDetail({
     }
   }
 
+  async function persistDraft(next: Draft) {
+    setDraftStatus('saving');
+    const write = repo.saveDraft(order.id, next);
+    pendingWrite.current = write;
+    try {
+      await write;
+      if (pendingWrite.current === write) setDraftStatus('saved');
+    } catch (error) {
+      if (pendingWrite.current === write) setDraftStatus('failed');
+      return { error };
+    } finally {
+      if (pendingWrite.current === write) pendingWrite.current = null;
+    }
+  }
   async function save(next: Draft) {
     currentDraft.current = next;
     setDraft(next);
-    pendingWrites.current += 1;
-    setSaving(true);
     setError('');
-    try {
-      await repo.saveDraft(order.id, next);
-    } catch {
-      setError(web.saveFailed);
-    } finally {
-      pendingWrites.current -= 1;
-      setSaving(pendingWrites.current > 0);
-    }
+    await persistDraft(next);
   }
   async function photos(files: File[], itemId?: string) {
     if (!files.length || attaching.current) return;
@@ -180,7 +193,7 @@ export default function OrderDetail({
         mutationId: crypto.randomUUID(),
         baseVersion: order.version,
       });
-      await repo.saveDraft(order.id, draft);
+      if (await persistDraft(draft)) return;
       const photoError = reportPhotoError(order.template, input.photos, copy.photoErrors);
       if (photoError) throw new Error(photoError.message);
       await repo.enqueue(order.id, input);
@@ -208,12 +221,13 @@ export default function OrderDetail({
   }
   return (
     <article className="detail">
-      <IconButton className="quiet back" label={web.back} onClick={onBack}>
-        <ArrowLeftIcon aria-hidden="true" />
-      </IconButton>
-      <div className="detail-heading">
+      <header className="detail-heading">
         <div>
           <div className="detail-identity">
+            <Button type="button" variant="ghost" className="inspection-back" onClick={onBack}>
+              <ArrowLeftIcon aria-hidden="true" />
+              {returnLabel ?? web.back}
+            </Button>
             <div className="detail-reference">
               <span className="reference">{order.reference}</span>
               <IconButton
@@ -235,12 +249,15 @@ export default function OrderDetail({
             {referenceCopy === 'copied' && copy.referenceCopied}
             {referenceCopy === 'failed' && copy.referenceCopyFailed}
           </div>
-          <h1>{order.title}</h1>
+          <h1 id="inspection-title" tabIndex={-1}>
+            {order.title}
+          </h1>
         </div>
         <Badge className={`status status-${order.status.toLowerCase()}`}>
           {status[order.status]}
         </Badge>
-      </div>
+      </header>
+      {workspaceFeedback}
       <dl className="order-meta">
         <div>
           <dt>{copy.site}</dt>
@@ -294,9 +311,10 @@ export default function OrderDetail({
               <div className="section-heading">
                 <h2>{copy.checklist}</h2>
                 <span className="muted" role="status">
-                  {saving ? copy.savingLocally : copy.draftSaved}
+                  {saving ? copy.savingLocally : draftStatus === 'saved' ? copy.draftSaved : null}
                 </span>
               </div>
+              {draftStatus === 'failed' && <FieldError>{web.saveFailed}</FieldError>}
               <p className="inspection-progress" role="status">
                 <strong>{completed}</strong> {web.progress(order.template.items.length)}
               </p>
@@ -656,12 +674,13 @@ export default function OrderDetail({
             locale={locale}
             beforeReload={async () => {
               const map = workerMapCopy[locale];
-              if (busy || pendingWrites.current > 0) throw new Error(map.waitBeforeReload);
+              if (busy || pendingWrite.current) throw new Error(map.waitBeforeReload);
               if (review.trim()) throw new Error(manager.unsaved);
               if (editable) {
                 const snapshot = currentDraft.current;
-                await repo.saveDraft(order.id, snapshot);
-                if (pendingWrites.current > 0 || snapshot !== currentDraft.current)
+                const failure = await persistDraft(snapshot);
+                if (failure) throw failure.error;
+                if (pendingWrite.current || snapshot !== currentDraft.current)
                   throw new Error(map.draftChanged);
               }
             }}

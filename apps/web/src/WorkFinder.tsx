@@ -33,7 +33,7 @@ export default function WorkFinder({
   orders: WorkOrder[];
   locale?: Locale;
   onNavigate: (view: 'orders' | 'outbox' | 'resources') => void;
-  onOrder: (id: string) => void;
+  onOrder: (id: string, origin: HTMLElement | null) => void;
 }) {
   const copy = workerFinderCopy[locale];
   const workspace = workerWorkspaceCopy[locale];
@@ -118,7 +118,7 @@ export default function WorkFinder({
 
   function select(item: CommandItem) {
     navigated.current = true;
-    if (item.id.startsWith('order:')) onOrder(item.id.slice(6));
+    if (item.id.startsWith('order:')) onOrder(item.id.slice(6), previousFocus.current);
     else if (item.id === 'orders' || item.id === 'outbox' || item.id === 'resources')
       onNavigate(item.id);
   }
@@ -152,7 +152,7 @@ export default function WorkFinder({
         onCloseAutoFocus={(event) => {
           event.preventDefault();
           const target = navigated.current
-            ? document.getElementById('main')
+            ? (document.getElementById('inspection-title') ?? document.getElementById('main'))
             : previousFocus.current;
           target?.focus();
         }}

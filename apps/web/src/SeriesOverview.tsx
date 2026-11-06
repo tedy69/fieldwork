@@ -315,7 +315,7 @@ export default function SeriesOverview({
           label={copy.title}
           lang={locale}
           ref={trigger}
-          className="quiet"
+          className="quiet series-overview-launcher"
           disabled={!online}
         >
           <StackIcon aria-hidden="true" />
@@ -341,7 +341,11 @@ export default function SeriesOverview({
         }}
         onCloseAutoFocus={(event) => {
           event.preventDefault();
-          if (navigated.current || !trigger.current?.isConnected || trigger.current.disabled)
+          if (navigated.current)
+            (
+              document.getElementById('inspection-title') ?? document.getElementById('main')
+            )?.focus();
+          else if (!trigger.current?.isConnected || trigger.current.disabled)
             document.getElementById('main')?.focus();
           else trigger.current.focus();
           const batch = reuseAfterClose.current;

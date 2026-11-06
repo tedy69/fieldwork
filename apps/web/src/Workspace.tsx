@@ -21,7 +21,7 @@ import { IconButton } from './components/ui/icon-button';
 import { SearchField } from './components/ui/search-field';
 import { Label } from './components/ui/label';
 import { Avatar, AvatarFallback } from './components/ui/avatar';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   compareOrdersByDueDate,
   isOpenDueBetween,
@@ -33,7 +33,13 @@ import {
 } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { emptyState, type State } from '@fieldwork/offline';
-import { languageNames, languageTags, notebookCopy, type Locale } from '@fieldwork/strings';
+import {
+  inspectionCopy,
+  languageNames,
+  languageTags,
+  notebookCopy,
+  type Locale,
+} from '@fieldwork/strings';
 import { repositoryFor } from './storage';
 import { client, message, dateLabel } from './lib';
 import { PageHeading, Empty, ActionGroup } from './components';
@@ -53,6 +59,7 @@ import WorkFinder from './WorkFinder';
 import ServerSearch from './ServerSearch';
 import { workerWorkspaceCopy } from './worker-workspace-copy';
 import { managerDispatchCopy } from './manager-dispatch-copy';
+import { useInspectionNavigation } from './useInspectionNavigation';
 
 export default function Workspace({
   user,
@@ -76,8 +83,11 @@ export default function Workspace({
   const repo = useMemo(() => repositoryFor(user.id, client), [user.id]);
   const [state, setState] = useState<State>(emptyState);
   const [catalog, setCatalog] = useState<Catalog>({ users: [], sites: [], templates: [] });
-  const [selected, setSelected] = useState<string | null>(null);
-  const [view, setView] = useState<'orders' | 'outbox' | 'resources'>('orders');
+  const { destination, navigate, openInspection, closeInspection } = useInspectionNavigation(
+    user.id,
+  );
+  const { view, orderId, returnFocus } = destination;
+  const navigation = useRef<HTMLElement>(null);
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [dueFrom, setDueFrom] = useState('');
@@ -149,7 +159,16 @@ export default function Workspace({
       window.removeEventListener('offline', disconnected);
     };
   }, [repo]);
-  const order = state.orders.find((order) => order.id === selected);
+  const order = state.orders.find((order) => order.id === orderId);
+  const inspectionId = order?.id;
+  useLayoutEffect(() => {
+    if (inspectionId) document.getElementById('inspection-title')?.focus();
+    else if (returnFocus) {
+      const target = document.querySelector<HTMLElement>(returnFocus);
+      if (target && !target.matches(':disabled')) target.focus();
+      else document.getElementById('main')?.focus();
+    }
+  }, [inspectionId, returnFocus]);
   const overdueEmpty = search
     ? {
         title: copy.noMatchingOverdue,
@@ -251,9 +270,37 @@ export default function Workspace({
     view === 'orders' &&
     order &&
     state.outbox.some((item) => item.orderId === order.id && item.state === 'pending');
+  const workspaceFeedback = (
+    <>
+      {!recoveryInReport && sessionRecovery}
+      {!sessionExpired && error !== '' && (
+        <Alert className="banner error" lang={locale}>
+          {locale === 'id' && user.role === 'manager'
+            ? copy.unavailable
+            : (error ?? copy.unavailable)}
+        </Alert>
+      )}
+      {!sessionExpired && notice && (
+        <Alert role="status" className="banner notice" lang={locale}>
+          {notice}
+          <IconButton label={copy.dismiss} variant="ghost" onClick={() => setNotice('')}>
+            <XIcon aria-hidden="true" />
+          </IconButton>
+        </Alert>
+      )}
+    </>
+  );
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#main" lang={locale}>
+      <a
+        className="skip-link"
+        href="#main"
+        lang={locale}
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById('main')?.focus();
+        }}
+      >
         {copy.skip}
       </a>
       <header className="sidebar" lang={locale}>
@@ -261,15 +308,12 @@ export default function Workspace({
           Fieldwork<span className="version">v0.1</span>
         </div>
         <p className="workspace-label">{copy.notebook}</p>
-        <nav aria-label={copy.workspace}>
+        <nav ref={navigation} aria-label={copy.workspace}>
           <Button
             variant="ghost"
             aria-current={view === 'orders' ? 'page' : undefined}
             className={view === 'orders' ? 'nav-active' : ''}
-            onClick={() => {
-              setView('orders');
-              setSelected(null);
-            }}
+            onClick={() => navigate('orders')}
           >
             <ClipboardTextIcon aria-hidden="true" />
             <span className="nav-label">
@@ -280,10 +324,7 @@ export default function Workspace({
             variant="ghost"
             aria-current={view === 'outbox' ? 'page' : undefined}
             className={view === 'outbox' ? 'nav-active' : ''}
-            onClick={() => {
-              setView('outbox');
-              setSelected(null);
-            }}
+            onClick={() => navigate('outbox')}
           >
             <TrayIcon aria-hidden="true" />
             <span className="nav-label">
@@ -295,10 +336,7 @@ export default function Workspace({
               variant="ghost"
               aria-current={view === 'resources' ? 'page' : undefined}
               className={view === 'resources' ? 'nav-active' : ''}
-              onClick={() => {
-                setView('resources');
-                setSelected(null);
-              }}
+              onClick={() => navigate('resources')}
             >
               <BuildingsIcon aria-hidden="true" />{' '}
               <span className="nav-label">{dispatch.resources}</span>
@@ -329,7 +367,20 @@ export default function Workspace({
           </IconButton>
         </Card>
       </header>
-      <div className="main-column">
+      <div
+        className="main-column"
+        onFocus={({ target, currentTarget }) => {
+          const nav = navigation.current;
+          if (!nav || !currentTarget.contains(target) || getComputedStyle(nav).position !== 'fixed')
+            return;
+          requestAnimationFrame(() => {
+            if (document.activeElement !== target) return;
+            // The browser can consider a control visible even when the fixed bar covers it.
+            const overlap = target.getBoundingClientRect().bottom - nav.getBoundingClientRect().top;
+            if (overlap > 0) window.scrollBy(0, overlap + 8);
+          });
+        }}
+      >
         <div className="topbar" lang={locale}>
           <span className="workspace-context">
             {user.role === 'manager' ? dispatch.desk : copy.context}
@@ -359,14 +410,10 @@ export default function Workspace({
               locale={locale}
               user={user}
               orders={state.orders}
-              onNavigate={(view) => {
-                setView(view);
-                setSelected(null);
-              }}
-              onOrder={(id) => {
-                setView('orders');
-                setSelected(id);
-              }}
+              onNavigate={navigate}
+              onOrder={(id, origin) =>
+                openInspection(id, origin?.id ? `#${CSS.escape(origin.id)}` : '.command-launcher')
+              }
             />
             <ServerSearch
               user={user}
@@ -378,30 +425,12 @@ export default function Workspace({
                 await repo.cacheOrder(order);
                 setState(await repo.read());
               }}
-              onOpened={(id) => {
-                setView('orders');
-                setSelected(id);
-              }}
+              onOpened={(id) => openInspection(id, '.server-search-launcher')}
             />
           </div>
         </div>
         <main id="main" tabIndex={-1} lang={locale}>
-          {!recoveryInReport && sessionRecovery}
-          {!sessionExpired && error !== '' && (
-            <Alert className="banner error" lang={locale}>
-              {locale === 'id' && user.role === 'manager'
-                ? copy.unavailable
-                : (error ?? copy.unavailable)}
-            </Alert>
-          )}
-          {!sessionExpired && notice && (
-            <Alert role="status" className="banner notice" lang={locale}>
-              {notice}
-              <IconButton label={copy.dismiss} variant="ghost" onClick={() => setNotice('')}>
-                <XIcon aria-hidden="true" />
-              </IconButton>
-            </Alert>
-          )}
+          {!order && workspaceFeedback}
           {view === 'resources' ? (
             <Resources
               catalog={catalog}
@@ -471,8 +500,7 @@ export default function Workspace({
                               const latest = await client.order(item.orderId);
                               await repo.cacheOrder(latest);
                               await repo.discard(item.orderId);
-                              setSelected(item.orderId);
-                              setView('orders');
+                              openInspection(item.orderId);
                               setNotice(copy.retainedDraft);
                             } catch (error) {
                               if (
@@ -512,8 +540,16 @@ export default function Workspace({
               state={state}
               online={online}
               locale={locale}
+              workspaceFeedback={workspaceFeedback}
               queuedRecovery={recoveryInReport ? sessionRecovery : null}
-              onBack={() => setSelected(null)}
+              returnLabel={
+                destination.returnView === 'outbox'
+                  ? inspectionCopy[locale].backToOutbox
+                  : destination.returnView === 'resources'
+                    ? dispatch.backToResources
+                    : undefined
+              }
+              onBack={closeInspection}
               onRefresh={refresh}
               onNotice={setNotice}
             />
@@ -524,6 +560,7 @@ export default function Workspace({
                 {user.role === 'manager' && (
                   <ActionGroup className="assignment-actions">
                     <Button
+                      id="assign-work-order"
                       className="primary"
                       aria-label={planner && plannerDay ? dispatch.assignDay : dispatch.assignLabel}
                       onClick={(event) => {
@@ -549,7 +586,7 @@ export default function Workspace({
                         await repo.cacheOrder(order);
                         setState(await repo.read());
                       }}
-                      onOpened={(id) => setSelected(id)}
+                      onOpened={(id) => openInspection(id, '.series-overview-launcher')}
                       onReuse={setBatchToReuse}
                     />
                     <RecurringDispatch
@@ -562,7 +599,7 @@ export default function Workspace({
                       onReuseDismissed={() => setBatchToReuse(null)}
                       onCreated={async (receipt) => {
                         await refresh();
-                        setSelected(receipt.orders[0].id);
+                        openInspection(receipt.orders[0].id, '#assign-recurring-work');
                         setNotice(dispatch.recurringAssigned(receipt.orders.length));
                       }}
                     />
@@ -630,6 +667,7 @@ export default function Workspace({
                   <Label className="search">
                     <span className="sr-only">{copy.search}</span>
                     <SearchField
+                      id="workspace-order-search"
                       aria-label={copy.search}
                       clearLabel={copy.clearSearch}
                       value={search}
@@ -728,7 +766,10 @@ export default function Workspace({
                       <Button
                         variant="unstyled"
                         className="order-row"
-                        onClick={() => setSelected(order.id)}
+                        id={`work-order-${order.id}`}
+                        onClick={(event) =>
+                          openInspection(order.id, `#${CSS.escape(event.currentTarget.id)}`)
+                        }
                         aria-label={`${notebook.open} ${order.reference}: ${order.title}`}
                         aria-describedby={
                           closureVisits.has(order.id) ? `closure-${order.id}` : undefined
@@ -836,7 +877,7 @@ export default function Workspace({
               onCreated={async (order) => {
                 setCreating(false);
                 await refresh();
-                setSelected(order.id);
+                openInspection(order.id, '#assign-work-order');
                 setNotice(dispatch.assigned(order.reference, order.assignee.name));
               }}
             />

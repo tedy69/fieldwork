@@ -24,6 +24,26 @@ tags:
 - assertVisible: Waiting for confirmation
 - assertVisible: Synthetic Android journal draft retained after restart.
 - assertVisible: '1 photos.*'
+- scrollUntilVisible:
+    element: Open saved assignment
+    centerElement: true
+- tapOn: Open saved assignment
+- assertVisible: Back to sync outbox
+- assertNotVisible: Back to assignments
+- tapOn: Back to sync outbox
+- scrollUntilVisible:
+    element: Sync outbox
+    direction: UP
+- assertVisible: Sync outbox
+- scrollUntilVisible:
+    element: Open saved assignment
+    centerElement: true
+- tapOn: Open saved assignment
+- back
+- scrollUntilVisible:
+    element: Sync outbox
+    direction: UP
+- assertVisible: Sync outbox
 - launchApp
 - extendedWaitUntil:
     visible: Development servers

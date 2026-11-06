@@ -144,7 +144,7 @@ test('manager previews calendar dates, validates the batch, and assigns real wor
   await expect(page.locator('#main').getByRole('status')).toContainText(
     '3 recurring work orders confirmed.',
   );
-  await expect(page.locator('#main')).toBeFocused();
+  await expect(page.getByRole('heading', { name: 'Recurring calendar QA' })).toBeFocused();
   expect(await journal(page)).toBeNull();
   const result = await manager.searchOrders({ q: 'Recurring calendar QA' });
   expect(result.total).toBe(3);

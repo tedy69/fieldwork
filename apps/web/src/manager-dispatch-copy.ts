@@ -2,6 +2,7 @@ import type { Locale } from '@fieldwork/strings';
 
 const english = {
   resources: 'Sites & checklists',
+  backToResources: 'Back to sites and checklists',
   manager: 'Dispatch manager',
   desk: 'Dispatch desk',
   assign: 'Assign work',
@@ -53,6 +54,7 @@ export const managerDispatchCopy: Record<Locale, typeof english> = {
   en: english,
   id: {
     resources: 'Lokasi dan daftar periksa',
+    backToResources: 'Kembali ke lokasi dan daftar periksa',
     manager: 'Manajer penugasan',
     desk: 'Ruang penugasan',
     assign: 'Beri tugas',

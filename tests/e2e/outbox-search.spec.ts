@@ -57,6 +57,18 @@ test('offline outbox search keeps queued reports separate from assignment search
   await expect(cards).toHaveCount(2);
   await expect(page.getByRole('region', { name: 'Sync needs attention' })).toBeVisible();
   await expect(cards.locator('.error')).toHaveCount(0);
+  await search.fill('LATCH');
+  await expect(cards).toHaveCount(1);
+  const attention = page.getByRole('button', { name: 'Filter reports that need attention' });
+  await attention.press('Enter');
+  await expect(attention).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('No reports are blocked', { exact: true })).toBeVisible();
+  await expect(cards).toHaveCount(0);
+  await expect(outbox).toContainText('2');
+  await attention.press('Enter');
+  await expect(attention).toHaveAttribute('aria-pressed', 'false');
+  await expect(search).toHaveValue('LATCH');
+  await expect(cards).toHaveCount(1);
   await search.fill(first.reference.toLowerCase());
   await expect(cards).toHaveCount(1);
   await expect(cards).toContainText(reports[0].summary);
@@ -100,6 +112,9 @@ test('offline outbox search keeps queued reports separate from assignment search
   await expect(page.getByRole('searchbox', { name: 'Cari laporan dalam antrean' })).toHaveValue(
     'no queued match',
   );
+  await expect(
+    page.getByRole('button', { name: 'Saring laporan yang perlu diperiksa' }),
+  ).toBeVisible();
   await expect(
     page.getByText('Tidak ada laporan dalam antrean yang cocok', { exact: true }),
   ).toBeVisible();

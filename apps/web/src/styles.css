@@ -801,8 +801,25 @@ main#main {
   margin-top: 30px;
 }
 .outbox-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 16px;
-  max-width: 360px;
+  max-width: 412px;
+}
+.outbox-search > .input-with-action {
+  flex: 1;
+}
+.outbox-search > .input-with-action > .ui-input {
+  padding-right: 12px;
+}
+.outbox-search > .input-with-action:has(> .ui-button) > .ui-input {
+  padding-right: 44px;
+}
+.outbox-filter.ui-button[aria-pressed='true'] {
+  background: var(--surface-raised);
+  border-color: var(--amber);
+  color: var(--amber);
 }
 .detail {
   max-width: 1240px;

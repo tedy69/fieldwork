@@ -213,6 +213,13 @@ test('rescheduling blocks a stale offline report and preserves its answers, note
   });
   await context.setOffline(true);
   await expect(openLatest).toBeDisabled();
+  const attention = page.getByRole('button', { name: 'Filter reports that need attention' });
+  await attention.press('Enter');
+  await expect(attention).toHaveAttribute('aria-pressed', 'true');
+  const searchOutbox = page.getByRole('searchbox', { name: 'Search queued reports' });
+  await searchOutbox.fill('no blocked match');
+  await expect(page.getByText('No matching queued reports', { exact: true })).toBeVisible();
+  await searchOutbox.fill('offline reschedule');
   await expect(page.locator('.outbox-item .error')).toContainText('This work order changed.');
   await context.setOffline(false);
   await openLatest.click();

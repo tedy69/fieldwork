@@ -78,7 +78,7 @@ When an assignment has coordinates, Expo shows them next to the site address wit
 
 The assignment list has a named funnel beside Search. Pick a status or **Overdue** to narrow the saved list, or choose **All assignments** to clear the filter while keeping the search. The filter and result count stay visible when the choices are closed. The clear icon beside the count resets the filter and keeps your search. Overdue follows the device’s local date. **Urgent work** shows assignments marked urgent until they’re approved.
 
-In **Sync outbox**, search queued reports by reference, title, site, or summary. The search works offline and is separate from assignment search. Clearing it shows the whole queue.
+In **Sync outbox**, search queued reports by reference, title, site, or summary. The search works offline and is separate from assignment search. Use the warning icon to show reports that need attention. Tap it again to clear the filter and keep your search.
 
 When sync requires a new session, **Sign in again** opens the sign-in form with the current server and account filled in. Drafts and queued reports remain on the device. Start with a fresh worker session in English to run `npm exec -- tsx tests/native/session-recovery.ios.ts <simulator-id>` against the synthetic fixture. The runner revokes the session through password reset, checks that the report stays in the outbox, and verifies one saved revision after signing back in.
 

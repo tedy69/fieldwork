@@ -482,7 +482,13 @@ function Notebook({
       </View>
       <View style={styles.content}>
         {error && (
-          <NotebookNotice error={error} locale={locale} onSignInAgain={() => void signInAgain()} />
+          <NotebookNotice
+            error={error}
+            locale={locale}
+            onSignInAgain={() => void signInAgain()}
+            onRetry={() => void sync()}
+            retrying={busy}
+          />
         )}
         <Inspection
           key={`${order.id}:${order.version}`}

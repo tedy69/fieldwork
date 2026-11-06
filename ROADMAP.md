@@ -12,7 +12,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] First-open language follows the device, with explicit choices saved on web and Expo.
 - [x] English and Indonesian invitation and password-reset pages that share the web sign-in preference.
 - [x] English and Indonesian assignment and outbox screens in the Expo worker notebook.
-- [x] Localized Expo sync recovery that keeps saved work visible during an outage and clears after reconnect.
+- [x] Localized Expo sync recovery with a retry action that keeps saved work visible during an outage.
 - [x] English and Indonesian inspection forms and saved reports in Expo, including reading and photo guidance.
 - [x] English and Indonesian web worker lists and outbox, with localized date filters and draft export.
 - [x] English and Indonesian manager dispatch list, planners, single assignment form, and export controls.

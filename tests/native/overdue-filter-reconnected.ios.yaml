@@ -2,11 +2,9 @@ appId: host.exp.Exponent
 name: Clear the localized sync notice after reconnect
 ---
 - scrollUntilVisible:
-    element: Sinkronkan sekarang
+    element: Coba sinkron lagi
     direction: UP
-- tapOn:
-    text: Sinkronkan sekarang
-    point: 10%,50%
+- tapOn: Coba sinkron lagi
 - extendedWaitUntil:
     notVisible: Sinkronisasi perlu diperiksa
     timeout: 15000

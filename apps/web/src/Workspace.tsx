@@ -27,6 +27,7 @@ import {
   nextSevenDaysEnd,
   type User,
   type Catalog,
+  type OrderSeriesDetail,
 } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { emptyState, type State } from '@fieldwork/offline';
@@ -87,6 +88,7 @@ export default function Workspace({
   const [plannerDay, setPlannerDay] = useState('');
   const invalidRange = !planner && !isValidDueRange(dueFrom, dueThrough);
   const [creating, setCreating] = useState(false);
+  const [batchToReuse, setBatchToReuse] = useState<OrderSeriesDetail | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -528,6 +530,7 @@ export default function Workspace({
                         setState(await repo.read());
                       }}
                       onOpened={(id) => setSelected(id)}
+                      onReuse={setBatchToReuse}
                     />
                     <RecurringDispatch
                       userId={user.id}
@@ -535,6 +538,8 @@ export default function Workspace({
                       locale={locale}
                       online={online}
                       initialDueDate={planner && plannerDay ? plannerDay : undefined}
+                      batchToReuse={batchToReuse}
+                      onReuseDismissed={() => setBatchToReuse(null)}
                       onCreated={async (receipt) => {
                         await refresh();
                         setSelected(receipt.orders[0].id);

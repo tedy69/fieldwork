@@ -55,6 +55,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Filters for upcoming, overdue, rescheduled, submitted, and approved visits in a loaded recurring batch.
 - [x] Offline CSV export of filtered batch visits with planned and current dates.
 - [x] Reschedule one unfinished order from its recurring batch while keeping the planned date visible.
+- [x] Reuse a recurring batch with a new first date, preview, and the standard duplicate-safe save.
 - [x] Optional coordinates on new sites/assignments and opt-in web maps with configurable raster tiles, attribution, keyboard controls, and offline-readable coordinates.
 - [x] Manager coordinate editing for existing sites, with conflict recovery, explicit clearing, and unchanged inspection snapshots.
 - [x] English and Indonesian site creation, coordinate editing, and closure dates.

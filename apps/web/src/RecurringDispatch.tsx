@@ -9,12 +9,13 @@ import {
   recurrenceDatesThrough,
   type Catalog,
   type CreateOrderSeries,
+  type OrderSeriesDetail,
   type OrderSeriesReceipt,
   type Recurrence,
   type RepeatDay,
 } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
-import { languageTags, type Locale } from '@fieldwork/strings';
+import { languageTags, signInCopy, type Locale } from '@fieldwork/strings';
 import { pendingSeriesFor, PendingDispatchError } from './pending-series';
 import { client, message } from './lib';
 import { localDate } from './dates';
@@ -94,6 +95,8 @@ export default function RecurringDispatch({
   online,
   locale,
   initialDueDate,
+  batchToReuse,
+  onReuseDismissed,
   onCreated,
 }: {
   userId: string;
@@ -101,6 +104,8 @@ export default function RecurringDispatch({
   online: boolean;
   locale: Locale;
   initialDueDate?: string;
+  batchToReuse: OrderSeriesDetail | null;
+  onReuseDismissed: () => void;
   onCreated: (receipt: OrderSeriesReceipt) => Promise<void>;
 }) {
   const copy = recurringDispatchCopy[locale];
@@ -109,8 +114,10 @@ export default function RecurringDispatch({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [open, setOpen] = useState(false);
-  const openRef = useRef(open);
-  openRef.current = open;
+  const [checkedReuse, setCheckedReuse] = useState<OrderSeriesDetail | null>(null);
+  const showing = open || Boolean(batchToReuse);
+  const openRef = useRef(showing);
+  openRef.current = showing;
   useEffect(() => {
     let active = true;
     const load = async () => {
@@ -123,7 +130,10 @@ export default function RecurringDispatch({
       } catch (error) {
         if (active) setLoadError(message(error));
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setCheckedReuse(batchToReuse);
+          setLoading(false);
+        }
       }
     };
     void load();
@@ -135,11 +145,15 @@ export default function RecurringDispatch({
       active = false;
       window.removeEventListener('focus', focused);
     };
-  }, [journal]);
+  }, [journal, batchToReuse]);
   const hasCatalog =
     catalog.sites.length > 0 &&
     catalog.templates.length > 0 &&
     catalog.users.some((user) => user.role === 'worker');
+  function close() {
+    setOpen(false);
+    if (batchToReuse) onReuseDismissed();
+  }
   return (
     <div className="recurring-dispatch" lang={locale}>
       <IconButton
@@ -175,7 +189,7 @@ export default function RecurringDispatch({
           </Button>
         </Alert>
       )}
-      {open && (
+      {showing && !loading && !loadError && (!batchToReuse || checkedReuse === batchToReuse) && (
         <RecurringDialog
           userId={userId}
           catalog={catalog}
@@ -183,7 +197,8 @@ export default function RecurringDispatch({
           locale={locale}
           pending={pending}
           initialDueDate={initialDueDate}
-          onClose={() => setOpen(false)}
+          batchToReuse={batchToReuse}
+          onClose={close}
           onReserve={async (input) => {
             try {
               await journal.reserve(input);
@@ -197,7 +212,7 @@ export default function RecurringDispatch({
             setPending(await journal.clear(mutationId));
           }}
           onCreated={async (receipt) => {
-            setOpen(false);
+            close();
             await onCreated(receipt);
           }}
         />
@@ -213,6 +228,7 @@ function RecurringDialog({
   locale,
   initialDueDate,
   pending,
+  batchToReuse,
   onClose,
   onReserve,
   onClear,
@@ -224,6 +240,7 @@ function RecurringDialog({
   locale: Locale;
   initialDueDate?: string;
   pending: CreateOrderSeries | null;
+  batchToReuse: OrderSeriesDetail | null;
   onClose: () => void;
   onReserve: (input: CreateOrderSeries) => Promise<void>;
   onClear: (mutationId: string) => Promise<void>;
@@ -234,14 +251,36 @@ function RecurringDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [editable, setEditable] = useState(false);
-  const [dueDate, setDueDate] = useState(pending?.dueDate ?? initialDueDate ?? localDate());
-  const [siteId, setSiteId] = useState(pending?.siteId ?? catalog.sites[0]?.id ?? '');
+  const source = batchToReuse?.orders[0].order;
+  const reusing = Boolean(source && !pending);
+  const initial = source && {
+    title: source.title,
+    instructions: source.instructions,
+    priority: source.priority,
+    siteId: source.site.id,
+    assigneeId: batchToReuse.assignee.id,
+    templateId: source.template.id,
+  };
+  const [dueDate, setDueDate] = useState(
+    pending?.dueDate ?? (source ? '' : (initialDueDate ?? localDate())),
+  );
+  const [siteId, setSiteId] = useState(
+    pending?.siteId ??
+      (initial
+        ? catalog.sites.find((site) => site.id === initial.siteId)?.id
+        : catalog.sites[0]?.id) ??
+      '',
+  );
   const siteClosures = catalog.sites.find((site) => site.id === siteId)?.closureDates;
   const [frequency, setFrequency] = useState<Recurrence['frequency']>(
-    pending?.frequency ?? 'weekly',
+    pending?.frequency ?? batchToReuse?.frequency ?? 'weekly',
   );
-  const [repeatDays, setRepeatDays] = useState<RepeatDay[]>(pending?.repeatDays ?? []);
-  const [occurrences, setOccurrences] = useState(pending?.occurrences ?? 4);
+  const [repeatDays, setRepeatDays] = useState<RepeatDay[]>(
+    pending?.repeatDays ?? batchToReuse?.repeatDays ?? [],
+  );
+  const [occurrences, setOccurrences] = useState(
+    pending?.occurrences ?? batchToReuse?.occurrences ?? 4,
+  );
   const [endMode, setEndMode] = useState<'count' | 'date'>('count');
   const [endDate, setEndDate] = useState('');
   const [skipDates, setSkipDates] = useState(pending?.skipDates ?? []);
@@ -346,7 +385,12 @@ function RecurringDialog({
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           if (pending) heading.current?.focus();
-          else dialog.current?.querySelector<HTMLInputElement>('input[name="title"]')?.focus();
+          else
+            dialog.current
+              ?.querySelector<HTMLInputElement>(
+                source ? 'input[name="dueDate"]' : 'input[name="title"]',
+              )
+              ?.focus();
         }}
         onCloseAutoFocus={(event) => {
           event.preventDefault();
@@ -363,9 +407,9 @@ function RecurringDialog({
         <DialogHeader>
           <div>
             <DialogTitle ref={heading} tabIndex={-1}>
-              {copy.assign}
+              {reusing ? copy.reuse : copy.assign}
             </DialogTitle>
-            <DialogDescription>{copy.intro}</DialogDescription>
+            <DialogDescription>{reusing ? copy.reuseHint : copy.intro}</DialogDescription>
           </div>
           <Button className="quiet" onClick={onClose} disabled={busy}>
             {copy.close}
@@ -439,12 +483,17 @@ function RecurringDialog({
             )}
           </>
         ) : (
-          <Form noValidate onSubmit={submit}>
+          <Form
+            noValidate
+            onSubmit={submit}
+            validationCopy={locale === 'id' ? signInCopy.id.web : undefined}
+          >
             <FieldSet disabled={busy}>
               <AssignmentFields
                 catalog={catalog}
                 locale={locale}
-                initial={draft.current ?? { dueDate }}
+                initial={draft.current ?? { ...initial, dueDate }}
+                chooseMissing={Boolean(source)}
                 onDateChange={setDueDate}
                 onSiteChange={setSiteId}
               />

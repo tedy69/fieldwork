@@ -15,23 +15,26 @@ export default function AssignmentFields({
   catalog,
   locale = 'en',
   initial,
+  chooseMissing = false,
   onDateChange,
   onSiteChange,
 }: {
   catalog: Catalog;
   locale?: Locale;
   initial?: Partial<CreateOrder>;
+  chooseMissing?: boolean;
   onDateChange?: (date: string) => void;
   onSiteChange?: (siteId: string) => void;
 }) {
   const copy = managerDispatchCopy[locale];
+  const workers = catalog.users.filter((user) => user.role === 'worker');
   return (
     <>
       <Label>
         {copy.title}
         <Input
           name="title"
-          autoFocus
+          autoFocus={!chooseMissing}
           required
           minLength={3}
           maxLength={140}
@@ -45,9 +48,14 @@ export default function AssignmentFields({
           name="siteId"
           aria-label={copy.site}
           required
-          defaultValue={initial?.siteId}
+          defaultValue={
+            chooseMissing && !catalog.sites.some((option) => option.id === initial?.siteId)
+              ? ''
+              : initial?.siteId
+          }
           onChange={(event) => onSiteChange?.(event.currentTarget.value)}
         >
+          {chooseMissing && <Option value="">{copy.chooseSite}</Option>}
           {catalog.sites.map((site) => (
             <Option key={site.id} value={site.id}>
               {site.name}
@@ -62,15 +70,18 @@ export default function AssignmentFields({
             name="assigneeId"
             aria-label={copy.assignee}
             required
-            defaultValue={initial?.assigneeId}
+            defaultValue={
+              chooseMissing && !workers.some((option) => option.id === initial?.assigneeId)
+                ? ''
+                : initial?.assigneeId
+            }
           >
-            {catalog.users
-              .filter((user) => user.role === 'worker')
-              .map((user) => (
-                <Option key={user.id} value={user.id}>
-                  {user.name}
-                </Option>
-              ))}
+            {chooseMissing && <Option value="">{copy.chooseWorker}</Option>}
+            {workers.map((user) => (
+              <Option key={user.id} value={user.id}>
+                {user.name}
+              </Option>
+            ))}
           </Select>
         </Label>
         <Label>
@@ -92,8 +103,14 @@ export default function AssignmentFields({
             name="templateId"
             aria-label={copy.checklist}
             required
-            defaultValue={initial?.templateId}
+            defaultValue={
+              chooseMissing &&
+              !catalog.templates.some((option) => option.id === initial?.templateId)
+                ? ''
+                : initial?.templateId
+            }
           >
+            {chooseMissing && <Option value="">{copy.chooseChecklist}</Option>}
             {catalog.templates.map((template) => (
               <Option key={template.id} value={template.id}>
                 {template.name}

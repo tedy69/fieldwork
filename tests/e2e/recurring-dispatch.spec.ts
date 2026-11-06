@@ -343,6 +343,20 @@ test('a lost creation response survives reload, offline recovery, and another ac
     page.getByRole('button', { name: 'Recover recurring batch', exact: true }),
   ).toBeFocused();
   await page.unroute(endpoint);
+
+  const batches = page.getByRole('dialog', { name: 'Recurring batches', exact: true });
+  await page.getByRole('button', { name: 'Recurring batches', exact: true }).click();
+  await batches
+    .getByRole('button', {
+      name: `View batch ${original!.id}: Recurring lost response QA`,
+      exact: true,
+    })
+    .click();
+  await batches.getByRole('button', { name: 'Use batch as template', exact: true }).click();
+  await expect(dialogFor(page).getByText('Saved batch awaiting confirmation')).toBeVisible();
+  expect(await journal(page)).toEqual(saved);
+  await dialogFor(page).getByRole('button', { name: 'Close', exact: true }).click();
+
   await context.setOffline(true);
   await page.reload();
   await page.getByRole('button', { name: 'Recover recurring batch', exact: true }).click();

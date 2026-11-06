@@ -57,6 +57,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Reschedule one unfinished order from its recurring batch while keeping the planned date visible.
 - [x] Optional coordinates on new sites/assignments and opt-in web maps with configurable raster tiles, attribution, keyboard controls, and offline-readable coordinates.
 - [x] Manager coordinate editing for existing sites, with conflict recovery, explicit clearing, and unchanged inspection snapshots.
+- [x] English and Indonesian site creation, coordinate editing, and closure dates.
 - [x] Weekday-only recurring batches with Monday–Friday previews, saved-request recovery, and batch browsing.
 - [x] Weekend-only recurring batches with Saturday–Sunday previews and skipped dates.
 - [x] Weekly batches on selected days with date previews and saved-request recovery.

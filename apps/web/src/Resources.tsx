@@ -14,7 +14,8 @@ import {
   type Site,
   type WorkerAccount,
 } from '@fieldwork/contracts';
-import { createClient } from '@fieldwork/sdk';
+import { ApiError, createClient } from '@fieldwork/sdk';
+import type { Locale } from '@fieldwork/strings';
 import { parseCoordinateInputs } from './coordinate-input';
 import SiteLocation from './SiteLocation';
 import SiteCoordinatesEditor from './SiteCoordinatesEditor';
@@ -23,9 +24,12 @@ import WorkerInvitations from './WorkerInvitations';
 import WorkerAccounts from './WorkerAccounts';
 import { PageHeading, PanelHeader } from './components';
 import ChecklistItemsEditor, { checklistItems } from './ChecklistItemsEditor';
+import { managerSitesCopy } from './manager-sites-copy';
+import { managerDispatchCopy } from './manager-dispatch-copy';
 const client = createClient();
 export default function Resources({
   catalog,
+  locale,
   refresh,
   online,
   onSiteUpdated,
@@ -34,6 +38,7 @@ export default function Resources({
   onWorkerUpdated,
 }: {
   catalog: Catalog;
+  locale: Locale;
   refresh: () => Promise<void>;
   online: boolean;
   onSiteUpdated: (site: Site) => void;
@@ -41,26 +46,26 @@ export default function Resources({
   onCatalog: (catalog: Catalog) => void;
   onWorkerUpdated: (account: WorkerAccount) => void;
 }) {
+  const copy = managerSitesCopy[locale];
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [checklistRevision, resetChecklist] = useState(0);
   const forms = useRef<HTMLDivElement>(null);
   async function beforeReload() {
-    if (busy) throw new Error('Wait for the workspace save to finish before reloading.');
+    if (busy) throw new Error(copy.wait);
     if (forms.current?.querySelector('[data-site-coordinate-form]'))
-      throw new Error('Save or cancel the open coordinate editor before reloading.');
+      throw new Error(copy.openCoordinates);
     if (forms.current?.querySelector('[data-site-closure-form]'))
-      throw new Error('Save or cancel the open closure dates editor before reloading.');
+      throw new Error(copy.openClosures);
     for (const form of forms.current?.querySelectorAll<HTMLFormElement>('form') ?? []) {
       if (form && [...new FormData(form).values()].some((value) => String(value).trim()))
-        throw new Error(
-          'Your workspace form has unsaved changes. Save or clear it before reloading.',
-        );
+        throw new Error(copy.unsaved);
     }
   }
   async function create(event: FormEvent<HTMLFormElement>, kind: 'site' | 'template') {
     event.preventDefault();
+    if (kind === 'site' && !online) return;
     const form = event.currentTarget;
     const data = new FormData(form);
     setBusy(true);
@@ -74,6 +79,7 @@ export default function Resources({
           parseCoordinateInputs(
             String(data.get('latitude') ?? ''),
             String(data.get('longitude') ?? ''),
+            locale,
           ),
         );
       else
@@ -85,19 +91,24 @@ export default function Resources({
       await refresh();
       form.reset();
       if (kind === 'template') resetChecklist((revision) => revision + 1);
-      setNotice(kind === 'site' ? 'Site added.' : 'Checklist added.');
+      setNotice(kind === 'site' ? copy.saved : 'Checklist added.');
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Unable to save.');
+      setError(
+        kind === 'site' &&
+          locale === 'id' &&
+          (error instanceof ApiError || error instanceof TypeError)
+          ? copy.failed
+          : error instanceof Error
+            ? error.message
+            : 'Unable to save.',
+      );
     } finally {
       setBusy(false);
     }
   }
   return (
     <>
-      <PageHeading
-        title="Sites & checklists"
-        description="Manage the places, inspection standards, and people your team works with."
-      />
+      <PageHeading title={managerDispatchCopy[locale].resources} description={copy.intro} />
       {error && <Alert className="banner error">{error}</Alert>}
       {notice && (
         <Alert className="banner notice" role="status">
@@ -109,10 +120,10 @@ export default function Resources({
           <PanelHeader
             title={
               <>
-                Sites <span className="panel-count">{catalog.sites.length}</span>
+                {copy.sites} <span className="panel-count">{catalog.sites.length}</span>
               </>
             }
-            description="Saved locations for your team."
+            description={copy.sitesHint}
           />
           <div className="catalog-columns">
             <ul className="resource-list">
@@ -120,56 +131,57 @@ export default function Resources({
                 <li key={site.id}>
                   <strong>{site.name}</strong>
                   <p>{site.address}</p>
-                  <SiteCoordinatesEditor site={site} online={online} onUpdated={onSiteUpdated} />
+                  <SiteCoordinatesEditor
+                    site={site}
+                    online={online}
+                    locale={locale}
+                    onUpdated={onSiteUpdated}
+                  />
                   <SiteClosuresEditor
                     site={site}
                     online={online}
+                    locale={locale}
                     onUpdated={onSiteClosuresUpdated}
                   />
                   <SiteLocation
                     key={`${site.id}:${site.coordinates?.latitude ?? ''}:${site.coordinates?.longitude ?? ''}`}
                     site={site}
                     online={online}
+                    locale={locale}
                     beforeReload={beforeReload}
                   />
                 </li>
               ))}
             </ul>
-            <Form
-              noValidate
-              aria-label="Add a site"
-              onSubmit={(event) => void create(event, 'site')}
-            >
-              <h3>Add a site</h3>
+            <Form noValidate aria-label={copy.add} onSubmit={(event) => void create(event, 'site')}>
+              <h3>{copy.add}</h3>
               <Label>
-                Site name
+                {copy.name}
                 <Input name="name" required minLength={2} maxLength={120} />
               </Label>
               <Label>
-                Address
+                {copy.address}
                 <Input name="address" required minLength={3} maxLength={250} />
               </Label>
-              <p className="muted">
-                Coordinates are optional. Enter them only when the location should be shared with
-                your workspace.
-              </p>
+              <p className="muted">{copy.coordinatesHint}</p>
               <div className="form-grid">
                 <Label>
-                  Latitude
+                  {copy.latitude}
                   <Input name="latitude" type="number" step="any" min={-90} max={90} />
                 </Label>
                 <Label>
-                  Longitude
+                  {copy.longitude}
                   <Input name="longitude" type="number" step="any" min={-180} max={180} />
                 </Label>
               </div>
-              <Button className="primary" disabled={busy}>
-                Add site
+              {!online && <p className="muted">{copy.offline}</p>}
+              <Button className="primary" disabled={!online || busy}>
+                {copy.save}
               </Button>
             </Form>
           </div>
         </Card>
-        <Card className="catalog-panel">
+        <Card className="catalog-panel" lang="en">
           <PanelHeader
             title={
               <>
@@ -239,7 +251,7 @@ export default function Resources({
           </div>
         </Card>
       </div>
-      <Card className="brief worker-directory">
+      <Card className="brief worker-directory" lang="en">
         <PanelHeader
           title="Field workers"
           description="Invite people and manage their access to the workspace."

@@ -626,10 +626,15 @@ test('worker copies the saved site coordinates offline without loading a map', a
   await page.setViewportSize({ width: 320, height: 840 });
   await login(page);
   await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
-  await page.getByRole('button', { name: `Buka ${order.reference}: ${order.title}` }).click();
-  await context.setOffline(true);
+  await page.getByRole('searchbox', { name: 'Cari tugas' }).fill(order.reference);
+  await page
+    .getByRole('button', { name: `Buka ${order.reference}: ${order.title}` })
+    .press('Enter');
   const card = location(page);
   const coordinates = card.getByText('Lintang 0 · Bujur -106.8', { exact: true });
+  await expect(coordinates).toBeVisible();
+  await context.setOffline(true);
+  await expect(page.getByRole('status').filter({ hasText: 'Bekerja offline' })).toBeVisible();
   await expect(coordinates).toBeVisible();
   const copy = card.getByRole('button', { name: 'Salin koordinat lokasi', exact: true });
   await expect(copy.locator('svg[aria-hidden=true]')).toBeVisible();

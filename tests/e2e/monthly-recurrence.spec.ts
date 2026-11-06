@@ -126,6 +126,9 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
     await dialog.getByRole('button', { name: 'Close', exact: true }).click();
     await context.setOffline(true);
     await page.reload();
+    await expect(page.getByRole('alert')).toContainText(
+      'Server unavailable. Saved work is still available on this device.',
+    );
     await page.getByRole('button', { name: 'Recover recurring batch', exact: true }).click();
     await expect(dialog.getByText(`${repeatLabel} · 4 work orders`, { exact: true })).toBeVisible();
     expect(

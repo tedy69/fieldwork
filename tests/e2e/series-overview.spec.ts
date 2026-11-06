@@ -288,7 +288,10 @@ test('manager filters current batch visits offline and keeps focus when an order
   await page.setViewportSize({ width: 320, height: 840 });
   await page.clock.setFixedTime(new Date('2026-12-30T12:00:00Z'));
   await login(page);
-  await page.getByRole('button', { name: 'Recurring batches', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: `Open ${late.reference}: ${late.title}`, exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Recurring batches', exact: true }).press('Enter');
   await option(page, batch).click();
   const dialog = dialogFor(page);
   const selected = dialog.getByRole('region', { name: 'Selected recurring batch' });

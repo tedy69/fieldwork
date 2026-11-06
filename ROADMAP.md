@@ -73,6 +73,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Recurring batch frequency and open-work filters combined with search and pagination.
 - [x] Filters for upcoming, overdue, rescheduled, closed-site, submitted, and approved visits in a loaded recurring batch.
 - [x] Offline CSV export of filtered batch visits with planned and current dates.
+- [x] Offline all-day calendar export of filtered batch visits using their current due dates.
 - [x] Reschedule one unfinished order from its recurring batch while keeping the planned date visible.
 - [x] Reuse a recurring batch with a new first date, preview, and the standard duplicate-safe save.
 - [x] Optional coordinates on new sites/assignments and opt-in web maps with configurable raster tiles, attribution, keyboard controls, and offline-readable coordinates.

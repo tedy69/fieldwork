@@ -1,6 +1,6 @@
 # Recurring assignments
 
-Managers can create a finite batch of daily, weekday, weekly, two-week, monthly, month-end, last-weekday or quarterly assignments through `POST /api/v1/work-order-series` or `client.createOrderSeries(input)`. Each occurrence becomes an ordinary work order immediately, visible in the existing list, search, planner, and worker sync. Managers use **Assign recurring work** beside ordinary assignment in the web dispatch desk. A selected planner date becomes the first date. The form previews every occurrence before creating the batch.
+Managers can create a finite batch of daily, weekday, weekly, two-week, monthly, first-weekday, month-end, last-weekday or quarterly assignments through `POST /api/v1/work-order-series` or `client.createOrderSeries(input)`. Each occurrence becomes an ordinary work order immediately, visible in the existing list, search, planner, and worker sync. Managers use **Assign recurring work** beside ordinary assignment in the web dispatch desk. A selected planner date becomes the first date. The form previews every occurrence before creating the batch.
 
 ## Contract
 
@@ -25,6 +25,8 @@ Weekday schedules include public holidays. They are a Monday–Friday calendar r
 `monthly` repeats on the original day of each month. If that day is unavailable, the occurrence uses that month's last day. For example, Jan 31, 2027 produces Jan 31, Feb 28, Mar 31, Apr 30. Jan 30 produces Jan 30, Feb 28, Mar 30. Starting Feb 28 repeats on the 28th; this is an original-day rule rather than an end-of-month mode. Weekend and holiday dates remain included. The selector explains the shorter-month behavior before assignment, and recovered batches retain the same rule and preview.
 
 `quarterly` advances three calendar months from each scheduled month and uses the same original-day rule. Choose **Every three months** for seasonal inspections. Starting Aug 31, 2026 produces Aug 31, Nov 30, Feb 28, and May 31. If a date is skipped, the next occurrence stays on the same three-month schedule.
+
+Choose **First weekday of month** to use `month-start-weekday`. Start on the first Monday through Friday of a month. A month that starts on Saturday or Sunday schedules its visit on Monday. Use a skip date for a holiday or site closure to omit that month’s visit.
 
 Choose **Last day of month** to use `month-end`. The first date must be the last day of its month. A batch beginning February 29, 2028 repeats on March 31 and April 30. Skip dates and the inclusive end date use the same calendar as the preview.
 
@@ -100,6 +102,8 @@ Read-only API methods, restricted to current manager accounts:
 Lists sort newest first by creation timestamp, then batch ID. The cursor anchors the next older page; later arrivals do not shift that boundary. Totals reflect the current database, not a frozen historical snapshot. Unknown cursors return 422 `INVALID_CURSOR`; malformed queries/IDs return 422 `VALIDATION`; unknown valid batch IDs return 404. Authorization runs before pagination or lookup. An incomplete membership record returns an error rather than a successful partial batch. These reads use existing schema 3 tables without a new migration; large-scale indexed querying remains separate work.
 
 ## Boundaries and contributor entry points
+
+The server and web bundle must both support `month-start-weekday` before managers create batches with it. The rule uses the existing series tables and receipts, with no database migration. Workers receive ordinary work orders.
 
 There is no background scheduler, infinite series, shared holiday calendar, configurable day-of-month, bulk editing or series cancellation. Each materialized order can be rescheduled, reassigned, submitted and reviewed independently through the existing versioned workflow. Template changes do not rewrite its saved checklist. Future scheduling rules and series management need their own contract and migration discussion.
 

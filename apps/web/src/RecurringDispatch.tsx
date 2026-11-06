@@ -432,6 +432,9 @@ function RecurringDialog({
           </Button>
         </DialogHeader>
         {(pending?.frequency ?? frequency) === 'monthly' && <p className="muted">{copy.monthly}</p>}
+        {(pending?.frequency ?? frequency) === 'month-start-weekday' && (
+          <p className="muted">{copy.monthStartWeekday}</p>
+        )}
         {(pending?.frequency ?? frequency) === 'month-end' && (
           <p className="muted">{copy.monthEnd}</p>
         )}

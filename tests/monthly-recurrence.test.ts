@@ -71,6 +71,37 @@ describe('quarterly calendar rules', () => {
   });
 });
 
+describe('first weekday of month calendar rules', () => {
+  it('moves weekend starts to Monday and keeps weekday starts across years', () => {
+    expect(
+      recurrenceDates({
+        dueDate: '2026-08-03',
+        frequency: 'month-start-weekday',
+        occurrences: 6,
+      }),
+    ).toEqual(['2026-08-03', '2026-09-01', '2026-10-01', '2026-11-02', '2026-12-01', '2027-01-01']);
+  });
+
+  it.each(['2026-08-01', '2026-08-02', '2026-08-04'])('rejects %s as the first date', (dueDate) => {
+    expect(() =>
+      recurrenceDates({ dueDate, frequency: 'month-start-weekday', occurrences: 2 }),
+    ).toThrow('Choose the first weekday of a month for the first visit.');
+  });
+
+  it('skips a closure and includes the cutoff without shifting later visits', () => {
+    expect(
+      recurrenceDatesThrough(
+        {
+          dueDate: '2026-08-03',
+          frequency: 'month-start-weekday',
+          skipDates: ['2026-09-01'],
+        },
+        '2026-11-02',
+      ),
+    ).toEqual(['2026-08-03', '2026-10-01', '2026-11-02']);
+  });
+});
+
 describe('month-end calendar rules', () => {
   it.each([
     ['2027-02-28', ['2027-02-28', '2027-03-31', '2027-04-30']],

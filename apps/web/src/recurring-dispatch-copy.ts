@@ -11,6 +11,7 @@ const english = {
   reuseHint: 'Choose a first date. Add any holidays or closures for the new schedule.',
   close: 'Close',
   monthly: 'Repeats on the original day of the month. Shorter months use their last day.',
+  monthStartWeekday: 'Start on the first Monday through Friday of a month.',
   monthEnd: 'Choose the last day of a month for the first visit.',
   monthEndWeekday: 'Choose the last Monday through Friday of a month to start.',
   quarterly: 'Repeats every three months on the original day. Shorter months use their last day.',
@@ -90,6 +91,7 @@ export const recurringDispatchCopy: Record<Locale, typeof english> = {
     close: 'Tutup',
     monthly:
       'Berulang pada tanggal awal tiap bulan. Bulan yang lebih pendek memakai hari terakhir.',
+    monthStartWeekday: 'Mulai pada hari kerja pertama suatu bulan.',
     monthEnd: 'Pilih hari terakhir suatu bulan untuk kunjungan pertama.',
     monthEndWeekday: 'Mulai pada hari kerja terakhir suatu bulan.',
     quarterly: 'Berulang tiap tiga bulan. Bulan yang lebih pendek memakai hari terakhir.',

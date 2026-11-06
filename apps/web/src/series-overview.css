@@ -120,8 +120,18 @@
   margin: 6px 0 0;
   font-size: 14px;
 }
-.series-orders .status {
-  justify-self: start;
+.series-visit-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-control);
+}
+.series-visit-status .series-closure-label {
+  border-color: var(--amber);
+}
+.series-closure-label svg {
+  width: 14px;
+  height: 14px;
 }
 .series-order-actions {
   display: flex;

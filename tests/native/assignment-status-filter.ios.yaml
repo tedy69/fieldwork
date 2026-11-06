@@ -4,7 +4,11 @@ name: Filter cached assignments by status on iOS
 - scrollUntilVisible:
     element: My assignments
     direction: UP
-- tapOn: Filter assignments
+- tapOn:
+    text: Filter assignments
+    point: 25%,50%
+- scrollUntilVisible:
+    element: Approved
 - tapOn:
     text: Approved
     index: 0
@@ -46,9 +50,27 @@ name: Filter cached assignments by status on iOS
 - scrollUntilVisible:
     element: Ditugaskan · 1 ditampilkan
 - assertVisible: Ditugaskan · 1 ditampilkan
+- tapOn: Hapus filter tugas
+- assertNotVisible: Ditugaskan · 1 ditampilkan
+- assertVisible:
+    id: assignment-search
+    text: Weekly
+- tapOn: Saring tugas
+- tapOn:
+    text: Ditugaskan
+    index: 0
+- tapOn: Saring tugas
+- assertVisible: Ditugaskan · 1 ditampilkan
 - tapOn: Hapus pencarian
 - assertNotVisible: Hapus pencarian
 - assertVisible: Ditugaskan · 3 ditampilkan
 - tapOn: Saring tugas
 - tapOn: Semua tugas
 - assertNotVisible: Ditugaskan · 3 ditampilkan
+- tapOn: Tugas mendesak
+- tapOn: Saring tugas
+- assertVisible: Tugas mendesak · 1 ditampilkan
+- scrollUntilVisible:
+    element: 'Buka FW-002: Check emergency access'
+    centerElement: true
+- assertNotVisible: 'Buka FW-001: Morning safety walkthrough'

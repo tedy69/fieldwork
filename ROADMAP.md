@@ -32,6 +32,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Overdue filter with search and offline support in the Expo notebook.
 - [x] Due today filter for open work on web and Expo, with offline search and the device’s local date.
 - [x] Next 7 days filter on web and Expo, with offline search and a rolling local date range.
+- [x] Urgent work filter on web and Expo that combines with search and excludes approved orders.
 - [x] Localized Expo due dates in saved assignment rows, screen-reader hints, and inspection details.
 - [x] Copy an inspection reference from saved assignments in Expo, including offline.
 - [x] CSV exports for filtered manager report lists, including saved offline reports.
@@ -52,7 +53,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] English and Indonesian recurring batch browsing, visit filters, and individual rescheduling.
 - [x] Recurring batch search by title, worker, site, ID, or work order reference, with paginated matches and retry.
 - [x] Recurring batch frequency and open-work filters combined with search and pagination.
-- [x] Filters for upcoming, overdue, rescheduled, submitted, and approved visits in a loaded recurring batch.
+- [x] Filters for upcoming, overdue, rescheduled, closed-site, submitted, and approved visits in a loaded recurring batch.
 - [x] Offline CSV export of filtered batch visits with planned and current dates.
 - [x] Reschedule one unfinished order from its recurring batch while keeping the planned date visible.
 - [x] Reuse a recurring batch with a new first date, preview, and the standard duplicate-safe save.
@@ -78,7 +79,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Repeatable iOS smoke test for draft retention, offline restart, and duplicate-safe reconnect.
 - [x] Expo outbox recovery that keeps blocked reports through outages and reassignment, with an iOS conflict smoke test.
 - [x] Offline assignment status filters in Expo that combine with search and follow the worker's language.
-- [x] One-tap clearing of Expo assignment search while retaining the active filter.
+- [x] One-tap clearing of Expo assignment search and filters, independently and offline.
 - [x] Expo report history with saved revisions, review feedback, and retry without changing the active draft.
 - [x] Offline site coordinates in Expo inspections, taken from the saved assignment snapshot.
 - [x] Copy saved site coordinates in web and Expo inspections, including offline.

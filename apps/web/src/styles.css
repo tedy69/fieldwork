@@ -769,11 +769,21 @@ main#main {
   padding: 25px 0;
   border-bottom: 1px solid var(--line);
 }
+.outbox-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
 .outbox-item h2 {
   margin-top: 12px;
 }
 .outbox-list {
   margin-top: 30px;
+}
+.outbox-search {
+  margin-bottom: 16px;
+  max-width: 360px;
 }
 .detail {
   max-width: 1240px;

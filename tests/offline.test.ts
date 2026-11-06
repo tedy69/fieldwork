@@ -4,6 +4,7 @@ import {
   createOfflineRepository,
   emptyState,
   localReportExport,
+  searchQueuedReports,
   type State,
   type StorageAdapter,
 } from '@fieldwork/offline';
@@ -41,6 +42,28 @@ function memory() {
   };
   return storage;
 }
+it('finds a blocked report by its local summary after the assignment is removed', () => {
+  const orders = [order('cached')];
+  const outbox: State['outbox'] = [
+    { orderId: 'cached', input: input(), createdAt: '', state: 'pending' },
+    {
+      orderId: 'removed',
+      input: { ...input(), summary: 'Gate latch checked.' },
+      createdAt: '',
+      state: 'blocked',
+    },
+  ];
+  const before = structuredClone(outbox);
+  expect(searchQueuedReports(orders, outbox, '  LATCH ')).toEqual([
+    { item: outbox[1], order: undefined },
+  ]);
+  expect(searchQueuedReports(orders, outbox, 'inspection')).toEqual([
+    { item: outbox[0], order: orders[0] },
+  ]);
+  expect(searchQueuedReports(orders, outbox, '').map(({ item }) => item)).toEqual(before);
+  expect(outbox).toEqual(before);
+});
+
 describe('local report export', () => {
   it('exports only the selected incomplete draft and strips account and report metadata', () => {
     const selected = order('selected');

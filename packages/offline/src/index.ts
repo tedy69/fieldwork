@@ -33,6 +33,20 @@ export const emptyState = (): State => ({
   outbox: [],
   lastSynced: null,
 });
+/** Find queued reports using data already available on the originating device. */
+export function searchQueuedReports(orders: WorkOrder[], outbox: PendingReport[], search: string) {
+  const query = search.trim().toLowerCase();
+  const ordersById = new Map(orders.map((order) => [order.id, order]));
+  return outbox
+    .map((item) => ({ item, order: ordersById.get(item.orderId) }))
+    .filter(
+      ({ item, order }) =>
+        !query ||
+        [order?.reference, order?.title, order?.site.name, item.input.summary, item.orderId].some(
+          (value) => value?.toLowerCase().includes(query),
+        ),
+    );
+}
 /** Project only the selected local report. Export never acknowledges or changes the queue. */
 export function localReportExport(state: State, orderId: string, now = new Date()) {
   const queued = state.outbox.find((item) => item.orderId === orderId);

@@ -13,6 +13,7 @@ import { Label } from './components/ui/label';
 import { FieldError } from './components/ui/field';
 import { client, message } from './lib';
 import { managerReviewCopy } from './manager-review-copy';
+import type { LocalizedNotice } from './useLocalizedNotice';
 import './reschedule.css';
 
 export default function ReassignOrder({
@@ -28,7 +29,7 @@ export default function ReassignOrder({
   online: boolean;
   locale: Locale;
   onSaved: (order: WorkOrder) => Promise<void>;
-  onNotice: (notice: string) => void;
+  onNotice: (notice: LocalizedNotice) => void;
 }) {
   const copy = managerReviewCopy[locale].handover;
   const [editing, setEditing] = useState(false);
@@ -58,7 +59,11 @@ export default function ReassignOrder({
         assigneeId,
       });
       await onSaved(updated);
-      onNotice(copy.saved(order.reference, updated.assignee.name));
+      const {
+        reference,
+        assignee: { name },
+      } = updated;
+      onNotice((language) => managerReviewCopy[language].handover.saved(reference, name));
       setEditing(false);
       document.getElementById('main')?.focus();
     } catch (error) {
@@ -74,7 +79,11 @@ export default function ReassignOrder({
     try {
       const updated = await client.order(order.id);
       await onSaved(updated);
-      onNotice(copy.reloaded(order.reference, updated.assignee.name));
+      const {
+        reference,
+        assignee: { name },
+      } = updated;
+      onNotice((language) => managerReviewCopy[language].handover.reloaded(reference, name));
       setNeedsReload(false);
       document.getElementById('main')?.focus();
     } catch (error) {

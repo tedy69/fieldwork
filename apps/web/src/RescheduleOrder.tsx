@@ -10,6 +10,7 @@ import type { WorkOrder } from '@fieldwork/contracts';
 import { languageTags, type Locale } from '@fieldwork/strings';
 import { client, dateLabel, message } from './lib';
 import { rescheduleCopy } from './reschedule-copy';
+import type { LocalizedNotice } from './useLocalizedNotice';
 import SiteClosureHint from './SiteClosureHint';
 import './reschedule.css';
 
@@ -27,7 +28,7 @@ export default function RescheduleOrder({
   online: boolean;
   locale?: Locale;
   onSaved: (order: WorkOrder) => Promise<void>;
-  onNotice: (notice: string) => void;
+  onNotice: (notice: LocalizedNotice) => void;
   batch?: {
     locked: boolean;
     onBusyChange: (busy: boolean) => void;
@@ -82,7 +83,13 @@ export default function RescheduleOrder({
         dueDate,
       });
       await onSaved(updated);
-      onNotice(copy.saved(order.reference, dateLabel(updated.dueDate, dateLocale)));
+      const { reference, dueDate: updatedDueDate } = updated;
+      onNotice((language) =>
+        rescheduleCopy[language].saved(
+          reference,
+          dateLabel(updatedDueDate, languageTags[language]),
+        ),
+      );
       setEditing(false);
       focusAfterUpdate();
     } catch (error) {
@@ -101,7 +108,13 @@ export default function RescheduleOrder({
     try {
       const updated = await client.order(order.id);
       await onSaved(updated);
-      onNotice(copy.reloaded(order.reference, dateLabel(updated.dueDate, dateLocale)));
+      const { reference, dueDate: updatedDueDate } = updated;
+      onNotice((language) =>
+        rescheduleCopy[language].reloaded(
+          reference,
+          dateLabel(updatedDueDate, languageTags[language]),
+        ),
+      );
       setNeedsReload(false);
       focusAfterUpdate();
     } catch (error) {

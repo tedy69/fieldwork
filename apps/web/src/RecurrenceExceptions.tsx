@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import { RecurrenceSchema } from '@fieldwork/contracts';
+import { languageTags, type Locale } from '@fieldwork/strings';
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus';
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
 import { calendarLabel } from './calendar';
@@ -8,28 +9,32 @@ import { DatePicker } from './components/ui/date-picker';
 import { FieldError } from './components/ui/field';
 import { IconButton } from './components/ui/icon-button';
 import { Label } from './components/ui/label';
+import { recurringDispatchCopy } from './recurring-dispatch-copy';
 import './recurrence-exceptions.css';
 
 export function SkippedDates({
   dates,
+  locale = 'en',
   onRemove,
   disabled,
 }: {
   dates?: string[];
+  locale?: Locale;
   onRemove?: (date: string) => void;
   disabled?: boolean;
 }) {
   if (!dates?.length) return null;
+  const copy = recurringDispatchCopy[locale].exceptions;
   return (
-    <section aria-label="Skipped dates">
-      <h3>Dates to skip</h3>
+    <section aria-label={copy.region}>
+      <h3>{copy.title}</h3>
       <ul className="recurrence-skip-list">
         {dates.map((date) => (
           <li key={date}>
-            <time dateTime={date}>{calendarLabel(date, true)}</time>
+            <time dateTime={date}>{calendarLabel(date, true, languageTags[locale])}</time>
             {onRemove && (
               <IconButton
-                label={`Remove skipped date ${date}`}
+                label={copy.remove(date)}
                 disabled={disabled}
                 onClick={() => onRemove(date)}
               >
@@ -45,6 +50,7 @@ export function SkippedDates({
 
 export default function RecurrenceExceptions({
   dates,
+  locale,
   candidate,
   dueDate,
   closureDates,
@@ -54,6 +60,7 @@ export default function RecurrenceExceptions({
   onChange,
 }: {
   dates: string[];
+  locale: Locale;
   candidate: string;
   dueDate: string;
   closureDates?: string[];
@@ -62,6 +69,7 @@ export default function RecurrenceExceptions({
   onCandidate: (date: string) => void;
   onChange: (dates: string[]) => void;
 }) {
+  const copy = recurringDispatchCopy[locale].exceptions;
   const id = useId();
   const [open, setOpen] = useState(dates.length > 0);
   const validDate = RecurrenceSchema.shape.dueDate.safeParse(candidate).success;
@@ -70,9 +78,9 @@ export default function RecurrenceExceptions({
   const tooMany = dates.length + laterClosures.length > 52;
   const error =
     validDate && candidate <= dueDate
-      ? 'Choose a skipped date after the first due date.'
+      ? copy.afterFirst
       : validDate && dates.includes(candidate)
-        ? 'This date is already in the list.'
+        ? copy.duplicate
         : '';
   function focusDate() {
     document.getElementById(id)?.focus();
@@ -84,14 +92,10 @@ export default function RecurrenceExceptions({
       onToggle={(event) => setOpen(event.currentTarget.open)}
     >
       <summary>
-        Skip dates{dates.length ? ` (${dates.length})` : ' (optional)'}
-        {candidate && <span className="muted"> · Date not added</span>}
+        {copy.summary(dates.length)}
+        {candidate && <span className="muted"> · {copy.unadded}</span>}
       </summary>
-      <p className="muted">
-        {byDate
-          ? 'Add holidays or site closures. Skipped dates within the range reduce the order count.'
-          : 'Add holidays or site closures. The batch still creates the chosen number of orders, extending the schedule when needed.'}
-      </p>
+      <p className="muted">{byDate ? copy.dateHint : copy.countHint}</p>
       {closureDates?.length ? (
         <>
           <Button
@@ -103,27 +107,20 @@ export default function RecurrenceExceptions({
               focusDate();
             }}
           >
-            Copy site closure dates
+            {copy.copyClosures}
           </Button>
-          {closureDates.includes(dueDate) && (
-            <p className="muted">
-              The first date is marked closed. Change it to start on another date.
-            </p>
-          )}
-          {tooMany && (
-            <p className="muted">Remove skipped dates before copying this site calendar.</p>
-          )}
-          {!tooMany && laterClosures.length === 0 && (
-            <p className="muted">No later closure dates to copy.</p>
-          )}
+          {closureDates.includes(dueDate) && <p className="muted">{copy.firstClosed}</p>}
+          {tooMany && <p className="muted">{copy.tooMany}</p>}
+          {!tooMany && laterClosures.length === 0 && <p className="muted">{copy.noneToCopy}</p>}
         </>
       ) : null}
-      <Label htmlFor={id}>Date to skip</Label>
+      <Label htmlFor={id}>{copy.date}</Label>
       <DatePicker
         id={id}
         value={candidate}
         onValueChange={onCandidate}
-        calendarLabel="Choose a date to skip"
+        calendarLabel={copy.calendar}
+        locale={locale}
         disabled={disabled || dates.length >= 52}
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={
@@ -132,13 +129,11 @@ export default function RecurrenceExceptions({
       />
       {candidate && (
         <p id={`${id}-hint`} className="muted">
-          Add this date or clear it before assigning.
+          {copy.addOrClear}
         </p>
       )}
       {error && <FieldError id={`${id}-error`}>{error}</FieldError>}
-      {dates.length >= 52 && (
-        <p role="status">Up to 52 dates can be skipped. Remove one to add another.</p>
-      )}
+      {dates.length >= 52 && <p role="status">{copy.maximum}</p>}
       <Button
         type="button"
         className="quiet"
@@ -149,10 +144,11 @@ export default function RecurrenceExceptions({
           focusDate();
         }}
       >
-        <PlusIcon aria-hidden="true" /> Add date
+        <PlusIcon aria-hidden="true" /> {copy.add}
       </Button>
       <SkippedDates
         dates={dates}
+        locale={locale}
         disabled={disabled}
         onRemove={(date) => {
           onChange(dates.filter((item) => item !== date));

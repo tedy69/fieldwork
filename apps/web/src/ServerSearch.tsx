@@ -229,7 +229,11 @@ export default function ServerSearch({
         }}
         onCloseAutoFocus={(event) => {
           event.preventDefault();
-          if (navigated.current || !trigger.current?.isConnected || trigger.current.disabled)
+          if (navigated.current)
+            (
+              document.getElementById('inspection-title') ?? document.getElementById('main')
+            )?.focus();
+          else if (!trigger.current?.isConnected || trigger.current.disabled)
             document.getElementById('main')?.focus();
           else trigger.current.focus();
         }}
@@ -281,12 +285,12 @@ export default function ServerSearch({
             </Label>
             {user.role === 'manager' && (
               <Label>
-                Field worker
+                {copy.worker}
                 <Select
                   value={filters.assigneeId}
                   onChange={(event) => change({ assigneeId: event.target.value })}
                 >
-                  <Option value="">All field workers</Option>
+                  <Option value="">{copy.anyWorker}</Option>
                   {workers
                     .filter((worker) => worker.role === 'worker')
                     .map((worker) => (

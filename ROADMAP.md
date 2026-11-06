@@ -11,12 +11,16 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] English and Indonesian sign-in on web and Expo, with a saved device preference.
 - [x] First-open language follows the device, with explicit choices saved on web and Expo.
 - [x] English and Indonesian invitation and password-reset pages that share the web sign-in preference.
+- [x] The web document language follows the selected language through sign-in, the workspace, and account recovery.
 - [x] English and Indonesian assignment and outbox screens in the Expo worker notebook.
-- [x] Localized Expo sync recovery that keeps saved work visible during an outage and clears after reconnect.
+- [x] Localized Expo sync recovery with a retry action that keeps saved work visible during an outage.
+- [x] Retry web sync from the notebook warning while keeping saved work visible.
 - [x] English and Indonesian inspection forms and saved reports in Expo, including reading and photo guidance.
 - [x] English and Indonesian web worker lists and outbox, with localized date filters and draft export.
+- [x] English and Indonesian manager dispatch list, planners, single assignment form, and export controls.
+- [x] English and Indonesian manager report review, worker handover, and due-date editing.
 - [x] English and Indonesian web worker inspection forms and saved reports, with localized photo and reading feedback.
-- [x] English and Indonesian report history and printable reports for web workers.
+- [x] English and Indonesian report history and printable reports for web workers, with localized dates and UTC timestamps in print.
 - [x] English and Indonesian week and month planners in the web worker notebook.
 - [x] English and Indonesian site maps with named zoom and recenter icons in the web worker notebook.
 - [x] English and Indonesian saved work finder with offline keyboard navigation and named destinations.
@@ -30,6 +34,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Overdue filter with search and offline support in the Expo notebook.
 - [x] Due today filter for open work on web and Expo, with offline search and the device’s local date.
 - [x] Next 7 days filter on web and Expo, with offline search and a rolling local date range.
+- [x] Urgent work filter on web and Expo that combines with search and excludes approved orders.
 - [x] Localized Expo due dates in saved assignment rows, screen-reader hints, and inspection details.
 - [x] Copy an inspection reference from saved assignments in Expo, including offline.
 - [x] CSV exports for filtered manager report lists, including saved offline reports.
@@ -45,14 +50,18 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Web server search with combined filters, incremental result loading, fresh authorization on opening, and preserved offline drafts.
 - [x] Bounded recurring assignment API and SDK with daily/weekly dates, atomic creation, and durable retry receipts.
 - [x] Web recurring assignment creation with a date preview, planner date preset, and durable recovery after uncertain writes.
+- [x] English and Indonesian recurring assignment creation, date exceptions, and saved-request recovery.
 - [x] Recurring batch overview with paginated API/SDK, planned/current order comparison, and fresh individual-order opening.
+- [x] English and Indonesian recurring batch browsing, visit filters, and individual rescheduling.
 - [x] Recurring batch search by title, worker, site, ID, or work order reference, with paginated matches and retry.
 - [x] Recurring batch frequency and open-work filters combined with search and pagination.
-- [x] Filters for upcoming, overdue, rescheduled, submitted, and approved visits in a loaded recurring batch.
+- [x] Filters for upcoming, overdue, rescheduled, closed-site, submitted, and approved visits in a loaded recurring batch.
 - [x] Offline CSV export of filtered batch visits with planned and current dates.
 - [x] Reschedule one unfinished order from its recurring batch while keeping the planned date visible.
+- [x] Reuse a recurring batch with a new first date, preview, and the standard duplicate-safe save.
 - [x] Optional coordinates on new sites/assignments and opt-in web maps with configurable raster tiles, attribution, keyboard controls, and offline-readable coordinates.
 - [x] Manager coordinate editing for existing sites, with conflict recovery, explicit clearing, and unchanged inspection snapshots.
+- [x] English and Indonesian site creation, coordinate editing, and closure dates.
 - [x] Weekday-only recurring batches with Monday–Friday previews, saved-request recovery, and batch browsing.
 - [x] Weekend-only recurring batches with Saturday–Sunday previews and skipped dates.
 - [x] Weekly batches on selected days with date previews and saved-request recovery.
@@ -64,25 +73,37 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Recurring batches that end on a date, with an inclusive preview and duplicate-safe recovery.
 - [x] Per-batch dates to skip for holidays/site closures, with extended previews, preserved order counts and duplicate-safe recovery.
 - [x] Reusable site closure dates that managers can copy into new recurring batches.
+- [x] Flag planned visits that fall on a site closure before assigning a recurring batch.
+- [x] Show site closure dates when a manager creates or moves an individual visit.
+- [x] Flag and filter unfinished visits on site closure dates in the manager dispatch desk.
+- [x] Suggest the next open date when a manager assigns or moves a visit onto a site closure.
 - [x] Checklist-wide photo requirements, web/Expo guidance, offline draft protection, and server enforcement.
 - [x] Photo evidence for individual checklist items, with offline attachments and labeled report history.
 - [x] Repeatable Android smoke test for item photos, offline restart, and duplicate-safe reconnect.
 - [x] Repeatable iOS smoke test for draft retention, offline restart, and duplicate-safe reconnect.
 - [x] Expo outbox recovery that keeps blocked reports through outages and reassignment, with an iOS conflict smoke test.
 - [x] Offline assignment status filters in Expo that combine with search and follow the worker's language.
+- [x] One-tap clearing of Expo assignment search and filters, independently and offline.
+- [x] One-tap clearing of the web work-order filter without clearing search or dates.
 - [x] Expo report history with saved revisions, review feedback, and retry without changing the active draft.
 - [x] Offline site coordinates in Expo inspections, taken from the saved assignment snapshot.
+- [x] Copy saved site coordinates in web and Expo inspections, including offline.
+- [x] Repeatable Android and iOS smoke tests for copying the exact saved coordinates during an API outage.
 - [x] Expo sign-in recovery from the notebook and outbox with the current server, account, and local reports retained.
 - [x] Repeatable Android smoke test for Expo sign-in recovery, assignment filters, saved coordinates, report history, and Back navigation.
 - [x] Web worker sign-in recovery in English and Indonesian, with queued reports retained through session expiry.
 - [x] Text-response checklist fields on web and Expo, including mixed API templates, offline drafts and saved report exports.
 - [x] Numeric checklist readings on web and Expo, with partial offline input, zero/negative decimals, type validation and saved report exports.
 - [x] Mixed checklist creation on web, with a response type per question and a bulk entry shortcut.
+- [x] English and Indonesian checklist creation, including mixed answers, reading limits, and photo requirements.
 - [x] Optional units and inclusive limits for numeric checklist items, with offline guidance and server validation.
 - [x] Worker invitations with one-time expiring links, a paginated manager ledger, revocation, browser password setup, and preserved device notebooks.
+- [x] English and Indonesian manager invitation creation, copying, and revocation.
 - [x] Worker deactivation and reactivation with manager confirmations, session revocation, active assignment choices, version conflicts, and preserved offline reports.
+- [x] English and Indonesian worker account status, access confirmations, and access history.
 - [x] Manager worker-access history with actor/time details, stable pagination, retry/restart, and temporary offline browsing.
 - [x] Manager-assisted worker password recovery with one-hour links, replacement/revocation, browser password confirmation, session revocation, and preserved offline reports.
+- [x] English and Indonesian manager controls for creating, copying, replacing, and revoking password reset links.
 
 ## Next · Make daily work easier
 

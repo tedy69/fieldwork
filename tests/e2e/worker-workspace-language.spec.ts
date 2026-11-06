@@ -72,6 +72,7 @@ test('worker language keeps filters and an offline report available at 320px', a
   expect((await download).suggestedFilename()).toContain(order.reference);
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Tugas saya' })).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'id');
   await outbox.click();
   await expect(page.getByText(summary, { exact: true })).toBeVisible();
   await context.setOffline(false);

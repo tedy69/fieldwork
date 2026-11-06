@@ -2,12 +2,16 @@ import type { Locale } from './index';
 
 const english = {
   back: 'Back to assignments',
+  backToOutbox: 'Back to sync outbox',
   copyReference: 'Copy work order reference',
   referenceCopied: 'Work order reference copied.',
   referenceCopyFailed: 'Could not copy the reference. Select it to copy manually.',
   site: 'Site',
   coordinates: (latitude: number, longitude: number) =>
     `Latitude ${latitude} · Longitude ${longitude}`,
+  copyCoordinates: 'Copy site coordinates',
+  coordinatesCopied: 'Site coordinates copied.',
+  coordinatesCopyFailed: 'Could not copy the coordinates. Select them to copy manually.',
   assignee: 'Assigned to',
   duePriority: 'Due / priority',
   priority: { routine: 'routine', urgent: 'urgent' },
@@ -77,11 +81,15 @@ export const inspectionCopy: Record<Locale, typeof english> = {
   en: english,
   id: {
     back: 'Kembali ke daftar tugas',
+    backToOutbox: 'Kembali ke antrean sinkronisasi',
     copyReference: 'Salin nomor tugas',
     referenceCopied: 'Nomor tugas disalin.',
     referenceCopyFailed: 'Nomor tugas tidak bisa disalin. Pilih nomornya untuk menyalin.',
     site: 'Lokasi',
     coordinates: (latitude, longitude) => `Lintang ${latitude} · Bujur ${longitude}`,
+    copyCoordinates: 'Salin koordinat lokasi',
+    coordinatesCopied: 'Koordinat lokasi disalin.',
+    coordinatesCopyFailed: 'Koordinat tidak bisa disalin. Pilih koordinat untuk menyalin.',
     assignee: 'Ditugaskan kepada',
     duePriority: 'Tenggat / prioritas',
     priority: { routine: 'rutin', urgent: 'mendesak' },

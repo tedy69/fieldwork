@@ -14,23 +14,32 @@ import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus';
 import { ListDashesIcon } from '@phosphor-icons/react/dist/csr/ListDashes';
 import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
 import { CalendarDotsIcon } from '@phosphor-icons/react/dist/csr/CalendarDots';
+import { CalendarXIcon } from '@phosphor-icons/react/dist/csr/CalendarX';
 import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { GlobeIcon } from '@phosphor-icons/react/dist/csr/Globe';
 import { IconButton } from './components/ui/icon-button';
 import { SearchField } from './components/ui/search-field';
 import { Label } from './components/ui/label';
 import { Avatar, AvatarFallback } from './components/ui/avatar';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   compareOrdersByDueDate,
   isOpenDueBetween,
+  isUrgentOpenOrder,
   nextSevenDaysEnd,
   type User,
   type Catalog,
+  type OrderSeriesDetail,
 } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { emptyState, type State } from '@fieldwork/offline';
-import { languageNames, languageTags, notebookCopy, type Locale } from '@fieldwork/strings';
+import {
+  inspectionCopy,
+  languageNames,
+  languageTags,
+  notebookCopy,
+  type Locale,
+} from '@fieldwork/strings';
 import { repositoryFor } from './storage';
 import { client, message, dateLabel } from './lib';
 import { PageHeading, Empty, ActionGroup } from './components';
@@ -39,7 +48,7 @@ import CreateOrder from './CreateOrderDialog';
 import RecurringDispatch from './RecurringDispatch';
 import SeriesOverview from './SeriesOverview';
 import OrderDetail from './OrderDetail';
-import { isInDueRange, isOverdue, isValidDueRange } from './dates';
+import { isInDueRange, isOverdue, isScheduledOnClosure, isValidDueRange } from './dates';
 import { useLocalDate } from './useLocalDate';
 import WorkspaceExports from './WorkspaceExports';
 import DueDateRange from './DueDateRange';
@@ -49,6 +58,8 @@ import { monthDates, weekDates } from './calendar';
 import WorkFinder from './WorkFinder';
 import ServerSearch from './ServerSearch';
 import { workerWorkspaceCopy } from './worker-workspace-copy';
+import { managerDispatchCopy } from './manager-dispatch-copy';
+import { useInspectionNavigation } from './useInspectionNavigation';
 
 export default function Workspace({
   user,
@@ -63,21 +74,27 @@ export default function Workspace({
   language: Locale;
   onLanguageChange: (language: Locale) => void;
 }) {
-  const locale = user.role === 'worker' ? language : 'en';
+  const locale = language;
   const alternate = locale === 'id' ? 'en' : 'id';
   const copy = workerWorkspaceCopy[locale];
+  const dispatch = managerDispatchCopy[locale];
   const notebook = notebookCopy[locale];
   const dateLocale = languageTags[locale];
   const repo = useMemo(() => repositoryFor(user.id, client), [user.id]);
   const [state, setState] = useState<State>(emptyState);
   const [catalog, setCatalog] = useState<Catalog>({ users: [], sites: [], templates: [] });
-  const [selected, setSelected] = useState<string | null>(null);
-  const [view, setView] = useState<'orders' | 'outbox' | 'resources'>('orders');
+  const { destination, navigate, openInspection, closeInspection } = useInspectionNavigation(
+    user.id,
+  );
+  const { view, orderId, returnFocus } = destination;
+  const navigation = useRef<HTMLElement>(null);
   const [filter, setFilter] = useState('ALL');
+  const statusFilterToolbar = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState('');
   const [dueFrom, setDueFrom] = useState('');
   const [dueThrough, setDueThrough] = useState('');
   const [datesOpen, setDatesOpen] = useState(false);
+  const [closureOnly, setClosureOnly] = useState(false);
   const today = useLocalDate();
   const [plannerView, setPlannerView] = useState<'list' | 'week' | 'month'>('list');
   const planner = plannerView !== 'list';
@@ -85,15 +102,21 @@ export default function Workspace({
   const [plannerDay, setPlannerDay] = useState('');
   const invalidRange = !planner && !isValidDueRange(dueFrom, dueThrough);
   const [creating, setCreating] = useState(false);
+  const [batchToReuse, setBatchToReuse] = useState<OrderSeriesDetail | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState<string | null>('');
+  const [error, setError] = useState<{ kind: 'sync' | 'workspace'; detail: string | null } | null>(
+    null,
+  );
+  const syncAction = useRef<HTMLButtonElement>(null);
+  const retryAction = useRef<HTMLButtonElement>(null);
+  const restoreRetryFocus = useRef(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [notice, setNotice] = useState('');
   async function refresh(reconnecting = false) {
     setBusy(true);
-    setError('');
+    setError((current) => (current?.kind === 'sync' ? current : null));
     try {
       await repo.flush({ afterCurrent: reconnecting });
       const [first, catalog] = await Promise.all([client.orders(), client.catalog()]);
@@ -102,12 +125,13 @@ export default function Workspace({
         orders.push(...(await client.orders(offset)).data);
       setCatalog(catalog);
       await repo.cacheOrders(orders);
+      setError((current) => (current?.kind === 'sync' ? null : current));
       setSessionExpired(false);
     } catch (error) {
       if (user.role === 'worker' && error instanceof ApiError && error.status === 401) {
         setSessionExpired(true);
       } else {
-        setError(error instanceof ApiError ? error.message : null);
+        setError({ kind: 'sync', detail: error instanceof ApiError ? error.message : null });
       }
     } finally {
       setState(await repo.read());
@@ -123,7 +147,7 @@ export default function Workspace({
         .then((state) => {
           if (mounted) setState(state);
         })
-        .catch((error) => setError(message(error)));
+        .catch((error) => setError({ kind: 'workspace', detail: message(error) }));
     };
     load();
     const unsubscribe = repo.subscribe(load);
@@ -142,7 +166,25 @@ export default function Workspace({
       window.removeEventListener('offline', disconnected);
     };
   }, [repo]);
-  const order = state.orders.find((order) => order.id === selected);
+  useLayoutEffect(() => {
+    if (busy || !restoreRetryFocus.current) return;
+    restoreRetryFocus.current = false;
+    if (document.activeElement !== document.body) return;
+    const target =
+      error?.kind === 'sync' && !sessionExpired ? retryAction.current : syncAction.current;
+    if (target && !target.disabled) target.focus();
+    else document.getElementById('main')?.focus();
+  }, [busy, error, sessionExpired]);
+  const order = state.orders.find((order) => order.id === orderId);
+  const inspectionId = order?.id;
+  useLayoutEffect(() => {
+    if (inspectionId) document.getElementById('inspection-title')?.focus();
+    else if (returnFocus) {
+      const target = document.querySelector<HTMLElement>(returnFocus);
+      if (target && !target.matches(':disabled')) target.focus();
+      else document.getElementById('main')?.focus();
+    }
+  }, [inspectionId, returnFocus]);
   const overdueEmpty = search
     ? {
         title: copy.noMatchingOverdue,
@@ -173,16 +215,31 @@ export default function Workspace({
     OVERDUE: copy.overdue,
     DUE_TODAY: notebook.dueToday,
     NEXT_SEVEN_DAYS: notebook.nextSevenDays,
+    URGENT: notebook.urgentWork,
     ...notebook.status,
   };
+  const hasSiteClosures =
+    user.role === 'manager' && catalog.sites.some((site) => site.closureDates?.length);
+  const closureVisits = useMemo(() => {
+    const visits = new Set<string>();
+    if (!hasSiteClosures) return visits;
+    const closures = new Map(catalog.sites.map((site) => [site.id, site.closureDates]));
+    for (const order of state.orders) {
+      if (isScheduledOnClosure(order, closures.get(order.site.id))) visits.add(order.id);
+    }
+    return visits;
+  }, [catalog.sites, hasSiteClosures, state.orders]);
   const matching = state.orders.filter(
     (order) =>
+      (!closureOnly || closureVisits.has(order.id)) &&
       (filter === 'ALL' ||
         (filter === 'OVERDUE'
           ? isOverdue(order, today)
-          : dateWindow
-            ? isOpenDueBetween(order, today, windowEnd)
-            : order.status === filter)) &&
+          : filter === 'URGENT'
+            ? isUrgentOpenOrder(order)
+            : dateWindow
+              ? isOpenDueBetween(order, today, windowEnd)
+              : order.status === filter)) &&
       `${order.title} ${order.site.name} ${order.reference} ${order.assignee.name}`
         .toLowerCase()
         .includes(search.toLowerCase()),
@@ -203,7 +260,7 @@ export default function Workspace({
   useEffect(() => {
     const title =
       view === 'resources'
-        ? 'Sites & checklists'
+        ? dispatch.resources
         : view === 'outbox'
           ? notebook.outbox
           : order
@@ -212,9 +269,9 @@ export default function Workspace({
               ? copy.orders
               : notebook.assignments;
     document.title = `${title} · Fieldwork`;
-  }, [view, order?.reference, user.role, copy.orders, notebook]);
+  }, [view, order?.reference, user.role, copy.orders, notebook, dispatch.resources]);
   const sessionRecovery = sessionExpired ? (
-    <Alert role="region" aria-label={notebook.syncSignIn} className="banner session-recovery">
+    <Alert role="region" aria-label={notebook.syncSignIn} className="banner feedback-with-action">
       <div role="alert">
         <strong>{notebook.syncSignIn}</strong>
         <p>{notebook.sessionDrafts}</p>
@@ -229,9 +286,62 @@ export default function Workspace({
     view === 'orders' &&
     order &&
     state.outbox.some((item) => item.orderId === order.id && item.state === 'pending');
+  const workspaceFeedback = (
+    <>
+      {!recoveryInReport && sessionRecovery}
+      {!sessionExpired &&
+        error &&
+        (error.kind === 'sync' ? (
+          <Alert
+            role="region"
+            aria-label={notebook.syncError}
+            className="banner error feedback-with-action"
+            lang={locale}
+          >
+            <p role="alert">
+              {locale === 'id' ? copy.unavailable : (error.detail ?? copy.unavailable)}
+            </p>
+            <Button
+              ref={retryAction}
+              variant="outline"
+              disabled={busy || !online}
+              onClick={(event) => {
+                restoreRetryFocus.current = document.activeElement === event.currentTarget;
+                void refresh();
+              }}
+            >
+              <ArrowClockwiseIcon aria-hidden="true" />
+              {notebook.retrySync}
+            </Button>
+          </Alert>
+        ) : (
+          <Alert className="banner error" lang={locale}>
+            {locale === 'id' && user.role === 'manager'
+              ? copy.unavailable
+              : (error.detail ?? copy.unavailable)}
+          </Alert>
+        ))}
+      {!sessionExpired && notice && (
+        <Alert role="status" className="banner notice" lang={locale}>
+          {notice}
+          <IconButton label={copy.dismiss} variant="ghost" onClick={() => setNotice('')}>
+            <XIcon aria-hidden="true" />
+          </IconButton>
+        </Alert>
+      )}
+    </>
+  );
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#main" lang={locale}>
+      <a
+        className="skip-link"
+        href="#main"
+        lang={locale}
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById('main')?.focus();
+        }}
+      >
         {copy.skip}
       </a>
       <header className="sidebar" lang={locale}>
@@ -239,15 +349,12 @@ export default function Workspace({
           Fieldwork<span className="version">v0.1</span>
         </div>
         <p className="workspace-label">{copy.notebook}</p>
-        <nav aria-label={copy.workspace}>
+        <nav ref={navigation} aria-label={copy.workspace}>
           <Button
             variant="ghost"
             aria-current={view === 'orders' ? 'page' : undefined}
             className={view === 'orders' ? 'nav-active' : ''}
-            onClick={() => {
-              setView('orders');
-              setSelected(null);
-            }}
+            onClick={() => navigate('orders')}
           >
             <ClipboardTextIcon aria-hidden="true" />
             <span className="nav-label">
@@ -258,10 +365,7 @@ export default function Workspace({
             variant="ghost"
             aria-current={view === 'outbox' ? 'page' : undefined}
             className={view === 'outbox' ? 'nav-active' : ''}
-            onClick={() => {
-              setView('outbox');
-              setSelected(null);
-            }}
+            onClick={() => navigate('outbox')}
           >
             <TrayIcon aria-hidden="true" />
             <span className="nav-label">
@@ -273,13 +377,10 @@ export default function Workspace({
               variant="ghost"
               aria-current={view === 'resources' ? 'page' : undefined}
               className={view === 'resources' ? 'nav-active' : ''}
-              onClick={() => {
-                setView('resources');
-                setSelected(null);
-              }}
+              onClick={() => navigate('resources')}
             >
               <BuildingsIcon aria-hidden="true" />{' '}
-              <span className="nav-label">Sites &amp; checklists</span>
+              <span className="nav-label">{dispatch.resources}</span>
             </Button>
           )}
         </nav>
@@ -295,7 +396,7 @@ export default function Workspace({
           </Avatar>
           <div>
             <strong>{user.name}</strong>
-            <small>{user.role === 'manager' ? 'Dispatch manager' : notebook.worker}</small>
+            <small>{user.role === 'manager' ? dispatch.manager : notebook.worker}</small>
           </div>
           <IconButton
             className="quiet"
@@ -307,15 +408,29 @@ export default function Workspace({
           </IconButton>
         </Card>
       </header>
-      <div className="main-column">
+      <div
+        className="main-column"
+        onFocus={({ target, currentTarget }) => {
+          const nav = navigation.current;
+          if (!nav || !currentTarget.contains(target) || getComputedStyle(nav).position !== 'fixed')
+            return;
+          requestAnimationFrame(() => {
+            if (document.activeElement !== target) return;
+            // The browser can consider a control visible even when the fixed bar covers it.
+            const overlap = target.getBoundingClientRect().bottom - nav.getBoundingClientRect().top;
+            if (overlap > 0) window.scrollBy(0, overlap + 8);
+          });
+        }}
+      >
         <div className="topbar" lang={locale}>
           <span className="workspace-context">
-            {user.role === 'manager' ? 'Dispatch desk' : copy.context}
+            {user.role === 'manager' ? dispatch.desk : copy.context}
           </span>
           <div className="connection">
             <span className={online ? 'signal' : 'signal offline'} />
             <span role="status">{online ? copy.connected : copy.offline}</span>
             <IconButton
+              ref={syncAction}
               className="quiet sync-action"
               label={busy ? notebook.syncing : notebook.sync}
               onClick={() => void refresh()}
@@ -324,29 +439,23 @@ export default function Workspace({
               <ArrowClockwiseIcon aria-hidden="true" />
             </IconButton>
           </div>
-          <div className="topbar-tools" lang="en">
-            {user.role === 'worker' && (
-              <IconButton
-                className="quiet"
-                label={languageNames[alternate]}
-                lang={alternate}
-                onClick={() => onLanguageChange(alternate)}
-              >
-                <GlobeIcon aria-hidden="true" />
-              </IconButton>
-            )}
+          <div className="topbar-tools">
+            <IconButton
+              className="quiet"
+              label={languageNames[alternate]}
+              lang={alternate}
+              onClick={() => onLanguageChange(alternate)}
+            >
+              <GlobeIcon aria-hidden="true" />
+            </IconButton>
             <WorkFinder
               locale={locale}
               user={user}
               orders={state.orders}
-              onNavigate={(view) => {
-                setView(view);
-                setSelected(null);
-              }}
-              onOrder={(id) => {
-                setView('orders');
-                setSelected(id);
-              }}
+              onNavigate={navigate}
+              onOrder={(id, origin) =>
+                openInspection(id, origin?.id ? `#${CSS.escape(origin.id)}` : '.command-launcher')
+              }
             />
             <ServerSearch
               user={user}
@@ -358,29 +467,16 @@ export default function Workspace({
                 await repo.cacheOrder(order);
                 setState(await repo.read());
               }}
-              onOpened={(id) => {
-                setView('orders');
-                setSelected(id);
-              }}
+              onOpened={(id) => openInspection(id, '.server-search-launcher')}
             />
           </div>
         </div>
         <main id="main" tabIndex={-1} lang={locale}>
-          {!recoveryInReport && sessionRecovery}
-          {!sessionExpired && error !== '' && (
-            <Alert className="banner error">{error ?? copy.unavailable}</Alert>
-          )}
-          {!sessionExpired && notice && (
-            <Alert role="status" className="banner notice">
-              {notice}
-              <IconButton label={copy.dismiss} variant="ghost" onClick={() => setNotice('')}>
-                <XIcon aria-hidden="true" />
-              </IconButton>
-            </Alert>
-          )}
+          {!order && workspaceFeedback}
           {view === 'resources' ? (
             <Resources
               catalog={catalog}
+              locale={locale}
               refresh={refresh}
               online={online}
               onCatalog={setCatalog}
@@ -441,13 +537,12 @@ export default function Workspace({
                           disabled={busy || !online}
                           onClick={async () => {
                             setBusy(true);
-                            setError('');
+                            setError(null);
                             try {
                               const latest = await client.order(item.orderId);
                               await repo.cacheOrder(latest);
                               await repo.discard(item.orderId);
-                              setSelected(item.orderId);
-                              setView('orders');
+                              openInspection(item.orderId);
                               setNotice(copy.retainedDraft);
                             } catch (error) {
                               if (
@@ -457,11 +552,13 @@ export default function Workspace({
                               ) {
                                 setSessionExpired(true);
                               } else {
-                                setError(
-                                  error instanceof ApiError && error.status === 404
-                                    ? copy.unavailableOrder
-                                    : `${message(error)} ${copy.retainedReport}`,
-                                );
+                                setError({
+                                  kind: 'workspace',
+                                  detail:
+                                    error instanceof ApiError && error.status === 404
+                                      ? copy.unavailableOrder
+                                      : `${message(error)} ${copy.retainedReport}`,
+                                });
                               }
                             } finally {
                               setBusy(false);
@@ -482,12 +579,21 @@ export default function Workspace({
               user={user}
               order={order}
               workers={catalog.users}
+              closureDates={catalog.sites.find((site) => site.id === order.site.id)?.closureDates}
               repo={repo}
               state={state}
               online={online}
               locale={locale}
+              workspaceFeedback={workspaceFeedback}
               queuedRecovery={recoveryInReport ? sessionRecovery : null}
-              onBack={() => setSelected(null)}
+              returnLabel={
+                destination.returnView === 'outbox'
+                  ? inspectionCopy[locale].backToOutbox
+                  : destination.returnView === 'resources'
+                    ? dispatch.backToResources
+                    : undefined
+              }
+              onBack={closeInspection}
               onRefresh={refresh}
               onNotice={setNotice}
             />
@@ -498,11 +604,13 @@ export default function Workspace({
                 {user.role === 'manager' && (
                   <ActionGroup className="assignment-actions">
                     <Button
+                      id="assign-work-order"
                       className="primary"
-                      aria-label={
-                        planner && plannerDay ? 'Assign for selected day' : 'Assign work order'
-                      }
-                      onClick={() => setCreating(true)}
+                      aria-label={planner && plannerDay ? dispatch.assignDay : dispatch.assignLabel}
+                      onClick={(event) => {
+                        event.currentTarget.focus();
+                        setCreating(true);
+                      }}
                       disabled={
                         !online ||
                         catalog.sites.length === 0 ||
@@ -511,26 +619,32 @@ export default function Workspace({
                       }
                     >
                       <PlusIcon aria-hidden="true" />
-                      {planner && plannerDay ? 'Assign for selected day' : 'Assign work'}
+                      {planner && plannerDay ? dispatch.assignDay : dispatch.assign}
                     </Button>
                     <SeriesOverview
                       online={online}
+                      sites={catalog.sites}
+                      locale={locale}
                       today={today}
                       onCache={async (order) => {
                         await repo.cacheOrder(order);
                         setState(await repo.read());
                       }}
-                      onOpened={(id) => setSelected(id)}
+                      onOpened={(id) => openInspection(id, '.series-overview-launcher')}
+                      onReuse={setBatchToReuse}
                     />
                     <RecurringDispatch
                       userId={user.id}
                       catalog={catalog}
+                      locale={locale}
                       online={online}
                       initialDueDate={planner && plannerDay ? plannerDay : undefined}
+                      batchToReuse={batchToReuse}
+                      onReuseDismissed={() => setBatchToReuse(null)}
                       onCreated={async (receipt) => {
                         await refresh();
-                        setSelected(receipt.orders[0].id);
-                        setNotice(`${receipt.orders.length} recurring work orders confirmed.`);
+                        openInspection(receipt.orders[0].id, '#assign-recurring-work');
+                        setNotice(dispatch.recurringAssigned(receipt.orders.length));
                       }}
                     />
                   </ActionGroup>
@@ -597,6 +711,7 @@ export default function Workspace({
                   <Label className="search">
                     <span className="sr-only">{copy.search}</span>
                     <SearchField
+                      id="workspace-order-search"
                       aria-label={copy.search}
                       clearLabel={copy.clearSearch}
                       value={search}
@@ -606,7 +721,7 @@ export default function Workspace({
                   </Label>
                 </div>
                 <div className="board-filters">
-                  <div className="list-toolbar">
+                  <div className="list-toolbar" ref={statusFilterToolbar}>
                     <SmoothTab
                       className="status-filters"
                       label={copy.filter}
@@ -618,6 +733,7 @@ export default function Workspace({
                           'OVERDUE',
                           'DUE_TODAY',
                           'NEXT_SEVEN_DAYS',
+                          'URGENT',
                           'ASSIGNED',
                           'SUBMITTED',
                           'APPROVED',
@@ -625,8 +741,35 @@ export default function Workspace({
                         ] as const
                       ).map((id) => ({ id, title: filterLabels[id] }))}
                     />
+                    {filter !== 'ALL' && (
+                      <IconButton
+                        className="clear-status-filter"
+                        label={copy.clearFilter}
+                        variant="ghost"
+                        onClick={() => {
+                          setFilter('ALL');
+                          statusFilterToolbar.current
+                            ?.querySelector<HTMLButtonElement>('.status-filters button')
+                            ?.focus();
+                        }}
+                      >
+                        <XIcon aria-hidden="true" />
+                      </IconButton>
+                    )}
                     <p className="status-scroll-hint">{copy.moreStatuses}</p>
                   </div>
+                  {(hasSiteClosures || closureOnly) && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="closure-visit-filter"
+                      aria-pressed={closureOnly}
+                      onClick={() => setClosureOnly((selected) => !selected)}
+                    >
+                      <CalendarXIcon aria-hidden="true" />
+                      {dispatch.closureVisits}
+                    </Button>
+                  )}
                   {!planner && (
                     <DueDateRange
                       open={datesOpen}
@@ -682,8 +825,14 @@ export default function Workspace({
                       <Button
                         variant="unstyled"
                         className="order-row"
-                        onClick={() => setSelected(order.id)}
+                        id={`work-order-${order.id}`}
+                        onClick={(event) =>
+                          openInspection(order.id, `#${CSS.escape(event.currentTarget.id)}`)
+                        }
                         aria-label={`${notebook.open} ${order.reference}: ${order.title}`}
+                        aria-describedby={
+                          closureVisits.has(order.id) ? `closure-${order.id}` : undefined
+                        }
                       >
                         <div>
                           <div className="reference">
@@ -708,6 +857,14 @@ export default function Workspace({
                             <time dateTime={order.dueDate}>
                               {dateLabel(order.dueDate, dateLocale)}
                             </time>
+                            {closureVisits.has(order.id) && (
+                              <span className="closure-visit-icon" title={dispatch.siteClosed}>
+                                <CalendarXIcon aria-hidden="true" />
+                                <span id={`closure-${order.id}`} className="sr-only">
+                                  {dispatch.siteClosed}
+                                </span>
+                              </span>
+                            )}
                           </span>
                           {isOverdue(order, today) && (
                             <span className="overdue-label">{copy.overdue}</span>
@@ -725,34 +882,38 @@ export default function Workspace({
                     title={
                       !loaded
                         ? copy.loading
-                        : planner
-                          ? plannerDay
-                            ? copy.noDay
-                            : plannerView === 'month'
-                              ? copy.noMonth
-                              : copy.noWeek
-                          : dueFrom || dueThrough
-                            ? copy.noDate
-                            : dateFilterEmpty
-                              ? dateFilterEmpty.title
-                              : search || filter !== 'ALL'
-                                ? copy.noMatch
-                                : copy.empty
+                        : closureOnly
+                          ? dispatch.noClosureVisits
+                          : planner
+                            ? plannerDay
+                              ? copy.noDay
+                              : plannerView === 'month'
+                                ? copy.noMonth
+                                : copy.noWeek
+                            : dueFrom || dueThrough
+                              ? copy.noDate
+                              : dateFilterEmpty
+                                ? dateFilterEmpty.title
+                                : search || filter !== 'ALL'
+                                  ? copy.noMatch
+                                  : copy.empty
                     }
                     description={
                       !loaded
                         ? copy.loadingHint
-                        : planner
-                          ? copy.plannerHint(plannerView === 'month' ? 'month' : 'week')
-                          : dueFrom || dueThrough
-                            ? copy.dateHint
-                            : dateFilterEmpty
-                              ? dateFilterEmpty.description
-                              : user.role === 'manager'
-                                ? 'Assign a work order to start the first inspection.'
-                                : locale === 'id' && (search || filter !== 'ALL')
-                                  ? copy.trySearch
-                                  : copy.emptyHint
+                        : closureOnly
+                          ? dispatch.changeClosureFilters
+                          : planner
+                            ? copy.plannerHint(plannerView === 'month' ? 'month' : 'week')
+                            : dueFrom || dueThrough
+                              ? copy.dateHint
+                              : dateFilterEmpty
+                                ? dateFilterEmpty.description
+                                : user.role === 'manager'
+                                  ? dispatch.emptyHint
+                                  : locale === 'id' && (search || filter !== 'ALL')
+                                    ? copy.trySearch
+                                    : copy.emptyHint
                     }
                   />
                 )}
@@ -761,7 +922,7 @@ export default function Workspace({
                   <span>{copy.queuedCount(state.outbox.length)}</span>
                 </footer>
                 {user.role === 'manager' && (
-                  <WorkspaceExports orders={visible} onNotice={setNotice} />
+                  <WorkspaceExports orders={visible} locale={locale} onNotice={setNotice} />
                 )}
               </Card>
             </>
@@ -769,13 +930,14 @@ export default function Workspace({
           {creating && (
             <CreateOrder
               catalog={catalog}
+              locale={locale}
               initialDueDate={planner && plannerDay ? plannerDay : undefined}
               onClose={() => setCreating(false)}
               onCreated={async (order) => {
                 setCreating(false);
                 await refresh();
-                setSelected(order.id);
-                setNotice(`${order.reference} assigned to ${order.assignee.name}.`);
+                openInspection(order.id, '#assign-work-order');
+                setNotice(dispatch.assigned(order.reference, order.assignee.name));
               }}
             />
           )}

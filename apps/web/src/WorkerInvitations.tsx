@@ -1,8 +1,14 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError } from '@fieldwork/sdk';
+import { languageTags, signInCopy, type Locale } from '@fieldwork/strings';
+import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
+import { CopyIcon } from '@phosphor-icons/react/dist/csr/Copy';
+import { EnvelopeSimpleIcon } from '@phosphor-icons/react/dist/csr/EnvelopeSimple';
+import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { client, message } from './lib';
 import { invitationLink } from './invitation-link';
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
 import { Form } from './components/ui/form';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
@@ -18,11 +24,17 @@ import {
   DialogDescription,
 } from './components/ui/dialog';
 import { Empty } from './components';
+import { workerInvitationsCopy } from './worker-invitations-copy';
 import './invitations.css';
 
 type Page = Awaited<ReturnType<typeof client.invitations>>;
 type FreshLink = Awaited<ReturnType<typeof client.createInvitation>> & { url: string };
-export default function WorkerInvitations({ online }: { online: boolean }) {
+export default function WorkerInvitations({ online, locale }: { online: boolean; locale: Locale }) {
+  const copyText = workerInvitationsCopy[locale];
+  const date = new Intl.DateTimeFormat(languageTags[locale], {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState<Page | null>(null);
   const [freshLink, setFreshLink] = useState<FreshLink | null>(null);
@@ -45,6 +57,12 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
       generation.current++;
     };
   }, [open]);
+  useLayoutEffect(() => {
+    if (freshLink) {
+      linkInput.current?.focus();
+      linkInput.current?.select();
+    }
+  }, [freshLink]);
   function changeOpen(next: boolean) {
     if (!next && writing.current) return;
     generation.current++;
@@ -87,8 +105,11 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
       });
     } catch (error) {
       if (current === generation.current) {
-        setListError(message(error));
-        setRestart(error instanceof ApiError && error.status === 422 && error.code === 'CURSOR');
+        const stale = error instanceof ApiError && error.status === 422 && error.code === 'CURSOR';
+        setListError(
+          locale === 'en' ? message(error) : stale ? copyText.cursor : copyText.loadFailed,
+        );
+        setRestart(stale);
       }
     } finally {
       if (current === generation.current) setBusy(null);
@@ -114,23 +135,25 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
       if (current !== generation.current) return;
       setFreshLink({ ...receipt, url: invitationLink(location.origin, receipt.token) });
       form.reset();
-      setNotice('Invitation created. Copy its link before closing.');
+      setNotice(copyText.created);
       created = true;
-      requestAnimationFrame(() => {
-        if (linkInput.current?.dataset.invitationId === receipt.invitation.id) {
-          linkInput.current.focus();
-          linkInput.current.select();
-        }
-      });
     } catch (error) {
       if (current === generation.current) {
         const definitive =
           error instanceof ApiError && [401, 403, 409, 422, 429].includes(error.status);
-        setError(
-          definitive
-            ? message(error)
-            : `${message(error)} If the response was lost, refresh invitations and revoke the pending invitation before creating another link.`,
-        );
+        if (locale === 'en') {
+          const detail = message(error);
+          setError(definitive ? detail : `${detail} ${copyText.uncertain}`);
+        } else {
+          const code = error instanceof ApiError ? error.code : undefined;
+          const rejected =
+            code === 'ACCOUNT_EXISTS'
+              ? copyText.exists
+              : code === 'INVITATION_EXISTS'
+                ? copyText.pending
+                : copyText.rejected;
+          setError(definitive ? rejected : copyText.uncertain);
+        }
       }
     } finally {
       writing.current = false;
@@ -155,10 +178,12 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
           : previous,
       );
       setFreshLink((previous) => (previous?.invitation.id === id ? null : previous));
-      setNotice('Invitation revoked. Its link can no longer create an account.');
+      setNotice(copyText.revokeDone);
     } catch (error) {
       if (current === generation.current)
-        setError(`${message(error)} Refresh invitations to check its current state.`);
+        setError(
+          `${locale === 'en' ? message(error) : copyText.revokeFailed} ${copyText.refreshBeforeRetry}`,
+        );
     } finally {
       writing.current = false;
       if (current === generation.current) setBusy(null);
@@ -171,11 +196,10 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
     setError('');
     try {
       await navigator.clipboard.writeText(freshLink.url);
-      if (current === generation.current)
-        setNotice('Invitation link copied. Share it directly with the intended worker.');
+      if (current === generation.current) setNotice(copyText.copied);
     } catch {
       if (current === generation.current) {
-        setError('Could not copy. Select the link and copy it manually.');
+        setError(copyText.copyFailed);
         linkInput.current?.focus();
         linkInput.current?.select();
       }
@@ -187,11 +211,12 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>
         <Button ref={trigger} className="quiet" disabled={!online}>
-          Worker invitations
+          <EnvelopeSimpleIcon aria-hidden="true" /> {copyText.title}
         </Button>
       </DialogTrigger>
       <DialogContent
         size="directory"
+        lang={locale}
         className="invitation-dialog"
         showCloseButton={false}
         onEscapeKeyDown={(event) => {
@@ -211,25 +236,22 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
         <DialogHeader>
           <div>
             <DialogTitle ref={heading} tabIndex={-1}>
-              Worker invitations
+              {copyText.title}
             </DialogTitle>
-            <DialogDescription>
-              Create a 72-hour link for a field worker to choose their own password. Copy and share
-              the link directly.
-            </DialogDescription>
+            <DialogDescription>{copyText.intro}</DialogDescription>
           </div>
-          <Button
-            type="button"
+          <IconButton
+            label={copyText.close}
             className="quiet"
             disabled={changing}
             onClick={() => changeOpen(false)}
           >
-            Close invitations
-          </Button>
+            <XIcon aria-hidden="true" />
+          </IconButton>
         </DialogHeader>
         {!online && (
           <Alert className="banner notice" role="status">
-            Loaded invitations stay visible offline. Reconnect to create, refresh, or revoke.
+            {copyText.offline}
           </Alert>
         )}
         {notice && (
@@ -239,18 +261,14 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
         )}
         {error && <FieldError>{error}</FieldError>}
         {freshLink ? (
-          <section aria-label="New invitation link" className="invitation-new-link">
+          <section aria-label={copyText.newLink} className="invitation-new-link">
             <h3>{freshLink.invitation.name}</h3>
             <p>{freshLink.invitation.email}</p>
-            <p className="muted">
-              This link is shown once. Copy it before closing or creating another invitation. Only
-              the intended worker should receive it.
-            </p>
+            <p className="muted">{copyText.oneTime}</p>
             <Label>
-              Invitation link
+              {copyText.link}
               <Input
                 ref={linkInput}
-                data-invitation-id={freshLink.invitation.id}
                 readOnly
                 value={freshLink.url}
                 onFocus={(event) => event.currentTarget.select()}
@@ -263,7 +281,7 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
                 disabled={changing || copyBusy}
                 onClick={() => void copy()}
               >
-                {copyBusy ? 'Copying…' : 'Copy invitation link'}
+                <CopyIcon aria-hidden="true" /> {copyBusy ? copyText.copying : copyText.copy}
               </Button>
               <Button
                 type="button"
@@ -277,48 +295,50 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
                   setError('');
                 }}
               >
-                Create another invitation
+                {copyText.another}
               </Button>
             </div>
           </section>
         ) : (
-          <Form noValidate aria-label="Invite a field worker" onSubmit={create}>
+          <Form
+            noValidate
+            validationCopy={locale === 'id' ? signInCopy.id.web : undefined}
+            aria-label={copyText.invite}
+            onSubmit={create}
+          >
             <FieldSet disabled={!online || Boolean(busy)}>
               <div className="form-grid">
                 <Label>
-                  Worker name
+                  {copyText.name}
                   <Input name="name" autoComplete="off" required maxLength={120} />
                 </Label>
                 <Label>
-                  Worker email
+                  {copyText.email}
                   <Input name="email" type="email" autoComplete="off" required maxLength={254} />
                 </Label>
               </div>
             </FieldSet>
             <Button className="primary" disabled={!online || Boolean(busy)}>
-              {busy === 'creating' ? 'Creating invitation…' : 'Create invitation'}
+              {busy === 'creating' ? copyText.creating : copyText.create}
             </Button>
           </Form>
         )}
-        <section aria-label="Saved worker invitations" className="invitation-ledger">
+        <section aria-label={copyText.saved} className="invitation-ledger">
           <div className="invitation-toolbar">
-            <h3>Invitations</h3>
-            <Button
-              type="button"
+            <h3>{copyText.ledger}</h3>
+            <IconButton
+              label={copyText.refresh}
               className="quiet"
               disabled={!online || Boolean(busy)}
               onClick={() => void load()}
             >
-              Refresh invitations
-            </Button>
+              <ArrowClockwiseIcon aria-hidden="true" />
+            </IconButton>
           </div>
-          <p className="muted">
-            Refresh to check acceptance and expiry. Use Sync now in the workspace to load newly
-            accepted workers for assignment.
-          </p>
+          <p className="muted">{copyText.refreshHint}</p>
           {busy === 'loading' && (
             <p className="muted" role="status">
-              Loading invitations…
+              {copyText.loading}
             </p>
           )}
           {listError && (
@@ -330,49 +350,45 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
                 disabled={!online || Boolean(busy)}
                 onClick={() => void load(restart ? undefined : attemptedCursor.current)}
               >
-                {restart ? 'Restart invitations' : 'Retry invitations'}
+                {restart ? copyText.restart : copyText.retry}
               </Button>
             </Alert>
           )}
           {page && (
             <>
               <p className="muted" role="status">
-                {page.data.length} loaded · {page.total}{' '}
-                {page.total === 1 ? 'invitation' : 'invitations'}
+                {copyText.count(page.data.length, page.total)}
               </p>
               {page.data.length === 0 && (
-                <Empty
-                  title="No invitations yet"
-                  description="Create a link when a new field worker is ready to join."
-                />
+                <Empty title={copyText.empty} description={copyText.emptyHint} />
               )}
               <ul className="invitation-list">
                 {page.data.map((invitation) => (
                   <li key={invitation.id}>
                     <div className="invitation-toolbar">
                       <strong>{invitation.name}</strong>
-                      <Badge>{invitation.status}</Badge>
+                      <Badge>{copyText.statuses[invitation.status]}</Badge>
                     </div>
                     <p>{invitation.email}</p>
                     <p className="muted">
-                      Created by {invitation.createdBy.name} · Expires{' '}
+                      {copyText.createdBy(invitation.createdBy.name)} · {copyText.expires}{' '}
                       <time dateTime={invitation.expiresAt}>
-                        {new Date(invitation.expiresAt).toLocaleString()}
+                        {date.format(new Date(invitation.expiresAt))}
                       </time>
                     </p>
                     {invitation.acceptedAt && (
                       <p className="muted">
-                        Accepted{' '}
+                        {copyText.accepted}{' '}
                         <time dateTime={invitation.acceptedAt}>
-                          {new Date(invitation.acceptedAt).toLocaleString()}
+                          {date.format(new Date(invitation.acceptedAt))}
                         </time>
                       </p>
                     )}
                     {invitation.revokedAt && (
                       <p className="muted">
-                        Revoked{' '}
+                        {copyText.revoked}{' '}
                         <time dateTime={invitation.revokedAt}>
-                          {new Date(invitation.revokedAt).toLocaleString()}
+                          {date.format(new Date(invitation.revokedAt))}
                         </time>
                       </p>
                     )}
@@ -380,11 +396,11 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
                       <Button
                         type="button"
                         className="quiet"
-                        aria-label={`Revoke invitation for ${invitation.email}`}
+                        aria-label={copyText.revokeFor(invitation.email)}
                         disabled={!online || Boolean(busy)}
                         onClick={() => void revoke(invitation.id)}
                       >
-                        {busy === `revoking:${invitation.id}` ? 'Revoking…' : 'Revoke invitation'}
+                        {busy === `revoking:${invitation.id}` ? copyText.revoking : copyText.revoke}
                       </Button>
                     )}
                   </li>
@@ -397,7 +413,7 @@ export default function WorkerInvitations({ online }: { online: boolean }) {
                   disabled={!online || Boolean(busy)}
                   onClick={() => void load(page.nextCursor!)}
                 >
-                  Load more invitations
+                  {copyText.more}
                 </Button>
               )}
             </>

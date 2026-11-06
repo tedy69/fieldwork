@@ -70,6 +70,7 @@ try {
     SEARCH: search,
     FIRST: open(first),
     LAST: open(last),
+    BEYOND: open(beyond),
   });
 } finally {
   await setAvailable(true);

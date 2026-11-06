@@ -54,6 +54,8 @@ test('worker reads localized report history and prints the latest saved report o
     submittedAt,
   );
   await expect(page.getByText(`Submitted ${englishTime}`, { exact: true })).toBeVisible();
+  const printDue = page.locator(`.print-report time[datetime="${order.dueDate}"]`);
+  await expect(printDue).toHaveText('Dec 28, 2026');
   await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
   await expect(page.getByText(`Dikirim ${indonesianTime}`, { exact: true })).toBeVisible();
   const history = page.getByRole('button', { name: 'Riwayat laporan', exact: true });
@@ -85,5 +87,18 @@ test('worker reads localized report history and prints the latest saved report o
   await expect(print.getByText(latestSummary)).toBeVisible();
   await expect(print.getByText(firstSummary)).toHaveCount(0);
   await expect(print.getByText('Lolos', { exact: true })).toBeVisible();
+  await expect(printDue).toHaveText('28 Des 2026');
+  const printedTimestamp = await page.evaluate(
+    (time) =>
+      new Date(time).toLocaleString('id-ID', {
+        dateStyle: 'medium',
+        timeStyle: 'medium',
+        timeZone: 'UTC',
+      }),
+    submittedAt,
+  );
+  await expect(print.locator(`time[datetime="${submittedAt}"]`)).toHaveText(
+    `${printedTimestamp} UTC`,
+  );
   expect((await manager.order(order.id)).version).toBe(latest.version);
 });

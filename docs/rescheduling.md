@@ -6,6 +6,8 @@ The action needs a connection. It updates the saved order and the list/planner c
 
 Dates are calendar dates, without a time zone. A past date is allowed when recording an overdue commitment. The current date appears beside the input for comparison. Enter submits, Escape or Cancel closes the edit, and each action has a visible keyboard focus style. Saving or reloading moves focus to the updated order's main content.
 
+The date field flags a proposed date on the selected site’s closure calendar. The hint appears when assigning a single visit, moving an order, or editing a visit within a recurring batch.
+
 ## Conflicts and uncertain outcomes
 
 Each save supplies the version that the manager saw. If another manager changes the schedule or a worker submits a report first, the server rejects the stale write. The selected date stays in the failed form; **Reload order** fetches the latest state before another attempt is allowed. A newer version resets the edit so the manager can review the new date/status. A successful reload also replaces any earlier success notice with the current due date.

@@ -1,0 +1,38 @@
+appId: host.exp.exponent
+name: Clear search and filters independently on Android
+---
+- scrollUntilVisible:
+    element: My assignments
+    direction: UP
+- tapOn: Filter assignments
+- tapOn:
+    text: Assigned
+    index: 0
+- tapOn: Filter assignments
+- tapOn:
+    id: assignment-search
+- inputText: Weekly
+- tapOn: Done editing
+- assertVisible: Assigned · 1 shown
+- tapOn: Clear assignment filter
+- assertNotVisible: Assigned · 1 shown
+- assertVisible:
+    id: assignment-search
+    text: Weekly
+- tapOn: Filter assignments
+- tapOn:
+    text: Assigned
+    index: 0
+- tapOn: Filter assignments
+- assertVisible: Assigned · 1 shown
+- tapOn: Clear search
+- assertNotVisible: Clear search
+- assertVisible: Assigned · 3 shown
+- tapOn: Filter assignments
+- tapOn: Urgent work
+- tapOn: Filter assignments
+- assertVisible: Urgent work · 1 shown
+- scrollUntilVisible:
+    element: 'Open FW-002: Check emergency access'
+    centerElement: true
+- assertNotVisible: 'Open FW-001: Morning safety walkthrough'

@@ -48,7 +48,7 @@ Open **Skip dates (optional)** in the assignment form. Choose a date, then use *
 
 API/SDK callers may supply `skipDates`, an optional array of up to 52 distinct `YYYY-MM-DD` dates. Every skipped date must be after `dueDate`; change the first due date rather than skipping it. `occurrences` remains the number of orders created (2–52), so skipped occurrences extend the schedule. Daily and weekly rules advance to the next candidate; weekday rules still skip weekends; monthly rules retain the original day even when a month is excluded. For example, three monthly orders starting Jan 31, 2027 with Feb 28 excluded fall on Jan 31, Mar 31 and Apr 30. A date not reached by the chosen recurrence has no effect. Dates generated after exclusions must still fit a four-digit year.
 
-Managers can save up to 52 closure dates per site in **Sites & checklists**. In the recurring form, choose the site, open **Skip dates**, and use **Copy site closure dates**. The action copies dates after the first due date into the batch list. The form flags a first date that falls on a closure so the manager can choose a different start. Review and remove copied dates in the same list as manual exclusions.
+Managers can save up to 52 closure dates per site in **Sites & checklists**. In the recurring form, choose the site, open **Skip dates**, and use **Copy site closure dates**. The action copies dates after the first due date into the batch list. The date preview marks every visit that falls on a closure. Choose a different first date if the site is closed that day, then review the revised schedule. Copied dates can be removed from the same list as manual exclusions.
 
 The saved batch carries the exact copied dates. Later edits to the site calendar do not change batches or pending retries. The calendar uses manager-entered dates.
 
@@ -82,7 +82,9 @@ In a web work order, use the copy icon beside its reference to paste that number
 
 Turn on **Open work** to see batches with at least one visit that has yet to be approved. The filter works with search and frequency.
 
-Use **Show visits** to narrow a loaded batch. Upcoming field work includes unfinished assignments due today or later. Overdue follows the work-order list and uses the current due date and the device's local date. **Rescheduled** shows visits whose current due date differs from the planned date. The filter works offline and stays selected when you refresh the same batch.
+Use **Show visits** to narrow a loaded batch. Upcoming field work includes unfinished assignments due today or later. Overdue follows the work-order list and uses the current due date and the device's local date. **Rescheduled** shows visits whose current due date differs from the planned date. **On a closure date** shows unfinished visits whose current due date falls on the saved site calendar. These filters work offline and stay selected when you refresh the same batch.
+
+**Use batch as template** opens a new schedule with the original worker, assignment details, repeat rule, and visit count filled in. Choose a first date and add any holidays or closures for the new schedule. If a site, worker, or checklist is unavailable, select a current one. An unconfirmed saved request opens for recovery first.
 
 **Export batch visits as CSV** downloads the visits in the current filter, including both due dates and the current worker and status. The export works from loaded batch data while offline. It contains schedule rows without inspection report content.
 

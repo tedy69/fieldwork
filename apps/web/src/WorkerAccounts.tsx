@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Catalog, WorkerAccount } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
+import { languageTags, type Locale } from '@fieldwork/strings';
+import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
+import { ClockCounterClockwiseIcon } from '@phosphor-icons/react/dist/csr/ClockCounterClockwise';
+import { KeyIcon } from '@phosphor-icons/react/dist/csr/Key';
+import { UsersIcon } from '@phosphor-icons/react/dist/csr/Users';
+import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { client, message } from './lib';
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
 import { Badge } from './components/ui/badge';
 import { Alert } from './components/ui/alert';
 import {
@@ -16,17 +23,27 @@ import {
 import './invitations.css';
 import WorkerAccessHistory from './WorkerAccessHistory';
 import WorkerPasswordReset from './WorkerPasswordReset';
+import { ActionGroup } from './components';
+import { workerAccessCopy } from './worker-access-copy';
+import { workerInvitationsCopy } from './worker-invitations-copy';
 
 type Page = Awaited<ReturnType<typeof client.workers>>;
 export default function WorkerAccounts({
   online,
+  locale,
   onCatalog,
   onUpdated,
 }: {
   online: boolean;
+  locale: Locale;
   onCatalog: (catalog: Catalog) => void;
   onUpdated: (account: WorkerAccount) => void;
 }) {
+  const copy = workerAccessCopy[locale];
+  const date = new Intl.DateTimeFormat(languageTags[locale], {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState<Page | null>(null);
   const [selected, setSelected] = useState<WorkerAccount | null>(null);
@@ -93,11 +110,12 @@ export default function WorkerAccounts({
       setSelected(null);
       setHistory(null);
       setRecovery(null);
-      setNotice('Worker accounts refreshed.');
+      setNotice(copy.refreshed);
     } catch (error) {
       if (current === generation.current) {
-        setError(message(error));
-        setRestart(error instanceof ApiError && error.code === 'CURSOR');
+        const stale = error instanceof ApiError && error.code === 'CURSOR';
+        setError(locale === 'en' ? message(error) : stale ? copy.cursor : copy.loadFailed);
+        setRestart(stale);
       }
     } finally {
       if (current === generation.current) setBusy(null);
@@ -130,15 +148,13 @@ export default function WorkerAccounts({
       setRecovery(null);
       setNotice(
         updated.enabled
-          ? `${updated.user.name} can sign in again with their existing password.`
-          : `${updated.user.name} is disabled. Existing sessions have ended.`,
+          ? copy.enabledNotice(updated.user.name)
+          : copy.disabledNotice(updated.user.name),
       );
       heading.current?.focus();
     } catch (error) {
       if (current === generation.current) {
-        setError(
-          `${message(error)} Refresh worker accounts to check the saved state before trying again.`,
-        );
+        setError(`${locale === 'en' ? message(error) : copy.saveFailed} ${copy.reloadHint}`);
         setNeedsReload(true);
       }
     } finally {
@@ -150,10 +166,11 @@ export default function WorkerAccounts({
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>
         <Button ref={trigger} className="quiet" disabled={!online}>
-          Worker accounts
+          <UsersIcon aria-hidden="true" /> {copy.title}
         </Button>
       </DialogTrigger>
       <DialogContent
+        lang={locale}
         size="directory"
         className="invitation-dialog"
         showCloseButton={false}
@@ -174,20 +191,22 @@ export default function WorkerAccounts({
         <DialogHeader>
           <div>
             <DialogTitle ref={heading} tabIndex={-1}>
-              Worker accounts
+              {copy.title}
             </DialogTitle>
-            <DialogDescription>
-              Control who can sign in and receive new assignments. Saved inspections and device
-              notebooks stay with their original accounts.
-            </DialogDescription>
+            <DialogDescription>{copy.intro}</DialogDescription>
           </div>
-          <Button className="quiet" disabled={busy === 'saving'} onClick={() => changeOpen(false)}>
-            Close accounts
-          </Button>
+          <IconButton
+            label={copy.close}
+            className="quiet"
+            disabled={busy === 'saving'}
+            onClick={() => changeOpen(false)}
+          >
+            <XIcon aria-hidden="true" />
+          </IconButton>
         </DialogHeader>
         {!online && (
           <Alert role="status" className="banner notice">
-            Loaded accounts stay visible offline. Reconnect to refresh or change access.
+            {copy.offline}
           </Alert>
         )}
         {notice && (
@@ -205,39 +224,37 @@ export default function WorkerAccounts({
                 void load(restart || needsReload ? undefined : attemptedCursor.current)
               }
             >
-              {restart ? 'Restart accounts' : 'Retry accounts'}
+              {restart ? copy.restart : copy.retry}
             </Button>
           </Alert>
         )}
         <div className="invitation-toolbar">
-          <h3>Field workers</h3>
-          <Button className="quiet" disabled={!online || Boolean(busy)} onClick={() => void load()}>
-            Refresh accounts
-          </Button>
+          <h3>{workerInvitationsCopy[locale].directory}</h3>
+          <IconButton
+            label={copy.refresh}
+            className="quiet"
+            disabled={!online || Boolean(busy)}
+            onClick={() => void load()}
+          >
+            <ArrowClockwiseIcon aria-hidden="true" />
+          </IconButton>
         </div>
         {busy === 'loading' && (
           <p role="status" className="muted">
-            Loading worker accounts…
+            {copy.loading}
           </p>
         )}
         {selected && (
           <section
             className="invitation-new-link worker-access-confirmation"
-            aria-label="Confirm worker access"
+            aria-label={copy.confirm}
           >
             <h3 ref={confirmation} tabIndex={-1}>
-              {selected.enabled ? 'Disable' : 'Reactivate'} {selected.user.name}?
+              {copy.confirmTitle(selected.enabled, selected.user.name)}
             </h3>
             <p>{selected.user.email}</p>
-            <p>
-              {selected.enabled
-                ? 'This ends all current sessions and prevents sign-in and new assignments. Existing work stays assigned; coordinate any handover separately.'
-                : 'This restores sign-in with the existing password and makes this worker available for new assignments. They must sign in again.'}
-            </p>
-            <p className="muted">
-              Saved reports, photos, drafts, and queued reports are kept. Offline devices may still
-              show previously saved work.
-            </p>
+            <p>{selected.enabled ? copy.disableHint : copy.reactivateHint}</p>
+            <p className="muted">{copy.retained}</p>
             <div className="invitation-actions">
               <Button
                 className="primary"
@@ -245,10 +262,10 @@ export default function WorkerAccounts({
                 onClick={() => void save()}
               >
                 {busy === 'saving'
-                  ? 'Saving access…'
+                  ? copy.saving
                   : selected.enabled
-                    ? 'Confirm disable'
-                    : 'Confirm reactivation'}
+                    ? copy.confirmDisable
+                    : copy.confirmReactivate}
               </Button>
               <Button
                 className="quiet"
@@ -258,7 +275,7 @@ export default function WorkerAccounts({
                   heading.current?.focus();
                 }}
               >
-                Cancel change
+                {copy.cancel}
               </Button>
             </div>
           </section>
@@ -268,6 +285,7 @@ export default function WorkerAccounts({
             key={history.user.id}
             worker={history.user}
             online={online}
+            locale={locale}
             onClose={() => {
               setHistory(null);
               heading.current?.focus();
@@ -279,6 +297,7 @@ export default function WorkerAccounts({
             key={recovery.user.id}
             worker={recovery}
             online={online}
+            locale={locale}
             onWriting={(active) => {
               writing.current = active;
               setBusy(active ? 'saving' : null);
@@ -305,78 +324,79 @@ export default function WorkerAccounts({
         {page && (
           <>
             <p className="muted" role="status">
-              {page.data.length} loaded · {page.total} {page.total === 1 ? 'worker' : 'workers'}
+              {copy.count(page.data.length, page.total)}
             </p>
-            {page.data.length === 0 && (
-              <p>No worker accounts yet. Create an invitation when someone is ready to join.</p>
-            )}
+            {page.data.length === 0 && <p>{copy.empty}</p>}
             <ul className="invitation-list">
               {page.data.map((account) => (
                 <li key={account.user.id}>
                   <div className="invitation-toolbar">
                     <strong>{account.user.name}</strong>
-                    <Badge>{account.enabled ? 'Active' : 'Disabled'}</Badge>
+                    <Badge>{account.enabled ? copy.active : copy.disabled}</Badge>
                   </div>
                   <p>{account.user.email}</p>
                   <p className="muted">
                     {account.updatedAt && account.updatedBy ? (
                       <>
-                        Changed by {account.updatedBy.name} ·{' '}
+                        {copy.changedBy(account.updatedBy.name)} ·{' '}
                         <time dateTime={account.updatedAt}>
-                          {new Date(account.updatedAt).toLocaleString()}
+                          {date.format(new Date(account.updatedAt))}
                         </time>
                       </>
                     ) : (
-                      'No access changes recorded.'
+                      copy.noChanges
                     )}
                   </p>
-                  <Button
-                    className="quiet"
-                    aria-label={`${account.enabled ? 'Disable' : 'Reactivate'} ${account.user.email}`}
-                    disabled={!online || Boolean(busy) || needsReload}
-                    onClick={() => {
-                      setSelected(account);
-                      setHistory(null);
-                      setRecovery(null);
-                      setNotice('');
-                      setError('');
-                      requestAnimationFrame(() => confirmation.current?.focus());
-                    }}
-                  >
-                    {account.enabled ? 'Disable worker' : 'Reactivate worker'}
-                  </Button>
-                  <Button
-                    className="quiet"
-                    aria-label={`View access history for ${account.user.email}`}
-                    disabled={!online || Boolean(busy)}
-                    onClick={() => {
-                      setHistory(account);
-                      setRecovery(null);
-                      setSelected(null);
-                      setNotice('');
-                      requestAnimationFrame(() =>
-                        document.getElementById('worker-access-history-title')?.focus(),
-                      );
-                    }}
-                  >
-                    Access history
-                  </Button>
-                  <Button
-                    className="quiet"
-                    aria-label={`Password recovery for ${account.user.email}`}
-                    disabled={!online || Boolean(busy)}
-                    onClick={() => {
-                      setRecovery(account);
-                      setHistory(null);
-                      setSelected(null);
-                      setNotice('');
-                      requestAnimationFrame(() =>
-                        document.getElementById('worker-password-recovery-title')?.focus(),
-                      );
-                    }}
-                  >
-                    Password recovery
-                  </Button>
+                  <ActionGroup>
+                    <Button
+                      className="quiet"
+                      aria-label={copy.changeFor(account.enabled, account.user.email)}
+                      disabled={!online || Boolean(busy) || needsReload}
+                      onClick={() => {
+                        setSelected(account);
+                        setHistory(null);
+                        setRecovery(null);
+                        setNotice('');
+                        setError('');
+                        requestAnimationFrame(() => confirmation.current?.focus());
+                      }}
+                    >
+                      {account.enabled ? copy.disable : copy.reactivate}
+                    </Button>
+                    <IconButton
+                      className="quiet"
+                      label={copy.historyFor(account.user.email)}
+                      tooltip={copy.history}
+                      disabled={!online || Boolean(busy)}
+                      onClick={() => {
+                        setHistory(account);
+                        setRecovery(null);
+                        setSelected(null);
+                        setNotice('');
+                        if (history?.user.id === account.user.id)
+                          document.getElementById('worker-access-history-title')?.focus();
+                      }}
+                    >
+                      <ClockCounterClockwiseIcon aria-hidden="true" />
+                    </IconButton>
+                    <IconButton
+                      className="quiet"
+                      label={copy.recoveryFor(account.user.email)}
+                      tooltip={copy.recovery}
+                      disabled={!online || Boolean(busy)}
+                      onClick={() => {
+                        setRecovery(account);
+                        setHistory(null);
+                        setSelected(null);
+                        setNotice('');
+                        requestAnimationFrame(() =>
+                          document.getElementById('worker-password-recovery-title')?.focus(),
+                        );
+                      }}
+                    >
+                      <KeyIcon aria-hidden="true" />
+                    </IconButton>
+                  </ActionGroup>
                 </li>
               ))}
             </ul>
@@ -386,7 +406,7 @@ export default function WorkerAccounts({
                 disabled={!online || Boolean(busy)}
                 onClick={() => void load(page.nextCursor!)}
               >
-                Load more accounts
+                {copy.more}
               </Button>
             )}
           </>

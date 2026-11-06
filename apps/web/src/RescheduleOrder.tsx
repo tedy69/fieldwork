@@ -7,18 +7,25 @@ import { Label } from './components/ui/label';
 import { FieldError } from './components/ui/field';
 import { useId, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import type { WorkOrder } from '@fieldwork/contracts';
+import { languageTags, type Locale } from '@fieldwork/strings';
 import { client, dateLabel, message } from './lib';
+import { rescheduleCopy } from './reschedule-copy';
+import SiteClosureHint from './SiteClosureHint';
 import './reschedule.css';
 
 export default function RescheduleOrder({
   order,
+  closureDates,
   online,
+  locale = 'en',
   onSaved,
   onNotice,
   batch,
 }: {
   order: WorkOrder;
+  closureDates?: string[];
   online: boolean;
+  locale?: Locale;
   onSaved: (order: WorkOrder) => Promise<void>;
   onNotice: (notice: string) => void;
   batch?: {
@@ -27,14 +34,18 @@ export default function RescheduleOrder({
     onRestoreFocus: () => void;
   };
 }) {
+  const copy = rescheduleCopy[locale];
+  const dateLocale = languageTags[locale];
   const [editing, setEditing] = useState(false);
   const [dueDate, setDueDate] = useState(order.dueDate);
   const [busy, setBusy] = useState<'saving' | 'reloading' | null>(null);
   const [error, setError] = useState('');
   const [needsReload, setNeedsReload] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
+  const dateInput = useRef<HTMLInputElement>(null);
   const restoreFocus = useRef(false);
   const formId = useId();
+  const closureHint = `${formId}-closure`;
   const locked = Boolean(busy || batch?.locked);
 
   useLayoutEffect(() => {
@@ -71,11 +82,11 @@ export default function RescheduleOrder({
         dueDate,
       });
       await onSaved(updated);
-      onNotice(`${order.reference} is now due ${dateLabel(updated.dueDate)}.`);
+      onNotice(copy.saved(order.reference, dateLabel(updated.dueDate, dateLocale)));
       setEditing(false);
       focusAfterUpdate();
     } catch (error) {
-      setError(`${message(error)} Reload this order before trying again.`);
+      setError(`${locale === 'en' ? message(error) : copy.saveFailed} ${copy.reloadHint}`);
       setNeedsReload(true);
     } finally {
       setBusy(null);
@@ -90,20 +101,20 @@ export default function RescheduleOrder({
     try {
       const updated = await client.order(order.id);
       await onSaved(updated);
-      onNotice(`${order.reference} reloaded. Current due date: ${dateLabel(updated.dueDate)}.`);
+      onNotice(copy.reloaded(order.reference, dateLabel(updated.dueDate, dateLocale)));
       setNeedsReload(false);
       focusAfterUpdate();
     } catch (error) {
-      setError(message(error));
+      setError(locale === 'en' ? message(error) : copy.reloadFailed);
     } finally {
       setBusy(null);
       batch?.onBusyChange(false);
     }
   }
   return (
-    <section className="schedule" aria-label="Assignment schedule">
+    <section className="schedule" aria-label={copy.schedule}>
       <IconButton
-        label={batch ? `Change due date for ${order.reference}` : 'Change due date'}
+        label={batch ? copy.changeVisit(order.reference) : copy.change}
         ref={trigger}
         className="quiet"
         aria-expanded={editing}
@@ -113,12 +124,12 @@ export default function RescheduleOrder({
       >
         <CalendarBlankIcon aria-hidden="true" />
       </IconButton>
-      {!online && !batch && <p className="muted">Connect to change the due date.</p>}
+      {!online && !batch && <p className="muted">{copy.connect}</p>}
       {editing && (
         <Form
           noValidate
           id={formId}
-          aria-label="Change due date"
+          aria-label={copy.change}
           onSubmit={save}
           onKeyDown={(event) => {
             if (event.key === 'Escape' && !locked) {
@@ -128,31 +139,41 @@ export default function RescheduleOrder({
           }}
         >
           {!batch && (
-            <p className="muted">
-              Current due date: {dateLabel(order.dueDate)}. Saved reports stay unchanged.
-            </p>
+            <p className="muted">{copy.currentDue(dateLabel(order.dueDate, dateLocale))}</p>
           )}
           <Label>
-            New due date
+            {copy.newDue}
             <DatePicker
-              calendarLabel="Choose new due date"
+              calendarLabel={copy.calendar}
+              locale={locale}
               autoFocus
               required
+              inputRef={dateInput}
               value={dueDate}
+              aria-describedby={closureHint}
               disabled={locked}
               onValueChange={setDueDate}
             />
           </Label>
+          <SiteClosureHint
+            id={closureHint}
+            dueDate={dueDate}
+            closureDates={closureDates}
+            locale={locale}
+            disabled={locked}
+            inputRef={dateInput}
+            onDateChange={setDueDate}
+          />
           {error && <FieldError>{error}</FieldError>}
           <div className="schedule-actions">
             <Button
               className="primary"
               disabled={!online || locked || needsReload || !dueDate || dueDate === order.dueDate}
             >
-              {busy === 'saving' ? 'Saving…' : 'Save due date'}
+              {busy === 'saving' ? copy.saving : copy.save}
             </Button>
             <Button type="button" className="quiet" disabled={locked} onClick={cancel}>
-              Cancel
+              {copy.cancel}
             </Button>
             {needsReload && (
               <Button
@@ -161,7 +182,7 @@ export default function RescheduleOrder({
                 disabled={!online || locked}
                 onClick={() => void reload()}
               >
-                {busy === 'reloading' ? 'Reloading…' : 'Reload order'}
+                {busy === 'reloading' ? copy.reloading : copy.reload}
               </Button>
             )}
           </div>

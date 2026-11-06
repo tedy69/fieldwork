@@ -602,3 +602,57 @@ test('hiding the map cancels a reload that is waiting for draft persistence', as
   );
   await context.close();
 });
+
+test('worker copies the saved site coordinates offline without loading a map', async ({
+  page,
+  context,
+  browserName,
+}) => {
+  const { manager, site, order } = await fixture('Copy saved site coordinates QA', {
+    latitude: 0,
+    longitude: -106.8,
+  });
+  await manager.updateSiteLocation(site.id, {
+    expectedCoordinates: { latitude: 0, longitude: -106.8 },
+    coordinates: { latitude: 1, longitude: -105.8 },
+  });
+  let tiles = 0;
+  await page.route(tileEndpoint, (route) => {
+    tiles++;
+    return route.abort();
+  });
+  if (browserName === 'chromium')
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.setViewportSize({ width: 320, height: 840 });
+  await login(page);
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+  await page.getByRole('button', { name: `Buka ${order.reference}: ${order.title}` }).click();
+  await context.setOffline(true);
+  const card = location(page);
+  const coordinates = card.getByText('Lintang 0 · Bujur -106.8', { exact: true });
+  await expect(coordinates).toBeVisible();
+  const copy = card.getByRole('button', { name: 'Salin koordinat lokasi', exact: true });
+  await expect(copy.locator('svg[aria-hidden=true]')).toBeVisible();
+  await copy.focus();
+  await page.keyboard.press('Enter');
+  await expect(
+    card.getByRole('status').filter({ hasText: 'Koordinat lokasi disalin.' }),
+  ).toHaveCount(1);
+  if (browserName === 'chromium')
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('0, -106.8');
+  await page.evaluate(() => {
+    Object.defineProperty(navigator.clipboard, 'writeText', {
+      value: async () => {
+        throw new DOMException('Clipboard access denied', 'NotAllowedError');
+      },
+    });
+  });
+  await copy.click();
+  await expect(
+    card.getByText('Koordinat tidak bisa disalin. Pilih koordinat untuk menyalin.'),
+  ).toBeVisible();
+  await expect(coordinates).toBeVisible();
+  expect(tiles).toBe(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await card.screenshot({ path: test.info().outputPath('copy-coordinates-phone.png') });
+});

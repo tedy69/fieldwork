@@ -1,4 +1,6 @@
+import { useId, useRef } from 'react';
 import type { Catalog, CreateOrder } from '@fieldwork/contracts';
+import type { Locale } from '@fieldwork/strings';
 import { Input } from './components/ui/input';
 import { DatePicker } from './components/ui/date-picker';
 import { Textarea } from './components/ui/textarea';
@@ -8,41 +10,62 @@ import {
 } from './components/ui/native-select';
 import { Label } from './components/ui/label';
 import { localDate } from './dates';
+import { managerDispatchCopy } from './manager-dispatch-copy';
+import SiteClosureHint from './SiteClosureHint';
 
 export default function AssignmentFields({
   catalog,
+  locale = 'en',
   initial,
+  chooseMissing = false,
+  dueDate,
+  closureDates,
+  suggestionDisabled,
   onDateChange,
   onSiteChange,
 }: {
   catalog: Catalog;
+  locale?: Locale;
   initial?: Partial<CreateOrder>;
-  onDateChange?: (date: string) => void;
+  chooseMissing?: boolean;
+  dueDate?: string;
+  closureDates?: readonly string[];
+  suggestionDisabled?: boolean;
+  onDateChange: (date: string) => void;
   onSiteChange?: (siteId: string) => void;
 }) {
+  const copy = managerDispatchCopy[locale];
+  const closureHint = useId();
+  const dateInput = useRef<HTMLInputElement>(null);
+  const workers = catalog.users.filter((user) => user.role === 'worker');
   return (
     <>
       <Label>
-        Work order title
+        {copy.title}
         <Input
           name="title"
-          autoFocus
+          autoFocus={!chooseMissing}
           required
           minLength={3}
           maxLength={140}
           defaultValue={initial?.title}
-          placeholder="e.g. Inspect the north access gate"
+          placeholder={copy.titleHint}
         />
       </Label>
       <Label>
-        Site
+        {copy.site}
         <Select
           name="siteId"
-          aria-label="Site"
+          aria-label={copy.site}
           required
-          defaultValue={initial?.siteId}
+          defaultValue={
+            chooseMissing && !catalog.sites.some((option) => option.id === initial?.siteId)
+              ? ''
+              : initial?.siteId
+          }
           onChange={(event) => onSiteChange?.(event.currentTarget.value)}
         >
+          {chooseMissing && <Option value="">{copy.chooseSite}</Option>}
           {catalog.sites.map((site) => (
             <Option key={site.id} value={site.id}>
               {site.name}
@@ -52,73 +75,99 @@ export default function AssignmentFields({
       </Label>
       <div className="form-grid">
         <Label>
-          Assign to
+          {copy.assignee}
           <Select
             name="assigneeId"
-            aria-label="Assign to"
+            aria-label={copy.assignee}
             required
-            defaultValue={initial?.assigneeId}
+            defaultValue={
+              chooseMissing && !workers.some((option) => option.id === initial?.assigneeId)
+                ? ''
+                : initial?.assigneeId
+            }
           >
-            {catalog.users
-              .filter((user) => user.role === 'worker')
-              .map((user) => (
-                <Option key={user.id} value={user.id}>
-                  {user.name}
-                </Option>
-              ))}
+            {chooseMissing && <Option value="">{copy.chooseWorker}</Option>}
+            {workers.map((user) => (
+              <Option key={user.id} value={user.id}>
+                {user.name}
+              </Option>
+            ))}
           </Select>
         </Label>
-        <Label>
-          Due date
-          <DatePicker
-            name="dueDate"
-            calendarLabel="Choose due date"
-            required
-            defaultValue={initial?.dueDate ?? localDate()}
-            onValueChange={(value) => onDateChange?.(value)}
-          />
-        </Label>
+        <div>
+          <Label>
+            {copy.due}
+            <DatePicker
+              name="dueDate"
+              calendarLabel={copy.calendar}
+              locale={locale}
+              required
+              value={dueDate}
+              defaultValue={initial?.dueDate ?? localDate()}
+              inputRef={dateInput}
+              aria-describedby={dueDate !== undefined ? closureHint : undefined}
+              onValueChange={onDateChange}
+            />
+          </Label>
+          {dueDate !== undefined && (
+            <SiteClosureHint
+              id={closureHint}
+              dueDate={dueDate}
+              closureDates={closureDates}
+              locale={locale}
+              disabled={suggestionDisabled}
+              inputRef={dateInput}
+              onDateChange={onDateChange}
+            />
+          )}
+        </div>
       </div>
       <div className="form-grid">
         <Label>
-          Checklist
+          {copy.checklist}
           <Select
             name="templateId"
-            aria-label="Checklist"
+            aria-label={copy.checklist}
             required
-            defaultValue={initial?.templateId}
+            defaultValue={
+              chooseMissing &&
+              !catalog.templates.some((option) => option.id === initial?.templateId)
+                ? ''
+                : initial?.templateId
+            }
           >
+            {chooseMissing && <Option value="">{copy.chooseChecklist}</Option>}
             {catalog.templates.map((template) => (
               <Option key={template.id} value={template.id}>
                 {template.name}
                 {template.requiresPhoto || template.items.some((item) => item.requiresPhoto)
-                  ? ' · Photo required'
+                  ? ` · ${copy.photoRequired}`
                   : ''}
               </Option>
             ))}
           </Select>
         </Label>
         <Label>
-          Priority
+          {copy.priority}
           <Select
             name="priority"
-            aria-label="Priority"
+            aria-label={copy.priority}
             defaultValue={initial?.priority ?? 'routine'}
           >
-            <Option value="routine">Routine</Option>
-            <Option value="urgent">Urgent</Option>
+            <Option value="routine">{copy.routine}</Option>
+            <Option value="urgent">{copy.urgent}</Option>
           </Select>
         </Label>
       </div>
       <Label>
-        Instructions
+        {copy.instructions}
         <Textarea
           className="resize-none"
           name="instructions"
           rows={3}
           maxLength={4000}
           defaultValue={initial?.instructions}
-          placeholder="What should the worker check?"
+          placeholder={copy.instructionsHint}
         />
       </Label>
     </>

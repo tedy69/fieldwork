@@ -2,6 +2,8 @@ import type { Locale } from '@fieldwork/strings';
 
 const english = {
   back: 'Back to work orders',
+  tools: 'Order tools',
+  toolsRegion: 'Order tools and location',
   progress: (total: number) => `of ${total} checks recorded`,
   reviewer: (status: string, name: string) => `${status} by ${name}`,
   queuedHint: 'Your checklist, notes, and photos are saved. Open the outbox for sync details.',
@@ -35,6 +37,8 @@ export const workerInspectionCopy: Record<Locale, typeof english> = {
   en: english,
   id: {
     back: 'Kembali ke daftar tugas',
+    tools: 'Alat tugas',
+    toolsRegion: 'Alat dan lokasi tugas',
     progress: (total) => `dari ${total} pemeriksaan dicatat`,
     reviewer: (status, name) => `${status} oleh ${name}`,
     queuedHint:

@@ -3,6 +3,7 @@ import { IconButton } from './components/ui/icon-button';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
 import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check';
 import { CopyIcon } from '@phosphor-icons/react/dist/csr/Copy';
+import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple';
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
 import { ImageSquareIcon } from '@phosphor-icons/react/dist/csr/ImageSquare';
 import { Form } from './components/ui/form';
@@ -53,15 +54,19 @@ import SiteLocation from './SiteLocation';
 import DraftExport from './DraftExport';
 import { workerInspectionCopy } from './worker-inspection-copy';
 import { workerMapCopy } from './worker-map-copy';
+import { managerReviewCopy } from './manager-review-copy';
 export default function OrderDetail({
   user,
   order,
   workers,
+  closureDates,
   repo,
   state,
   online,
   locale = 'en',
+  workspaceFeedback,
   queuedRecovery,
+  returnLabel,
   onBack,
   onRefresh,
   onNotice,
@@ -69,28 +74,36 @@ export default function OrderDetail({
   user: User;
   order: WorkOrder;
   workers: User[];
+  closureDates?: string[];
   repo: OfflineRepository;
   state: State;
   online: boolean;
   locale?: Locale;
+  workspaceFeedback?: ReactNode;
   queuedRecovery?: ReactNode;
+  returnLabel?: string;
   onBack: () => void;
   onRefresh: () => Promise<void>;
   onNotice: (notice: string) => void;
 }) {
   const copy = inspectionCopy[locale];
   const web = workerInspectionCopy[locale];
+  const manager = managerReviewCopy[locale];
   const status = notebookCopy[locale].status;
   const dateLocale = languageTags[locale];
-  const [draft, setDraft] = useState<Draft>(state.drafts[order.id] ?? blankDraft(order));
+  const storedDraft = state.drafts[order.id];
+  const [draft, setDraft] = useState<Draft>(() => storedDraft ?? blankDraft(order));
   const currentDraft = useRef(draft);
-  const pendingWrites = useRef(0);
+  const pendingWrite = useRef<Promise<void> | null>(null);
   const attaching = useRef(false);
   const itemPhotoInput = useRef<HTMLInputElement>(null);
   const photoItem = useRef<string | undefined>(undefined);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [draftStatus, setDraftStatus] = useState<'untouched' | 'saving' | 'saved' | 'failed'>(
+    storedDraft ? 'saved' : 'untouched',
+  );
+  const saving = draftStatus === 'saving';
   const [review, setReview] = useState('');
   const [referenceCopy, setReferenceCopy] = useState<'idle' | 'copied' | 'failed'>('idle');
   const queued = state.outbox.find((item) => item.orderId === order.id);
@@ -108,20 +121,25 @@ export default function OrderDetail({
     }
   }
 
+  async function persistDraft(next: Draft) {
+    setDraftStatus('saving');
+    const write = repo.saveDraft(order.id, next);
+    pendingWrite.current = write;
+    try {
+      await write;
+      if (pendingWrite.current === write) setDraftStatus('saved');
+    } catch (error) {
+      if (pendingWrite.current === write) setDraftStatus('failed');
+      return { error };
+    } finally {
+      if (pendingWrite.current === write) pendingWrite.current = null;
+    }
+  }
   async function save(next: Draft) {
     currentDraft.current = next;
     setDraft(next);
-    pendingWrites.current += 1;
-    setSaving(true);
     setError('');
-    try {
-      await repo.saveDraft(order.id, next);
-    } catch {
-      setError(web.saveFailed);
-    } finally {
-      pendingWrites.current -= 1;
-      setSaving(pendingWrites.current > 0);
-    }
+    await persistDraft(next);
   }
   async function photos(files: File[], itemId?: string) {
     if (!files.length || attaching.current) return;
@@ -175,7 +193,7 @@ export default function OrderDetail({
         mutationId: crypto.randomUUID(),
         baseVersion: order.version,
       });
-      await repo.saveDraft(order.id, draft);
+      if (await persistDraft(draft)) return;
       const photoError = reportPhotoError(order.template, input.photos, copy.photoErrors);
       if (photoError) throw new Error(photoError.message);
       await repo.enqueue(order.id, input);
@@ -188,30 +206,28 @@ export default function OrderDetail({
     }
   }
   async function decide(decision: 'APPROVED' | 'CHANGES_REQUESTED') {
+    if (!online || busy) return;
     setBusy(true);
     setError('');
     try {
       await client.review(order.id, order.version, decision, review);
       await onRefresh();
-      onNotice(
-        decision === 'APPROVED'
-          ? 'Inspection approved.'
-          : 'Changes requested. The worker can update the inspection.',
-      );
+      onNotice(decision === 'APPROVED' ? manager.approved : manager.changesRequested);
     } catch (error) {
-      setError(message(error));
+      setError(locale === 'en' ? message(error) : manager.failed);
     } finally {
       setBusy(false);
     }
   }
   return (
     <article className="detail">
-      <IconButton className="quiet back" label={web.back} onClick={onBack}>
-        <ArrowLeftIcon aria-hidden="true" />
-      </IconButton>
-      <div className="detail-heading">
+      <header className="detail-heading">
         <div>
           <div className="detail-identity">
+            <Button type="button" variant="ghost" className="inspection-back" onClick={onBack}>
+              <ArrowLeftIcon aria-hidden="true" />
+              {returnLabel ?? web.back}
+            </Button>
             <div className="detail-reference">
               <span className="reference">{order.reference}</span>
               <IconButton
@@ -233,12 +249,15 @@ export default function OrderDetail({
             {referenceCopy === 'copied' && copy.referenceCopied}
             {referenceCopy === 'failed' && copy.referenceCopyFailed}
           </div>
-          <h1>{order.title}</h1>
+          <h1 id="inspection-title" tabIndex={-1}>
+            {order.title}
+          </h1>
         </div>
         <Badge className={`status status-${order.status.toLowerCase()}`}>
           {status[order.status]}
         </Badge>
-      </div>
+      </header>
+      {workspaceFeedback}
       <dl className="order-meta">
         <div>
           <dt>{copy.site}</dt>
@@ -292,9 +311,10 @@ export default function OrderDetail({
               <div className="section-heading">
                 <h2>{copy.checklist}</h2>
                 <span className="muted" role="status">
-                  {saving ? copy.savingLocally : copy.draftSaved}
+                  {saving ? copy.savingLocally : draftStatus === 'saved' ? copy.draftSaved : null}
                 </span>
               </div>
+              {draftStatus === 'failed' && <FieldError>{web.saveFailed}</FieldError>}
               <p className="inspection-progress" role="status">
                 <strong>{completed}</strong> {web.progress(order.template.items.length)}
               </p>
@@ -577,34 +597,35 @@ export default function OrderDetail({
               )}
               {user.role === 'manager' && order.status === 'SUBMITTED' && (
                 <section className="review-box">
-                  <h2>Manager review</h2>
+                  <h2>{manager.heading}</h2>
                   <Label>
-                    Review note
+                    {manager.note}
                     <Textarea
                       className="resize-none"
-                      aria-label="Review note"
+                      aria-label={manager.note}
                       maxLength={2000}
                       rows={3}
                       value={review}
                       onChange={(event) => setReview(event.target.value)}
-                      placeholder="Add feedback or explain what needs to change."
+                      placeholder={manager.noteHint}
                     />
                   </Label>
                   {error && <FieldError>{error}</FieldError>}
+                  {!online && <p className="muted">{manager.offline}</p>}
                   <ActionGroup className="review-actions">
                     <Button
                       className="quiet"
-                      disabled={busy || !review.trim()}
+                      disabled={!online || busy || !review.trim()}
                       onClick={() => void decide('CHANGES_REQUESTED')}
                     >
-                      Request changes
+                      <PencilSimpleIcon aria-hidden="true" /> {manager.requestChanges}
                     </Button>
                     <Button
                       className="primary"
-                      disabled={busy}
+                      disabled={!online || busy}
                       onClick={() => void decide('APPROVED')}
                     >
-                      {busy ? 'Saving review…' : 'Approve inspection'}
+                      <CheckIcon aria-hidden="true" /> {busy ? manager.saving : manager.approve}
                     </Button>
                   </ActionGroup>
                 </section>
@@ -612,15 +633,12 @@ export default function OrderDetail({
             </Card>
           )}
           {user.role === 'manager' && !order.report && (
-            <Empty
-              title="Waiting for the field report"
-              description="The assigned worker can complete this checklist offline. Their report will appear here after it syncs."
-            />
+            <Empty title={manager.waiting} description={manager.waitingHint} />
           )}
         </div>
-        <aside className="inspection-context" aria-label="Order tools and location" lang="en">
+        <aside className="inspection-context" aria-label={web.toolsRegion} lang={locale}>
           <Card className="order-tools">
-            <PanelHeader title="Order tools" />
+            <PanelHeader title={web.tools} />
             {user.role === 'manager' &&
               ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status) && (
                 <>
@@ -628,6 +646,7 @@ export default function OrderDetail({
                     order={order}
                     workers={workers}
                     online={online}
+                    locale={locale}
                     onSaved={async (updated) => {
                       await repo.cacheOrder(updated);
                     }}
@@ -635,7 +654,9 @@ export default function OrderDetail({
                   />
                   <RescheduleOrder
                     order={order}
+                    closureDates={closureDates}
                     online={online}
+                    locale={locale}
                     onSaved={async (updated) => {
                       await repo.cacheOrder(updated);
                     }}
@@ -653,13 +674,13 @@ export default function OrderDetail({
             locale={locale}
             beforeReload={async () => {
               const map = workerMapCopy[locale];
-              if (busy || pendingWrites.current > 0) throw new Error(map.waitBeforeReload);
-              if (review.trim())
-                throw new Error('Your review has unsaved text. Send or clear it before reloading.');
+              if (busy || pendingWrite.current) throw new Error(map.waitBeforeReload);
+              if (review.trim()) throw new Error(manager.unsaved);
               if (editable) {
                 const snapshot = currentDraft.current;
-                await repo.saveDraft(order.id, snapshot);
-                if (pendingWrites.current > 0 || snapshot !== currentDraft.current)
+                const failure = await persistDraft(snapshot);
+                if (failure) throw failure.error;
+                if (pendingWrite.current || snapshot !== currentDraft.current)
                   throw new Error(map.draftChanged);
               }
             }}

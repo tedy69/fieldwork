@@ -1,5 +1,12 @@
 /*! Composed from shadcn/ui Calendar and Radix Popover. MIT: /licenses/shadcn-ui-MIT.txt. */
-import { useId, useLayoutEffect, useRef, useState, type ComponentProps } from 'react';
+import {
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentProps,
+  type RefObject,
+} from 'react';
 import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
 import { id as indonesian } from 'react-day-picker/locale';
 import type { Locale } from '@fieldwork/strings';
@@ -17,6 +24,7 @@ type DatePickerProps = Omit<
   value?: string;
   defaultValue?: string;
   onValueChange: (value: string) => void;
+  inputRef?: RefObject<HTMLInputElement | null>;
   calendarLabel: string;
   locale?: Locale;
 };
@@ -25,6 +33,7 @@ export function DatePicker({
   value,
   defaultValue = '',
   onValueChange,
+  inputRef,
   calendarLabel,
   locale = 'en',
   disabled,
@@ -43,13 +52,14 @@ export function DatePicker({
   const invalid = Boolean(current && !selected);
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState(selected ?? new Date());
-  const input = useRef<HTMLInputElement>(null);
+  const fallback = useRef<HTMLInputElement>(null);
+  const input = inputRef ?? fallback;
   const help = useId();
   useLayoutEffect(() => {
     input.current?.setCustomValidity(invalid ? invalidText : '');
     // Form clears its previous error attributes on input; keep our own error associated.
     if (invalid) input.current?.setAttribute('aria-invalid', 'true');
-  }, [current, invalid, invalidText]);
+  }, [current, input, invalid, invalidText]);
 
   function change(next: string) {
     setInternal(next);

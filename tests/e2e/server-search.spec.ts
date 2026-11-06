@@ -113,8 +113,7 @@ test('worker searches the server in Indonesian and keeps loaded results offline'
   await expect(result).toBeVisible();
   await context.setOffline(false);
   await result.click();
-  await expect(page.getByRole('heading', { name: first.title, exact: true })).toBeVisible();
-  await expect(page.getByRole('main')).toBeFocused();
+  await expect(page.getByRole('heading', { name: first.title, exact: true })).toBeFocused();
 });
 
 test('manager searches server filters and paged results with retry, changed cursors, and narrow layouts', async ({
@@ -303,8 +302,7 @@ test('worker opens a fresh authorized result without replacing saved orders or a
   await manager.reassignOrder(fresh.id, { baseVersion: 2, assigneeId: 'worker' });
   await result.click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: fresh.title, exact: true })).toBeVisible();
-  await expect(page.getByRole('main')).toBeFocused();
+  await expect(page.getByRole('heading', { name: fresh.title, exact: true })).toBeFocused();
   await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
   await page.getByLabel('Search work orders', { exact: true }).fill(original.title);
   await page

@@ -38,21 +38,25 @@ import './series-overview.css';
 
 type Page = Awaited<ReturnType<typeof client.orderSeries>>;
 type BatchFilters = Pick<OrderSeriesQuery, 'q' | 'frequency'>;
+type Visit = OrderSeriesDetail['orders'][number];
 const visitLabels = {
   all: 'All visits',
   upcoming: 'Upcoming field work',
   overdue: 'Overdue',
+  rescheduled: 'Rescheduled',
   review: 'Awaiting review',
   approved: 'Approved',
 };
 type VisitFilter = keyof typeof visitLabels;
 
-function matchesVisit(order: WorkOrder, filter: VisitFilter, today: string) {
+function matchesVisit({ order, plannedDueDate }: Visit, filter: VisitFilter, today: string) {
   switch (filter) {
     case 'upcoming':
       return order.dueDate >= today && ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status);
     case 'overdue':
       return isOverdue(order, today);
+    case 'rescheduled':
+      return order.dueDate !== plannedDueDate;
     case 'review':
       return order.status === 'SUBMITTED';
     case 'approved':
@@ -213,7 +217,10 @@ export default function SeriesOverview({
   }
   async function saveSchedule(order: WorkOrder) {
     await onCache(order);
-    restoreVisitFocus.current = !matchesVisit(order, visitFilter, today);
+    const visit = detail?.orders.find((row) => row.order.id === order.id);
+    restoreVisitFocus.current = Boolean(
+      visit && !matchesVisit({ ...visit, order }, visitFilter, today),
+    );
     setDetail(
       (previous) =>
         previous && {
@@ -240,7 +247,7 @@ export default function SeriesOverview({
     visitSelect.current?.focus();
   }, [changingOrder, detail]);
   const visibleVisits =
-    detail?.orders.filter(({ order }) => matchesVisit(order, visitFilter, today)) ?? [];
+    detail?.orders.filter((visit) => matchesVisit(visit, visitFilter, today)) ?? [];
   function downloadVisits() {
     if (!detail || !visibleVisits.length) return;
     setOpenError('');

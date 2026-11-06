@@ -46,6 +46,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Online manager reassignment of unfinished web orders, with version checks, action history, and preserved local drafts and queued reports.
 - [x] Web report revision history with saved submissions, review feedback, stable pagination, and a tested SQLite upgrade.
 - [x] Monthly web planner with daily workloads, keyboard navigation, filtered exports, offline browsing, and date-preset assignments.
+- [x] Jump directly to a date in the web week and month planners, including offline.
 - [x] Read-only server search API and SDK with text, status, worker, priority, date filters, and cursor pagination.
 - [x] Web server search with combined filters, incremental result loading, fresh authorization on opening, and preserved offline drafts.
 - [x] Bounded recurring assignment API and SDK with daily/weekly dates, atomic creation, and durable retry receipts.

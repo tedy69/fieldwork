@@ -54,6 +54,7 @@ test('worker uses Indonesian week and month planners with cached work and keyboa
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
   await context.setOffline(true);
+  await expect(page.getByRole('status').filter({ hasText: 'Bekerja offline' })).toBeVisible();
   await page.getByRole('button', { name: 'Bulan berikutnya', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Januari 2027', exact: true })).toBeVisible();
   await expect(page.getByText('Tidak ada tugas bulan ini', { exact: true })).toBeVisible();

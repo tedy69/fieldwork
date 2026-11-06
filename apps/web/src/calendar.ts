@@ -7,7 +7,9 @@ export function addDays(date: string, days: number) {
 export function weekDates(date: string) {
   const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
   const monday = addDays(date, -((weekday + 6) % 7));
-  return Array.from({ length: 7 }, (_, index) => addDays(monday, index));
+  return Array.from({ length: 7 }, (_, index) => addDays(monday, index)).filter(
+    (day) => day >= '0001-01-01' && day <= '9999-12-31',
+  );
 }
 
 export function calendarLabel(date: string, full = false, locale?: string) {

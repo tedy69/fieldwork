@@ -4,6 +4,8 @@ Choose **Week planner** in the web work-order screen to see a Monday-to-Sunday s
 
 Choose a day to narrow the work-order list, or choose **Whole week** to restore all seven days. **Previous week** and **Next week** move by seven calendar days. **This week** returns to the current local week and clears the selected day. Today is labeled separately from the selected day.
 
+Use the **Jump to date** calendar icon to enter a date in YYYY-MM-DD format and open its week. The month planner uses the same control. Jumping keeps search and filters and clears the selected day.
+
 Planner lists are ordered by due date, then work-order reference. The ordinary List keeps its existing order.
 
 Managers can select a day, then choose **Assign for selected day**. The existing assignment form opens with that due date filled in; it can still be changed before submitting. Without a selected day, new assignments default to the device's local date. Creation requires a connection and available sites, checklists, and workers; a failed submission leaves the form open for correction or retry.

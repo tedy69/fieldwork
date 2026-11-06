@@ -51,6 +51,71 @@ async function fixture(prefix: string) {
   return { records, manager };
 }
 
+test('planner date jump works offline with the keyboard and keeps search at 320px', async ({
+  page,
+  context,
+}) => {
+  const title = 'Planner direct date QA';
+  const account = await createClient(baseURL).login('manager@fieldwork.local', 'fieldwork-demo');
+  const manager = createClient(baseURL, () => account.token);
+  await manager.createOrder({
+    title,
+    instructions: 'Synthetic future visit.',
+    siteId: 'north',
+    templateId: 'routine',
+    assigneeId: 'worker',
+    dueDate: '2030-02-18',
+    priority: 'routine',
+  });
+  await page.setViewportSize({ width: 320, height: 840 });
+  await page.clock.setFixedTime(new Date('2026-10-31T12:00:00Z'));
+  await login(page, 'manager');
+  const search = page.getByLabel('Search work orders');
+  await search.fill(title);
+  await expect(page.locator('.order-row')).toHaveCount(1);
+  await context.setOffline(true);
+  await page.getByRole('button', { name: 'Month planner', exact: true }).press('Enter');
+  await expect(page.getByRole('heading', { name: 'October 2026', exact: true })).toBeVisible();
+  const jump = page.getByRole('button', { name: 'Jump to date', exact: true });
+  const picker = page.getByRole('dialog', { name: 'Jump to date', exact: true });
+  const date = picker.getByLabel('Date (YYYY-MM-DD)', { exact: true });
+  await expect(jump.locator('svg[aria-hidden=true]')).toBeVisible();
+  await jump.press('Enter');
+  await expect(date).toBeFocused();
+  await date.fill('2030-02-30');
+  await date.press('Enter');
+  await expect(date).toHaveAccessibleDescription('Enter a valid date in YYYY-MM-DD format.');
+  await date.press('Escape');
+  await expect(picker).toHaveCount(0);
+  await expect(jump).toBeFocused();
+  await jump.press('Enter');
+  await expect(date).toHaveValue('2026-10-31');
+  await date.fill('2030-02-18');
+  await picker.screenshot({ path: test.info().outputPath('planner-date-jump-phone.png') });
+  await date.press('Enter');
+  await expect(jump).toBeFocused();
+  await expect(page.getByRole('heading', { name: 'February 2030', exact: true })).toBeVisible();
+  await expect(search).toHaveValue(title);
+  await expect(page.locator('.order-row')).toContainText(title);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  await page.getByRole('button', { name: 'Week planner', exact: true }).press('Enter');
+  await expect(
+    page.getByRole('heading', { name: 'Week of Feb 18, 2030', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).press('Enter');
+  const localizedJump = page.getByRole('button', { name: 'Lompat ke tanggal', exact: true });
+  await localizedJump.press('Enter');
+  const localizedDate = page.getByLabel('Tanggal (YYYY-MM-DD)', { exact: true });
+  await localizedDate.fill('9999-12-31');
+  await localizedDate.press('Enter');
+  await expect(localizedJump).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Minggu berikutnya' })).toBeDisabled();
+  await expect(
+    page.getByRole('group', { name: 'Hari dalam minggu ini' }).getByRole('button'),
+  ).toHaveCount(5);
+});
+
 for (const [role, timezoneId, time] of [
   ['manager', 'America/Los_Angeles', '2026-11-01T06:50:00Z'],
   ['worker', 'Asia/Jakarta', '2026-10-31T16:50:00Z'],

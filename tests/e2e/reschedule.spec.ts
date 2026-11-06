@@ -263,14 +263,18 @@ test('manager can reschedule correction work while submitted and approved work s
   expect(errors).toEqual([]);
 });
 
-test('manager sees site closures when moving an order from the workspace or a recurring batch', async ({
+test('manager can use the next open date when moving a visit without saving it automatically', async ({
   page,
   context,
 }) => {
   const manager = await managerClient();
   const site = await manager.createSite('Closure reschedule QA', 'Synthetic site');
   const closed = '2027-01-05';
-  await manager.updateSiteClosures(site.id, { expectedDates: [], dates: [closed] });
+  const lastSupportedDate = '9999-12-31';
+  await manager.updateSiteClosures(site.id, {
+    expectedDates: [],
+    dates: [closed, '2027-01-06', lastSupportedDate],
+  });
   const title = 'Closure warning reschedule QA';
   const batch = await manager.createOrderSeries({
     mutationId: crypto.randomUUID(),
@@ -294,12 +298,20 @@ test('manager sees site closures when moving an order from the workspace or a re
   await page.getByRole('button', { name: 'Change due date', exact: true }).click();
   const form = page.getByRole('form', { name: 'Change due date', exact: true });
   const due = form.getByRole('textbox', { name: 'New due date', exact: true });
+  const next = form.getByRole('button', { name: 'Use Jan 7, 2027', exact: true });
   await expect(due).toBeFocused();
+  await due.fill(lastSupportedDate);
+  await expect(due).toHaveAccessibleDescription('This site is closed on the selected date.');
+  await expect(form.getByRole('button', { name: /^Use / })).toHaveCount(0);
   await due.fill(closed);
   await expect(due).toHaveAccessibleDescription('This site is closed on the selected date.');
   await expect(form.getByRole('button', { name: 'Save due date', exact: true })).toBeEnabled();
-  await due.fill('2027-01-06');
+  await next.focus();
+  await page.keyboard.press('Enter');
+  await expect(due).toHaveValue('2027-01-07');
+  await expect(due).toBeFocused();
   await expect(form.getByText('This site is closed on the selected date.')).toHaveCount(0);
+  expect((await manager.order(first.id)).version).toBe(first.version);
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
 
@@ -316,6 +328,7 @@ test('manager sees site closures when moving an order from the workspace or a re
   const visit = viewer.getByRole('form', { name: 'Ubah tenggat', exact: true });
   const proposed = visit.getByRole('textbox', { name: 'Tenggat baru', exact: true });
   const save = visit.getByRole('button', { name: 'Simpan tenggat', exact: true });
+  const suggestion = visit.getByRole('button', { name: 'Gunakan 7 Jan 2027', exact: true });
   await proposed.fill(closed);
   await expect(proposed).toHaveAccessibleDescription('Lokasi tutup pada tanggal ini.');
   await expect(visit.locator('.site-closure-hint svg[aria-hidden=true]')).toBeVisible();
@@ -325,8 +338,11 @@ test('manager sees site closures when moving an order from the workspace or a re
   await context.setOffline(true);
   await expect(save).toBeDisabled();
   await expect(proposed).toHaveValue(closed);
+  await suggestion.click();
+  await expect(proposed).toHaveValue('2027-01-07');
+  await expect(proposed).toBeFocused();
+  expect((await manager.order(second.id)).version).toBe(second.version);
   await context.setOffline(false);
-  await proposed.fill('2027-01-06');
   await expect(visit.getByText('Lokasi tutup pada tanggal ini.')).toHaveCount(0);
   await save.click();
   await expect(visit).toHaveCount(0);
@@ -334,6 +350,6 @@ test('manager sees site closures when moving an order from the workspace or a re
   expect(updated.orders[0].order.dueDate).toBe(first.dueDate);
   expect(updated.orders[1]).toMatchObject({
     plannedDueDate: second.dueDate,
-    order: { dueDate: '2027-01-06', version: second.version + 1 },
+    order: { dueDate: '2027-01-07', version: second.version + 1 },
   });
 });

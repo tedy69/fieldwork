@@ -96,7 +96,7 @@ export const seriesOverviewCopy: Record<Locale, typeof english> = {
     empty: 'Belum ada jadwal berulang',
     changeFilter: 'Ubah filter atau hapus pencarian.',
     changeSearch: 'Coba judul, petugas, lokasi, ID jadwal, atau nomor tugas.',
-    create: 'Gunakan Assign recurring work untuk membuat jadwal.',
+    create: 'Gunakan Beri tugas berulang untuk membuat jadwal.',
     batch: 'Jadwal',
     viewBatch: (id, title) => `Lihat jadwal ${id}: ${title}`,
     orders: (count) => `${count} tugas`,

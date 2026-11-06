@@ -49,6 +49,7 @@ import { monthDates, weekDates } from './calendar';
 import WorkFinder from './WorkFinder';
 import ServerSearch from './ServerSearch';
 import { workerWorkspaceCopy } from './worker-workspace-copy';
+import { managerDispatchCopy } from './manager-dispatch-copy';
 
 export default function Workspace({
   user,
@@ -63,9 +64,10 @@ export default function Workspace({
   language: Locale;
   onLanguageChange: (language: Locale) => void;
 }) {
-  const locale = user.role === 'worker' ? language : 'en';
+  const locale = language;
   const alternate = locale === 'id' ? 'en' : 'id';
   const copy = workerWorkspaceCopy[locale];
+  const dispatch = managerDispatchCopy[locale];
   const notebook = notebookCopy[locale];
   const dateLocale = languageTags[locale];
   const repo = useMemo(() => repositoryFor(user.id, client), [user.id]);
@@ -279,7 +281,7 @@ export default function Workspace({
               }}
             >
               <BuildingsIcon aria-hidden="true" />{' '}
-              <span className="nav-label">Sites &amp; checklists</span>
+              <span className="nav-label">{dispatch.resources}</span>
             </Button>
           )}
         </nav>
@@ -295,7 +297,7 @@ export default function Workspace({
           </Avatar>
           <div>
             <strong>{user.name}</strong>
-            <small>{user.role === 'manager' ? 'Dispatch manager' : notebook.worker}</small>
+            <small>{user.role === 'manager' ? dispatch.manager : notebook.worker}</small>
           </div>
           <IconButton
             className="quiet"
@@ -310,7 +312,7 @@ export default function Workspace({
       <div className="main-column">
         <div className="topbar" lang={locale}>
           <span className="workspace-context">
-            {user.role === 'manager' ? 'Dispatch desk' : copy.context}
+            {user.role === 'manager' ? dispatch.desk : copy.context}
           </span>
           <div className="connection">
             <span className={online ? 'signal' : 'signal offline'} />
@@ -324,17 +326,15 @@ export default function Workspace({
               <ArrowClockwiseIcon aria-hidden="true" />
             </IconButton>
           </div>
-          <div className="topbar-tools" lang="en">
-            {user.role === 'worker' && (
-              <IconButton
-                className="quiet"
-                label={languageNames[alternate]}
-                lang={alternate}
-                onClick={() => onLanguageChange(alternate)}
-              >
-                <GlobeIcon aria-hidden="true" />
-              </IconButton>
-            )}
+          <div className="topbar-tools">
+            <IconButton
+              className="quiet"
+              label={languageNames[alternate]}
+              lang={alternate}
+              onClick={() => onLanguageChange(alternate)}
+            >
+              <GlobeIcon aria-hidden="true" />
+            </IconButton>
             <WorkFinder
               locale={locale}
               user={user}
@@ -365,13 +365,21 @@ export default function Workspace({
             />
           </div>
         </div>
-        <main id="main" tabIndex={-1} lang={locale}>
+        <main
+          id="main"
+          tabIndex={-1}
+          lang={view === 'resources' || (order && user.role === 'manager') ? 'en' : locale}
+        >
           {!recoveryInReport && sessionRecovery}
           {!sessionExpired && error !== '' && (
-            <Alert className="banner error">{error ?? copy.unavailable}</Alert>
+            <Alert className="banner error" lang={locale}>
+              {locale === 'id' && user.role === 'manager'
+                ? copy.unavailable
+                : (error ?? copy.unavailable)}
+            </Alert>
           )}
           {!sessionExpired && notice && (
-            <Alert role="status" className="banner notice">
+            <Alert role="status" className="banner notice" lang={locale}>
               {notice}
               <IconButton label={copy.dismiss} variant="ghost" onClick={() => setNotice('')}>
                 <XIcon aria-hidden="true" />
@@ -485,7 +493,7 @@ export default function Workspace({
               repo={repo}
               state={state}
               online={online}
-              locale={locale}
+              locale={user.role === 'manager' ? 'en' : locale}
               queuedRecovery={recoveryInReport ? sessionRecovery : null}
               onBack={() => setSelected(null)}
               onRefresh={refresh}
@@ -499,10 +507,11 @@ export default function Workspace({
                   <ActionGroup className="assignment-actions">
                     <Button
                       className="primary"
-                      aria-label={
-                        planner && plannerDay ? 'Assign for selected day' : 'Assign work order'
-                      }
-                      onClick={() => setCreating(true)}
+                      aria-label={planner && plannerDay ? dispatch.assignDay : dispatch.assignLabel}
+                      onClick={(event) => {
+                        event.currentTarget.focus();
+                        setCreating(true);
+                      }}
                       disabled={
                         !online ||
                         catalog.sites.length === 0 ||
@@ -511,7 +520,7 @@ export default function Workspace({
                       }
                     >
                       <PlusIcon aria-hidden="true" />
-                      {planner && plannerDay ? 'Assign for selected day' : 'Assign work'}
+                      {planner && plannerDay ? dispatch.assignDay : dispatch.assign}
                     </Button>
                     <SeriesOverview
                       online={online}
@@ -530,7 +539,7 @@ export default function Workspace({
                       onCreated={async (receipt) => {
                         await refresh();
                         setSelected(receipt.orders[0].id);
-                        setNotice(`${receipt.orders.length} recurring work orders confirmed.`);
+                        setNotice(dispatch.recurringAssigned(receipt.orders.length));
                       }}
                     />
                   </ActionGroup>
@@ -749,7 +758,7 @@ export default function Workspace({
                             : dateFilterEmpty
                               ? dateFilterEmpty.description
                               : user.role === 'manager'
-                                ? 'Assign a work order to start the first inspection.'
+                                ? dispatch.emptyHint
                                 : locale === 'id' && (search || filter !== 'ALL')
                                   ? copy.trySearch
                                   : copy.emptyHint
@@ -761,7 +770,7 @@ export default function Workspace({
                   <span>{copy.queuedCount(state.outbox.length)}</span>
                 </footer>
                 {user.role === 'manager' && (
-                  <WorkspaceExports orders={visible} onNotice={setNotice} />
+                  <WorkspaceExports orders={visible} locale={locale} onNotice={setNotice} />
                 )}
               </Card>
             </>
@@ -769,13 +778,14 @@ export default function Workspace({
           {creating && (
             <CreateOrder
               catalog={catalog}
+              locale={locale}
               initialDueDate={planner && plannerDay ? plannerDay : undefined}
               onClose={() => setCreating(false)}
               onCreated={async (order) => {
                 setCreating(false);
                 await refresh();
                 setSelected(order.id);
-                setNotice(`${order.reference} assigned to ${order.assignee.name}.`);
+                setNotice(dispatch.assigned(order.reference, order.assignee.name));
               }}
             />
           )}

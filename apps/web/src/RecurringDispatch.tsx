@@ -131,7 +131,7 @@ export default function RecurringDispatch({
     catalog.templates.length > 0 &&
     catalog.users.some((user) => user.role === 'worker');
   return (
-    <div className="recurring-dispatch">
+    <div className="recurring-dispatch" lang="en">
       <IconButton
         label={
           loading
@@ -316,6 +316,7 @@ function RecurringDialog({
       }}
     >
       <DialogContent
+        lang="en"
         ref={dialog}
         className="dialog recurring-dialog"
         aria-modal="true"

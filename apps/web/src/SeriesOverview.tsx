@@ -293,7 +293,13 @@ export default function SeriesOverview({
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>
-        <IconButton label="Recurring batches" ref={trigger} className="quiet" disabled={!online}>
+        <IconButton
+          label="Recurring batches"
+          lang="en"
+          ref={trigger}
+          className="quiet"
+          disabled={!online}
+        >
           <StackIcon aria-hidden="true" />
         </IconButton>
       </DialogTrigger>
@@ -301,6 +307,7 @@ export default function SeriesOverview({
         size="compare"
         className="series-dialog"
         aria-modal="true"
+        lang="en"
         showCloseButton={!scheduleBusy}
         onEscapeKeyDown={(event) => {
           if (

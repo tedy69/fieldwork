@@ -228,6 +228,17 @@ it('finds a batch by the saved site name using literal normalized search', async
   expect((await read('?q=south+gate+100%25&frequency=daily')).json().total).toBe(0);
 });
 
+it('finds a batch by a later visit reference and returns one row when several visits match', async () => {
+  const weekly = await create();
+  const daily = await create({ frequency: 'daily' });
+  const reference = weekly.orders[1].reference.toLowerCase();
+  const exact = OrderSeriesPageSchema.parse((await read(`?q=${reference}&limit=1`)).json());
+  expect(exact).toMatchObject({ total: 1, data: [{ id: weekly.id }], nextCursor: null });
+  const prefix = OrderSeriesPageSchema.parse((await read('?q=fw-&frequency=daily')).json());
+  expect(prefix).toMatchObject({ total: 1, data: [{ id: daily.id }], nextCursor: null });
+  expect((await read(`?q=${reference}`, worker)).statusCode).toBe(403);
+});
+
 it('reads batches created by another current manager without changing any saved records', async () => {
   const batch = await create();
   fixture.store.db.prepare("UPDATE users SET role='manager' WHERE id='worker-2'").run();

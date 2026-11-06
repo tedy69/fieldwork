@@ -57,23 +57,32 @@ test('managers resolve competing closure edits and copy later dates into a recur
   await dialog.getByRole('combobox', { name: 'Repeat', exact: true }).selectOption('daily');
   await dialog.getByLabel('Due date', { exact: true }).fill('2027-01-04');
   await dialog.getByLabel('Occurrences', { exact: true }).fill('3');
+  const preview = dialog.getByRole('region', { name: 'Scheduled dates', exact: true });
+  const closed = preview.getByText('Site closed', { exact: true });
+  await expect(preview.getByRole('status')).toHaveText('3 visits fall on site closure dates.');
+  await expect(closed).toHaveCount(3);
+  await expect(preview.locator('li').first()).toContainText('Site closed');
   await dialog.getByText('Skip dates (optional)', { exact: true }).click();
   const copy = dialog.getByRole('button', { name: 'Copy site closure dates' });
   await expect(dialog.getByText(/first date is marked closed/)).toBeVisible();
   const other = (await manager.catalog()).sites.find((entry) => entry.id !== site.id)!;
   await siteSelect.selectOption(other.id);
   await expect(copy).toHaveCount(0);
+  await expect(closed).toHaveCount(0);
   await siteSelect.selectOption(site.id);
   await dialog.getByLabel('Due date', { exact: true }).fill('2027-01-03');
+  await expect(preview.getByRole('status')).toHaveText('2 visits fall on site closure dates.');
+  await expect(closed).toHaveCount(2);
+  await preview.screenshot({ path: test.info().outputPath('closed-visits-phone.png') });
   await copy.focus();
   await page.keyboard.press('Enter');
   const skipped = dialog
     .getByRole('region', { name: 'Skipped dates', exact: true })
     .locator('time');
   await expect(skipped).toHaveCount(3);
-  const scheduled = dialog
-    .getByRole('region', { name: 'Scheduled dates', exact: true })
-    .locator('time');
+  await expect(closed).toHaveCount(0);
+  await expect(preview.getByRole('status')).toHaveText('');
+  const scheduled = preview.locator('time');
   expect(
     await scheduled.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('datetime'))),
   ).toEqual(['2027-01-03', '2027-01-07', '2027-01-08']);

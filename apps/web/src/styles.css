@@ -1090,6 +1090,23 @@ main#main {
   margin: 0 0 10px;
   font-size: 15px;
 }
+.recurrence-closure-count {
+  margin: 0;
+  font-size: 13px;
+}
+.recurrence-closure-count:not(:empty) {
+  margin-bottom: 8px;
+}
+.recurrence-date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+}
+.recurrence-date .recurrence-closed-date {
+  border-color: var(--amber);
+  background: var(--surface-raised);
+}
 .recurrence-preview ol {
   max-height: 160px;
   overflow: auto;

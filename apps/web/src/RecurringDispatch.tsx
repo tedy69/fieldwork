@@ -33,6 +33,7 @@ import {
   NativeSelectOption as Option,
 } from './components/ui/native-select';
 import { Alert } from './components/ui/alert';
+import { Badge } from './components/ui/badge';
 import { FieldError, FieldLegend, FieldSet } from './components/ui/field';
 import {
   Dialog,
@@ -55,30 +56,42 @@ function DatePreview({
   dates,
   locale,
   byDate = false,
+  closureDates,
 }: {
   dates: string[];
   locale: Locale;
   byDate?: boolean;
+  closureDates?: string[];
 }) {
   const copy = recurringDispatchCopy[locale];
+  const closures = new Set(closureDates);
+  const closedCount = dates.filter((date) => closures.has(date)).length;
   return (
     <section className="recurrence-preview" aria-label={copy.scheduled}>
       <h3 aria-live="polite">
         {dates.length ? copy.scheduledCount(dates.length) : copy.validSchedule}
       </h3>
+      <p className="recurrence-closure-count" role="status">
+        {closedCount > 0 && copy.closureCount(closedCount)}
+      </p>
       {dates.length ? (
         <ol tabIndex={0} aria-label={copy.allScheduled}>
           {dates.map((date) => (
             <li key={date}>
-              <time dateTime={date}>
-                {new Date(`${date}T12:00:00Z`).toLocaleDateString(languageTags[locale], {
-                  timeZone: 'UTC',
-                  weekday: 'short',
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </time>
+              <div className="recurrence-date">
+                <time dateTime={date}>
+                  {new Date(`${date}T12:00:00Z`).toLocaleDateString(languageTags[locale], {
+                    timeZone: 'UTC',
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </time>
+                {closures.has(date) && (
+                  <Badge className="recurrence-closed-date">{copy.siteClosed}</Badge>
+                )}
+              </div>
             </li>
           ))}
         </ol>
@@ -592,7 +605,12 @@ function RecurringDialog({
             </FieldSet>
             {frequency === 'weekdays' && <p className="muted">{copy.weekdays}</p>}
             {frequency === 'weekends' && <p className="muted">{copy.weekends}</p>}
-            <DatePreview dates={activeDates} locale={locale} byDate={endMode === 'date'} />
+            <DatePreview
+              dates={activeDates}
+              locale={locale}
+              byDate={endMode === 'date'}
+              closureDates={siteClosures}
+            />
             {skipDates.some((date) => date <= dueDate) && (
               <FieldError>{copy.exceptions.beforeStart}</FieldError>
             )}

@@ -21,6 +21,9 @@ const english = {
   scheduled: 'Scheduled dates',
   allScheduled: 'All scheduled dates',
   scheduledCount: (count: number) => `${count} scheduled dates`,
+  siteClosed: 'Site closed',
+  closureCount: (count: number) =>
+    `${count} ${count === 1 ? 'visit falls' : 'visits fall'} on site closure dates.`,
   validSchedule: 'Choose a valid schedule',
   validEnd: 'Choose an end date that gives 2–52 work orders.',
   validCount: 'Choose a first date and 2–52 occurrences within a four-digit year.',
@@ -97,6 +100,8 @@ export const recurringDispatchCopy: Record<Locale, typeof english> = {
     scheduled: 'Tanggal terjadwal',
     allScheduled: 'Semua tanggal terjadwal',
     scheduledCount: (count) => `${count} tanggal terjadwal`,
+    siteClosed: 'Lokasi tutup',
+    closureCount: (count) => `${count} kunjungan terjadwal saat lokasi tutup.`,
     validSchedule: 'Pilih jadwal yang valid',
     validEnd: 'Pilih tanggal akhir yang menghasilkan 2–52 tugas.',
     validCount: 'Pilih tanggal awal dan 2–52 pengulangan dalam tahun empat digit.',

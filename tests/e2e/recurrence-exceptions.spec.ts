@@ -166,10 +166,13 @@ for (const { width, frequency, skipped, expectedDates } of [
       dialog.getByRole('button', { name: 'Retry saved batch', exact: true }),
     ).toBeDisabled();
     await context.setOffline(false);
+    await page.unroute('**/api/v1/work-order-series');
+    const retry = page.waitForRequest(
+      (request) => request.method() === 'POST' && request.url().endsWith('/work-order-series'),
+    );
     await dialog.getByRole('button', { name: 'Retry saved batch', exact: true }).click();
     await expect(dialog).toHaveCount(0);
-    expect(requests).toHaveLength(3);
-    expect(requests[2]).toEqual(requests[1]);
+    expect((await retry).postDataJSON()).toEqual(requests[1]);
     expect((await manager.searchOrders({ q: title })).total).toBe(3);
     await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
     await page.getByRole('button', { name: 'Recurring batches', exact: true }).click();

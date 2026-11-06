@@ -62,6 +62,7 @@ async function attach(page: Page) {
 
 test('manager creates a required-photo checklist and the assignment selector identifies its policy', async ({
   page,
+  browserName,
 }) => {
   const manager = await managerClient();
   const old = await manager.order('demo-1');
@@ -80,7 +81,9 @@ test('manager creates a required-photo checklist and the assignment selector ide
   await expect(policy).toBeFocused();
   await policy.selectOption('required');
   await expect(policy).toHaveValue('required');
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(
+    browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab',
+  );
   await expect(form.getByRole('button', { name: 'Add checklist', exact: true })).toBeFocused();
   await page.setViewportSize({ width: 1440, height: 1100 });
   await form.scrollIntoViewIfNeeded();

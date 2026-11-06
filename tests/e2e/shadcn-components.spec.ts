@@ -73,6 +73,7 @@ test('shadcn assignment dialog traps focus, restores it, and stays open during a
 test('shadcn checklist radio groups validate, support arrow keys, and retain offline answers', async ({
   page,
   context,
+  browserName,
 }) => {
   const api = createClient('http://127.0.0.1:4173');
   const session = await api.login('manager@fieldwork.local', 'fieldwork-demo');
@@ -100,9 +101,19 @@ test('shadcn checklist radio groups validate, support arrow keys, and retain off
     exact: true,
   });
   await open.click();
+  let testingOfflineRecovery = false;
   page.on('console', (entry) => {
-    if (entry.type() === 'error' && !entry.text().includes('net::ERR_INTERNET_DISCONNECTED'))
-      errors.push(entry.text());
+    if (entry.type() !== 'error') return;
+    const message = entry.text();
+    if (message.includes('net::ERR_INTERNET_DISCONNECTED')) return;
+    if (
+      testingOfflineRecovery &&
+      browserName === 'webkit' &&
+      entry.location().url.includes('/api/v1/') &&
+      message === 'Failed to load resource: WebKit encountered an internal error'
+    )
+      return;
+    errors.push(message);
   });
   await page.getByLabel('Inspection summary', { exact: true }).fill('Offline shadcn answers.');
   await page.getByRole('button', { name: 'Submit inspection', exact: true }).click();
@@ -138,6 +149,7 @@ test('shadcn checklist radio groups validate, support arrow keys, and retain off
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
+  testingOfflineRecovery = true;
   await context.setOffline(true);
   await page.reload();
   expect(
@@ -153,6 +165,7 @@ test('shadcn checklist radio groups validate, support arrow keys, and retain off
   await expect(page.getByText('Report queued on this device', { exact: true })).toBeVisible();
   await context.setOffline(false);
   await expect(page.getByRole('heading', { name: 'Inspection report', exact: true })).toBeVisible();
+  testingOfflineRecovery = false;
   expect(
     (await manager.order(order.id)).report?.answers.every((answer) => answer.value === 'pass'),
   ).toBe(true);

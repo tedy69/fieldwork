@@ -111,7 +111,12 @@ test('manager finds real work and pages with Kokonut keyboard navigation and mod
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
   await expect(launcher).toBeFocused();
-  await page.getByLabel('Search work orders').fill('no-matching-order');
+  const workspaceSearch = page.getByLabel('Search work orders');
+  await workspaceSearch.fill('no-matching-order');
+  await page.keyboard.press('Control+k');
+  await expect(input).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(workspaceSearch).toBeFocused();
   await page.keyboard.press('Control+k');
   await input.fill(`${gate.reference}`);
   await dialog.getByRole('option', { name: new RegExp(gate.title) }).click();

@@ -81,11 +81,11 @@ export default function WorkFinder({
     [user.role, orders, locale, copy.saved, workspace, notebook.outbox],
   );
 
-  function show() {
+  function show(trigger?: HTMLButtonElement) {
     if (document.querySelector('dialog:modal, [data-slot="dialog-content"][data-state="open"]'))
       return;
     previousFocus.current =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      trigger ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     navigated.current = false;
     setOpen(true);
   }
@@ -132,7 +132,7 @@ export default function WorkFinder({
           aria-label={copy.open}
           lang={locale}
           shortcut="mod+k"
-          onClick={show}
+          onClick={(event) => show(event.currentTarget)}
           aria-keyshortcuts="Meta+K Control+K"
         >
           <MagnifyingGlassIcon aria-hidden="true" />

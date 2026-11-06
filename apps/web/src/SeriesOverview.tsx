@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { IconButton } from './components/ui/icon-button';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
+import { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight';
 import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple';
 import { FunnelSimpleIcon } from '@phosphor-icons/react/dist/csr/FunnelSimple';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass';
@@ -13,12 +14,13 @@ import {
   type WorkOrder,
 } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
-import { languageTags } from '@fieldwork/strings';
-import { client, labels, message } from './lib';
+import { languageTags, notebookCopy, type Locale } from '@fieldwork/strings';
+import { client, labels as orderLabels, message } from './lib';
 import { calendarLabel } from './calendar';
 import { downloadCsv, formatCsv } from './csv';
 import { isOverdue } from './dates';
-import { recurrenceLabels, recurrenceSummary } from './recurrence-labels';
+import { frequencyLabels, recurrenceSummary } from './recurrence-labels';
+import { seriesOverviewCopy } from './series-overview-copy';
 import { SkippedDates } from './RecurrenceExceptions';
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
@@ -42,15 +44,7 @@ type Page = Awaited<ReturnType<typeof client.orderSeries>>;
 type BatchFilters = Pick<OrderSeriesQuery, 'q' | 'frequency' | 'state'>;
 type LoadedBatch = OrderSeriesDetail & { loadedAt: string };
 type Visit = OrderSeriesDetail['orders'][number];
-const visitLabels = {
-  all: 'All visits',
-  upcoming: 'Upcoming field work',
-  overdue: 'Overdue',
-  rescheduled: 'Rescheduled',
-  review: 'Awaiting review',
-  approved: 'Approved',
-};
-type VisitFilter = keyof typeof visitLabels;
+type VisitFilter = keyof typeof seriesOverviewCopy.en.filters;
 
 function matchesVisit({ order, plannedDueDate }: Visit, filter: VisitFilter, today: string) {
   switch (filter) {
@@ -71,15 +65,21 @@ function matchesVisit({ order, plannedDueDate }: Visit, filter: VisitFilter, tod
 
 export default function SeriesOverview({
   online,
+  locale,
   today,
   onCache,
   onOpened,
 }: {
   online: boolean;
+  locale: Locale;
   today: string;
   onCache: (order: WorkOrder) => Promise<void>;
   onOpened: (id: string) => void;
 }) {
+  const copy = seriesOverviewCopy[locale];
+  const dateLocale = languageTags[locale];
+  const frequencies = frequencyLabels[locale];
+  const labels = locale === 'id' ? notebookCopy.id.status : orderLabels;
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState<Page | null>(null);
   const [search, setSearch] = useState('');
@@ -149,8 +149,9 @@ export default function SeriesOverview({
       );
     } catch (error) {
       if (current === listGeneration.current) {
-        setListError(message(error));
-        setInvalidCursor(error instanceof ApiError && error.code === 'INVALID_CURSOR');
+        const stale = error instanceof ApiError && error.code === 'INVALID_CURSOR';
+        setListError(locale === 'en' ? message(error) : stale ? copy.cursor : copy.listFailed);
+        setInvalidCursor(stale);
       }
     } finally {
       if (current === listGeneration.current) setListBusy(false);
@@ -174,7 +175,8 @@ export default function SeriesOverview({
       if (current === detailGeneration.current)
         setDetail({ ...next, loadedAt: new Date().toISOString() });
     } catch (error) {
-      if (current === detailGeneration.current) setDetailError(message(error));
+      if (current === detailGeneration.current)
+        setDetailError(locale === 'en' ? message(error) : copy.detailsFailed);
     } finally {
       if (current === detailGeneration.current) setDetailBusy(false);
     }
@@ -216,7 +218,7 @@ export default function SeriesOverview({
       onOpened(order.id);
     } catch (error) {
       if (current === navigationGeneration.current)
-        setOpenError(`${message(error)} Your saved work is kept.`);
+        setOpenError(locale === 'en' ? `${message(error)} ${copy.savedWork}` : copy.openFailed);
     } finally {
       if (current === navigationGeneration.current) setOpening('');
     }
@@ -284,18 +286,17 @@ export default function SeriesOverview({
         ]),
       ]);
       downloadCsv(`fieldwork-batch-${detail.id.slice(0, 8)}.csv`, csv);
-      const count = visibleVisits.length;
-      setScheduleNotice(`CSV prepared for ${count} ${count === 1 ? 'visit' : 'visits'}.`);
+      setScheduleNotice(copy.exported(visibleVisits.length));
     } catch {
-      setOpenError('Could not create the schedule CSV. Try again.');
+      setOpenError(copy.exportFailed);
     }
   }
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>
         <IconButton
-          label="Recurring batches"
-          lang="en"
+          label={copy.title}
+          lang={locale}
           ref={trigger}
           className="quiet"
           disabled={!online}
@@ -307,7 +308,8 @@ export default function SeriesOverview({
         size="compare"
         className="series-dialog"
         aria-modal="true"
-        lang="en"
+        lang={locale}
+        closeLabel={copy.close}
         showCloseButton={!scheduleBusy}
         onEscapeKeyDown={(event) => {
           if (
@@ -330,9 +332,9 @@ export default function SeriesOverview({
         <DialogHeader>
           <div>
             <DialogTitle ref={heading} tabIndex={-1}>
-              Recurring batches
+              {copy.title}
             </DialogTitle>
-            <DialogDescription>Compare planned and current dates for each order.</DialogDescription>
+            <DialogDescription>{copy.intro}</DialogDescription>
           </div>
         </DialogHeader>
         <form
@@ -343,7 +345,7 @@ export default function SeriesOverview({
           }}
         >
           <Label>
-            Search batches
+            {copy.search}
             <SearchField
               value={search}
               onValueChange={(value) => {
@@ -351,8 +353,8 @@ export default function SeriesOverview({
                 if (!value && attemptedList.current.filters.q)
                   void loadList(undefined, { ...filters, q: undefined });
               }}
-              clearLabel="Clear batch search"
-              placeholder="Name, ID, or reference"
+              clearLabel={copy.clearSearch}
+              placeholder={copy.searchHint}
               maxLength={200}
               disabled={!online || changingOrder}
             />
@@ -360,13 +362,13 @@ export default function SeriesOverview({
           <IconButton
             type="submit"
             variant="outline"
-            label="Search recurring batches"
+            label={copy.searchAction}
             disabled={searchDisabled}
           >
             <MagnifyingGlassIcon aria-hidden="true" />
           </IconButton>
           <Label>
-            Frequency
+            {copy.frequency}
             <NativeSelect
               value={frequency ?? ''}
               onChange={(event) => {
@@ -376,10 +378,10 @@ export default function SeriesOverview({
               }}
               disabled={!online || changingOrder}
             >
-              <NativeSelectOption value="">All frequencies</NativeSelectOption>
+              <NativeSelectOption value="">{copy.allFrequencies}</NativeSelectOption>
               {RecurrenceFrequencySchema.options.map((option) => (
                 <NativeSelectOption key={option} value={option}>
-                  {recurrenceLabels[option]}
+                  {frequencies[option]}
                 </NativeSelectOption>
               ))}
             </NativeSelect>
@@ -387,7 +389,7 @@ export default function SeriesOverview({
           <IconButton
             type="button"
             variant="outline"
-            label="Refresh batches"
+            label={copy.refresh}
             disabled={!online || listBusy || changingOrder}
             onClick={() => void loadList()}
           >
@@ -396,7 +398,7 @@ export default function SeriesOverview({
         </form>
         {!online && (
           <Alert role="status" className="banner notice">
-            You’re offline. Loaded batches stay visible. Reconnect to refresh or change an order.
+            {copy.offline}
           </Alert>
         )}
         {listError && (
@@ -412,33 +414,30 @@ export default function SeriesOverview({
                 )
               }
             >
-              {invalidCursor ? 'Restart batch list' : 'Retry batch list'}
+              {invalidCursor ? copy.restart : copy.retryList}
             </Button>
           </Alert>
         )}
         <div className="series-layout">
-          <section aria-label="Saved recurring batches" className="series-ledger">
+          <section aria-label={copy.saved} className="series-ledger">
             {listBusy && (
               <p role="status" className="muted">
-                Loading batches…
+                {copy.loading}
               </p>
             )}
             <div className="series-list-summary">
               {page && (
                 <p role="status" className="muted series-search-status">
-                  {page.data.length} loaded ·{' '}
-                  {loadedQuery
-                    ? `${page.total} ${page.total === 1 ? 'match' : 'matches'} for “${loadedQuery}”`
-                    : `${page.total} ${page.total === 1 ? 'batch' : 'batches'}`}
-                  {loadedFrequency && ` · ${recurrenceLabels[loadedFrequency]}`}
-                  {loadedState && ' · Open work'}
+                  {copy.resultCount(page.data.length, page.total, loadedQuery)}
+                  {loadedFrequency && ` · ${frequencies[loadedFrequency]}`}
+                  {loadedState && ` · ${copy.openWork}`}
                 </p>
               )}
               <Button
                 type="button"
                 variant="outline"
                 className="series-state-toggle"
-                aria-label="Show batches with open work"
+                aria-label={copy.openWorkLabel}
                 aria-pressed={batchState === 'open'}
                 disabled={!online || changingOrder}
                 onClick={() => {
@@ -448,20 +447,20 @@ export default function SeriesOverview({
                 }}
               >
                 <FunnelSimpleIcon aria-hidden="true" />
-                Open work
+                {copy.openWork}
               </Button>
             </div>
             {page && (
               <>
                 {page.data.length === 0 && (
                   <Empty
-                    title={filtered ? 'No matching batches' : 'No recurring batches yet'}
+                    title={filtered ? copy.noMatch : copy.empty}
                     description={
                       loadedFrequency || loadedState
-                        ? 'Change a filter or clear the search.'
+                        ? copy.changeFilter
                         : loadedQuery
-                          ? 'Try a title, worker, site, batch ID, or work order reference.'
-                          : 'Use Assign recurring work in dispatch to schedule a batch.'
+                          ? copy.changeSearch
+                          : copy.create
                     }
                   />
                 )}
@@ -472,12 +471,14 @@ export default function SeriesOverview({
                         variant="unstyled"
                         className="series-option"
                         aria-pressed={batch.id === selected}
-                        aria-label={`View batch ${batch.id}: ${batch.title}`}
+                        aria-label={copy.viewBatch(batch.id, batch.title)}
                         aria-describedby={batch.siteName ? `batch-site-${batch.id}` : undefined}
                         disabled={!online || listBusy || changingOrder}
                         onClick={() => void loadDetail(batch.id)}
                       >
-                        <span className="reference">Batch {batch.id.slice(0, 8)}</span>
+                        <span className="reference">
+                          {copy.batch} {batch.id.slice(0, 8)}
+                        </span>
                         <strong>{batch.title}</strong>
                         {batch.siteName && (
                           <span id={`batch-site-${batch.id}`} className="muted series-site">
@@ -486,12 +487,14 @@ export default function SeriesOverview({
                           </span>
                         )}
                         <span className="muted">
-                          {recurrenceSummary(batch)} · {batch.occurrences} orders ·{' '}
+                          {recurrenceSummary(batch, locale)} · {copy.orders(batch.occurrences)} ·{' '}
                           {batch.assignee.name}
                         </span>
                         <span className="muted">
-                          {calendarLabel(batch.firstDueDate, true)} to{' '}
-                          {calendarLabel(batch.lastDueDate, true)}
+                          {copy.dateRange(
+                            calendarLabel(batch.firstDueDate, true, dateLocale),
+                            calendarLabel(batch.lastDueDate, true, dateLocale),
+                          )}
                         </span>
                       </Button>
                     </li>
@@ -503,16 +506,16 @@ export default function SeriesOverview({
                     disabled={!online || listBusy || changingOrder}
                     onClick={() => void loadList(page.nextCursor!)}
                   >
-                    Load more batches
+                    {copy.more}
                   </Button>
                 )}
               </>
             )}
           </section>
-          <section aria-label="Selected recurring batch" className="series-detail">
+          <section aria-label={copy.selected} className="series-detail">
             {detailBusy && (
               <p role="status" className="muted">
-                Loading current batch orders…
+                {copy.loadingDetails}
               </p>
             )}
             {detailError && (
@@ -523,23 +526,25 @@ export default function SeriesOverview({
                   disabled={!online || detailBusy}
                   onClick={() => void loadDetail(selected)}
                 >
-                  Retry batch details
+                  {copy.retryDetails}
                 </Button>
               </Alert>
             )}
             {detail && (
               <>
                 <h3>{detail.title}</h3>
-                <SkippedDates dates={detail.skipDates} />
+                <SkippedDates dates={detail.skipDates} locale={locale} />
                 <p className="muted">
-                  Created by {detail.createdBy.name} on{' '}
-                  {new Date(detail.createdAt).toLocaleString()}. Original worker:{' '}
-                  {detail.assignee.name}.
+                  {copy.origin(
+                    detail.createdBy.name,
+                    new Date(detail.createdAt).toLocaleString(dateLocale),
+                    detail.assignee.name,
+                  )}
                 </p>
                 <p className="muted series-loaded">
-                  Loaded{' '}
+                  {copy.loaded}{' '}
                   <time dateTime={detail.loadedAt}>
-                    {new Date(detail.loadedAt).toLocaleString(languageTags.en, {
+                    {new Date(detail.loadedAt).toLocaleString(dateLocale, {
                       dateStyle: 'medium',
                       timeStyle: 'short',
                     })}
@@ -547,14 +552,14 @@ export default function SeriesOverview({
                 </p>
                 <div className="series-visit-tools">
                   <Label>
-                    Show visits
+                    {copy.visits}
                     <NativeSelect
                       ref={visitSelect}
                       value={visitFilter}
                       disabled={changingOrder}
                       onChange={(event) => setVisitFilter(event.currentTarget.value as VisitFilter)}
                     >
-                      {Object.entries(visitLabels).map(([value, label]) => (
+                      {Object.entries(copy.filters).map(([value, label]) => (
                         <NativeSelectOption value={value} key={value}>
                           {label}
                         </NativeSelectOption>
@@ -562,7 +567,7 @@ export default function SeriesOverview({
                     </NativeSelect>
                   </Label>
                   <IconButton
-                    label="Refresh batch details"
+                    label={copy.refreshDetails}
                     className="quiet"
                     disabled={!online || detailBusy || changingOrder}
                     onClick={() => void loadDetail(detail.id)}
@@ -570,7 +575,7 @@ export default function SeriesOverview({
                     <ArrowClockwiseIcon aria-hidden="true" />
                   </IconButton>
                   <IconButton
-                    label="Export batch visits as CSV"
+                    label={copy.export}
                     className="quiet"
                     disabled={!visibleVisits.length || detailBusy || changingOrder}
                     onClick={downloadVisits}
@@ -580,7 +585,7 @@ export default function SeriesOverview({
                 </div>
                 {visitFilter !== 'all' && (
                   <p role="status" className="muted">
-                    {visibleVisits.length} of {detail.orders.length} visits
+                    {copy.visitCount(visibleVisits.length, detail.orders.length)}
                   </p>
                 )}
                 {openError && <Alert className="banner error">{openError}</Alert>}
@@ -591,11 +596,11 @@ export default function SeriesOverview({
                 )}
                 {opening && (
                   <p role="status" className="muted">
-                    Opening current order…
+                    {copy.opening}
                   </p>
                 )}
                 {visibleVisits.length === 0 && (
-                  <Empty title="No matching visits" description="Choose another visit filter." />
+                  <Empty title={copy.noVisits} description={copy.changeVisitFilter} />
                 )}
                 <ol className="series-orders">
                   {visibleVisits.map(({ occurrence, plannedDueDate, order }) => (
@@ -607,26 +612,24 @@ export default function SeriesOverview({
                       <dl>
                         {plannedDueDate !== order.dueDate && (
                           <div>
-                            <dt>Planned due date</dt>
+                            <dt>{copy.plannedDue}</dt>
                             <dd>
                               <time dateTime={plannedDueDate}>
-                                {calendarLabel(plannedDueDate, true)}
+                                {calendarLabel(plannedDueDate, true, dateLocale)}
                               </time>
                             </dd>
                           </div>
                         )}
                         <div>
-                          <dt>
-                            {plannedDueDate === order.dueDate ? 'Due date' : 'Current due date'}
-                          </dt>
+                          <dt>{plannedDueDate === order.dueDate ? copy.due : copy.currentDue}</dt>
                           <dd>
                             <time dateTime={order.dueDate}>
-                              {calendarLabel(order.dueDate, true)}
+                              {calendarLabel(order.dueDate, true, dateLocale)}
                             </time>
                           </dd>
                         </div>
                         <div>
-                          <dt>Current worker</dt>
+                          <dt>{copy.currentWorker}</dt>
                           <dd>{order.assignee.name}</dd>
                         </div>
                       </dl>
@@ -634,17 +637,19 @@ export default function SeriesOverview({
                         {labels[order.status]}
                       </Badge>
                       <div className="series-order-actions">
-                        <Button
+                        <IconButton
                           className="quiet"
-                          aria-label={`Open batch order ${order.reference}: ${order.title}`}
+                          label={copy.openOrderLabel(order.reference, order.title)}
+                          tooltip={copy.openOrder}
                           disabled={!online || detailBusy || changingOrder}
                           onClick={() => void openOrder(order.id)}
                         >
-                          Open order
-                        </Button>
+                          <ArrowRightIcon aria-hidden="true" />
+                        </IconButton>
                         {(order.status === 'ASSIGNED' || order.status === 'CHANGES_REQUESTED') && (
                           <RescheduleOrder
                             order={order}
+                            locale={locale}
                             online={online}
                             onSaved={saveSchedule}
                             onNotice={setScheduleNotice}
@@ -666,10 +671,7 @@ export default function SeriesOverview({
               </>
             )}
             {!selected && page && page.data.length > 0 && (
-              <Empty
-                title="Choose a batch"
-                description="Select a saved schedule to compare its planned and current assignments."
-              />
+              <Empty title={copy.choose} description={copy.chooseHint} />
             )}
           </section>
         </div>

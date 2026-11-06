@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import { RecurrenceSchema } from '@fieldwork/contracts';
+import { languageTags, type Locale } from '@fieldwork/strings';
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus';
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
 import { calendarLabel } from './calendar';
@@ -12,24 +13,26 @@ import './recurrence-exceptions.css';
 
 export function SkippedDates({
   dates,
+  locale = 'en',
   onRemove,
   disabled,
 }: {
   dates?: string[];
+  locale?: Locale;
   onRemove?: (date: string) => void;
   disabled?: boolean;
 }) {
   if (!dates?.length) return null;
   return (
-    <section aria-label="Skipped dates">
-      <h3>Dates to skip</h3>
+    <section aria-label={locale === 'id' ? 'Tanggal yang dilewati' : 'Skipped dates'}>
+      <h3>{locale === 'id' ? 'Tanggal yang dilewati' : 'Dates to skip'}</h3>
       <ul className="recurrence-skip-list">
         {dates.map((date) => (
           <li key={date}>
-            <time dateTime={date}>{calendarLabel(date, true)}</time>
+            <time dateTime={date}>{calendarLabel(date, true, languageTags[locale])}</time>
             {onRemove && (
               <IconButton
-                label={`Remove skipped date ${date}`}
+                label={locale === 'id' ? `Hapus tanggal ${date}` : `Remove skipped date ${date}`}
                 disabled={disabled}
                 onClick={() => onRemove(date)}
               >

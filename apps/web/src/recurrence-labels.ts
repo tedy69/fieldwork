@@ -1,4 +1,5 @@
 import { RepeatDaySchema, type Recurrence, type RepeatDay } from '@fieldwork/contracts';
+import type { Locale } from '@fieldwork/strings';
 
 export const recurrenceLabels: Record<Recurrence['frequency'], string> = {
   daily: 'Daily',
@@ -23,13 +24,39 @@ export const repeatDayLabels: Record<RepeatDay, string> = {
   sun: 'Sunday',
 };
 
-export function recurrenceSummary({
-  frequency,
-  repeatDays,
-}: Pick<Recurrence, 'frequency' | 'repeatDays'>) {
-  if (!repeatDays) return recurrenceLabels[frequency];
+export const frequencyLabels: Record<Locale, typeof recurrenceLabels> = {
+  en: recurrenceLabels,
+  id: {
+    daily: 'Harian',
+    weekly: 'Mingguan',
+    biweekly: 'Setiap dua minggu',
+    weekdays: 'Hari kerja (Sen–Jum)',
+    weekends: 'Akhir pekan (Sab–Min)',
+    'selected-days': 'Hari terpilih',
+    monthly: 'Bulanan',
+    'month-end': 'Hari terakhir tiap bulan',
+    'month-end-weekday': 'Hari kerja terakhir tiap bulan',
+    quarterly: 'Setiap tiga bulan',
+  },
+};
+
+const shortDayLabels: Record<RepeatDay, string> = {
+  mon: 'Sen',
+  tue: 'Sel',
+  wed: 'Rab',
+  thu: 'Kam',
+  fri: 'Jum',
+  sat: 'Sab',
+  sun: 'Min',
+};
+
+export function recurrenceSummary(
+  { frequency, repeatDays }: Pick<Recurrence, 'frequency' | 'repeatDays'>,
+  locale: Locale = 'en',
+) {
+  if (!repeatDays) return frequencyLabels[locale][frequency];
   return RepeatDaySchema.options
     .filter((day) => repeatDays.includes(day))
-    .map((day) => repeatDayLabels[day].slice(0, 3))
+    .map((day) => (locale === 'id' ? shortDayLabels[day] : repeatDayLabels[day].slice(0, 3)))
     .join(', ');
 }

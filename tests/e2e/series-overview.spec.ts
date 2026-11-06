@@ -148,6 +148,77 @@ test('manager combines batch search and frequency across pages and keeps loaded 
   expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
 });
 
+test('manager filters recurring batches to open work and retains the results offline', async ({
+  page,
+  context,
+}) => {
+  const prefix = `Open batch QA ${crypto.randomUUID().slice(0, 8)}`;
+  const {
+    manager,
+    batches: [open, complete],
+  } = await fixture(prefix, 2);
+  const session = await createClient(baseURL).login('worker@fieldwork.local', 'fieldwork-demo');
+  const worker = createClient(baseURL, () => session.token);
+  for (const batch of [open, complete]) {
+    for (const order of batch.orders) {
+      const submitted = await worker.submitReport(order.id, {
+        mutationId: crypto.randomUUID(),
+        baseVersion: order.version,
+        summary: 'Synthetic visit review.',
+        photos: [],
+        answers: order.template.items.map((item) => ({ itemId: item.id, value: 'pass', note: '' })),
+      });
+      if (batch === complete)
+        await manager.review(order.id, submitted.version, 'APPROVED', 'Synthetic review.');
+    }
+  }
+  const result = await manager.orderSeries({
+    q: prefix,
+    frequency: 'weekly',
+    state: 'open',
+    limit: 1,
+  });
+  expect(result.total).toBe(1);
+  expect(result.nextCursor).toBeNull();
+  expect(result.data.map((batch) => batch.id)).toEqual([open.id]);
+  await expect(
+    manager.orderSeries({ q: prefix, state: 'open', cursor: complete.id }),
+  ).rejects.toMatchObject({ code: 'INVALID_CURSOR' });
+
+  await page.setViewportSize({ width: 320, height: 840 });
+  await login(page);
+  await page.getByRole('button', { name: 'Recurring batches', exact: true }).click();
+  const dialog = dialogFor(page);
+  const search = dialog.getByRole('searchbox', { name: 'Search batches', exact: true });
+  await search.fill(prefix);
+  await search.press('Enter');
+  await dialog.getByRole('combobox', { name: 'Frequency', exact: true }).selectOption('weekly');
+  await expect(
+    dialog.getByText(`2 loaded · 2 matches for “${prefix}” · Weekly`, { exact: true }),
+  ).toBeVisible();
+  await expect(option(page, complete)).toBeVisible();
+  const toggle = dialog.getByRole('button', { name: 'Show batches with open work', exact: true });
+  await toggle.focus();
+  await page.keyboard.press('Space');
+  await expect(toggle).toBeFocused();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(
+    dialog.getByText(`1 loaded · 1 match for “${prefix}” · Weekly · Open work`, { exact: true }),
+  ).toBeVisible();
+  await expect(option(page, open)).toBeVisible();
+  await expect(option(page, complete)).toHaveCount(0);
+  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath('open-batches-phone.png') });
+
+  await context.setOffline(true);
+  await expect(toggle).toBeDisabled();
+  await expect(option(page, open)).toBeVisible();
+  await context.setOffline(false);
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(option(page, complete)).toBeVisible();
+});
+
 test('manager filters current batch visits offline and keeps focus when an order leaves the filter', async ({
   page,
   context,

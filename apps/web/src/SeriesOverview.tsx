@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { IconButton } from './components/ui/icon-button';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
 import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple';
+import { FunnelSimpleIcon } from '@phosphor-icons/react/dist/csr/FunnelSimple';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass';
 import { MapPinIcon } from '@phosphor-icons/react/dist/csr/MapPin';
 import { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
@@ -38,7 +39,7 @@ import RescheduleOrder from './RescheduleOrder';
 import './series-overview.css';
 
 type Page = Awaited<ReturnType<typeof client.orderSeries>>;
-type BatchFilters = Pick<OrderSeriesQuery, 'q' | 'frequency'>;
+type BatchFilters = Pick<OrderSeriesQuery, 'q' | 'frequency' | 'state'>;
 type LoadedBatch = OrderSeriesDetail & { loadedAt: string };
 type Visit = OrderSeriesDetail['orders'][number];
 const visitLabels = {
@@ -83,6 +84,7 @@ export default function SeriesOverview({
   const [page, setPage] = useState<Page | null>(null);
   const [search, setSearch] = useState('');
   const [frequency, setFrequency] = useState<BatchFilters['frequency']>();
+  const [batchState, setBatchState] = useState<BatchFilters['state']>();
   const [loadedFilters, setLoadedFilters] = useState<BatchFilters>({});
   const [detail, setDetail] = useState<LoadedBatch | null>(null);
   const [selected, setSelected] = useState('');
@@ -181,6 +183,7 @@ export default function SeriesOverview({
     setPage(null);
     setSearch('');
     setFrequency(undefined);
+    setBatchState(undefined);
     setLoadedFilters({});
     setDetail(null);
     setSelected('');
@@ -236,14 +239,16 @@ export default function SeriesOverview({
   }
   const changingOrder = Boolean(opening) || scheduleBusy;
   const query = search.trim() || undefined;
-  const { q: loadedQuery, frequency: loadedFrequency } = loadedFilters;
-  const filtered = Boolean(loadedQuery || loadedFrequency);
+  const filters = { q: query, frequency, state: batchState };
+  const { q: loadedQuery, frequency: loadedFrequency, state: loadedState } = loadedFilters;
+  const filtered = Boolean(loadedQuery || loadedFrequency || loadedState);
   const searchDisabled =
     !online ||
     changingOrder ||
     (listBusy &&
       attemptedList.current.filters.q === query &&
-      attemptedList.current.filters.frequency === frequency);
+      attemptedList.current.filters.frequency === frequency &&
+      attemptedList.current.filters.state === batchState);
   useLayoutEffect(() => {
     if (changingOrder || !restoreVisitFocus.current) return;
     restoreVisitFocus.current = false;
@@ -327,7 +332,7 @@ export default function SeriesOverview({
           className="series-actions"
           onSubmit={(event) => {
             event.preventDefault();
-            if (!searchDisabled) void loadList(undefined, { q: query, frequency });
+            if (!searchDisabled) void loadList(undefined, filters);
           }}
         >
           <Label>
@@ -337,7 +342,7 @@ export default function SeriesOverview({
               onValueChange={(value) => {
                 setSearch(value);
                 if (!value && attemptedList.current.filters.q)
-                  void loadList(undefined, { frequency });
+                  void loadList(undefined, { ...filters, q: undefined });
               }}
               clearLabel="Clear batch search"
               placeholder="Name, ID, or reference"
@@ -360,7 +365,7 @@ export default function SeriesOverview({
               onChange={(event) => {
                 const next = RecurrenceFrequencySchema.safeParse(event.currentTarget.value).data;
                 setFrequency(next);
-                void loadList(undefined, { q: query, frequency: next });
+                void loadList(undefined, { ...filters, frequency: next });
               }}
               disabled={!online || changingOrder}
             >
@@ -411,21 +416,42 @@ export default function SeriesOverview({
                 Loading batches…
               </p>
             )}
-            {page && (
-              <>
+            <div className="series-list-summary">
+              {page && (
                 <p role="status" className="muted series-search-status">
                   {page.data.length} loaded ·{' '}
                   {loadedQuery
                     ? `${page.total} ${page.total === 1 ? 'match' : 'matches'} for “${loadedQuery}”`
                     : `${page.total} ${page.total === 1 ? 'batch' : 'batches'}`}
                   {loadedFrequency && ` · ${recurrenceLabels[loadedFrequency]}`}
+                  {loadedState && ' · Open work'}
                 </p>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                className="series-state-toggle"
+                aria-label="Show batches with open work"
+                aria-pressed={batchState === 'open'}
+                disabled={!online || changingOrder}
+                onClick={() => {
+                  const next = batchState === 'open' ? undefined : 'open';
+                  setBatchState(next);
+                  void loadList(undefined, { ...filters, state: next });
+                }}
+              >
+                <FunnelSimpleIcon aria-hidden="true" />
+                Open work
+              </Button>
+            </div>
+            {page && (
+              <>
                 {page.data.length === 0 && (
                   <Empty
                     title={filtered ? 'No matching batches' : 'No recurring batches yet'}
                     description={
-                      loadedFrequency
-                        ? 'Try another frequency or clear the search.'
+                      loadedFrequency || loadedState
+                        ? 'Change a filter or clear the search.'
                         : loadedQuery
                           ? 'Try a title, worker, site, batch ID, or work order reference.'
                           : 'Use Assign recurring work in dispatch to schedule a batch.'

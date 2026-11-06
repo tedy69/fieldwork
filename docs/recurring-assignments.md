@@ -80,6 +80,8 @@ Use **Search batches** to find a saved batch by title, original worker or site n
 
 In a web work order, use the copy icon beside its reference to paste that number into the batch search.
 
+Turn on **Open work** to see batches with at least one visit that has yet to be approved. The filter works with search and frequency.
+
 Use **Show visits** to narrow a loaded batch. Upcoming field work includes unfinished assignments due today or later. Overdue follows the work-order list and uses the current due date and the device's local date. **Rescheduled** shows visits whose current due date differs from the planned date. The filter works offline and stays selected when you refresh the same batch.
 
 **Export batch visits as CSV** downloads the visits in the current filter, including both due dates and the current worker and status. The export works from loaded batch data while offline. It contains schedule rows without inspection report content.
@@ -90,7 +92,7 @@ The ledger loads 20 batches at a time and offers **Load more batches**. Failed p
 
 Read-only API methods, restricted to current manager accounts:
 
-- `GET /api/v1/work-order-series?limit=20&cursor=<batch-id>`, through `client.orderSeries(query)`, returns `{ data, total, nextCursor }`. Limits are 1–50, default 20. Optional `q` matches up to 200 characters of batch title, original worker or site name, batch ID, or work-order reference, regardless of case. Optional `frequency` narrows the matches before pagination. Keep the same filters when following the cursor. Rows include the batch and creator, original worker and site name, frequency, occurrence count, and the first and last scheduled dates. Selected-day batches include `repeatDays`. Batches with exclusions include `skipDates`.
+- `GET /api/v1/work-order-series?limit=20&cursor=<batch-id>`, through `client.orderSeries(query)`, returns `{ data, total, nextCursor }`. Limits are 1–50, default 20. Optional `q` matches up to 200 characters of batch title, original worker or site name, batch ID, or work-order reference, regardless of case. Optional `frequency` and `state=open` narrow the matches before pagination. Keep the same filters when following the cursor. Rows include the batch and creator, original worker and site name, frequency, occurrence count, and the first and last scheduled dates. Selected-day batches include `repeatDays`. Batches with exclusions include `skipDates`.
 - `GET /api/v1/work-order-series/:id`, through `client.orderSeriesDetail(id)`, returns that summary plus `orders: [{ occurrence, plannedDueDate, order }]`. Members stay in original occurrence order, while each `order` contains its current complete work-order state. Creator names use the current account display name; original worker/date metadata uses the creation snapshot.
 
 Lists sort newest first by creation timestamp, then batch ID. The cursor anchors the next older page; later arrivals do not shift that boundary. Totals reflect the current database, not a frozen historical snapshot. Unknown cursors return 422 `INVALID_CURSOR`; malformed queries/IDs return 422 `VALIDATION`; unknown valid batch IDs return 404. Authorization runs before pagination or lookup. An incomplete membership record returns an error rather than a successful partial batch. These reads use existing schema 3 tables without a new migration; large-scale indexed querying remains separate work.

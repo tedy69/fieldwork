@@ -24,6 +24,22 @@
 .series-search-status {
   overflow-wrap: anywhere;
 }
+.series-list-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.series-list-summary p {
+  margin: 0;
+}
+.series-state-toggle.ui-button[aria-pressed='true'] {
+  background: var(--surface-raised);
+  border-color: var(--amber);
+  font-weight: 700;
+}
 .series-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);

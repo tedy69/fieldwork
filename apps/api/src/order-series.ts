@@ -40,7 +40,7 @@ function summary(row: Record<string, unknown>) {
   });
 }
 export function createSeriesQueries(store: Store) {
-  function list({ limit, cursor, q, frequency }: OrderSeriesQuery & { limit: number }) {
+  function list({ limit, cursor, q, frequency, state }: OrderSeriesQuery & { limit: number }) {
     const conditions = ['1=1'];
     const params: string[] = [];
     if (q) {
@@ -57,6 +57,12 @@ export function createSeriesQueries(store: Store) {
     if (frequency) {
       conditions.push("json_extract(s.input,'$.frequency')=?");
       params.push(frequency);
+    }
+    if (state === 'open') {
+      conditions.push(`EXISTS (
+        SELECT 1 FROM order_series_members m JOIN work_orders w ON w.id=m.order_id
+        WHERE m.series_id=s.id AND json_extract(w.data,'$.status')<>'APPROVED'
+      )`);
     }
     const match = conditions.join(' AND ');
     const before = cursor

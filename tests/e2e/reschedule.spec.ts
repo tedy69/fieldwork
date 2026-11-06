@@ -93,6 +93,14 @@ test('manager reschedules from the planner with keyboard, retry, conflict, and o
   );
   await expect(page.getByRole('main')).toBeFocused();
   await expect(page.locator('.order-meta')).toContainText('Oct 24');
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).press('Enter');
+  await expect(page.getByRole('main').getByRole('status')).toContainText(
+    `Tenggat ${order.reference} sekarang 24 Okt.`,
+  );
+  await page.getByRole('button', { name: 'English', exact: true }).press('Enter');
+  await expect(page.getByRole('main').getByRole('status')).toContainText(
+    `${order.reference} is now due Oct 24.`,
+  );
   await trigger.click();
   await date.fill('2026-10-26');
   await manager.rescheduleOrder(order.id, { baseVersion: 2, dueDate: '2026-10-25' });

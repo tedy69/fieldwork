@@ -63,6 +63,7 @@ import ServerSearch from './ServerSearch';
 import { workerWorkspaceCopy } from './worker-workspace-copy';
 import { managerDispatchCopy } from './manager-dispatch-copy';
 import { useInspectionNavigation } from './useInspectionNavigation';
+import { useLocalizedNotice } from './useLocalizedNotice';
 
 export default function Workspace({
   user,
@@ -122,7 +123,7 @@ export default function Workspace({
   const retryAction = useRef<HTMLButtonElement>(null);
   const restoreRetryFocus = useRef(false);
   const [sessionExpired, setSessionExpired] = useState(false);
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useLocalizedNotice(locale);
   const showPendingReportError = online && !sessionExpired && error?.kind !== 'sync';
   function updateCatalog(update: SetStateAction<Catalog>) {
     catalogGeneration.current++;
@@ -375,7 +376,7 @@ export default function Workspace({
       {!sessionExpired && notice && (
         <Alert role="status" className="banner notice" lang={locale}>
           {notice}
-          <IconButton label={copy.dismiss} variant="ghost" onClick={() => setNotice('')}>
+          <IconButton label={copy.dismiss} variant="ghost" onClick={() => setNotice(null)}>
             <XIcon aria-hidden="true" />
           </IconButton>
         </Alert>
@@ -633,7 +634,7 @@ export default function Workspace({
                               await repo.cacheOrder(latest);
                               await repo.discard(item.orderId);
                               openInspection(item.orderId);
-                              setNotice(copy.retainedDraft);
+                              setNotice((language) => workerWorkspaceCopy[language].retainedDraft);
                             } catch (error) {
                               if (
                                 user.role === 'worker' &&
@@ -734,7 +735,10 @@ export default function Workspace({
                       onCreated={async (receipt) => {
                         await refresh();
                         openInspection(receipt.orders[0].id, '#assign-recurring-work');
-                        setNotice(dispatch.recurringAssigned(receipt.orders.length));
+                        const count = receipt.orders.length;
+                        setNotice((language) =>
+                          managerDispatchCopy[language].recurringAssigned(count),
+                        );
                       }}
                     />
                   </ActionGroup>
@@ -1063,7 +1067,11 @@ export default function Workspace({
                 setCreating(false);
                 await refresh();
                 openInspection(order.id, '#assign-work-order');
-                setNotice(dispatch.assigned(order.reference, order.assignee.name));
+                const {
+                  reference,
+                  assignee: { name },
+                } = order;
+                setNotice((language) => managerDispatchCopy[language].assigned(reference, name));
               }}
             />
           )}

@@ -56,6 +56,7 @@ import DraftExport from './DraftExport';
 import { workerInspectionCopy } from './worker-inspection-copy';
 import { workerMapCopy } from './worker-map-copy';
 import { managerReviewCopy } from './manager-review-copy';
+import type { LocalizedNotice } from './useLocalizedNotice';
 export default function OrderDetail({
   user,
   order,
@@ -85,7 +86,7 @@ export default function OrderDetail({
   returnLabel?: string;
   onBack: () => void;
   onRefresh: () => Promise<void>;
-  onNotice: (notice: string) => void;
+  onNotice: (notice: LocalizedNotice) => void;
 }) {
   const copy = inspectionCopy[locale];
   const web = workerInspectionCopy[locale];
@@ -198,7 +199,7 @@ export default function OrderDetail({
       const photoError = reportPhotoError(order.template, input.photos, copy.photoErrors);
       if (photoError) throw new Error(photoError.message);
       await repo.enqueue(order.id, input);
-      onNotice(web.sentToOutbox);
+      onNotice((language) => workerInspectionCopy[language].sentToOutbox);
       await onRefresh();
     } catch (error) {
       setError(message(error));
@@ -213,7 +214,11 @@ export default function OrderDetail({
     try {
       await client.review(order.id, order.version, decision, review);
       await onRefresh();
-      onNotice(decision === 'APPROVED' ? manager.approved : manager.changesRequested);
+      onNotice((language) =>
+        decision === 'APPROVED'
+          ? managerReviewCopy[language].approved
+          : managerReviewCopy[language].changesRequested,
+      );
     } catch (error) {
       setError(locale === 'en' ? message(error) : manager.failed);
     } finally {

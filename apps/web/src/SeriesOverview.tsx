@@ -24,6 +24,7 @@ import { downloadCsv, formatCsv } from './csv';
 import { isOverdue, isScheduledOnClosure } from './dates';
 import { frequencyLabels, recurrenceSummary } from './recurrence-labels';
 import { seriesOverviewCopy } from './series-overview-copy';
+import { useLocalizedNotice } from './useLocalizedNotice';
 import { SkippedDates } from './RecurrenceExceptions';
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
@@ -112,7 +113,7 @@ export default function SeriesOverview({
   const [openError, setOpenError] = useState('');
   const [opening, setOpening] = useState('');
   const [scheduleBusy, setScheduleBusy] = useState(false);
-  const [scheduleNotice, setScheduleNotice] = useState('');
+  const [scheduleNotice, setScheduleNotice] = useLocalizedNotice(locale);
   const [invalidCursor, setInvalidCursor] = useState(false);
   const listGeneration = useRef(0);
   const detailGeneration = useRef(0);
@@ -144,7 +145,7 @@ export default function SeriesOverview({
       setVisitFilter('all');
       setDetailError('');
       setOpenError('');
-      setScheduleNotice('');
+      setScheduleNotice(null);
       detailGeneration.current++;
       navigationGeneration.current++;
       setDetailBusy(false);
@@ -179,7 +180,7 @@ export default function SeriesOverview({
     navigationGeneration.current++;
     setOpening('');
     setOpenError('');
-    setScheduleNotice('');
+    setScheduleNotice(null);
     if (id !== selected) {
       setSelected(id);
       setDetail(null);
@@ -210,7 +211,7 @@ export default function SeriesOverview({
     setListError('');
     setDetailError('');
     setOpenError('');
-    setScheduleNotice('');
+    setScheduleNotice(null);
     setListBusy(false);
     setDetailBusy(false);
     if (open) void loadList(undefined, {});
@@ -278,7 +279,7 @@ export default function SeriesOverview({
   function downloadVisits() {
     if (!detail || !visibleVisits.length) return;
     setOpenError('');
-    setScheduleNotice('');
+    setScheduleNotice(null);
     try {
       const csv = formatCsv([
         [
@@ -303,7 +304,8 @@ export default function SeriesOverview({
         ]),
       ]);
       downloadCsv(`fieldwork-batch-${detail.id.slice(0, 8)}.csv`, csv);
-      setScheduleNotice(copy.exported(visibleVisits.length));
+      const visitCount = visibleVisits.length;
+      setScheduleNotice((language) => seriesOverviewCopy[language].exported(visitCount));
     } catch {
       setOpenError(copy.exportFailed);
     }

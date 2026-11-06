@@ -13,6 +13,7 @@ import { downloadText } from './download-text';
 import { formatScheduleCalendar } from './schedule-calendar';
 import { ActionGroup } from './components';
 import { managerDispatchCopy } from './manager-dispatch-copy';
+import type { LocalizedNotice } from './useLocalizedNotice';
 
 export default function WorkspaceExports({
   orders,
@@ -23,14 +24,15 @@ export default function WorkspaceExports({
   orders: WorkOrder[];
   locale: Locale;
   includeCsv: boolean;
-  onNotice: (notice: string) => void;
+  onNotice: (notice: LocalizedNotice | null) => void;
 }) {
   const copy = managerDispatchCopy[locale];
   const [error, setError] = useState('');
+  const orderCount = orders.length;
   const reportCount = includeCsv ? orders.filter((order) => order.report).length : 0;
   function download(kind: 'schedule' | 'reports' | 'calendar') {
     setError('');
-    onNotice('');
+    onNotice(null);
     try {
       if (kind === 'schedule') {
         const csv = formatCsv([
@@ -46,17 +48,17 @@ export default function WorkspaceExports({
           ]),
         ]);
         downloadCsv(`fieldwork-schedule-${localDate()}.csv`, csv);
-        onNotice(copy.schedulePrepared(orders.length));
+        onNotice((language) => managerDispatchCopy[language].schedulePrepared(orderCount));
       } else if (kind === 'calendar') {
         downloadText(
           `fieldwork-calendar-${localDate()}.ics`,
           formatScheduleCalendar(orders),
           'text/calendar;charset=utf-8',
         );
-        onNotice(copy.calendarPrepared(orders.length));
+        onNotice((language) => managerDispatchCopy[language].calendarPrepared(orderCount));
       } else {
         downloadCsv(`fieldwork-reports-${localDate()}.csv`, reportCsv(orders));
-        onNotice(copy.reportsPrepared(reportCount));
+        onNotice((language) => managerDispatchCopy[language].reportsPrepared(reportCount));
       }
     } catch {
       setError(kind === 'calendar' ? copy.calendarFailed : copy.exportFailed);

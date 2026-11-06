@@ -86,7 +86,17 @@ test('offline outbox search keeps queued reports separate from assignment search
   await expect(search).toHaveValue('no queued match');
 
   await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(
+    page.getByText('Report saved to your outbox. It will sync when the server is available.', {
+      exact: true,
+    }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).press('Enter');
+  await expect(
+    page.getByText('Laporan tersimpan di antrean dan akan dikirim saat server tersedia.', {
+      exact: true,
+    }),
+  ).toBeVisible();
   await expect(page.getByRole('searchbox', { name: 'Cari laporan dalam antrean' })).toHaveValue(
     'no queued match',
   );
@@ -96,5 +106,11 @@ test('offline outbox search keeps queued reports separate from assignment search
   await page.getByRole('button', { name: 'Hapus pencarian', exact: true }).press('Enter');
   await expect(page.getByRole('searchbox', { name: 'Cari laporan dalam antrean' })).toBeFocused();
   await expect(cards).toHaveCount(2);
+  await page.getByRole('button', { name: 'Tutup pemberitahuan', exact: true }).press('Enter');
+  await expect(
+    page.getByText('Laporan tersimpan di antrean dan akan dikirim saat server tersedia.', {
+      exact: true,
+    }),
+  ).toHaveCount(0);
   for (const { order } of reports) expect((await manager.order(order.id)).report).toBeNull();
 });

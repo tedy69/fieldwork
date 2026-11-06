@@ -46,6 +46,17 @@ name: Filter cached assignments by status on iOS
 - scrollUntilVisible:
     element: Ditugaskan · 1 ditampilkan
 - assertVisible: Ditugaskan · 1 ditampilkan
+- tapOn: Hapus filter tugas
+- assertNotVisible: Ditugaskan · 1 ditampilkan
+- assertVisible:
+    id: assignment-search
+    text: Weekly
+- tapOn: Saring tugas
+- tapOn:
+    text: Ditugaskan
+    index: 0
+- tapOn: Saring tugas
+- assertVisible: Ditugaskan · 1 ditampilkan
 - tapOn: Hapus pencarian
 - assertNotVisible: Hapus pencarian
 - assertVisible: Ditugaskan · 3 ditampilkan

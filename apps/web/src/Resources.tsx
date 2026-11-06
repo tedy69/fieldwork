@@ -273,7 +273,12 @@ export default function Resources({
           actions={
             <>
               <WorkerInvitations online={online} locale={locale} />
-              <WorkerAccounts online={online} onCatalog={onCatalog} onUpdated={onWorkerUpdated} />
+              <WorkerAccounts
+                online={online}
+                locale={locale}
+                onCatalog={onCatalog}
+                onUpdated={onWorkerUpdated}
+              />
             </>
           }
         />

@@ -69,12 +69,16 @@ test('manager pages invitations, retries a failed page, and confirms a lost revo
   for (const email of firstEmails)
     await expect(dialog(page).getByText(email, { exact: true })).toBeVisible();
   await dialog(page).getByRole('button', { name: 'Retry invitations', exact: true }).click();
-  await expect(
-    dialog(page).getByRole('button', { name: 'Load more invitations', exact: true }),
-  ).toHaveCount(0);
-  expect(await dialog(page).locator('.invitation-list > li').count()).toBe(
-    (await manager.invitations()).total,
-  );
+  const more = dialog(page).getByRole('button', { name: 'Load more invitations', exact: true });
+  const rows = dialog(page).locator('.invitation-list > li');
+  const pageSize = 20;
+  const { total } = await manager.invitations();
+  await expect(rows).toHaveCount(Math.min(2 * pageSize, total));
+  for (let loaded = 2 * pageSize; loaded < total; loaded += pageSize) {
+    await more.click();
+    await expect(rows).toHaveCount(Math.min(loaded + pageSize, total));
+  }
+  await expect(more).toHaveCount(0);
   await page.unroute(endpoint);
   await dialog(page).getByRole('button', { name: 'Refresh invitations', exact: true }).click();
   await expect(

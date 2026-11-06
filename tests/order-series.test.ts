@@ -60,6 +60,7 @@ afterEach(async () => {
 it('requires a current manager before cursor or batch lookup and returns a real empty list', async () => {
   expect((await fixture.app.inject('/api/v1/work-order-series')).statusCode).toBe(401);
   expect((await read('?cursor=bad', worker)).statusCode).toBe(403);
+  expect((await read('?state=open', worker)).statusCode).toBe(403);
   expect((await read('/bad', worker)).statusCode).toBe(403);
   expect((await read()).json()).toEqual({ data: [], total: 0, nextCursor: null });
   expect((await read(`/${randomUUID()}`)).statusCode).toBe(404);
@@ -184,6 +185,7 @@ it.each([
   '?offset=0',
   '?search=gate',
   '?frequency=fortnightly',
+  '?state=closed',
   `?q=${'a'.repeat(201)}`,
 ])('rejects invalid list parameters %s', async (suffix) => {
   expect((await read(suffix)).statusCode).toBe(422);

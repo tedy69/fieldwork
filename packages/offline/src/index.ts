@@ -207,11 +207,13 @@ export function createOfflineRepository(
         outbox: state.outbox.filter((item) => item.orderId !== orderId),
       }));
     },
-    flush() {
-      if (!flushing)
-        flushing = runFlush().finally(() => {
-          flushing = undefined;
+    flush({ afterCurrent = false } = {}) {
+      if (!flushing || afterCurrent) {
+        const next = (flushing ? flushing.then(runFlush, runFlush) : runFlush()).finally(() => {
+          if (flushing === next) flushing = undefined;
         });
+        flushing = next;
+      }
       return flushing;
     },
   };

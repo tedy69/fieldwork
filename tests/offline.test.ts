@@ -374,6 +374,33 @@ describe('durable outbox', () => {
     expect(send).toHaveBeenCalledTimes(2);
     expect((await repo.read()).outbox).toEqual([]);
   });
+  it('retries the same queued report when reconnect overlaps a failed send', async () => {
+    const first = Promise.withResolvers<WorkOrder>();
+    const retry = Promise.withResolvers<WorkOrder>();
+    const send = vi.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(retry.promise);
+    const repo = createOfflineRepository(memory(), send);
+    const payload = input();
+    const draft = { answers: [], summary: payload.summary, photos: [] };
+    await repo.saveDraft('one', draft);
+    await repo.enqueue('one', payload);
+    const beforeReconnect = repo.flush();
+    await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+    const afterReconnect = repo.flush({ afterCurrent: true });
+    expect(send).toHaveBeenCalledTimes(1);
+    first.reject(new Error('Failed to fetch'));
+    await beforeReconnect;
+    await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(2));
+    expect(send.mock.calls).toEqual([
+      ['one', payload],
+      ['one', payload],
+    ]);
+    expect(repo.flush()).toBe(afterReconnect);
+    expect((await repo.read()).drafts.one).toEqual(draft);
+    retry.resolve(order('one'));
+    await afterReconnect;
+    expect((await repo.read()).outbox).toEqual([]);
+    expect((await repo.read()).drafts.one).toBeUndefined();
+  });
   it('rejects a second queued report for the same order', async () => {
     const repo = createOfflineRepository(memory(), async () => order('one'));
     await repo.enqueue('one', input());

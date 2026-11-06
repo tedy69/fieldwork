@@ -955,8 +955,13 @@ export default function Workspace({
                   <span>{copy.orderCount(visible.length, state.orders.length)}</span>
                   <span>{copy.queuedCount(state.outbox.length)}</span>
                 </footer>
-                {user.role === 'manager' && (
-                  <WorkspaceExports orders={visible} locale={locale} onNotice={setNotice} />
+                {(user.role === 'manager' || planner) && (
+                  <WorkspaceExports
+                    orders={visible}
+                    locale={locale}
+                    includeCsv={user.role === 'manager'}
+                    onNotice={setNotice}
+                  />
                 )}
               </Card>
             </>

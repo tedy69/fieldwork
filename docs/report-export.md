@@ -8,6 +8,8 @@ Choose **Schedule CSV** to export one row per visible work order, including assi
 
 Choose **Calendar** to download an iCalendar file with one all-day event per visible work order. Each event includes the reference, title, site name, and due date. The file follows the same filters and planner window as the schedule CSV. Import it into your calendar as a snapshot. Later assignment changes appear in a fresh export. [iCalendar specification](https://www.rfc-editor.org/rfc/rfc5545)
 
+Workers can download **Calendar** from the web week and month planners. The file contains their own assignments in the selected window and follows the current search and status filter, including **To do**.
+
 Exports use the records currently saved on the device and work offline. Sync first when you need the latest server changes. The report file uses the current snapshot for each order.
 
 The CSV files use UTF-8, comma-separated cells, a byte-order mark, and CRLF record endings. The report file has one row per checklist answer, repeating the report's context so rows can be sorted or filtered in a spreadsheet.

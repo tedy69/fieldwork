@@ -99,10 +99,12 @@ export default function Workspace({
   const statusFilterToolbar = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState('');
   const [outboxSearch, setOutboxSearch] = useState('');
+  const [onlyBlocked, setOnlyBlocked] = useState(false);
   const queuedReports = useMemo(
-    () => searchQueuedReports(state.orders, state.outbox, outboxSearch),
-    [state.orders, state.outbox, outboxSearch],
+    () => searchQueuedReports(state.orders, state.outbox, outboxSearch, onlyBlocked),
+    [state.orders, state.outbox, outboxSearch, onlyBlocked],
   );
+  const noBlockedReports = onlyBlocked && state.outbox.every((item) => item.state !== 'blocked');
   const [dueFrom, setDueFrom] = useState('');
   const [dueThrough, setDueThrough] = useState('');
   const [datesOpen, setDatesOpen] = useState(false);
@@ -581,7 +583,7 @@ export default function Workspace({
             <>
               <PageHeading title={notebook.outbox} description={copy.outboxIntro} />
               <div className="outbox-list">
-                {(state.outbox.length > 0 || outboxSearch) && (
+                {(state.outbox.length > 0 || outboxSearch || onlyBlocked) && (
                   <div className="outbox-search">
                     <SearchField
                       aria-label={notebook.searchOutbox}
@@ -590,6 +592,15 @@ export default function Workspace({
                       onValueChange={setOutboxSearch}
                       placeholder={notebook.searchOutboxHint}
                     />
+                    <IconButton
+                      label={notebook.filterBlockedReports}
+                      variant="outline"
+                      className="outbox-filter"
+                      aria-pressed={onlyBlocked}
+                      onClick={() => setOnlyBlocked((current) => !current)}
+                    >
+                      <WarningCircleIcon aria-hidden="true" />
+                    </IconButton>
                   </div>
                 )}
                 {state.outbox.length === 0 ? (
@@ -597,8 +608,12 @@ export default function Workspace({
                 ) : queuedReports.length === 0 ? (
                   <div role="status">
                     <Empty
-                      title={notebook.noQueuedMatch}
-                      description={notebook.noQueuedMatchHint}
+                      title={noBlockedReports ? notebook.noBlockedReports : notebook.noQueuedMatch}
+                      description={
+                        noBlockedReports
+                          ? notebook.noBlockedReportsHint
+                          : notebook.noQueuedMatchHint
+                      }
                     />
                   </div>
                 ) : (

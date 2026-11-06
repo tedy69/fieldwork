@@ -120,6 +120,8 @@ export default function WorkspacePage({
   onViewChange,
   search,
   onSearchChange,
+  onlyBlocked,
+  onBlockedFilterChange,
   assignmentFilter,
   onAssignmentFilterChange,
   scrollPosition,
@@ -139,6 +141,8 @@ export default function WorkspacePage({
   onViewChange: (view: 'assignments' | 'outbox') => void;
   search: string;
   onSearchChange: (search: string) => void;
+  onlyBlocked: boolean;
+  onBlockedFilterChange: () => void;
   assignmentFilter: AssignmentFilter;
   onAssignmentFilterChange: (filter: AssignmentFilter) => void;
   scrollPosition: RefObject<number>;
@@ -196,7 +200,7 @@ export default function WorkspacePage({
   );
   const entries = useMemo<Entry[]>(() => {
     if (view === 'outbox')
-      return searchQueuedReports(state.orders, state.outbox, query).map((entry) => ({
+      return searchQueuedReports(state.orders, state.outbox, query, onlyBlocked).map((entry) => ({
         kind: 'queued',
         ...entry,
       }));
@@ -224,8 +228,31 @@ export default function WorkspacePage({
     });
     if (assignmentFilter === 'next') orders.sort(compareOrdersByDueDate);
     return orders.map((order) => ({ kind: 'order', order }));
-  }, [state.orders, state.outbox, queuedOrders, savedDrafts, query, assignmentFilter, today, view]);
+  }, [
+    state.orders,
+    state.outbox,
+    queuedOrders,
+    savedDrafts,
+    query,
+    assignmentFilter,
+    today,
+    view,
+    onlyBlocked,
+  ]);
   const queuedReports = state.outbox.length;
+  const noBlockedReports = onlyBlocked && state.outbox.every((item) => item.state !== 'blocked');
+  const outboxEmptyTitle =
+    queuedReports === 0
+      ? copy.upToDate
+      : noBlockedReports
+        ? copy.noBlockedReports
+        : copy.noQueuedMatch;
+  const outboxEmptyHint =
+    queuedReports === 0
+      ? copy.outboxEmpty
+      : noBlockedReports
+        ? copy.noBlockedReportsHint
+        : copy.noQueuedMatchHint;
   const clearSearch = search ? (
     <Button
       title={copy.clearSearch}
@@ -310,18 +337,33 @@ export default function WorkspacePage({
               retrying={busy}
             />
           )}
-          {view === 'outbox' && (queuedReports > 0 || search) ? (
-            <Field
-              label={copy.searchOutbox}
-              placeholder={copy.searchOutboxHint}
-              actionLabels={signInCopy[locale]}
-              value={search}
-              onChangeText={onSearchChange}
-              autoCapitalize="none"
-              autoCorrect={false}
-              testID="outbox-search"
-              trailingAction={clearSearch}
-            />
+          {view === 'outbox' && (queuedReports > 0 || search || onlyBlocked) ? (
+            <View style={styles.searchRow}>
+              <View style={styles.flexItem}>
+                <Field
+                  label={copy.searchOutbox}
+                  placeholder={copy.searchOutboxHint}
+                  actionLabels={signInCopy[locale]}
+                  value={search}
+                  onChangeText={onSearchChange}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  testID="outbox-search"
+                  trailingAction={clearSearch}
+                />
+              </View>
+              <Button
+                title={copy.filterBlockedReports}
+                icon={WarningCircle}
+                iconOnly
+                variant="outline"
+                selected={onlyBlocked}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  onBlockedFilterChange();
+                }}
+              />
+            </View>
           ) : null}
           {view === 'assignments' && (
             <View style={styles.searchTools}>
@@ -511,9 +553,7 @@ export default function WorkspacePage({
         <Notice
           title={
             view === 'outbox'
-              ? queuedReports > 0
-                ? copy.noQueuedMatch
-                : copy.upToDate
+              ? outboxEmptyTitle
               : busy
                 ? copy.loading
                 : query || assignmentFilter
@@ -522,9 +562,7 @@ export default function WorkspacePage({
           }
         >
           {view === 'outbox'
-            ? queuedReports > 0
-              ? copy.noQueuedMatchHint
-              : copy.outboxEmpty
+            ? outboxEmptyHint
             : busy
               ? copy.loadingHint
               : assignmentFilter

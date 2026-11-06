@@ -34,10 +34,16 @@ export const emptyState = (): State => ({
   lastSynced: null,
 });
 /** Find queued reports using data already available on the originating device. */
-export function searchQueuedReports(orders: WorkOrder[], outbox: PendingReport[], search: string) {
+export function searchQueuedReports(
+  orders: WorkOrder[],
+  outbox: PendingReport[],
+  search: string,
+  onlyBlocked = false,
+) {
   const query = search.trim().toLowerCase();
   const ordersById = new Map(orders.map((order) => [order.id, order]));
   return outbox
+    .filter((item) => !onlyBlocked || item.state === 'blocked')
     .map((item) => ({ item, order: ordersById.get(item.orderId) }))
     .filter(
       ({ item, order }) =>

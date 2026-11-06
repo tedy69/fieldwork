@@ -60,6 +60,10 @@ it('finds a blocked report by its local summary after the assignment is removed'
   expect(searchQueuedReports(orders, outbox, 'inspection')).toEqual([
     { item: outbox[0], order: orders[0] },
   ]);
+  expect(searchQueuedReports(orders, outbox, '', true)).toEqual([
+    { item: outbox[1], order: undefined },
+  ]);
+  expect(searchQueuedReports(orders, outbox, 'inspection', true)).toEqual([]);
   expect(searchQueuedReports(orders, outbox, '').map(({ item }) => item)).toEqual(before);
   expect(outbox).toEqual(before);
 });

@@ -1,0 +1,18 @@
+appId: host.exp.exponent
+name: Copy a saved report summary during an API outage on Android
+---
+- tapOn: ${ORDER_NAME}
+- scrollUntilVisible:
+    element: Copy report summary
+    centerElement: true
+- tapOn: Copy report summary
+- scrollUntilVisible:
+    element: Back to assignments
+    direction: UP
+- tapOn: Back to assignments
+- scrollUntilVisible:
+    element:
+      id: assignment-search
+    direction: UP
+- tapOn:
+    id: assignment-search

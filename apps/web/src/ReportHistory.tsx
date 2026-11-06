@@ -4,6 +4,7 @@ import { inspectionCopy, languageTags, notebookCopy, type Locale } from '@fieldw
 import { ClockCounterClockwiseIcon } from '@phosphor-icons/react/dist/csr/ClockCounterClockwise';
 import { client, dateLabel, message } from './lib';
 import { Button } from './components/ui/button';
+import CopyReportSummary from './CopyReportSummary';
 import { IconButton } from './components/ui/icon-button';
 import { Badge } from './components/ui/badge';
 import { Alert } from './components/ui/alert';
@@ -234,7 +235,14 @@ export default function ReportHistory({
                 <p className="preserve-lines">
                   {selected.snapshot.instructions || report.noInstructions}
                 </p>
-                <h4>{inspection.summary}</h4>
+                <div className="report-summary-heading">
+                  <h4>{inspection.summary}</h4>
+                  <CopyReportSummary
+                    key={selected.snapshot.report.id}
+                    summary={selected.snapshot.report.summary}
+                    locale={locale}
+                  />
+                </div>
                 <p className="preserve-lines">{selected.snapshot.report.summary}</p>
                 <Table aria-label={copy.answers}>
                   <caption className="sr-only">{selected.snapshot.template.name}</caption>

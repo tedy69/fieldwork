@@ -1,0 +1,8 @@
+appId: host.exp.exponent
+name: Confirm the exact saved report summary on Android
+---
+- assertVisible:
+    id: assignment-search
+    text: ^${SUMMARY}$
+- eraseText: 64
+- tapOn: Done editing

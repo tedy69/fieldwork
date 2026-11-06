@@ -1,7 +1,9 @@
+import { execFileSync } from 'node:child_process';
 import { iosSmokeFlows } from './ios-smoke-flows';
 import { openFixture } from './smoke-fixture';
 
-const flow = iosSmokeFlows(process.argv[2], {
+const device = process.argv[2] ?? '';
+const flow = iosSmokeFlows(device, {
   METRO_URL: process.env.METRO_URL ?? 'exp://127.0.0.1:8082',
 });
 const { manager, setAvailable } = await openFixture();
@@ -17,7 +19,7 @@ const order = await manager.createOrder({
   dueDate: '2026-12-28',
   priority: 'routine',
 });
-const summary = 'Valve checked';
+const summary = `Valve checked for ${order.reference}`;
 const draft = { ORDER_NAME: `Open ${order.reference}: ${order.title}`, SUMMARY: summary };
 await flow('offline-report-draft.ios.yaml', draft);
 try {
@@ -44,3 +46,17 @@ if (
 )
   throw new Error('Expected exactly one saved revision with the retained draft.');
 console.log(`${order.reference} synced once after two iOS restarts.`);
+
+try {
+  await setAvailable(false);
+  await flow('offline-report-copy.ios.yaml');
+  const pasted = execFileSync('xcrun', ['simctl', 'pbpaste', device], {
+    encoding: 'utf8',
+    timeout: 10_000,
+  });
+  if (pasted !== summary)
+    throw new Error('Expected the exact saved summary in the iOS pasteboard.');
+  console.log(`${order.reference} copied the exact saved summary while offline on iOS.`);
+} finally {
+  await setAvailable(true);
+}

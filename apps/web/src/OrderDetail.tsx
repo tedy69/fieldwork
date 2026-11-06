@@ -1,5 +1,6 @@
 import { Button } from './components/ui/button';
 import { IconButton } from './components/ui/icon-button';
+import CopyReportSummary from './CopyReportSummary';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
 import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check';
 import { CopyIcon } from '@phosphor-icons/react/dist/csr/Copy';
@@ -575,7 +576,14 @@ export default function OrderDetail({
                   </li>
                 ))}
               </ul>
-              <h3>{copy.reportSummary}</h3>
+              <div className="report-summary-heading">
+                <h3>{copy.reportSummary}</h3>
+                <CopyReportSummary
+                  key={order.report.id}
+                  summary={order.report.summary}
+                  locale={locale}
+                />
+              </div>
               <p className="preserve-lines">{order.report.summary}</p>
               {order.report.photos.length > 0 && (
                 <div className="photos">

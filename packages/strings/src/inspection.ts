@@ -74,6 +74,9 @@ const english = {
   report: 'Inspection report',
   submitted: 'Submitted',
   reportSummary: 'Summary',
+  copyReportSummary: 'Copy report summary',
+  reportSummaryCopied: 'Report summary copied.',
+  reportSummaryCopyFailed: 'Could not copy the summary. Select the text to copy it.',
   submittedPhoto: 'Submitted site photo',
 };
 
@@ -153,6 +156,9 @@ export const inspectionCopy: Record<Locale, typeof english> = {
     report: 'Laporan inspeksi',
     submitted: 'Dikirim',
     reportSummary: 'Ringkasan',
+    copyReportSummary: 'Salin ringkasan laporan',
+    reportSummaryCopied: 'Ringkasan laporan disalin.',
+    reportSummaryCopyFailed: 'Ringkasan tidak bisa disalin. Pilih teks untuk menyalin.',
     submittedPhoto: 'Foto lokasi yang dikirim',
   },
 };

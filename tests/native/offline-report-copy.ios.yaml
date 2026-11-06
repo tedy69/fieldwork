@@ -1,0 +1,7 @@
+appId: host.exp.Exponent
+name: Copy the saved report summary while offline on iOS
+---
+- scrollUntilVisible:
+    element: Copy report summary
+    direction: UP
+- tapOn: Copy report summary

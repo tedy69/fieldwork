@@ -60,15 +60,5 @@ name: Recover a session and use the inspection tools on Android
     id: report-history-version-2
 - assertVisible: Android review 1
 - scrollUntilVisible:
-    element: Android gate report 1
-- assertVisible: Android gate report 1
-- back
-- assertVisible:
-    id: report-history-version-2
-- back
-- assertVisible: Android notebook QA visit
-- back
-- scrollUntilVisible:
-    element: Approved · 1 shown
-    direction: UP
-- assertVisible: Approved · 1 shown
+    element: ${SUMMARY}
+- assertVisible: ${SUMMARY}

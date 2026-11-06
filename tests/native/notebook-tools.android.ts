@@ -13,7 +13,7 @@ const emulator = execFileSync(adb, ['-s', device, 'shell', 'getprop', 'ro.kernel
 }).trim();
 if (emulator !== '1') throw new Error('Use a booted Android emulator.');
 
-const { manager, baseUrl } = await openFixture();
+const { manager, baseUrl, setAvailable } = await openFixture();
 const account = createClient(baseUrl);
 const session = await account.login('worker@fieldwork.local', 'fieldwork-demo');
 const worker = createClient(baseUrl, () => session.token);
@@ -33,12 +33,13 @@ let order = await manager.createOrder({
   dueDate: '2026-12-28',
   priority: 'routine',
 });
+const olderSummary = `Android gate report 1 for ${order.reference}`;
 for (let number = 1; number <= 2; number++) {
   const submitted = await worker.submitReport(order.id, {
     mutationId: randomUUID(),
     baseVersion: order.version,
     answers: [{ itemId: template.items[0].id, value: 'pass', note: '' }],
-    summary: `Android gate report ${number}`,
+    summary: number === 1 ? olderSummary : 'Android gate report 2',
     photos: [],
   });
   order = await manager.review(
@@ -50,18 +51,30 @@ for (let number = 1; number <= 2; number++) {
 }
 const reset = await manager.createPasswordReset(session.user.id, { expectedAccessVersion: 0 });
 await account.completePasswordReset(reset.token, 'fieldwork-demo');
-await run(
-  'maestro',
-  [
-    '--device',
-    device,
-    'test',
-    '-e',
-    `ORDER_NAME=Open ${order.reference}: ${order.title}`,
-    fileURLToPath(new URL('notebook-tools.android.yaml', import.meta.url)),
-  ],
-  180_000,
-);
+const flow = (name: string) =>
+  run(
+    'maestro',
+    [
+      '--device',
+      device,
+      'test',
+      '-e',
+      `ORDER_NAME=Open ${order.reference}: ${order.title}`,
+      '-e',
+      `SUMMARY=${olderSummary}`,
+      fileURLToPath(new URL(name, import.meta.url)),
+    ],
+    180_000,
+  );
+await flow('notebook-tools.android.yaml');
+try {
+  await setAvailable(false);
+  await flow('notebook-history-copy.android.yaml');
+  await run(adb, ['-s', device, 'shell', 'input', 'keyevent', 'KEYCODE_PASTE'], 10_000);
+  await flow('report-summary-paste.android.yaml');
+} finally {
+  await setAvailable(true);
+}
 
 const [saved, history] = await Promise.all([
   manager.order(order.id),

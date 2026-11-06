@@ -1,0 +1,23 @@
+appId: host.exp.exponent
+name: Copy an older loaded report while offline and return through Android Back
+---
+- scrollUntilVisible:
+    element: Copy report summary
+    direction: UP
+- tapOn: Copy report summary
+- back
+- assertVisible:
+    id: report-history-version-2
+- back
+- assertVisible: Android notebook QA visit
+- back
+- scrollUntilVisible:
+    element: Approved · 1 shown
+    direction: UP
+- assertVisible: Approved · 1 shown
+- scrollUntilVisible:
+    element:
+      id: assignment-search
+    direction: UP
+- tapOn:
+    id: assignment-search

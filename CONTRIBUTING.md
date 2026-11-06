@@ -9,7 +9,7 @@ Thanks for helping build Fieldwork. The aim is a useful field operations platfor
 3. Fork the repository and create a branch from `main`.
 4. Make one focused change and add tests when behavior changes.
 5. Run `npm run check`. Run `npm run test:e2e` for workflow or UI changes.
-6. Open a pull request explaining the problem, the change, and what you checked. A few plain sentences are enough.
+6. Use the [pull request template](.github/PULL_REQUEST_TEMPLATE.md) to explain the change and what you verified. A few plain sentences are enough. Keep the same sections when supplying a description with the GitHub CLI.
 
 You do not need to ask permission for a small bug fix or documentation improvement. For changes to sync, authentication, data storage, or the public API, discuss the approach first so contributors can agree on the contract.
 

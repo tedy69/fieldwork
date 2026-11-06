@@ -1,9 +1,7 @@
-What problem does this solve, and what changes for the user?
+## What changed
 
-Related issue:
+<!-- Describe the problem and what changes for the user. Link a related issue if there is one. Use synthetic data in screenshots or recordings. -->
 
-How did you check it? Include offline, permission, or device checks when relevant.
+## Verification
 
-- [ ] The change is focused and uses synthetic data.
-- [ ] Relevant tests pass and documentation is updated.
-- [ ] Unsent work is preserved when synchronization fails.
+<!-- List the checks you ran and their results. For UI work, name the browsers or devices you tested. Include relevant offline, retry, or permission checks. For sync changes, describe how you verified that unsent work survives a failure. Note any checks you could not run. -->

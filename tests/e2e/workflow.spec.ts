@@ -29,15 +29,21 @@ test('worker completes an inspection offline, survives reload, syncs photos, and
   const uncaught: string[] = [];
   field.on('pageerror', (error) => uncaught.push(error.message));
   desk.on('pageerror', (error) => uncaught.push(error.message));
+  const assignment = field.getByRole('button', { name: /^Open FW-001:/ });
+  async function openWorkerInspection() {
+    await assignment.press('Enter');
+    await expect(
+      field.getByRole('heading', { name: 'Morning safety walkthrough', exact: true }),
+    ).toBeFocused();
+  }
   await login(field, 'worker');
   await field.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
   await field.reload();
-  const assignment = field.getByRole('button', { name: /^Open FW-001:/ });
   await expect(assignment).toBeVisible();
   await expect(field.getByRole('button', { name: 'Sync now', exact: true })).toBeEnabled();
-  await assignment.click();
+  await openWorkerInspection();
   for (const radio of await field.getByRole('radio', { name: 'Pass', exact: true }).all())
     await radio.check();
   await field
@@ -56,7 +62,7 @@ test('worker completes an inspection offline, survives reload, syncs photos, and
   await worker.setOffline(true);
   await field.reload();
   await expect(field.getByText('Working offline', { exact: true })).toBeVisible();
-  await field.getByRole('button', { name: /^Open FW-001:/ }).click();
+  await openWorkerInspection();
   await expect(field.getByLabel('Inspection summary', { exact: true })).toHaveValue(
     'Gate and equipment checked. No follow-up needed.',
   );
@@ -85,7 +91,8 @@ test('worker completes an inspection offline, survives reload, syncs photos, and
   await desk.screenshot({ path: test.info().outputPath('dispatch-desk.png'), fullPage: true });
   await field.getByRole('button', { name: /^Work orders/ }).click();
   await field.getByRole('button', { name: /Sync now/ }).click();
-  await field.getByRole('button', { name: /^Open FW-001:/ }).click();
+  await expect(assignment).toContainText('Approved');
+  await openWorkerInspection();
   await expect(field.getByText('Approved by Alex Morgan', { exact: true })).toBeVisible();
   await field.screenshot({ path: test.info().outputPath('field-notebook.png'), fullPage: true });
   expect(

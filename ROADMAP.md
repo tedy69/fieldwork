@@ -31,6 +31,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Shared outage guidance in the web outbox, with individual recovery reasons for blocked reports.
 - [x] Open a saved assignment from the web or Expo outbox and return to the queue.
 - [x] Distinct clock and warning icons for waiting and blocked reports on web and Expo.
+- [x] Clear the web outbox confirmation once its report syncs or needs attention.
 - [x] Private local draft JSON exports in the web notebook/outbox, including offline photos and blocked submissions without changing the queue.
 - [x] Indonesian contributor quick-start guide for local setup, demo accounts, offline production builds and checks.
 - [x] Version conflicts, approval, requests for changes, and action history.

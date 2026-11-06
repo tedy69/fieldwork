@@ -4,9 +4,16 @@ import type { Locale } from '@fieldwork/strings';
 export type LocalizedNotice = (locale: Locale) => string;
 
 export function useLocalizedNotice(locale: Locale) {
-  const [renderNotice, setRenderNotice] = useState<LocalizedNotice | null>(null);
-  const showNotice = useCallback((notice: LocalizedNotice | null) => {
-    setRenderNotice(() => notice);
+  const [notice, setNotice] = useState<{
+    render: LocalizedNotice;
+    pendingMutationId?: string;
+  } | null>(null);
+  const show = useCallback((render: LocalizedNotice | null, pendingMutationId?: string) => {
+    setNotice(render ? { render, pendingMutationId } : null);
   }, []);
-  return [renderNotice?.(locale), showNotice] as const;
+  return {
+    message: notice?.render(locale),
+    pendingMutationId: notice?.pendingMutationId,
+    show,
+  };
 }

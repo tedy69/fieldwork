@@ -125,7 +125,12 @@ export default function Workspace({
   const retryAction = useRef<HTMLButtonElement>(null);
   const restoreRetryFocus = useRef(false);
   const [sessionExpired, setSessionExpired] = useState(false);
-  const [notice, setNotice] = useLocalizedNotice(locale);
+  const { message: notice, pendingMutationId, show: setNotice } = useLocalizedNotice(locale);
+  const noticeIsCurrent =
+    !pendingMutationId ||
+    state.outbox.some(
+      (item) => item.input.mutationId === pendingMutationId && item.state === 'pending',
+    );
   const showPendingReportError = online && !sessionExpired && error?.kind !== 'sync';
   function updateCatalog(update: SetStateAction<Catalog>) {
     catalogGeneration.current++;
@@ -375,7 +380,7 @@ export default function Workspace({
               : (error.detail ?? copy.unavailable)}
           </Alert>
         ))}
-      {!sessionExpired && notice && (
+      {!sessionExpired && noticeIsCurrent && notice && (
         <Alert role="status" className="banner notice" lang={locale}>
           {notice}
           <IconButton label={copy.dismiss} variant="ghost" onClick={() => setNotice(null)}>

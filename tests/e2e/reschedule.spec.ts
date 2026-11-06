@@ -193,11 +193,17 @@ test('rescheduling blocks a stale offline report and preserves its answers, note
   await context.setOffline(true);
   await page.getByRole('button', { name: 'Save report for sync', exact: true }).click();
   await expect(page.getByText('Report queued on this device', { exact: true })).toBeVisible();
+  const queuedNotice = page.getByText(
+    'Report saved to your outbox. It will sync when the server is available.',
+    { exact: true },
+  );
+  await expect(queuedNotice).toBeVisible();
   await manager.rescheduleOrder(order.id, { baseVersion: 1, dueDate: '2026-10-24' });
   await context.setOffline(false);
   await expect(page.getByText('Sync needs your attention', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Sync outbox/ }).click();
   await expect(page.getByText('NEEDS YOUR ATTENTION', { exact: true })).toBeVisible();
+  await expect(queuedNotice).toHaveCount(0);
   await expect(
     page.getByText('Keep this offline reschedule report.', { exact: true }),
   ).toBeVisible();

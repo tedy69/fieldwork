@@ -72,10 +72,16 @@ test('worker completes an inspection offline, survives reload, syncs photos, and
   await expect(field.getByText('Report queued on this device', { exact: true })).toBeVisible();
   await field.getByRole('button', { name: /Sync outbox/ }).click();
   await expect(field.getByText('WAITING TO SYNC', { exact: true })).toBeVisible();
+  const queuedNotice = field.getByText(
+    'Report saved to your outbox. It will sync when the server is available.',
+    { exact: true },
+  );
+  await expect(queuedNotice).toBeVisible();
   await worker.setOffline(false);
   await expect(
     field.getByRole('heading', { name: 'Everything is up to date', exact: true }),
   ).toBeVisible();
+  await expect(queuedNotice).toHaveCount(0);
   await login(desk, 'manager');
   await desk.getByRole('button', { name: /^Open FW-001:/ }).click();
   await expect(
@@ -167,11 +173,15 @@ test('search, empty outbox, draft edits, and a request for changes work across b
   await expect(
     field.getByRole('main').getByText('Please describe the blocked access.', { exact: true }),
   ).toBeVisible();
-  await field
-    .getByLabel('Inspection summary', { exact: true })
-    .fill('Gate blocked by stored equipment. Dispatch notified.');
+  for (const radio of await field.getByRole('radio', { name: 'N/A', exact: true }).all())
+    await radio.check();
+  await field.getByRole('radio', { name: 'Issue found', exact: true }).first().check();
+  const correctedSummary = 'Gate blocked by stored equipment. Dispatch notified.';
+  await field.getByLabel('Inspection summary', { exact: true }).fill(correctedSummary);
   await field.getByRole('button', { name: 'Submit inspection', exact: true }).click();
-  await field.getByRole('button', { name: 'Dismiss', exact: true }).click();
+  await expect(field.getByText('To review', { exact: true }).first()).toBeVisible();
+  await expect(field.getByRole('main').getByText(correctedSummary, { exact: true })).toBeVisible();
+  await expect(field.getByRole('button', { name: 'Dismiss', exact: true })).toHaveCount(0);
   await field.getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect(field.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
   await worker.close();

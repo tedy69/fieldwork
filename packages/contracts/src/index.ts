@@ -710,6 +710,7 @@ export const OrderSeriesSummarySchema = z.object({
   createdAt: z.iso.datetime(),
   createdBy: UserSchema.pick({ id: true, name: true }),
   title: z.string(),
+  siteName: SiteSchema.shape.name.optional(),
   frequency: RecurrenceFrequencySchema,
   skipDates: SkippedDatesSchema.optional(),
   occurrences: z.number().int().min(2).max(MAX_RECURRENCE_OCCURRENCES),

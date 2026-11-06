@@ -136,6 +136,10 @@ test('manager combines batch search and frequency across pages and keeps loaded 
   await frequency.selectOption('');
   await expect(option(page, daily)).toBeVisible();
   await expect(dialog.getByText(/20 loaded · \d+ batches/)).toBeVisible();
+  await input.fill('North pump station');
+  await input.press('Enter');
+  await expect(dialog.getByText(/matches for “North pump station”/)).toBeVisible();
+  await expect(option(page, daily)).toHaveAccessibleDescription('North pump station');
   expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
 });
 
@@ -259,7 +263,10 @@ test('manager exports only filtered batch visits while offline and can retry a f
 
 test('manager compares planned and current orders, pages with retry, and uses keyboard and narrow layouts', async ({
   page,
+  browserName,
 }) => {
+  const backTab =
+    browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Shift+Tab' : 'Shift+Tab';
   const { manager, batches } = await fixture('Batch overview manager QA', 21);
   const batch = batches.at(-1)!;
   await manager.rescheduleOrder(batch.orders[0].id, { baseVersion: 1, dueDate: '2027-02-01' });
@@ -295,13 +302,13 @@ test('manager compares planned and current orders, pages with retry, and uses ke
   await expect(refresh).toBeEnabled();
   await refresh.focus();
   await expect(refresh).toBeFocused();
-  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press(backTab);
   await expect(dialog.getByRole('combobox', { name: 'Frequency', exact: true })).toBeFocused();
-  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press(backTab);
   await expect(
     dialog.getByRole('button', { name: 'Search recurring batches', exact: true }),
   ).toBeFocused();
-  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press(backTab);
   await expect(
     dialog.getByRole('searchbox', { name: 'Search batches', exact: true }),
   ).toBeFocused();

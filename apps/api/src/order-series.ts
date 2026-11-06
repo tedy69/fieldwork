@@ -7,6 +7,7 @@ import {
 } from '@fieldwork/contracts';
 import type { Store } from './store';
 
+const originalSiteName = "json_extract(s.receipt,'$.orders[0].site.name')";
 const summarySelect = `SELECT s.id,
   json_extract(s.receipt,'$.createdAt') AS created_at,
   json_extract(s.input,'$.title') AS title,
@@ -17,6 +18,7 @@ const summarySelect = `SELECT s.id,
   json_extract(s.receipt,'$.orders[#-1].dueDate') AS last_due_date,
   json_extract(s.receipt,'$.orders[0].assignee.id') AS assignee_id,
   json_extract(s.receipt,'$.orders[0].assignee.name') AS assignee_name,
+  ${originalSiteName} AS site_name,
   u.id AS actor_id, u.name AS actor_name
   FROM order_series s JOIN users u ON u.id=s.actor_id`;
 
@@ -25,6 +27,7 @@ function summary(row: Record<string, unknown>) {
     id: row.id,
     createdAt: row.created_at,
     title: row.title,
+    ...(row.site_name ? { siteName: row.site_name } : {}),
     frequency: row.frequency,
     ...(row.skip_dates ? { skipDates: JSON.parse(row.skip_dates as string) } : {}),
     occurrences: row.occurrences,
@@ -40,9 +43,10 @@ export function createSeriesQueries(store: Store) {
     const params: string[] = [];
     if (q) {
       conditions.push(
-        "fieldwork_contains(json_extract(s.input,'$.title') || ' ' || json_extract(s.receipt,'$.orders[0].assignee.name') || ' ' || s.id,?)=1",
+        `(fieldwork_contains(json_extract(s.input,'$.title') || ' ' || json_extract(s.receipt,'$.orders[0].assignee.name') || ' ' || s.id,?)=1
+          OR fieldwork_contains(${originalSiteName},?)=1)`,
       );
-      params.push(q);
+      params.push(q, q);
     }
     if (frequency) {
       conditions.push("json_extract(s.input,'$.frequency')=?");

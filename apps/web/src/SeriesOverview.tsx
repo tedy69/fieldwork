@@ -3,6 +3,7 @@ import { IconButton } from './components/ui/icon-button';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
 import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass';
+import { MapPinIcon } from '@phosphor-icons/react/dist/csr/MapPin';
 import { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
 import {
   RecurrenceFrequencySchema,
@@ -329,7 +330,7 @@ export default function SeriesOverview({
                   void loadList(undefined, { frequency });
               }}
               clearLabel="Clear batch search"
-              placeholder="Title, worker, or ID"
+              placeholder="Title, worker, site or ID"
               maxLength={200}
               disabled={!online || changingOrder}
             />
@@ -416,7 +417,7 @@ export default function SeriesOverview({
                       loadedFrequency
                         ? 'Try another frequency or clear the search.'
                         : loadedQuery
-                          ? 'Try another title, worker, or batch ID.'
+                          ? 'Try another title, worker, site, or batch ID.'
                           : 'Use Assign recurring work in dispatch to schedule a batch.'
                     }
                   />
@@ -429,11 +430,18 @@ export default function SeriesOverview({
                         className="series-option"
                         aria-pressed={batch.id === selected}
                         aria-label={`View batch ${batch.id}: ${batch.title}`}
+                        aria-describedby={batch.siteName ? `batch-site-${batch.id}` : undefined}
                         disabled={!online || listBusy || changingOrder}
                         onClick={() => void loadDetail(batch.id)}
                       >
                         <span className="reference">Batch {batch.id.slice(0, 8)}</span>
                         <strong>{batch.title}</strong>
+                        {batch.siteName && (
+                          <span id={`batch-site-${batch.id}`} className="muted series-site">
+                            <MapPinIcon aria-hidden="true" />
+                            {batch.siteName}
+                          </span>
+                        )}
                         <span className="muted">
                           {recurrenceLabels[batch.frequency]} · {batch.occurrences} orders ·{' '}
                           {batch.assignee.name}

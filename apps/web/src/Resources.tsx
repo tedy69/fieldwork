@@ -27,6 +27,7 @@ import ChecklistItemsEditor, { checklistItems } from './ChecklistItemsEditor';
 import { managerSitesCopy } from './manager-sites-copy';
 import { managerDispatchCopy } from './manager-dispatch-copy';
 import { checklistEditorCopy } from './checklist-editor-copy';
+import { workerInvitationsCopy } from './worker-invitations-copy';
 const client = createClient();
 export default function Resources({
   catalog,
@@ -49,6 +50,7 @@ export default function Resources({
 }) {
   const copy = managerSitesCopy[locale];
   const checklist = checklistEditorCopy[locale];
+  const people = workerInvitationsCopy[locale];
   const validation = locale === 'id' ? signInCopy.id.web : undefined;
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
@@ -264,13 +266,13 @@ export default function Resources({
           </div>
         </Card>
       </div>
-      <Card className="brief worker-directory" lang="en">
+      <Card className="brief worker-directory">
         <PanelHeader
-          title="Field workers"
-          description="Invite people and manage their access to the workspace."
+          title={people.directory}
+          description={people.directoryHint}
           actions={
             <>
-              <WorkerInvitations online={online} />
+              <WorkerInvitations online={online} locale={locale} />
               <WorkerAccounts online={online} onCatalog={onCatalog} onUpdated={onWorkerUpdated} />
             </>
           }
@@ -281,17 +283,17 @@ export default function Resources({
             .map((user) => (
               <li key={user.id}>
                 <strong>{user.name}</strong>
-                <span className="muted">Field worker</span>
+                <span className="muted">{people.worker}</span>
               </li>
             ))}
         </ul>
-        {!catalog.users.some((user) => user.role === 'worker') && <p>No field workers yet.</p>}
+        {!catalog.users.some((user) => user.role === 'worker') && <p>{people.noWorkers}</p>}
         <p>
-          Invite workers to set up their accounts, or use the{' '}
+          {people.setup}{' '}
           <a href="https://github.com/tedy69/fieldwork/blob/main/docs/self-hosting.md">
-            self-hosting guide
+            {people.guide}
           </a>{' '}
-          for server setup.
+          {people.forServer}
         </p>
       </Card>
     </>

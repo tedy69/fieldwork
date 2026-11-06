@@ -88,7 +88,7 @@ Use **Show visits** to narrow a loaded batch. Upcoming field work includes unfin
 
 **Use batch as template** opens a new schedule with the original worker, assignment details, repeat rule, and visit count filled in. Choose a first date and add any holidays or closures for the new schedule. If a site, worker, or checklist is unavailable, select a current one. An unconfirmed saved request opens for recovery first.
 
-**Export batch visits as CSV** downloads the visits in the current filter, including both due dates and the current worker and status. The export works from loaded batch data while offline. It contains schedule rows without inspection report content.
+**Export batch visits as CSV** downloads the visits in the current filter, including planned and current due dates, worker, and status. **Export batch visits as a calendar** saves those visits as all-day events on their current due dates, with the reference, title, and site. Both exports use loaded schedule data while offline.
 
 Use the calendar action beside an assigned order or an order with changes requested to edit its current due date from this view. The planned date and sibling orders stay as scheduled. If another update arrives first, **Reload order** refreshes the row and keeps the proposed date available for review. The action needs a connection. See [rescheduling](rescheduling.md) for version checks and worker sync behavior.
 

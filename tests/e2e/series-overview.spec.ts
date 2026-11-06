@@ -195,6 +195,14 @@ test('manager reads and reschedules recurring visits in Indonesian', async ({ pa
   await expect(selected.getByText('1 dari 2 kunjungan', { exact: true })).toBeVisible();
   await expect(selected.getByText('Tenggat awal', { exact: true })).toBeVisible();
   await expect(selected.getByText('Tenggat terkini', { exact: true })).toBeVisible();
+  const calendar = selected.getByRole('button', {
+    name: 'Ekspor kunjungan sebagai kalender',
+    exact: true,
+  });
+  const ready = page.waitForEvent('download');
+  await calendar.click();
+  expect((await ready).suggestedFilename()).toMatch(/\.ics$/);
+  await expect(selected.getByText('Kalender untuk 1 kunjungan siap diunduh.')).toBeVisible();
   expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
   await selected.screenshot({ path: test.info().outputPath('indonesian-batch-phone.png') });
 });
@@ -376,19 +384,23 @@ test('manager exports only filtered batch visits while offline and can retry a f
   const dialog = dialogFor(page);
   const filter = dialog.getByRole('combobox', { name: 'Show visits', exact: true });
   const button = dialog.getByRole('button', { name: 'Export batch visits as CSV', exact: true });
+  const calendar = dialog.getByRole('button', { name: 'Export batch visits as a calendar' });
   await context.setOffline(true);
   await filter.selectOption('approved');
   await expect(button).toBeDisabled();
+  await expect(calendar).toBeDisabled();
   await filter.selectOption('upcoming');
   await expect(button).toBeEnabled();
   expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
-  await page.evaluate(() => {
-    const create = URL.createObjectURL;
-    URL.createObjectURL = () => {
-      URL.createObjectURL = create;
-      throw new Error('Synthetic download failure');
-    };
-  });
+  const failDownload = () =>
+    page.evaluate(() => {
+      const create = URL.createObjectURL;
+      URL.createObjectURL = () => {
+        URL.createObjectURL = create;
+        throw new Error('Synthetic download failure');
+      };
+    });
+  await failDownload();
   await button.click();
   await expect(dialog.getByRole('alert')).toHaveText(
     'Could not create the schedule CSV. Try again.',
@@ -406,6 +418,27 @@ test('manager exports only filtered batch visits while offline and can retry a f
   expect(csv).not.toContain(other.reference);
   expect(csv).not.toContain('Synthetic inspection omitted');
   await expect(dialog.getByText('CSV prepared for 1 visit.', { exact: true })).toBeVisible();
+
+  await expect(calendar.locator('svg[aria-hidden=true]')).toBeVisible();
+  await failDownload();
+  await calendar.click();
+  await expect(dialog.getByRole('alert')).toHaveText('Could not create the calendar. Try again.');
+  await calendar.focus();
+  const calendarReady = page.waitForEvent('download');
+  await page.keyboard.press('Enter');
+  const calendarDownload = await calendarReady;
+  expect(calendarDownload.suggestedFilename()).toBe(`fieldwork-batch-${batch.id.slice(0, 8)}.ics`);
+  const events = readFileSync((await calendarDownload.path())!, 'utf8');
+  expect(events.match(/BEGIN:VEVENT/g)).toHaveLength(1);
+  expect(events).toContain(`UID:${visit.id}\r\n`);
+  expect(events).toContain('DTSTART;VALUE=DATE:20270108\r\n');
+  expect(events).toContain(`SUMMARY:${visit.reference} ${visit.title}`);
+  expect(events).not.toContain('20261228');
+  expect(events).not.toContain(other.reference);
+  expect(events).not.toContain('Synthetic inspection omitted');
+  await expect(dialog.getByText('Calendar prepared for 1 visit.', { exact: true })).toBeVisible();
+  await calendar.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: test.info().outputPath('batch-export-phone.png') });
 });
 
 test('manager compares planned and current orders, pages with retry, and uses keyboard and narrow layouts', async ({

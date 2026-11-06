@@ -2,13 +2,14 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { IconButton } from './components/ui/icon-button';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
 import { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight';
+import { CalendarDotsIcon } from '@phosphor-icons/react/dist/csr/CalendarDots';
 import { CalendarXIcon } from '@phosphor-icons/react/dist/csr/CalendarX';
 import { CopyIcon } from '@phosphor-icons/react/dist/csr/Copy';
-import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple';
 import { FunnelSimpleIcon } from '@phosphor-icons/react/dist/csr/FunnelSimple';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGlass';
 import { MapPinIcon } from '@phosphor-icons/react/dist/csr/MapPin';
 import { StackIcon } from '@phosphor-icons/react/dist/csr/Stack';
+import { TableIcon } from '@phosphor-icons/react/dist/csr/Table';
 import {
   RecurrenceFrequencySchema,
   type Catalog,
@@ -22,6 +23,8 @@ import { client, labels as orderLabels, message } from './lib';
 import { calendarLabel } from './calendar';
 import { downloadCsv, formatCsv } from './csv';
 import { isOverdue, isScheduledOnClosure } from './dates';
+import { downloadText } from './download-text';
+import { formatScheduleCalendar } from './schedule-calendar';
 import { frequencyLabels, recurrenceSummary } from './recurrence-labels';
 import { seriesOverviewCopy } from './series-overview-copy';
 import { useLocalizedNotice } from './useLocalizedNotice';
@@ -276,11 +279,22 @@ export default function SeriesOverview({
   }, [changingOrder, detail]);
   const visibleVisits =
     detail?.orders.filter((visit) => matchesVisit(visit, visitFilter, today, closureDates)) ?? [];
-  function downloadVisits() {
+  function downloadVisits(format: 'csv' | 'calendar') {
     if (!detail || !visibleVisits.length) return;
     setOpenError('');
     setScheduleNotice(null);
+    const visitCount = visibleVisits.length;
+    const filename = `fieldwork-batch-${detail.id.slice(0, 8)}`;
     try {
+      if (format === 'calendar') {
+        downloadText(
+          `${filename}.ics`,
+          formatScheduleCalendar(visibleVisits.map(({ order }) => order)),
+          'text/calendar;charset=utf-8',
+        );
+        setScheduleNotice((language) => seriesOverviewCopy[language].calendarPrepared(visitCount));
+        return;
+      }
       const csv = formatCsv([
         [
           'Visit',
@@ -303,11 +317,10 @@ export default function SeriesOverview({
           order.status,
         ]),
       ]);
-      downloadCsv(`fieldwork-batch-${detail.id.slice(0, 8)}.csv`, csv);
-      const visitCount = visibleVisits.length;
+      downloadCsv(`${filename}.csv`, csv);
       setScheduleNotice((language) => seriesOverviewCopy[language].exported(visitCount));
     } catch {
-      setOpenError(copy.exportFailed);
+      setOpenError(format === 'calendar' ? copy.calendarFailed : copy.exportFailed);
     }
   }
   return (
@@ -617,9 +630,17 @@ export default function SeriesOverview({
                     label={copy.export}
                     className="quiet"
                     disabled={!visibleVisits.length || detailBusy || changingOrder}
-                    onClick={downloadVisits}
+                    onClick={() => downloadVisits('csv')}
                   >
-                    <DownloadSimpleIcon aria-hidden="true" />
+                    <TableIcon aria-hidden="true" />
+                  </IconButton>
+                  <IconButton
+                    label={copy.exportCalendar}
+                    className="quiet"
+                    disabled={!visibleVisits.length || detailBusy || changingOrder}
+                    onClick={() => downloadVisits('calendar')}
+                  >
+                    <CalendarDotsIcon aria-hidden="true" />
                   </IconButton>
                 </div>
                 {visitFilter !== 'all' && (

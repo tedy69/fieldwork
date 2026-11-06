@@ -278,7 +278,15 @@ export default function Workspace({
   );
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#main" lang={locale}>
+      <a
+        className="skip-link"
+        href="#main"
+        lang={locale}
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById('main')?.focus();
+        }}
+      >
         {copy.skip}
       </a>
       <header className="sidebar" lang={locale}>

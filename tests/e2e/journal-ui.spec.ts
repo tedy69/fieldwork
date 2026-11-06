@@ -101,6 +101,17 @@ test('inspection Back restores the work list and keyboard focus', async ({ page 
   await expect(page.getByLabel('Search work orders')).toHaveValue('FW-001');
   await page.goForward();
   await expect(title).toBeFocused();
+  await page.locator('.skip-link').press('Enter');
+  await expect(page.getByRole('main')).toBeFocused();
+  await expect(title).toBeVisible();
+  await back.evaluate((button: HTMLButtonElement) => {
+    button.click();
+    button.click();
+  });
+  await expect(row).toBeFocused();
+  await expect(page).not.toHaveURL(/previous/);
+  await page.goForward();
+  await expect(title).toBeFocused();
   await back.press('Enter');
   await expect(row).toBeFocused();
 });

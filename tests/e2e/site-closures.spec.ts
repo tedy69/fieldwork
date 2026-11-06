@@ -249,7 +249,13 @@ test('dispatch flags unfinished visits on loaded closure dates and filters them 
     await page.getByLabel('Email', { exact: true }).fill('manager@fieldwork.local');
     await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+    await expect(
+      page.getByRole('button', {
+        name: `Open ${assigned.reference}: ${assigned.title}`,
+        exact: true,
+      }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).press('Enter');
     await page.setViewportSize({ width: 320, height: 850 });
     const row = (order: WorkOrder) =>
       page.getByRole('button', { name: `Buka ${order.reference}: ${order.title}`, exact: true });
@@ -303,7 +309,6 @@ test('dispatch flags unfinished visits on loaded closure dates and filters them 
     await expect(toggle).toBeFocused();
     await expect(row(assigned)).toBeVisible();
   } finally {
-    await context.setOffline(false);
     await manager.updateSiteClosures(site.id, {
       expectedDates: closureDates,
       dates: savedDates,

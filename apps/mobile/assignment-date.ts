@@ -1,4 +1,4 @@
-import type { Locale } from '@fieldwork/strings';
+import { languageTags, type Locale } from '@fieldwork/strings';
 
 const options = {
   timeZone: 'UTC',
@@ -7,8 +7,8 @@ const options = {
   day: 'numeric',
 } as const;
 const dates = {
-  en: new Intl.DateTimeFormat('en-US', options),
-  id: new Intl.DateTimeFormat('id-ID', options),
+  en: new Intl.DateTimeFormat(languageTags.en, options),
+  id: new Intl.DateTimeFormat(languageTags.id, options),
 };
 
 export function assignmentDate(date: string, locale: Locale) {

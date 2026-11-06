@@ -3,7 +3,7 @@ import { IconButton } from './components/ui/icon-button';
 import { CaretLeftIcon } from '@phosphor-icons/react/dist/csr/CaretLeft';
 import { CaretRightIcon } from '@phosphor-icons/react/dist/csr/CaretRight';
 import type { WorkOrder } from '@fieldwork/contracts';
-import type { Locale } from '@fieldwork/strings';
+import { languageTags, type Locale } from '@fieldwork/strings';
 import { addDays, calendarLabel, weekDates } from './calendar';
 import { workerPlannerCopy } from './worker-planner-copy';
 
@@ -26,7 +26,7 @@ export default function WeekPlanner({
 }) {
   const dates = weekDates(anchor);
   const copy = workerPlannerCopy[locale];
-  const dateLocale = locale === 'id' ? 'id-ID' : undefined;
+  const dateLocale = languageTags[locale];
   return (
     <section className="week-planner" aria-labelledby="week-heading">
       <div className="week-heading">

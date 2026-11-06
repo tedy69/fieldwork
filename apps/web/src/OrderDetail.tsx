@@ -36,7 +36,13 @@ import {
   type WorkOrder,
 } from '@fieldwork/contracts';
 import type { State, OfflineRepository } from '@fieldwork/offline';
-import { inspectionCopy, notebookCopy, signInCopy, type Locale } from '@fieldwork/strings';
+import {
+  inspectionCopy,
+  languageTags,
+  notebookCopy,
+  signInCopy,
+  type Locale,
+} from '@fieldwork/strings';
 import { client, dateLabel, message } from './lib';
 import { Empty, PanelHeader, ActionGroup } from './components';
 import ReportPrint from './ReportPrint';
@@ -75,7 +81,7 @@ export default function OrderDetail({
   const copy = inspectionCopy[locale];
   const web = workerInspectionCopy[locale];
   const status = notebookCopy[locale].status;
-  const dateLocale = locale === 'id' ? 'id-ID' : undefined;
+  const dateLocale = languageTags[locale];
   const [draft, setDraft] = useState<Draft>(state.drafts[order.id] ?? blankDraft(order));
   const currentDraft = useRef(draft);
   const pendingWrites = useRef(0);

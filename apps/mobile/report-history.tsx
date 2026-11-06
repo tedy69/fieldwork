@@ -7,7 +7,7 @@ import {
 } from 'react-native-safe-area-context';
 import type { ReportRevision, WorkOrder } from '@fieldwork/contracts';
 import { ApiError, createClient } from '@fieldwork/sdk';
-import { notebookCopy, type Locale } from '@fieldwork/strings';
+import { languageTags, notebookCopy, type Locale } from '@fieldwork/strings';
 import { ArrowLeft, ClockCounterClockwise } from './notebook-icons';
 import { Button, Copy, Notice } from './notebook-ui';
 import SavedReport from './saved-report';
@@ -82,7 +82,7 @@ function ReportHistory({ order, baseUrl, token, locale, close }: Props & { close
   const [problem, setProblem] = useState<'unavailable' | 'failed' | 'cursor' | null>(null);
   const request = useRef(0);
   const listOffset = useRef(0);
-  const dateLocale = locale === 'id' ? 'id-ID' : undefined;
+  const dateLocale = languageTags[locale];
   const load = useCallback(
     async (cursor?: string) => {
       const current = ++request.current;

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { createClient } from '@fieldwork/sdk';
+import type { WorkOrder } from '@fieldwork/contracts';
 
 test('managers resolve competing closure edits and copy later dates into a recurring batch', async ({
   page,
@@ -94,4 +95,118 @@ test('managers resolve competing closure edits and copy later dates into a recur
   expect(receipt.skipDates).toEqual(['2027-01-04', '2027-01-05', '2027-01-06']);
   await manager.updateSiteClosures(site.id, { expectedDates: proposal.split('\n'), dates: [] });
   expect((await manager.orderSeriesDetail(receipt.id)).skipDates).toEqual(receipt.skipDates);
+});
+
+test('dispatch flags unfinished visits on loaded closure dates and filters them offline', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  const base = baseURL ?? 'http://127.0.0.1:4173';
+  const session = await createClient(base).login('manager@fieldwork.local', 'fieldwork-demo');
+  const manager = createClient(base, () => session.token);
+  const site = await manager.site('north');
+  const savedDates = site.closureDates ?? [];
+  const closedDate = '2029-05-15';
+  const closureDates = [...savedDates, closedDate].sort();
+  const prefix = 'Dispatch closure QA';
+  const create = (name: string, dueDate: string, siteId = site.id) =>
+    manager.createOrder({
+      title: `${prefix} ${name}`,
+      instructions: 'Synthetic dispatch visit.',
+      siteId,
+      templateId: 'routine',
+      assigneeId: 'worker',
+      priority: 'routine',
+      dueDate,
+    });
+  await manager.updateSiteClosures(site.id, {
+    expectedDates: savedDates,
+    dates: closureDates,
+  });
+  try {
+    const assigned = await create('assigned', closedDate);
+    const submitted = await create('submitted', closedDate);
+    const openDate = await create('open date', '2029-05-16');
+    const otherSite = await create('other site', closedDate, 'depot');
+    const workerSession = await createClient(base).login(
+      'worker@fieldwork.local',
+      'fieldwork-demo',
+    );
+    await createClient(base, () => workerSession.token).submitReport(submitted.id, {
+      mutationId: crypto.randomUUID(),
+      baseVersion: submitted.version,
+      answers: submitted.template.items.map((item) => ({
+        itemId: item.id,
+        value: 'pass',
+        note: '',
+      })),
+      summary: 'Synthetic visit awaiting review.',
+      photos: [],
+    });
+
+    await page.goto('/');
+    await page.getByLabel('Email', { exact: true }).fill('manager@fieldwork.local');
+    await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+    await page.setViewportSize({ width: 320, height: 850 });
+    const row = (order: WorkOrder) =>
+      page.getByRole('button', { name: `Buka ${order.reference}: ${order.title}`, exact: true });
+    const search = page.getByRole('searchbox', { name: 'Cari tugas' });
+    const toggle = page.getByRole('button', { name: 'Tugas saat lokasi tutup', exact: true });
+    await search.fill(prefix);
+    await expect(row(assigned)).toHaveAccessibleDescription('Lokasi tutup');
+    for (const order of [submitted, openDate, otherSite]) await expect(row(order)).toBeVisible();
+    await expect(row(submitted)).not.toHaveAccessibleDescription('Lokasi tutup');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
+
+    await context.setOffline(true);
+    await toggle.focus();
+    await page.keyboard.press('Enter');
+    await expect(toggle).toBeFocused();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(row(assigned)).toBeVisible();
+    for (const order of [submitted, openDate, otherSite]) await expect(row(order)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Ekspor tugas (1)' })).toBeEnabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({
+      path: test.info().outputPath('dispatch-closure-filter-320.png'),
+      fullPage: true,
+    });
+
+    await search.fill(`${prefix} other site`);
+    await expect(page.getByText('Tidak ada tugas yang cocok saat lokasi tutup')).toBeVisible();
+    await toggle.click();
+    await expect(row(otherSite)).toBeVisible();
+    await page.reload();
+    await expect(row(assigned)).toBeVisible();
+    await expect(toggle).toHaveCount(0);
+    await expect(row(assigned)).not.toHaveAccessibleDescription('Lokasi tutup');
+
+    await context.setOffline(false);
+    await expect(row(assigned)).toHaveAccessibleDescription('Lokasi tutup');
+    await manager.rescheduleOrder(assigned.id, {
+      baseVersion: assigned.version,
+      dueDate: '2029-05-16',
+    });
+    await page.getByRole('button', { name: 'Sinkronkan sekarang', exact: true }).click();
+    await expect(row(assigned)).not.toHaveAccessibleDescription('Lokasi tutup');
+    await search.fill(prefix);
+    await toggle.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByText('Tidak ada tugas yang cocok saat lokasi tutup')).toBeVisible();
+    await page.keyboard.press('Enter');
+    await expect(toggle).toBeFocused();
+    await expect(row(assigned)).toBeVisible();
+  } finally {
+    await context.setOffline(false);
+    await manager.updateSiteClosures(site.id, {
+      expectedDates: closureDates,
+      dates: savedDates,
+    });
+  }
 });

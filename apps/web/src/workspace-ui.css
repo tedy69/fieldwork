@@ -720,6 +720,21 @@ form > .ui-field-label {
 .board-filters .date-filter:has([data-state='open']) {
   flex-basis: 100%;
 }
+.closure-visit-filter.ui-button[aria-pressed='true'] {
+  background: var(--surface-raised);
+  border-color: var(--amber);
+  font-weight: 700;
+}
+.closure-visit-icon {
+  display: inline-flex;
+  margin-inline-start: 5px;
+  vertical-align: text-bottom;
+  color: var(--amber);
+}
+.closure-visit-icon svg {
+  width: 16px;
+  height: 16px;
+}
 .status-filters.kokonut-tabs {
   padding: 0;
   border: 0;

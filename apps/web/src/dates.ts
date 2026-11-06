@@ -1,6 +1,16 @@
-import { localDate } from '@fieldwork/contracts';
+import { localDate, type WorkOrder } from '@fieldwork/contracts';
 
 export { isOverdue, localDate } from '@fieldwork/contracts';
+
+export function isScheduledOnClosure(
+  order: Pick<WorkOrder, 'status' | 'dueDate'>,
+  closureDates: readonly string[] = [],
+) {
+  return (
+    (order.status === 'ASSIGNED' || order.status === 'CHANGES_REQUESTED') &&
+    closureDates.includes(order.dueDate)
+  );
+}
 
 /** Parse date-only values locally, without UTC conversion or Date's overflow normalization. */
 export function parseLocalDate(value: string): Date | undefined {

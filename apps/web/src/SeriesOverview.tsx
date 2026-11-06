@@ -561,16 +561,20 @@ export default function SeriesOverview({
                       </span>
                       <strong>{order.title}</strong>
                       <dl>
+                        {plannedDueDate !== order.dueDate && (
+                          <div>
+                            <dt>Planned due date</dt>
+                            <dd>
+                              <time dateTime={plannedDueDate}>
+                                {calendarLabel(plannedDueDate, true)}
+                              </time>
+                            </dd>
+                          </div>
+                        )}
                         <div>
-                          <dt>Planned due date</dt>
-                          <dd>
-                            <time dateTime={plannedDueDate}>
-                              {calendarLabel(plannedDueDate, true)}
-                            </time>
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>Current due date</dt>
+                          <dt>
+                            {plannedDueDate === order.dueDate ? 'Due date' : 'Current due date'}
+                          </dt>
                           <dd>
                             <time dateTime={order.dueDate}>
                               {calendarLabel(order.dueDate, true)}

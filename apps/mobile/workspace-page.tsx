@@ -37,12 +37,14 @@ import { colors, radius, spacing } from './theme';
 import {
   ArrowClockwise,
   ClipboardText,
+  Clock,
   FunnelSimple,
   Globe,
   PencilSimple,
   Tray,
   SignIn,
   SignOut,
+  WarningCircle,
   X,
 } from './notebook-icons';
 
@@ -405,6 +407,9 @@ export default function WorkspacePage({
       renderItem={({ item: entry }) => {
         if (entry.kind === 'queued') {
           const { item, order } = entry;
+          const blocked = item.state === 'blocked';
+          const StatusIcon = blocked ? WarningCircle : Clock;
+          const statusColor = blocked ? colors.error : colors.muted;
           return (
             <Panel style={styles.queueCard}>
               <View style={styles.metadata}>
@@ -413,9 +418,14 @@ export default function WorkspacePage({
                     {order.reference}
                   </Copy>
                 )}
-                <Copy variant="caption" style={{ color: colors.amber }}>
-                  {item.state === 'blocked' ? copy.needsAttention : copy.awaitingConfirmation}
-                </Copy>
+                <View style={styles.queueStatus}>
+                  <View accessible={false} importantForAccessibility="no-hide-descendants">
+                    <StatusIcon size={16} color={statusColor} />
+                  </View>
+                  <Copy variant="caption" style={[styles.queueStatusText, { color: statusColor }]}>
+                    {blocked ? copy.needsAttention : copy.awaitingConfirmation}
+                  </Copy>
+                </View>
               </View>
               <Copy accessibilityRole="header" variant="record">
                 {order?.title ?? copy.savedInspection}
@@ -425,14 +435,12 @@ export default function WorkspacePage({
                 {copy.photoCount(item.input.photos.length)} · {copy.savedAt}{' '}
                 {new Date(item.createdAt).toLocaleString(dateLocale)}
               </Copy>
-              {item.error &&
-                (item.state === 'blocked' ||
-                  (error !== 'session' && error !== 'syncUnavailable')) && (
-                  <Notice error title={copy.reportError}>
-                    {item.error}
-                  </Notice>
-                )}
-              {item.state === 'blocked' ? (
+              {item.error && (blocked || (error !== 'session' && error !== 'syncUnavailable')) && (
+                <Notice error title={copy.reportError}>
+                  {item.error}
+                </Notice>
+              )}
+              {blocked ? (
                 <Button
                   title={copy.openLatest}
                   variant="outline"
@@ -604,6 +612,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.sm,
   },
+  queueStatus: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, maxWidth: '100%' },
+  queueStatusText: { flexShrink: 1 },
   queueCard: { marginBottom: spacing.md },
   footer: { gap: spacing.md, paddingTop: spacing.section },
   signOut: { alignSelf: 'flex-start' },

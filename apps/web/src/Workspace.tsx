@@ -5,6 +5,8 @@ import { Alert } from './components/ui/alert';
 import { Badge } from './components/ui/badge';
 import SmoothTab from './components/kokonutui/smooth-tab';
 import { ClipboardTextIcon } from '@phosphor-icons/react/dist/csr/ClipboardText';
+import { ClockIcon } from '@phosphor-icons/react/dist/csr/Clock';
+import { WarningCircleIcon } from '@phosphor-icons/react/dist/csr/WarningCircle';
 import { TrayIcon } from '@phosphor-icons/react/dist/csr/Tray';
 import { BuildingsIcon } from '@phosphor-icons/react/dist/csr/Buildings';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
@@ -592,7 +594,12 @@ export default function Workspace({
                     <Card className="outbox-item" key={item.input.mutationId}>
                       <div className="outbox-meta">
                         {order && <span className="reference">{order.reference}</span>}
-                        <span className="eyebrow">
+                        <span className="eyebrow outbox-status" data-state={item.state}>
+                          {item.state === 'blocked' ? (
+                            <WarningCircleIcon size={16} aria-hidden="true" />
+                          ) : (
+                            <ClockIcon size={16} aria-hidden="true" />
+                          )}
                           {item.state === 'blocked' ? copy.blocked : copy.waiting}
                         </span>
                       </div>
@@ -624,7 +631,7 @@ export default function Workspace({
                       <DraftExport orderId={item.orderId} repo={repo} locale={locale} />
                       {item.state === 'blocked' && (
                         <Button
-                          className="quiet"
+                          className="quiet outbox-recover"
                           disabled={busy || !online}
                           onClick={async () => {
                             setBusy(true);

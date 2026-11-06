@@ -524,6 +524,7 @@ export default function Workspace({
                     </Button>
                     <SeriesOverview
                       online={online}
+                      locale={locale}
                       today={today}
                       onCache={async (order) => {
                         await repo.cacheOrder(order);

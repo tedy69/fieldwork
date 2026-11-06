@@ -1,0 +1,46 @@
+appId: ${APP_ID}
+name: Review a blocked report with the warning icon
+---
+- scrollUntilVisible:
+    element: Sync now
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- extendedWaitUntil:
+    visible: 'Outbox \(1\)'
+    timeout: 30000
+- scrollUntilVisible:
+    element: '^Needs attention$'
+    centerElement: true
+- assertVisible: '^Needs attention$'
+- assertVisible: ValveSearchQA
+- assertNotVisible: GateSearchQA
+- scrollUntilVisible:
+    element: Filter reports that need attention
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Filter reports that need attention
+- tapOn:
+    id: outbox-search
+    point: 20%,50%
+- inputText: NoBlockedMatch
+- tapOn: Done editing
+- scrollUntilVisible:
+    element: No matching queued reports
+    centerElement: true
+- assertVisible: No matching queued reports
+- scrollUntilVisible:
+    element: Clear search
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Clear search
+- assertNotVisible: Clear search
+- scrollUntilVisible:
+    element: ValveSearchQA
+    centerElement: true
+- assertVisible: ValveSearchQA

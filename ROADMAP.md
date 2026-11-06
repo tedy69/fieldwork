@@ -18,7 +18,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] English and Indonesian manager dispatch list, planners, single assignment form, and export controls.
 - [x] English and Indonesian manager report review, worker handover, and due-date editing.
 - [x] English and Indonesian web worker inspection forms and saved reports, with localized photo and reading feedback.
-- [x] English and Indonesian report history and printable reports for web workers.
+- [x] English and Indonesian report history and printable reports for web workers, with localized dates and UTC timestamps in print.
 - [x] English and Indonesian week and month planners in the web worker notebook.
 - [x] English and Indonesian site maps with named zoom and recenter icons in the web worker notebook.
 - [x] English and Indonesian saved work finder with offline keyboard navigation and named destinations.

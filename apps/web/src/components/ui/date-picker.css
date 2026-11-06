@@ -40,6 +40,16 @@
   margin-left: -8px;
   color: var(--muted);
 }
+.date-filter-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+.date-filter-value > .ui-icon-button {
+  flex: none;
+}
 .date-filter-summary {
   min-width: 0;
   overflow-wrap: anywhere;

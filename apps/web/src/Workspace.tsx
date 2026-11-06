@@ -28,6 +28,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type SetStateAct
 import {
   awaitsInspection,
   compareOrdersByDueDate,
+  compactWorkReference,
   hasDraftContent,
   isOpenDueBetween,
   isUrgentOpenOrder,
@@ -282,7 +283,7 @@ export default function Workspace({
     const matchesSearch =
       `${order.title} ${order.site.name} ${order.reference} ${order.assignee.name}`
         .toLowerCase()
-        .includes(query);
+        .includes(query) || compactWorkReference(order.reference).toLowerCase().includes(query);
     if (!matchesSearch || (closureOnly && !closureVisits.has(order.id))) return false;
     switch (filter) {
       case 'ALL':

@@ -12,6 +12,7 @@ import {
 import {
   awaitsInspection,
   compareOrdersByDueDate,
+  compactWorkReference,
   hasDraftContent,
   isOpenDueBetween,
   isUrgentOpenOrder,
@@ -206,8 +207,10 @@ export default function WorkspacePage({
       }));
     const through = assignmentFilter === 'next' ? nextSevenDaysEnd(today) : today;
     const orders = state.orders.filter((order) => {
-      if (!`${order.reference} ${order.title} ${order.site.name}`.toLowerCase().includes(query))
-        return false;
+      const matchesSearch =
+        `${order.reference} ${order.title} ${order.site.name}`.toLowerCase().includes(query) ||
+        compactWorkReference(order.reference).toLowerCase().includes(query);
+      if (!matchesSearch) return false;
       switch (assignmentFilter) {
         case null:
           return true;

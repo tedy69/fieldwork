@@ -14,7 +14,7 @@ import {
   DialogHeader,
 } from './components/ui/dialog';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { User, WorkOrder } from '@fieldwork/contracts';
+import { compactWorkReference, type User, type WorkOrder } from '@fieldwork/contracts';
 import { notebookCopy, type Locale } from '@fieldwork/strings';
 import ActionSearchBar, { type CommandItem } from './components/kokonutui/action-search-bar';
 import { workerWorkspaceCopy } from './worker-workspace-copy';
@@ -75,7 +75,7 @@ export default function WorkFinder({
         label: `${order.reference} ${order.title} · ${order.site.name}`,
         group: copy.saved,
         icon: <FileTextIcon />,
-        keywords: [order.assignee.name],
+        keywords: [order.assignee.name, compactWorkReference(order.reference)],
       })),
     ],
     [user.role, orders, locale, copy.saved, workspace, notebook.outbox],

@@ -1,6 +1,7 @@
 import type { Draft, ReportInput, WorkOrder } from '@fieldwork/contracts';
 import {
   LocalReportExportSchema,
+  compactWorkReference,
   reportPhotoError,
   answersMatchTemplate,
   reportReadingError,
@@ -48,9 +49,14 @@ export function searchQueuedReports(
     .filter(
       ({ item, order }) =>
         !query ||
-        [order?.reference, order?.title, order?.site.name, item.input.summary, item.orderId].some(
-          (value) => value?.toLowerCase().includes(query),
-        ),
+        [
+          order?.reference,
+          order ? compactWorkReference(order.reference) : undefined,
+          order?.title,
+          order?.site.name,
+          item.input.summary,
+          item.orderId,
+        ].some((value) => value?.toLowerCase().includes(query)),
     );
 }
 /** Project only the selected local report. Export never acknowledges or changes the queue. */

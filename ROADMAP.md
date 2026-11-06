@@ -89,6 +89,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Worker invitations with one-time expiring links, a paginated manager ledger, revocation, browser password setup, and preserved device notebooks.
 - [x] English and Indonesian manager invitation creation, copying, and revocation.
 - [x] Worker deactivation and reactivation with manager confirmations, session revocation, active assignment choices, version conflicts, and preserved offline reports.
+- [x] English and Indonesian worker account status, access confirmations, and access history.
 - [x] Manager worker-access history with actor/time details, stable pagination, retry/restart, and temporary offline browsing.
 - [x] Manager-assisted worker password recovery with one-hour links, replacement/revocation, browser password confirmation, session revocation, and preserved offline reports.
 

@@ -1,21 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
 import type { User } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
+import { languageTags, type Locale } from '@fieldwork/strings';
+import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
+import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { client, message } from './lib';
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
 import { Alert } from './components/ui/alert';
 import { Badge } from './components/ui/badge';
+import { ActionGroup } from './components';
+import { workerAccessCopy } from './worker-access-copy';
 
 type Page = Awaited<ReturnType<typeof client.workerAccessHistory>>;
 export default function WorkerAccessHistory({
   worker,
   online,
+  locale,
   onClose,
 }: {
   worker: User;
   online: boolean;
+  locale: Locale;
   onClose: () => void;
 }) {
+  const access = workerAccessCopy[locale];
+  const copy = access.historyPanel;
+  const date = new Intl.DateTimeFormat(languageTags[locale], {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
   const [page, setPage] = useState<Page | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -55,8 +69,9 @@ export default function WorkerAccessHistory({
       );
     } catch (error) {
       if (current === generation.current) {
-        setError(message(error));
-        setRestart(error instanceof ApiError && error.code === 'CURSOR');
+        const stale = error instanceof ApiError && error.code === 'CURSOR';
+        setError(locale === 'en' ? message(error) : stale ? copy.cursor : copy.failed);
+        setRestart(stale);
       }
     } finally {
       if (current === generation.current) setBusy(false);
@@ -64,33 +79,38 @@ export default function WorkerAccessHistory({
   }
   return (
     <section
+      lang={locale}
       className="invitation-new-link worker-access-confirmation"
-      aria-label="Worker access history"
+      aria-label={copy.region}
     >
       <div className="invitation-toolbar">
         <h3 id="worker-access-history-title" ref={heading} tabIndex={-1}>
-          Access history: {worker.name}
+          {copy.title(worker.name)}
         </h3>
-        <Button className="quiet" onClick={onClose}>
-          Close history
-        </Button>
+        <ActionGroup>
+          <IconButton
+            label={copy.refresh}
+            className="quiet"
+            disabled={!online || busy}
+            onClick={() => void load()}
+          >
+            <ArrowClockwiseIcon aria-hidden="true" />
+          </IconButton>
+          <IconButton label={copy.close} className="quiet" onClick={onClose}>
+            <XIcon aria-hidden="true" />
+          </IconButton>
+        </ActionGroup>
       </div>
       <p>{worker.email}</p>
-      <p className="muted">
-        Recorded access changes, newest first. Names reflect current account details. Refresh to see
-        newer changes.
-      </p>
-      <Button className="quiet" disabled={!online || busy} onClick={() => void load()}>
-        Refresh access history
-      </Button>
+      <p className="muted">{copy.intro}</p>
       {!online && (
         <Alert role="status" className="banner notice">
-          Loaded history stays visible offline. Reconnect to refresh or load more.
+          {copy.offline}
         </Alert>
       )}
       {busy && (
         <p role="status" className="muted">
-          Loading access history…
+          {copy.loading}
         </p>
       )}
       {error && (
@@ -101,31 +121,26 @@ export default function WorkerAccessHistory({
             disabled={!online || busy}
             onClick={() => void load(restart ? undefined : attemptedCursor.current)}
           >
-            {restart ? 'Restart access history' : 'Retry access history'}
+            {restart ? copy.restart : copy.retry}
           </Button>
         </Alert>
       )}
       {page && (
         <>
           <p className="muted" role="status">
-            {page.data.length} loaded · {page.total} {page.total === 1 ? 'change' : 'changes'}
+            {copy.count(page.data.length, page.total)}
           </p>
-          {page.data.length === 0 && (
-            <p>
-              No access changes recorded for this worker. Account creation and sign-ins are not part
-              of this history.
-            </p>
-          )}
+          {page.data.length === 0 && <p>{copy.empty}</p>}
           <ol className="invitation-list">
             {page.data.map((event) => (
               <li key={event.id}>
                 <div className="invitation-toolbar">
-                  <strong>{event.enabled ? 'Worker reactivated' : 'Worker disabled'}</strong>
-                  <Badge>{event.enabled ? 'Enabled' : 'Disabled'}</Badge>
+                  <strong>{event.enabled ? copy.reactivated : copy.disabled}</strong>
+                  <Badge>{event.enabled ? copy.enabled : access.disabled}</Badge>
                 </div>
-                <p>Changed by {event.actor.name}</p>
+                <p>{access.changedBy(event.actor.name)}</p>
                 <p className="muted">
-                  <time dateTime={event.at}>{new Date(event.at).toLocaleString()}</time>
+                  <time dateTime={event.at}>{date.format(new Date(event.at))}</time>
                 </p>
               </li>
             ))}
@@ -136,7 +151,7 @@ export default function WorkerAccessHistory({
               disabled={!online || busy}
               onClick={() => void load(page.nextCursor!)}
             >
-              Load older access changes
+              {copy.more}
             </Button>
           )}
         </>

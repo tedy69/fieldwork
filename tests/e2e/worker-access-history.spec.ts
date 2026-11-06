@@ -31,10 +31,12 @@ async function login(page: Page) {
   await expect(dialog(page).getByText('Worker accounts refreshed.', { exact: true })).toBeVisible();
 }
 async function open(page: Page, email: string) {
-  await dialog(page)
-    .getByRole('button', { name: `View access history for ${email}`, exact: true })
-    .focus();
-  await page.keyboard.press('Enter');
+  const trigger = dialog(page).getByRole('button', {
+    name: `View access history for ${email}`,
+    exact: true,
+  });
+  await trigger.press('Enter');
+  await expect(history(page).getByText(email, { exact: true })).toBeVisible();
   await expect(history(page).getByRole('heading')).toBeFocused();
 }
 test('manager browses real access history, refreshes newer events and retains loaded rows offline on phone layouts', async ({

@@ -152,6 +152,7 @@ export default function WorkerPasswordReset({
   const changing = busy === 'creating' || busy === 'revoking';
   return (
     <section
+      lang="en"
       className="invitation-new-link worker-access-confirmation"
       aria-label="Worker password recovery"
     >

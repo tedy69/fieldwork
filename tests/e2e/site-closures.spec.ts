@@ -2,6 +2,79 @@ import { expect, test } from '@playwright/test';
 import { createClient } from '@fieldwork/sdk';
 import type { WorkOrder } from '@fieldwork/contracts';
 
+test('manager planners mark days with matching closure visits on a narrow offline screen', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  const base = baseURL ?? 'http://127.0.0.1:4173';
+  const session = await createClient(base).login('manager@fieldwork.local', 'fieldwork-demo');
+  const manager = createClient(base, () => session.token);
+  const site = await manager.createSite('Planner closure QA site', 'Synthetic site address');
+  await manager.updateSiteClosures(site.id, {
+    expectedDates: [],
+    dates: ['2026-10-23', '2026-10-24'],
+  });
+  for (const [name, dueDate] of [
+    ['Open day', '2026-10-22'],
+    ['Closed day', '2026-10-23'],
+  ]) {
+    await manager.createOrder({
+      title: `Planner closure QA ${name}`,
+      instructions: 'Synthetic planner visit.',
+      siteId: site.id,
+      assigneeId: 'worker',
+      templateId: 'routine',
+      dueDate,
+      priority: 'routine',
+    });
+  }
+  await page.clock.setFixedTime(new Date('2026-10-22T12:00:00Z'));
+  await page.goto('/');
+  await page.getByLabel('Email', { exact: true }).fill('manager@fieldwork.local');
+  await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  const search = page.getByLabel('Search work orders');
+  await search.fill('Planner closure QA');
+  const rows = page.locator('.order-row');
+  await expect(rows).toHaveCount(2);
+  await expect(
+    page.getByRole('button', { name: 'Site closure visits', exact: true }),
+  ).toBeVisible();
+  await context.setOffline(true);
+
+  await page.getByRole('button', { name: 'Week planner', exact: true }).press('Enter');
+  const week = page.getByRole('group', { name: 'Days in this week' });
+  const friday = week.getByRole('button', { name: 'Fri, Oct 23 1 work order', exact: true });
+  await expect(friday).toHaveAccessibleDescription('Visits on site closure dates');
+  await expect(friday.locator('svg')).toBeVisible();
+  await expect(week.locator('button[aria-describedby]')).toHaveCount(1);
+  await friday.press('Space');
+  await expect(friday).toBeFocused();
+  await expect(rows).toHaveCount(1);
+  await expect(rows).toContainText('Closed day');
+  await week.screenshot({ path: test.info().outputPath('closure-week-desktop.png') });
+
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.getByRole('button', { name: 'Month planner', exact: true }).press('Enter');
+  const month = page.getByRole('group', { name: 'Days in this month' });
+  const closed = month.getByRole('button', { name: 'Choose Oct 23, 2026: 1 work order' });
+  await expect(closed).toHaveAccessibleDescription('Visits on site closure dates');
+  await expect(closed.locator('svg')).toBeVisible();
+  await expect(month.locator('button[aria-describedby]')).toHaveCount(1);
+  await month.screenshot({ path: test.info().outputPath('closure-month-phone.png') });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await search.fill('Planner closure QA Open day');
+  await expect(month.locator('button[aria-describedby]')).toHaveCount(0);
+  await expect(page.getByText('Visits on site closure dates', { exact: true })).toHaveCount(0);
+  await search.fill('Planner closure QA');
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).press('Enter');
+  const localized = page.getByRole('group', { name: 'Hari dalam bulan ini' });
+  await expect(localized.locator('button[aria-describedby]')).toHaveAccessibleDescription(
+    'Kunjungan saat lokasi tutup',
+  );
+});
+
 test('managers resolve competing closure edits and copy later dates into a recurring batch', async ({
   page,
   context,

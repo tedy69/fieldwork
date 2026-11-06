@@ -245,6 +245,11 @@ export default function Workspace({
         .includes(search.toLowerCase()),
   );
   const period = plannerView === 'month' ? monthDates(plannerAnchor) : weekDates(plannerAnchor);
+  const closedDays = new Set(
+    matching
+      .filter((order) => closureVisits.has(order.id) && period.includes(order.dueDate))
+      .map((order) => order.dueDate),
+  );
   const visible = matching.filter((order) =>
     isInDueRange(
       order.dueDate,
@@ -793,6 +798,7 @@ export default function Workspace({
                     today={today}
                     day={plannerDay}
                     orders={matching}
+                    closedDays={closedDays}
                     onMonth={(date) => {
                       setPlannerAnchor(date);
                       setPlannerDay('');
@@ -806,6 +812,7 @@ export default function Workspace({
                     today={today}
                     day={plannerDay}
                     orders={matching}
+                    closedDays={closedDays}
                     onWeek={(date) => {
                       setPlannerAnchor(date);
                       setPlannerDay('');
@@ -813,6 +820,12 @@ export default function Workspace({
                     onDay={setPlannerDay}
                   />
                 ) : null}
+                {planner && closedDays.size > 0 && (
+                  <p id="planner-closure-description" className="planner-closure-legend">
+                    <CalendarXIcon aria-hidden="true" />
+                    {dispatch.plannerClosure}
+                  </p>
+                )}
                 <div className="list-header" aria-hidden="true">
                   <span>{copy.orderSite}</span>
                   <span>{copy.assignee}</span>

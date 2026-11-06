@@ -2,6 +2,7 @@ import { Button } from './components/ui/button';
 import { IconButton } from './components/ui/icon-button';
 import { CaretLeftIcon } from '@phosphor-icons/react/dist/csr/CaretLeft';
 import { CaretRightIcon } from '@phosphor-icons/react/dist/csr/CaretRight';
+import { CalendarXIcon } from '@phosphor-icons/react/dist/csr/CalendarX';
 import type { WorkOrder } from '@fieldwork/contracts';
 import { languageTags, type Locale } from '@fieldwork/strings';
 import { addDays, calendarLabel, weekDates } from './calendar';
@@ -12,6 +13,7 @@ export default function WeekPlanner({
   today,
   day,
   orders,
+  closedDays,
   locale = 'en',
   onWeek,
   onDay,
@@ -20,6 +22,7 @@ export default function WeekPlanner({
   today: string;
   day: string;
   orders: WorkOrder[];
+  closedDays: ReadonlySet<string>;
   locale?: Locale;
   onWeek: (date: string) => void;
   onDay: (date: string) => void;
@@ -57,6 +60,7 @@ export default function WeekPlanner({
       <div className="week-days" role="group" aria-label={copy.week.days}>
         {dates.map((date) => {
           const count = orders.filter((order) => order.dueDate === date).length;
+          const closed = closedDays.has(date);
           return (
             <Button
               key={date}
@@ -64,9 +68,17 @@ export default function WeekPlanner({
               className={day === date ? 'week-day active' : 'week-day'}
               aria-pressed={day === date}
               aria-current={date === today ? 'date' : undefined}
+              aria-describedby={closed ? 'planner-closure-description' : undefined}
               onClick={() => onDay(date)}
             >
-              <span>{calendarLabel(date, false, dateLocale)}</span>
+              <span>
+                {calendarLabel(date, false, dateLocale)}
+                {closed && (
+                  <span className="closure-visit-icon" aria-hidden="true">
+                    <CalendarXIcon />
+                  </span>
+                )}
+              </span>
               <strong>{count}</strong>
               <small>
                 {copy.workload(count)}

@@ -10,6 +10,8 @@ Managers can select a day, then choose **Assign for selected day**. The existing
 
 The planner works offline with saved records. Browsing does not change reports, drafts, or the outbox. Dates remain calendar dates across time zones and daylight-saving changes. The displayed week stays where you left it across midnight; the Today marker updates, and This week returns to the new current week.
 
+The week and month planners mark days with matching unfinished visits that fall on a site closure. Managers can select a marked day to see which visits need attention. The marker uses the site calendar loaded in the current session and stays visible if the connection drops.
+
 Search and status apply to both List and Week planner. The list's custom date range is preserved while the planner uses its own week/day window. Switching back restores the custom range. Opening an order and returning keeps the planner selection; reloading or signing out resets view/filter selections.
 
 The [monthly planner](month-planner.md) shares those search/status filters and date context. Switching calendar views clears the selected day and uses that date to anchor the destination calendar; List retains its independent custom range.

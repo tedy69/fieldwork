@@ -1,7 +1,6 @@
 import { Button } from './components/ui/button';
 import { IconButton } from './components/ui/icon-button';
 import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
-import { CalendarXIcon } from '@phosphor-icons/react/dist/csr/CalendarX';
 import { Form } from './components/ui/form';
 import { DatePicker } from './components/ui/date-picker';
 import { Label } from './components/ui/label';
@@ -11,6 +10,7 @@ import type { WorkOrder } from '@fieldwork/contracts';
 import { languageTags, type Locale } from '@fieldwork/strings';
 import { client, dateLabel, message } from './lib';
 import { rescheduleCopy } from './reschedule-copy';
+import SiteClosureHint from './SiteClosureHint';
 import './reschedule.css';
 
 export default function RescheduleOrder({
@@ -44,7 +44,7 @@ export default function RescheduleOrder({
   const trigger = useRef<HTMLButtonElement>(null);
   const restoreFocus = useRef(false);
   const formId = useId();
-  const closed = closureDates?.includes(dueDate);
+  const closed = closureDates?.includes(dueDate) ?? false;
   const closureHint = `${formId}-closure`;
   const locked = Boolean(busy || batch?.locked);
 
@@ -154,13 +154,7 @@ export default function RescheduleOrder({
               onValueChange={setDueDate}
             />
           </Label>
-          <p id={closureHint} className="schedule-closure" aria-live="polite">
-            {closed && (
-              <>
-                <CalendarXIcon aria-hidden="true" /> {copy.siteClosed}
-              </>
-            )}
-          </p>
+          <SiteClosureHint id={closureHint} closed={closed} locale={locale} />
           {error && <FieldError>{error}</FieldError>}
           <div className="schedule-actions">
             <Button

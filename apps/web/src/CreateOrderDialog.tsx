@@ -13,6 +13,7 @@ import type { Catalog, WorkOrder } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import type { Locale } from '@fieldwork/strings';
 import { client, message } from './lib';
+import { localDate } from './dates';
 import AssignmentFields from './AssignmentFields';
 import { managerDispatchCopy } from './manager-dispatch-copy';
 export default function CreateOrder({
@@ -31,6 +32,9 @@ export default function CreateOrder({
   const copy = managerDispatchCopy[locale];
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [siteId, setSiteId] = useState(catalog.sites[0]?.id);
+  const [dueDate, setDueDate] = useState(() => initialDueDate ?? localDate());
+  const site = catalog.sites.find((site) => site.id === siteId);
   const dialog = useRef<HTMLDivElement>(null);
   const previousFocus = useRef(document.activeElement);
   const created = useRef(false);
@@ -107,7 +111,10 @@ export default function CreateOrder({
           <AssignmentFields
             catalog={catalog}
             locale={locale}
-            initial={{ dueDate: initialDueDate }}
+            initial={{ dueDate }}
+            siteClosed={site?.closureDates?.includes(dueDate) ?? false}
+            onDateChange={setDueDate}
+            onSiteChange={setSiteId}
           />
           {error && <FieldError>{error}</FieldError>}
           <Button className="primary full" disabled={busy}>

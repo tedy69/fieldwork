@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import type { Catalog, CreateOrder } from '@fieldwork/contracts';
 import type { Locale } from '@fieldwork/strings';
 import { Input } from './components/ui/input';
@@ -10,12 +11,14 @@ import {
 import { Label } from './components/ui/label';
 import { localDate } from './dates';
 import { managerDispatchCopy } from './manager-dispatch-copy';
+import SiteClosureHint from './SiteClosureHint';
 
 export default function AssignmentFields({
   catalog,
   locale = 'en',
   initial,
   chooseMissing = false,
+  siteClosed,
   onDateChange,
   onSiteChange,
 }: {
@@ -23,10 +26,12 @@ export default function AssignmentFields({
   locale?: Locale;
   initial?: Partial<CreateOrder>;
   chooseMissing?: boolean;
+  siteClosed?: boolean;
   onDateChange?: (date: string) => void;
   onSiteChange?: (siteId: string) => void;
 }) {
   const copy = managerDispatchCopy[locale];
+  const closureHint = useId();
   const workers = catalog.users.filter((user) => user.role === 'worker');
   return (
     <>
@@ -84,17 +89,23 @@ export default function AssignmentFields({
             ))}
           </Select>
         </Label>
-        <Label>
-          {copy.due}
-          <DatePicker
-            name="dueDate"
-            calendarLabel={copy.calendar}
-            locale={locale}
-            required
-            defaultValue={initial?.dueDate ?? localDate()}
-            onValueChange={(value) => onDateChange?.(value)}
-          />
-        </Label>
+        <div>
+          <Label>
+            {copy.due}
+            <DatePicker
+              name="dueDate"
+              calendarLabel={copy.calendar}
+              locale={locale}
+              required
+              defaultValue={initial?.dueDate ?? localDate()}
+              aria-describedby={siteClosed ? closureHint : undefined}
+              onValueChange={(value) => onDateChange?.(value)}
+            />
+          </Label>
+          {siteClosed !== undefined && (
+            <SiteClosureHint id={closureHint} closed={siteClosed} locale={locale} />
+          )}
+        </div>
       </div>
       <div className="form-grid">
         <Label>

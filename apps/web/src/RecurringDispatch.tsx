@@ -9,15 +9,18 @@ import {
   recurrenceDatesThrough,
   type Catalog,
   type CreateOrderSeries,
+  type OrderSeriesDetail,
   type OrderSeriesReceipt,
   type Recurrence,
   type RepeatDay,
 } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
+import { languageTags, signInCopy, type Locale } from '@fieldwork/strings';
 import { pendingSeriesFor, PendingDispatchError } from './pending-series';
 import { client, message } from './lib';
 import { localDate } from './dates';
-import { recurrenceLabels, recurrenceSummary, repeatDayLabels } from './recurrence-labels';
+import { frequencyLabels, recurrenceSummary, weekdayLabels } from './recurrence-labels';
+import { recurringDispatchCopy } from './recurring-dispatch-copy';
 import AssignmentFields from './AssignmentFields';
 import RecurrenceExceptions, { SkippedDates } from './RecurrenceExceptions';
 import { Button } from './components/ui/button';
@@ -30,6 +33,7 @@ import {
   NativeSelectOption as Option,
 } from './components/ui/native-select';
 import { Alert } from './components/ui/alert';
+import { Badge } from './components/ui/badge';
 import { FieldError, FieldLegend, FieldSet } from './components/ui/field';
 import {
   Dialog,
@@ -48,34 +52,51 @@ function datesFor(schedule: Recurrence, through?: string) {
     return [];
   }
 }
-function DatePreview({ dates, byDate = false }: { dates: string[]; byDate?: boolean }) {
+function DatePreview({
+  dates,
+  locale,
+  byDate = false,
+  closureDates,
+}: {
+  dates: string[];
+  locale: Locale;
+  byDate?: boolean;
+  closureDates?: string[];
+}) {
+  const copy = recurringDispatchCopy[locale];
+  const closures = new Set(closureDates);
+  const closedCount = dates.filter((date) => closures.has(date)).length;
   return (
-    <section className="recurrence-preview" aria-label="Scheduled dates">
+    <section className="recurrence-preview" aria-label={copy.scheduled}>
       <h3 aria-live="polite">
-        {dates.length ? `${dates.length} scheduled dates` : 'Choose a valid schedule'}
+        {dates.length ? copy.scheduledCount(dates.length) : copy.validSchedule}
       </h3>
+      <p className="recurrence-closure-count" role="status">
+        {closedCount > 0 && copy.closureCount(closedCount)}
+      </p>
       {dates.length ? (
-        <ol tabIndex={0} aria-label="All scheduled dates">
+        <ol tabIndex={0} aria-label={copy.allScheduled}>
           {dates.map((date) => (
             <li key={date}>
-              <time dateTime={date}>
-                {new Date(`${date}T12:00:00Z`).toLocaleDateString(undefined, {
-                  timeZone: 'UTC',
-                  weekday: 'short',
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </time>
+              <div className="recurrence-date">
+                <time dateTime={date}>
+                  {new Date(`${date}T12:00:00Z`).toLocaleDateString(languageTags[locale], {
+                    timeZone: 'UTC',
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </time>
+                {closures.has(date) && (
+                  <Badge className="recurrence-closed-date">{copy.siteClosed}</Badge>
+                )}
+              </div>
             </li>
           ))}
         </ol>
       ) : (
-        <p className="muted">
-          {byDate
-            ? 'Choose an end date that gives 2–52 work orders.'
-            : 'Choose a first date and 2–52 occurrences within a four-digit year.'}
-        </p>
+        <p className="muted">{byDate ? copy.validEnd : copy.validCount}</p>
       )}
     </section>
   );
@@ -85,22 +106,31 @@ export default function RecurringDispatch({
   userId,
   catalog,
   online,
+  locale,
   initialDueDate,
+  batchToReuse,
+  onReuseDismissed,
   onCreated,
 }: {
   userId: string;
   catalog: Catalog;
   online: boolean;
+  locale: Locale;
   initialDueDate?: string;
+  batchToReuse: OrderSeriesDetail | null;
+  onReuseDismissed: () => void;
   onCreated: (receipt: OrderSeriesReceipt) => Promise<void>;
 }) {
+  const copy = recurringDispatchCopy[locale];
   const journal = useMemo(() => pendingSeriesFor(userId), [userId]);
   const [pending, setPending] = useState<CreateOrderSeries | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [open, setOpen] = useState(false);
-  const openRef = useRef(open);
-  openRef.current = open;
+  const [checkedReuse, setCheckedReuse] = useState<OrderSeriesDetail | null>(null);
+  const showing = open || Boolean(batchToReuse);
+  const openRef = useRef(showing);
+  openRef.current = showing;
   useEffect(() => {
     let active = true;
     const load = async () => {
@@ -113,7 +143,10 @@ export default function RecurringDispatch({
       } catch (error) {
         if (active) setLoadError(message(error));
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setCheckedReuse(batchToReuse);
+          setLoading(false);
+        }
       }
     };
     void load();
@@ -125,31 +158,33 @@ export default function RecurringDispatch({
       active = false;
       window.removeEventListener('focus', focused);
     };
-  }, [journal]);
+  }, [journal, batchToReuse]);
   const hasCatalog =
     catalog.sites.length > 0 &&
     catalog.templates.length > 0 &&
     catalog.users.some((user) => user.role === 'worker');
+  function close() {
+    setOpen(false);
+    if (batchToReuse) onReuseDismissed();
+  }
   return (
-    <div className="recurring-dispatch">
+    <div className="recurring-dispatch" lang={locale}>
       <IconButton
-        label={
-          loading
-            ? 'Checking saved dispatch…'
-            : pending
-              ? 'Recover recurring batch'
-              : 'Assign recurring work'
-        }
+        id="assign-recurring-work"
+        label={loading ? copy.checking : pending ? copy.recover : copy.assign}
         showLabel={Boolean(pending)}
         className="quiet"
         disabled={loading || (!pending && (!online || !hasCatalog)) || Boolean(loadError)}
-        onClick={() => setOpen(true)}
+        onClick={(event) => {
+          event.currentTarget.focus();
+          setOpen(true);
+        }}
       >
         <CalendarPlusIcon aria-hidden="true" />
       </IconButton>
       {loadError && (
         <Alert className="error">
-          <p>{loadError}</p>
+          <p>{locale === 'en' ? loadError : copy.storeFailed}</p>
           <Button
             className="quiet"
             onClick={async () => {
@@ -164,18 +199,20 @@ export default function RecurringDispatch({
               }
             }}
           >
-            Reload saved dispatch
+            {copy.reloadSaved}
           </Button>
         </Alert>
       )}
-      {open && (
+      {showing && !loading && !loadError && (!batchToReuse || checkedReuse === batchToReuse) && (
         <RecurringDialog
           userId={userId}
           catalog={catalog}
           online={online}
+          locale={locale}
           pending={pending}
           initialDueDate={initialDueDate}
-          onClose={() => setOpen(false)}
+          batchToReuse={batchToReuse}
+          onClose={close}
           onReserve={async (input) => {
             try {
               await journal.reserve(input);
@@ -189,7 +226,7 @@ export default function RecurringDispatch({
             setPending(await journal.clear(mutationId));
           }}
           onCreated={async (receipt) => {
-            setOpen(false);
+            close();
             await onCreated(receipt);
           }}
         />
@@ -202,8 +239,10 @@ function RecurringDialog({
   userId,
   catalog,
   online,
+  locale,
   initialDueDate,
   pending,
+  batchToReuse,
   onClose,
   onReserve,
   onClear,
@@ -212,24 +251,50 @@ function RecurringDialog({
   userId: string;
   catalog: Catalog;
   online: boolean;
+  locale: Locale;
   initialDueDate?: string;
   pending: CreateOrderSeries | null;
+  batchToReuse: OrderSeriesDetail | null;
   onClose: () => void;
   onReserve: (input: CreateOrderSeries) => Promise<void>;
   onClear: (mutationId: string) => Promise<void>;
   onCreated: (receipt: OrderSeriesReceipt) => Promise<void>;
 }) {
+  const copy = recurringDispatchCopy[locale];
+  const days = weekdayLabels[locale];
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [editable, setEditable] = useState(false);
-  const [dueDate, setDueDate] = useState(pending?.dueDate ?? initialDueDate ?? localDate());
-  const [siteId, setSiteId] = useState(pending?.siteId ?? catalog.sites[0]?.id ?? '');
+  const source = batchToReuse?.orders[0].order;
+  const reusing = Boolean(source && !pending);
+  const initial = source && {
+    title: source.title,
+    instructions: source.instructions,
+    priority: source.priority,
+    siteId: source.site.id,
+    assigneeId: batchToReuse.assignee.id,
+    templateId: source.template.id,
+  };
+  const [dueDate, setDueDate] = useState(
+    pending?.dueDate ?? (source ? '' : (initialDueDate ?? localDate())),
+  );
+  const [siteId, setSiteId] = useState(
+    pending?.siteId ??
+      (initial
+        ? catalog.sites.find((site) => site.id === initial.siteId)?.id
+        : catalog.sites[0]?.id) ??
+      '',
+  );
   const siteClosures = catalog.sites.find((site) => site.id === siteId)?.closureDates;
   const [frequency, setFrequency] = useState<Recurrence['frequency']>(
-    pending?.frequency ?? 'weekly',
+    pending?.frequency ?? batchToReuse?.frequency ?? 'weekly',
   );
-  const [repeatDays, setRepeatDays] = useState<RepeatDay[]>(pending?.repeatDays ?? []);
-  const [occurrences, setOccurrences] = useState(pending?.occurrences ?? 4);
+  const [repeatDays, setRepeatDays] = useState<RepeatDay[]>(
+    pending?.repeatDays ?? batchToReuse?.repeatDays ?? [],
+  );
+  const [occurrences, setOccurrences] = useState(
+    pending?.occurrences ?? batchToReuse?.occurrences ?? 4,
+  );
   const [endMode, setEndMode] = useState<'count' | 'date'>('count');
   const [endDate, setEndDate] = useState('');
   const [skipDates, setSkipDates] = useState(pending?.skipDates ?? []);
@@ -271,12 +336,18 @@ function RecurringDialog({
       completed.current = true;
       await onCreated(receipt);
     } catch (error) {
-      setError(message(error));
-      setEditable(
+      const declined =
         error instanceof ApiError &&
-          error.status === 422 &&
-          ['VALIDATION', 'INVALID_ASSIGNMENT'].includes(error.code),
+        error.status === 422 &&
+        ['VALIDATION', 'INVALID_ASSIGNMENT'].includes(error.code);
+      setError(
+        locale === 'en' && !(error instanceof TypeError)
+          ? message(error)
+          : declined
+            ? copy.validation
+            : copy.sendFailed,
       );
+      setEditable(declined);
       setBusy(false);
     }
   }
@@ -284,7 +355,7 @@ function RecurringDialog({
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     if (skipDate) {
-      setError('Add the skipped date or clear it before assigning.');
+      setError(copy.skipRequired);
       return;
     }
     const parsed = CreateOrderSeriesSchema.safeParse({
@@ -302,7 +373,7 @@ function RecurringDialog({
       ...(frequency === 'selected-days' ? { repeatDays } : {}),
     });
     if (!parsed.success) {
-      setError('Check the assignment fields and choose 2–52 valid dates.');
+      setError(copy.validation);
       return;
     }
     draft.current = parsed.data;
@@ -316,6 +387,7 @@ function RecurringDialog({
       }}
     >
       <DialogContent
+        lang={locale}
         ref={dialog}
         className="dialog recurring-dialog"
         aria-modal="true"
@@ -327,7 +399,12 @@ function RecurringDialog({
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           if (pending) heading.current?.focus();
-          else dialog.current?.querySelector<HTMLInputElement>('input[name="title"]')?.focus();
+          else
+            dialog.current
+              ?.querySelector<HTMLInputElement>(
+                source ? 'input[name="dueDate"]' : 'input[name="title"]',
+              )
+              ?.focus();
         }}
         onCloseAutoFocus={(event) => {
           event.preventDefault();
@@ -337,67 +414,54 @@ function RecurringDialog({
             previousFocus.current.isConnected &&
             !previousFocus.current.matches(':disabled')
               ? previousFocus.current
-              : document.getElementById('main');
+              : completed.current
+                ? (document.getElementById('inspection-title') ?? document.getElementById('main'))
+                : document.getElementById('main');
           target?.focus();
         }}
       >
         <DialogHeader>
           <div>
             <DialogTitle ref={heading} tabIndex={-1}>
-              Assign recurring work
+              {reusing ? copy.reuse : copy.assign}
             </DialogTitle>
-            <DialogDescription>
-              Preview a repeat schedule. Each date becomes an independent work order.
-            </DialogDescription>
+            <DialogDescription>{reusing ? copy.reuseHint : copy.intro}</DialogDescription>
           </div>
           <Button className="quiet" onClick={onClose} disabled={busy}>
-            Close
+            {copy.close}
           </Button>
         </DialogHeader>
-        {(pending?.frequency ?? frequency) === 'monthly' && (
-          <p className="muted">
-            Repeats on the original day of the month. Shorter months use their last day.
-          </p>
-        )}
+        {(pending?.frequency ?? frequency) === 'monthly' && <p className="muted">{copy.monthly}</p>}
         {(pending?.frequency ?? frequency) === 'month-end' && (
-          <p className="muted">Choose the last day of a month for the first visit.</p>
+          <p className="muted">{copy.monthEnd}</p>
         )}
         {(pending?.frequency ?? frequency) === 'month-end-weekday' && (
-          <p className="muted">Choose the last Monday through Friday of a month to start.</p>
+          <p className="muted">{copy.monthEndWeekday}</p>
         )}
         {(pending?.frequency ?? frequency) === 'quarterly' && (
-          <p className="muted">
-            Repeats every three months on the original day. Shorter months use their last day.
-          </p>
+          <p className="muted">{copy.quarterly}</p>
         )}
         {pending ? (
           <>
             <Alert className="recurrence-recovery">
-              <strong>Saved batch awaiting confirmation</strong>
-              <p>
-                This batch may already exist. Retry its saved request to confirm without creating
-                duplicates. Closing keeps it on this device.
-              </p>
+              <strong>{copy.awaiting}</strong>
+              <p>{copy.recoveryHint}</p>
             </Alert>
             <h3>{pending.title}</h3>
             <p className="muted">
-              {recurrenceSummary(pending)} · {pending.occurrences} work orders
+              {recurrenceSummary(pending, locale)} · {copy.orders(pending.occurrences)}
             </p>
-            <DatePreview dates={activeDates} />
-            <SkippedDates dates={pending.skipDates} />
+            <DatePreview dates={activeDates} locale={locale} />
+            <SkippedDates dates={pending.skipDates} locale={locale} />
             {error && <FieldError>{error}</FieldError>}
-            {!online && (
-              <Alert className="notice">
-                Reconnect to confirm this batch. Its saved request is kept.
-              </Alert>
-            )}
+            {!online && <Alert className="notice">{copy.reconnectConfirm}</Alert>}
             <Button
               ref={retry}
               className="primary full"
               disabled={busy || !online}
               onClick={() => void send(pending, false)}
             >
-              {busy ? 'Confirming batch…' : 'Retry saved batch'}
+              {busy ? copy.confirming : copy.retry}
             </Button>
             {editable && (
               <Button
@@ -424,30 +488,36 @@ function RecurringDialog({
                         ?.focus(),
                     );
                   } catch (error) {
-                    setError(message(error));
+                    setError(locale === 'en' ? message(error) : copy.storeFailed);
                   } finally {
                     setBusy(false);
                   }
                 }}
               >
-                Edit declined batch
+                {copy.editDeclined}
               </Button>
             )}
           </>
         ) : (
-          <Form noValidate onSubmit={submit}>
+          <Form
+            noValidate
+            onSubmit={submit}
+            validationCopy={locale === 'id' ? signInCopy.id.web : undefined}
+          >
             <FieldSet disabled={busy}>
               <AssignmentFields
                 catalog={catalog}
-                initial={draft.current ?? { dueDate }}
+                locale={locale}
+                initial={draft.current ?? { ...initial, dueDate }}
+                chooseMissing={Boolean(source)}
                 onDateChange={setDueDate}
                 onSiteChange={setSiteId}
               />
               <div className="form-grid recurring-schedule-fields">
                 <Label>
-                  Repeat
+                  {copy.repeat}
                   <Select
-                    aria-label="Repeat"
+                    aria-label={copy.repeat}
                     value={frequency}
                     onChange={(event) =>
                       setFrequency(event.target.value as Recurrence['frequency'])
@@ -455,28 +525,29 @@ function RecurringDialog({
                   >
                     {RecurrenceFrequencySchema.options.map((option) => (
                       <Option key={option} value={option}>
-                        {recurrenceLabels[option]}
+                        {frequencyLabels[locale][option]}
                       </Option>
                     ))}
                   </Select>
                 </Label>
                 <Label>
-                  Ends
+                  {copy.ends}
                   <Select
                     value={endMode}
                     onChange={(event) =>
                       setEndMode(event.target.value === 'date' ? 'date' : 'count')
                     }
                   >
-                    <Option value="count">After a count</Option>
-                    <Option value="date">On a date</Option>
+                    <Option value="count">{copy.afterCount}</Option>
+                    <Option value="date">{copy.onDate}</Option>
                   </Select>
                 </Label>
                 {endMode === 'date' ? (
                   <Label>
-                    End date
+                    {copy.endDate}
                     <DatePicker
-                      calendarLabel="Choose end date"
+                      calendarLabel={copy.chooseEndDate}
+                      locale={locale}
                       value={endDate}
                       onValueChange={setEndDate}
                       required
@@ -484,7 +555,7 @@ function RecurringDialog({
                   </Label>
                 ) : (
                   <Label>
-                    Occurrences
+                    {copy.occurrences}
                     <Input
                       type="number"
                       required
@@ -499,14 +570,14 @@ function RecurringDialog({
               </div>
               {frequency === 'selected-days' && (
                 <FieldSet>
-                  <FieldLegend>Repeat days</FieldLegend>
+                  <FieldLegend>{copy.days}</FieldLegend>
                   <div className="repeat-day-options">
                     {RepeatDaySchema.options.map((day) => (
                       <Button
                         key={day}
                         type="button"
                         variant="outline"
-                        aria-label={repeatDayLabels[day]}
+                        aria-label={days[day]}
                         aria-pressed={repeatDays.includes(day)}
                         onClick={() =>
                           setRepeatDays((days) =>
@@ -516,15 +587,16 @@ function RecurringDialog({
                           )
                         }
                       >
-                        {repeatDayLabels[day].slice(0, 3)}
+                        {days[day].slice(0, 3)}
                       </Button>
                     ))}
                   </div>
-                  <p className="muted">Include the day of the first visit.</p>
+                  <p className="muted">{copy.dayHint}</p>
                 </FieldSet>
               )}
               <RecurrenceExceptions
                 dates={skipDates}
+                locale={locale}
                 candidate={skipDate}
                 dueDate={dueDate}
                 closureDates={siteClosures}
@@ -534,32 +606,25 @@ function RecurringDialog({
                 onChange={setSkipDates}
               />
             </FieldSet>
-            {frequency === 'weekdays' && (
-              <p className="muted">
-                Choose a Monday–Friday first date. Holidays stay scheduled unless you add them to
-                Skip dates.
-              </p>
-            )}
-            {frequency === 'weekends' && (
-              <p className="muted">Choose Saturday or Sunday for the first visit.</p>
-            )}
-            <DatePreview dates={activeDates} byDate={endMode === 'date'} />
+            {frequency === 'weekdays' && <p className="muted">{copy.weekdays}</p>}
+            {frequency === 'weekends' && <p className="muted">{copy.weekends}</p>}
+            <DatePreview
+              dates={activeDates}
+              locale={locale}
+              byDate={endMode === 'date'}
+              closureDates={siteClosures}
+            />
             {skipDates.some((date) => date <= dueDate) && (
-              <FieldError>
-                Skipped dates must be after the first due date. Remove them or change the first
-                date.
-              </FieldError>
+              <FieldError>{copy.exceptions.beforeStart}</FieldError>
             )}
-            <p className="muted">
-              The due date is the first occurrence. All orders are assigned now.
-            </p>
+            <p className="muted">{copy.timing}</p>
             {error && <FieldError>{error}</FieldError>}
-            {!online && <Alert className="notice">Reconnect before assigning this batch.</Alert>}
+            {!online && <Alert className="notice">{copy.reconnectAssign}</Alert>}
             <Button
               className="primary full"
               disabled={busy || !online || activeDates.length === 0 || Boolean(skipDate)}
             >
-              {busy ? 'Saving batch…' : `Assign ${activeDates.length || ''} work orders`}
+              {busy ? copy.saving : copy.assignOrders(activeDates.length)}
             </Button>
           </Form>
         )}

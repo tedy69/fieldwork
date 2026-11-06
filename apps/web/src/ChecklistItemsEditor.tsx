@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus';
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
 import type { CreateItem } from '@fieldwork/contracts';
+import type { Locale } from '@fieldwork/strings';
 import { Alert } from './components/ui/alert';
 import { Button } from './components/ui/button';
 import { IconButton } from './components/ui/icon-button';
@@ -9,6 +10,7 @@ import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { NativeSelect, NativeSelectOption } from './components/ui/native-select';
 import { Textarea } from './components/ui/textarea';
+import { checklistEditorCopy } from './checklist-editor-copy';
 
 type ResponseChoice = '' | 'text' | 'number';
 type Row = { id: number; label: string; type: ResponseChoice };
@@ -57,19 +59,21 @@ export function checklistItems(data: FormData): CreateItem[] {
 function ResponseSelect({
   name,
   label,
+  copy,
   initial = '',
   disabled,
   onChoice,
 }: {
   name: string;
   label: string;
+  copy: typeof checklistEditorCopy.en;
   initial?: ResponseChoice;
   disabled: boolean;
   onChoice?: (choice: ResponseChoice) => void;
 }) {
   return (
     <Label>
-      Response type
+      {copy.response}
       <NativeSelect
         name={name}
         aria-label={label}
@@ -77,9 +81,9 @@ function ResponseSelect({
         disabled={disabled}
         onChange={(event) => onChoice?.(responseChoice(event.currentTarget.value))}
       >
-        <NativeSelectOption value="">Pass / issue / N/A</NativeSelectOption>
-        <NativeSelectOption value="text">Text response</NativeSelectOption>
-        <NativeSelectOption value="number">Numeric reading</NativeSelectOption>
+        <NativeSelectOption value="">{copy.check}</NativeSelectOption>
+        <NativeSelectOption value="text">{copy.text}</NativeSelectOption>
+        <NativeSelectOption value="number">{copy.number}</NativeSelectOption>
       </NativeSelect>
     </Label>
   );
@@ -89,10 +93,12 @@ function ItemResponse({
   initial,
   index,
   busy,
+  copy,
 }: {
   initial: ResponseChoice;
   index: number;
   busy: boolean;
+  copy: typeof checklistEditorCopy.en;
 }) {
   const [type, setType] = useState(initial);
   const [minimum, setMinimum] = useState<number>();
@@ -101,27 +107,28 @@ function ItemResponse({
     <>
       <ResponseSelect
         name="itemType"
-        label={`Item ${index + 1} response type`}
+        label={copy.itemResponse(index + 1)}
+        copy={copy}
         initial={initial}
         disabled={busy}
         onChoice={setType}
       />
       <div hidden={type !== 'number'}>
         <Label>
-          Unit (optional)
+          {copy.unit}
           <Input
             name={`item-${index}-unit`}
-            aria-label={`Item ${index + 1} unit`}
+            aria-label={copy.itemUnit(index + 1)}
             maxLength={24}
             disabled={disabled}
           />
         </Label>
         <div className="form-grid">
           <Label>
-            Minimum (optional)
+            {copy.minimum}
             <Input
               name={`item-${index}-min`}
-              aria-label={`Item ${index + 1} minimum`}
+              aria-label={copy.itemMinimum(index + 1)}
               type="number"
               step="any"
               disabled={disabled}
@@ -132,10 +139,10 @@ function ItemResponse({
             />
           </Label>
           <Label>
-            Maximum (optional)
+            {copy.maximum}
             <Input
               name={`item-${index}-max`}
-              aria-label={`Item ${index + 1} maximum`}
+              aria-label={copy.itemMaximum(index + 1)}
               type="number"
               step="any"
               min={minimum}
@@ -148,7 +155,8 @@ function ItemResponse({
   );
 }
 
-export default function ChecklistItemsEditor({ busy }: { busy: boolean }) {
+export default function ChecklistItemsEditor({ busy, locale }: { busy: boolean; locale: Locale }) {
+  const copy = checklistEditorCopy[locale];
   const [rows, setRows] = useState<Row[] | null>(null);
   const [error, setError] = useState('');
   const nextId = useRef(0);
@@ -163,18 +171,18 @@ export default function ChecklistItemsEditor({ busy }: { busy: boolean }) {
     return (
       <>
         <Label>
-          Inspection items, one per line
+          {copy.lines}
           <Textarea
             className="resize-none"
             name="items"
             required
             rows={5}
             disabled={busy}
-            placeholder={'Check access route\nCheck equipment condition'}
+            placeholder={copy.placeholder}
             onChange={() => setError('')}
           />
         </Label>
-        <ResponseSelect name="responseType" label="Response type" disabled={busy} />
+        <ResponseSelect name="responseType" label={copy.response} copy={copy} disabled={busy} />
         <Button
           type="button"
           variant="outline"
@@ -185,7 +193,7 @@ export default function ChecklistItemsEditor({ busy }: { busy: boolean }) {
             const data = new FormData(form);
             const labels = bulkLabels(data);
             if (labels.length > itemLimit) {
-              setError('Use up to 50 items. Remove extra lines before setting individual types.');
+              setError(copy.maxItems);
               form.querySelector<HTMLTextAreaElement>('[name="items"]')?.focus();
               return;
             }
@@ -199,7 +207,7 @@ export default function ChecklistItemsEditor({ busy }: { busy: boolean }) {
             setRows(initial);
           }}
         >
-          Set types per item
+          {copy.perItem}
         </Button>
         {error && <Alert className="error">{error}</Alert>}
       </>
@@ -209,13 +217,13 @@ export default function ChecklistItemsEditor({ busy }: { busy: boolean }) {
     <div className="checklist-item-editor">
       {rows.map((row, index) => (
         <fieldset className="checklist-item-fields" key={row.id}>
-          <legend>Item {index + 1}</legend>
+          <legend>{copy.item(index + 1)}</legend>
           <div className="checklist-item-label">
             <Label>
-              Question
+              {copy.question}
               <Input
                 name="itemLabel"
-                aria-label={`Item ${index + 1} question`}
+                aria-label={copy.itemQuestion(index + 1)}
                 required
                 minLength={2}
                 maxLength={250}
@@ -228,7 +236,7 @@ export default function ChecklistItemsEditor({ busy }: { busy: boolean }) {
               />
             </Label>
             <IconButton
-              label={`Remove item ${index + 1}`}
+              label={copy.removeItem(index + 1)}
               variant="ghost"
               disabled={busy || rows.length === 1}
               onClick={() => {
@@ -239,15 +247,15 @@ export default function ChecklistItemsEditor({ busy }: { busy: boolean }) {
               <TrashIcon aria-hidden="true" />
             </IconButton>
           </div>
-          <ItemResponse initial={row.type} index={index} busy={busy} />
+          <ItemResponse initial={row.type} index={index} busy={busy} copy={copy} />
           <Label className="item-photo-option">
             <Input
               type="checkbox"
               name={`item-${index}-photo`}
-              aria-label={`Require photo for item ${index + 1}`}
+              aria-label={copy.requireItemPhoto(index + 1)}
               disabled={busy}
             />
-            Require a photo
+            {copy.requirePhoto}
           </Label>
         </fieldset>
       ))}
@@ -261,7 +269,7 @@ export default function ChecklistItemsEditor({ busy }: { busy: boolean }) {
           setRows([...rows, row]);
         }}
       >
-        <PlusIcon aria-hidden="true" /> Add item
+        <PlusIcon aria-hidden="true" /> {copy.addItem}
       </Button>
     </div>
   );

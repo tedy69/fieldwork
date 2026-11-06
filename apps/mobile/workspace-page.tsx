@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type RefObject } from 'react';
 import {
+  AccessibilityInfo,
   AppState,
   FlatList,
   Keyboard,
@@ -11,6 +12,7 @@ import {
 import {
   compareOrdersByDueDate,
   isOpenDueBetween,
+  isUrgentOpenOrder,
   nextSevenDaysEnd,
   isOverdue,
   localDate,
@@ -37,14 +39,15 @@ import {
   Tray,
   SignIn,
   SignOut,
+  X,
 } from './notebook-icons';
 
 type QueueItem = State['outbox'][number];
 type Entry = { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: QueueItem };
 const dateFilters = ['overdue', 'today', 'next'] as const;
 type DateFilter = (typeof dateFilters)[number];
-export type AssignmentFilter = WorkOrder['status'] | DateFilter | null;
-const filters: AssignmentFilter[] = [null, ...dateFilters, ...StatusSchema.options];
+export type AssignmentFilter = WorkOrder['status'] | DateFilter | 'urgent' | null;
+const filters: AssignmentFilter[] = [null, ...dateFilters, 'urgent', ...StatusSchema.options];
 
 export type NotebookProblem =
   'session' | 'syncUnavailable' | 'notebookReadFailed' | 'recoveryUnavailable' | 'recoveryFailed';
@@ -53,10 +56,14 @@ export function NotebookNotice({
   error,
   locale,
   onSignInAgain,
+  onRetry,
+  retrying,
 }: {
   error: NotebookProblem;
   locale: Locale;
   onSignInAgain: () => void;
+  onRetry: () => void;
+  retrying: boolean;
 }) {
   const copy = notebookCopy[locale];
   return error === 'session' ? (
@@ -66,7 +73,17 @@ export function NotebookNotice({
     </Notice>
   ) : (
     <Notice error title={copy.syncError}>
-      {copy[error]}
+      <Copy muted>{copy[error]}</Copy>
+      {error === 'syncUnavailable' && (
+        <Button
+          title={retrying ? copy.syncing : copy.retrySync}
+          icon={ArrowClockwise}
+          variant="outline"
+          style={styles.noticeAction}
+          disabled={retrying}
+          onPress={onRetry}
+        />
+      )}
     </Notice>
   );
 }
@@ -136,6 +153,7 @@ export default function WorkspacePage({
     overdue: copy.overdue,
     today: copy.dueToday,
     next: copy.nextSevenDays,
+    urgent: copy.urgentWork,
     ...copy.status,
   };
   const filterLabel = (filter: AssignmentFilter) =>
@@ -148,9 +166,11 @@ export default function WorkspacePage({
       const matches =
         assignmentFilter === 'overdue'
           ? isOverdue(order, today)
-          : assignmentFilter === 'today' || assignmentFilter === 'next'
-            ? isOpenDueBetween(order, today, through)
-            : !assignmentFilter || order.status === assignmentFilter;
+          : assignmentFilter === 'urgent'
+            ? isUrgentOpenOrder(order)
+            : assignmentFilter === 'today' || assignmentFilter === 'next'
+              ? isOpenDueBetween(order, today, through)
+              : !assignmentFilter || order.status === assignmentFilter;
       return (
         matches &&
         `${order.reference} ${order.title} ${order.site.name}`.toLowerCase().includes(query)
@@ -226,11 +246,19 @@ export default function WorkspacePage({
               onPress={() => onViewChange('outbox')}
             />
           </View>
-          {error && <NotebookNotice error={error} locale={locale} onSignInAgain={onSignInAgain} />}
+          {error && (
+            <NotebookNotice
+              error={error}
+              locale={locale}
+              onSignInAgain={onSignInAgain}
+              onRetry={onSync}
+              retrying={busy}
+            />
+          )}
           {view === 'assignments' && (
             <View style={styles.searchTools}>
               <View style={styles.searchRow}>
-                <View style={styles.searchField}>
+                <View style={styles.flexItem}>
                   <Field
                     label={copy.search}
                     placeholder={copy.searchHint}
@@ -239,8 +267,18 @@ export default function WorkspacePage({
                     onChangeText={onSearchChange}
                     autoCapitalize="none"
                     autoCorrect={false}
-                    clearButtonMode="while-editing"
                     testID="assignment-search"
+                    trailingAction={
+                      search ? (
+                        <Button
+                          title={copy.clearSearch}
+                          icon={X}
+                          iconOnly
+                          variant="ghost"
+                          onPress={() => onSearchChange('')}
+                        />
+                      ) : undefined
+                    }
                   />
                 </View>
                 <Button
@@ -271,9 +309,26 @@ export default function WorkspacePage({
                 </View>
               )}
               {assignmentFilter && (
-                <Copy variant="caption" muted accessibilityLiveRegion="polite">
-                  {copy.filteredCount(filterLabel(assignmentFilter), entries.length)}
-                </Copy>
+                <View style={styles.filterSummary}>
+                  <Copy
+                    variant="caption"
+                    muted
+                    accessibilityLiveRegion="polite"
+                    style={styles.flexItem}
+                  >
+                    {copy.filteredCount(filterLabel(assignmentFilter), entries.length)}
+                  </Copy>
+                  <Button
+                    title={copy.clearAssignmentFilter}
+                    icon={X}
+                    iconOnly
+                    variant="ghost"
+                    onPress={() => {
+                      onAssignmentFilterChange(null);
+                      AccessibilityInfo.announceForAccessibility(copy.assignmentFilterCleared);
+                    }}
+                  />
+                </View>
               )}
             </View>
           )}
@@ -449,9 +504,11 @@ const styles = StyleSheet.create({
   },
   tabsLarge: { flexDirection: 'column', flexWrap: 'nowrap' },
   tab: { flexGrow: 1, flexBasis: 120 },
+  noticeAction: { alignSelf: 'flex-start' },
   searchTools: { gap: spacing.sm },
   searchRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
-  searchField: { flex: 1, minWidth: 0 },
+  flexItem: { flex: 1, minWidth: 0 },
+  filterSummary: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   statusChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   statusChoice: { maxWidth: '100%' },
   pendingAction: { backgroundColor: colors.raised, justifyContent: 'flex-start' },

@@ -4,18 +4,23 @@ import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimpl
 import { FieldError } from './components/ui/field';
 import { useState } from 'react';
 import type { WorkOrder } from '@fieldwork/contracts';
+import type { Locale } from '@fieldwork/strings';
 import { localDate } from './dates';
 import { reportCsv } from './reportCsv';
 import { downloadCsv, formatCsv } from './csv';
 import { ActionGroup } from './components';
+import { managerDispatchCopy } from './manager-dispatch-copy';
 
 export default function WorkspaceExports({
   orders,
+  locale,
   onNotice,
 }: {
   orders: WorkOrder[];
+  locale: Locale;
   onNotice: (notice: string) => void;
 }) {
+  const copy = managerDispatchCopy[locale];
   const [error, setError] = useState('');
   const reportCount = orders.filter((order) => order.report).length;
   function download(kind: 'schedule' | 'reports') {
@@ -36,36 +41,34 @@ export default function WorkspaceExports({
           ]),
         ]);
         downloadCsv(`fieldwork-schedule-${localDate()}.csv`, csv);
-        onNotice(
-          `CSV prepared for ${orders.length} ${orders.length === 1 ? 'work order' : 'work orders'}.`,
-        );
+        onNotice(copy.schedulePrepared(orders.length));
       } else {
         downloadCsv(`fieldwork-reports-${localDate()}.csv`, reportCsv(orders));
-        onNotice(`CSV prepared for ${reportCount} ${reportCount === 1 ? 'report' : 'reports'}.`);
+        onNotice(copy.reportsPrepared(reportCount));
       }
     } catch {
-      setError('Could not create the CSV. Narrow the list and try again.');
+      setError(copy.exportFailed);
     }
   }
   return (
-    <section className="workspace-exports" aria-label="CSV exports">
-      <p className="export-note muted">Export this view</p>
+    <section className="workspace-exports" aria-label={copy.exports}>
+      <p className="export-note muted">{copy.exportView}</p>
       <ActionGroup>
         <Button
           className="quiet"
-          aria-label={`Export work orders (${orders.length})`}
+          aria-label={copy.exportSchedule(orders.length)}
           onClick={() => download('schedule')}
           disabled={orders.length === 0}
         >
-          <CalendarBlankIcon aria-hidden="true" /> Schedule ({orders.length})
+          <CalendarBlankIcon aria-hidden="true" /> {copy.schedule} ({orders.length})
         </Button>
         <Button
           className="quiet"
-          aria-label={`Export reports (${reportCount})`}
+          aria-label={copy.exportReports(reportCount)}
           onClick={() => download('reports')}
           disabled={reportCount === 0}
         >
-          <DownloadSimpleIcon aria-hidden="true" /> Reports ({reportCount})
+          <DownloadSimpleIcon aria-hidden="true" /> {copy.reports} ({reportCount})
         </Button>
       </ActionGroup>
       {error && <FieldError>{error}</FieldError>}

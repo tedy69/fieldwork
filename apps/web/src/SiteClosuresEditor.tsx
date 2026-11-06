@@ -1,6 +1,8 @@
 import { useId, useRef, useState, type FormEvent } from 'react';
 import { SkippedDatesSchema, type CatalogSite } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
+import type { Locale } from '@fieldwork/strings';
+import { CalendarXIcon } from '@phosphor-icons/react/dist/csr/CalendarX';
 import { Button } from './components/ui/button';
 import { FieldError } from './components/ui/field';
 import { Form } from './components/ui/form';
@@ -8,16 +10,20 @@ import { Label } from './components/ui/label';
 import { Textarea } from './components/ui/textarea';
 import { ActionGroup } from './components';
 import { client, message } from './lib';
+import { managerSitesCopy } from './manager-sites-copy';
 
 export default function SiteClosuresEditor({
   site,
   online,
+  locale,
   onUpdated,
 }: {
   site: CatalogSite;
   online: boolean;
+  locale: Locale;
   onUpdated: (site: CatalogSite) => void;
 }) {
+  const copy = managerSitesCopy[locale].closures;
   const [expected, setExpected] = useState<string[] | null>(null);
   const [proposal, setProposal] = useState('');
   const [busy, setBusy] = useState(false);
@@ -42,7 +48,7 @@ export default function SiteClosuresEditor({
       .filter(Boolean);
     const parsed = SkippedDatesSchema.safeParse(dates);
     if (!parsed.success) {
-      setError('Enter up to 52 distinct dates in YYYY-MM-DD format, one per line.');
+      setError(copy.invalid);
       input.current?.focus();
       return;
     }
@@ -55,8 +61,9 @@ export default function SiteClosuresEditor({
       setSaved(true);
       close();
     } catch (error) {
-      setConflict(error instanceof ApiError && error.code === 'CLOSURE_CONFLICT');
-      setError(message(error));
+      const changed = error instanceof ApiError && error.code === 'CLOSURE_CONFLICT';
+      setConflict(changed);
+      setError(locale === 'en' ? message(error) : changed ? copy.conflict : copy.saveFailed);
     } finally {
       setBusy(false);
     }
@@ -71,18 +78,18 @@ export default function SiteClosuresEditor({
       setConflict(false);
       requestAnimationFrame(() => input.current?.focus());
     } catch (error) {
-      setError(message(error));
+      setError(locale === 'en' ? message(error) : copy.reloadFailed);
     } finally {
       setBusy(false);
     }
   }
   return (
-    <section className="site-closure-editor" aria-label={`Closure dates for ${site.name}`}>
+    <section className="site-closure-editor" aria-label={copy.region(site.name)}>
       <Button
         ref={trigger}
         type="button"
         className="quiet"
-        aria-label={`Edit closure dates for ${site.name}`}
+        aria-label={copy.edit(site.name)}
         aria-expanded={expected !== null}
         aria-controls={formId}
         disabled={!online || busy}
@@ -95,13 +102,14 @@ export default function SiteClosuresEditor({
           requestAnimationFrame(() => input.current?.focus());
         }}
       >
-        Closure dates{site.closureDates?.length ? ` (${site.closureDates.length})` : ''}
+        <CalendarXIcon aria-hidden="true" /> {copy.label}
+        {site.closureDates?.length ? ` (${site.closureDates.length})` : ''}
       </Button>
-      {saved && <p role="status">Closure dates saved.</p>}
+      {saved && <p role="status">{copy.saved}</p>}
       {expected && (
         <Form
           id={formId}
-          aria-label={`Edit closure dates for ${site.name}`}
+          aria-label={copy.edit(site.name)}
           data-site-closure-form
           onSubmit={(event) => void save(event)}
           onKeyDown={(event) => {
@@ -112,7 +120,7 @@ export default function SiteClosuresEditor({
           }}
         >
           <Label>
-            Closure dates, one per line
+            {copy.lines}
             <Textarea
               ref={input}
               name="closureDates"
@@ -128,11 +136,9 @@ export default function SiteClosuresEditor({
               aria-describedby={error ? `${formId}-error` : undefined}
             />
           </Label>
-          <p className="muted">Use YYYY-MM-DD. Save an empty list to clear the calendar.</p>
-          {proposal !== expected.join('\n') && (
-            <p className="muted">Saved dates: {expected.length ? expected.join(', ') : 'None'}</p>
-          )}
-          {!online && <p role="status">Reconnect to save closure dates.</p>}
+          <p className="muted">{copy.hint}</p>
+          {proposal !== expected.join('\n') && <p className="muted">{copy.current(expected)}</p>}
+          {!online && <p role="status">{copy.offline}</p>}
           {error && <FieldError id={`${formId}-error`}>{error}</FieldError>}
           <ActionGroup>
             {conflict && (
@@ -142,14 +148,14 @@ export default function SiteClosuresEditor({
                 disabled={!online || busy}
                 onClick={() => void reload()}
               >
-                Load saved dates
+                {copy.reload}
               </Button>
             )}
             <Button className="primary" disabled={!online || busy || conflict}>
-              {busy ? 'Working…' : 'Save closure dates'}
+              {busy ? copy.saving : copy.save}
             </Button>
             <Button type="button" className="quiet" disabled={busy} onClick={close}>
-              Cancel
+              {copy.cancel}
             </Button>
           </ActionGroup>
         </Form>

@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { accountLinkCopy, languageNames, signInCopy, type Locale } from '@fieldwork/strings';
 import { GlobeIcon } from '@phosphor-icons/react/dist/csr/Globe';
 import { Button } from './components/ui/button';
@@ -30,12 +30,6 @@ export default function AuthLayout({
   locale?: Locale;
 }) {
   const copy = signInCopy[locale].web;
-  useEffect(() => {
-    document.documentElement.lang = locale;
-    return () => {
-      document.documentElement.lang = 'en';
-    };
-  }, [locale]);
   return (
     <div className="auth-shell">
       <header className="auth-header">

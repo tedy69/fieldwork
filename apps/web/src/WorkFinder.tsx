@@ -18,6 +18,7 @@ import type { User, WorkOrder } from '@fieldwork/contracts';
 import { notebookCopy, type Locale } from '@fieldwork/strings';
 import ActionSearchBar, { type CommandItem } from './components/kokonutui/action-search-bar';
 import { workerWorkspaceCopy } from './worker-workspace-copy';
+import { managerDispatchCopy } from './manager-dispatch-copy';
 import { workerFinderCopy } from './worker-finder-copy';
 import './kokonut.css';
 
@@ -32,7 +33,7 @@ export default function WorkFinder({
   orders: WorkOrder[];
   locale?: Locale;
   onNavigate: (view: 'orders' | 'outbox' | 'resources') => void;
-  onOrder: (id: string) => void;
+  onOrder: (id: string, origin: HTMLElement | null) => void;
 }) {
   const copy = workerFinderCopy[locale];
   const workspace = workerWorkspaceCopy[locale];
@@ -62,10 +63,10 @@ export default function WorkFinder({
         ? [
             {
               id: 'resources',
-              label: 'Sites & checklists',
+              label: managerDispatchCopy[locale].resources,
               group: workspace.workspace,
               icon: <BuildingsIcon />,
-              keywords: ['catalog', 'templates'],
+              keywords: locale === 'id' ? ['katalog', 'templat'] : ['catalog', 'templates'],
             },
           ]
         : []),
@@ -80,11 +81,11 @@ export default function WorkFinder({
     [user.role, orders, locale, copy.saved, workspace, notebook.outbox],
   );
 
-  function show() {
+  function show(trigger?: HTMLButtonElement) {
     if (document.querySelector('dialog:modal, [data-slot="dialog-content"][data-state="open"]'))
       return;
     previousFocus.current =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      trigger ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     navigated.current = false;
     setOpen(true);
   }
@@ -117,7 +118,7 @@ export default function WorkFinder({
 
   function select(item: CommandItem) {
     navigated.current = true;
-    if (item.id.startsWith('order:')) onOrder(item.id.slice(6));
+    if (item.id.startsWith('order:')) onOrder(item.id.slice(6), previousFocus.current);
     else if (item.id === 'orders' || item.id === 'outbox' || item.id === 'resources')
       onNavigate(item.id);
   }
@@ -131,7 +132,7 @@ export default function WorkFinder({
           aria-label={copy.open}
           lang={locale}
           shortcut="mod+k"
-          onClick={show}
+          onClick={(event) => show(event.currentTarget)}
           aria-keyshortcuts="Meta+K Control+K"
         >
           <MagnifyingGlassIcon aria-hidden="true" />
@@ -151,7 +152,7 @@ export default function WorkFinder({
         onCloseAutoFocus={(event) => {
           event.preventDefault();
           const target = navigated.current
-            ? document.getElementById('main')
+            ? (document.getElementById('inspection-title') ?? document.getElementById('main'))
             : previousFocus.current;
           target?.focus();
         }}

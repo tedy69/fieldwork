@@ -8,7 +8,17 @@
   font-size: 19px;
 }
 .site-coordinates {
+  display: flex;
+  align-items: center;
+  gap: var(--space-control);
+}
+.site-coordinates p {
+  min-width: 0;
+  margin: 0;
   overflow-wrap: anywhere;
+}
+.site-coordinates .ui-icon-button {
+  flex-shrink: 0;
 }
 .site-map-view {
   margin-top: 20px;

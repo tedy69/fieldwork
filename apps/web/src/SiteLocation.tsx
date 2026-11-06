@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Site } from '@fieldwork/contracts';
-import type { Locale } from '@fieldwork/strings';
+import { inspectionCopy, type Locale } from '@fieldwork/strings';
+import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check';
+import { CopyIcon } from '@phosphor-icons/react/dist/csr/Copy';
 import { useMapSettings } from './MapSettings';
 import SiteMap from './SiteMap';
 import { Card } from './components/ui/card';
 import { Alert } from './components/ui/alert';
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
 import { workerMapCopy } from './worker-map-copy';
 import './site-location.css';
 
@@ -21,8 +24,11 @@ export default function SiteLocation({
   locale?: Locale;
 }) {
   const copy = workerMapCopy[locale];
+  const inspection = inspectionCopy[locale];
   const { provider, loading, error, ensure, reload } = useMapSettings();
   const [active, setActive] = useState(false);
+  const [clipboard, setClipboard] = useState<'copied' | 'failed'>();
+  const coordinates = site.coordinates;
   const launcher = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (site.coordinates && online) ensure();
@@ -30,13 +36,40 @@ export default function SiteLocation({
   useEffect(() => {
     if (!online) setActive(false);
   }, [online]);
-  if (!site.coordinates) return null;
-  const covered = Math.abs(site.coordinates.latitude) <= 85.05112878;
+  if (!coordinates) return null;
+  const { latitude, longitude } = coordinates;
+  const covered = Math.abs(latitude) <= 85.05112878;
+  async function copyCoordinates() {
+    try {
+      await navigator.clipboard.writeText(`${latitude}, ${longitude}`);
+      setClipboard('copied');
+    } catch {
+      setClipboard('failed');
+    }
+  }
   return (
     <Card className="site-location" lang={locale}>
       <h2>{copy.location}</h2>
-      <p className="site-coordinates">
-        {copy.latitude} {site.coordinates.latitude} · {copy.longitude} {site.coordinates.longitude}
+      <div className="site-coordinates">
+        <p>{inspection.coordinates(latitude, longitude)}</p>
+        <IconButton
+          label={inspection.copyCoordinates}
+          tooltip={
+            clipboard === 'copied' ? inspection.coordinatesCopied : inspection.copyCoordinates
+          }
+          variant="ghost"
+          onClick={() => void copyCoordinates()}
+        >
+          {clipboard === 'copied' ? (
+            <CheckIcon aria-hidden="true" />
+          ) : (
+            <CopyIcon aria-hidden="true" />
+          )}
+        </IconButton>
+      </div>
+      <p role="status" className={clipboard === 'failed' ? 'muted' : 'sr-only'}>
+        {clipboard === 'copied' && inspection.coordinatesCopied}
+        {clipboard === 'failed' && inspection.coordinatesCopyFailed}
       </p>
       {!covered && <p className="muted">{copy.outside}</p>}
       {!online && (
@@ -83,7 +116,7 @@ export default function SiteLocation({
               </Button>
               {online && (
                 <SiteMap
-                  coordinates={site.coordinates}
+                  coordinates={coordinates}
                   provider={provider}
                   name={site.name}
                   locale={locale}

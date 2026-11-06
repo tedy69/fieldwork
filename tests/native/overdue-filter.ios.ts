@@ -50,6 +50,7 @@ try {
     LATE_ID: `Buka ${late.reference}: ${late.title}`,
     TODAY: `Open ${today.reference}: ${today.title}`,
     EDGE: `Open ${edge.reference}: ${edge.title}`,
+    FUTURE_ID: `Buka ${future.reference}: ${future.title}`,
   });
 } finally {
   await setAvailable(true);

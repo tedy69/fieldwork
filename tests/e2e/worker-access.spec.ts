@@ -11,10 +11,10 @@ async function managerClient() {
   const session = await createClient(baseURL).login('manager@fieldwork.local', 'fieldwork-demo');
   return createClient(baseURL, () => session.token);
 }
-async function workerFixture() {
+async function workerFixture(name = 'AAA Synthetic access worker QA') {
   const manager = await managerClient();
   const email = `access-${crypto.randomUUID()}@example.com`;
-  const invite = await manager.createInvitation({ name: 'AAA Synthetic access worker QA', email });
+  const invite = await manager.createInvitation({ name, email });
   const { user } = await createClient(baseURL).acceptInvitation(invite.token, password);
   return { manager, user };
 }
@@ -57,6 +57,68 @@ async function saved(page: Page, id: string) {
     `fieldwork:v1:${id}`,
   );
 }
+test('manager confirms worker access changes in Indonesian at 320px', async ({ page, context }) => {
+  const { manager, user } = await workerFixture('AAA Petugas akses Indonesia QA');
+  await page.setViewportSize({ width: 320, height: 840 });
+  await login(page);
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+  await page.getByRole('button', { name: 'Lokasi dan daftar periksa', exact: true }).click();
+  const trigger = page.getByRole('button', { name: 'Akun petugas', exact: true });
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  const accounts = page.getByRole('dialog', { name: 'Akun petugas', exact: true });
+  await expect(accounts).toHaveAttribute('lang', 'id');
+  const heading = accounts.getByRole('heading', { name: 'Akun petugas', exact: true });
+  await expect(heading).toBeFocused();
+  const worker = accounts.getByRole('listitem').filter({ hasText: user.email });
+  await expect(worker.getByText('Aktif', { exact: true })).toBeVisible();
+  for (const name of [`Lihat riwayat akses ${user.email}`, `Pulihkan kata sandi ${user.email}`]) {
+    await expect(
+      worker.getByRole('button', { name, exact: true }).locator('svg[aria-hidden=true]'),
+    ).toBeVisible();
+  }
+  await worker.screenshot({ path: test.info().outputPath('worker-account-row-phone.png') });
+  await worker.getByRole('button', { name: `Nonaktifkan ${user.email}`, exact: true }).click();
+  const confirmation = accounts.getByRole('region', { name: 'Konfirmasi akses petugas' });
+  await expect(confirmation.getByRole('heading')).toBeFocused();
+  const disable = confirmation.getByRole('button', { name: 'Ya, nonaktifkan', exact: true });
+  await context.setOffline(true);
+  await expect(disable).toBeDisabled();
+  await expect(worker.getByText('Aktif', { exact: true })).toBeVisible();
+  expect(await accounts.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+    true,
+  );
+  await confirmation.screenshot({ path: test.info().outputPath('worker-access-phone.png') });
+  await context.setOffline(false);
+  await disable.click();
+  await expect(worker.getByText('Nonaktif', { exact: true })).toBeVisible();
+  await expect(heading).toBeFocused();
+  let saved = (await manager.workers({ limit: 50 })).data.find(
+    (entry) => entry.user.id === user.id,
+  );
+  expect(saved).toMatchObject({ enabled: false, version: 1 });
+  await worker.getByRole('button', { name: `Aktifkan kembali ${user.email}`, exact: true }).click();
+  await confirmation.getByRole('button', { name: 'Ya, aktifkan', exact: true }).click();
+  await expect(worker.getByText('Aktif', { exact: true })).toBeVisible();
+  saved = (await manager.workers({ limit: 50 })).data.find((entry) => entry.user.id === user.id);
+  expect(saved).toMatchObject({ enabled: true, version: 2 });
+  expect((await createClient(baseURL).login(user.email, password)).user.id).toBe(user.id);
+  await worker
+    .getByRole('button', { name: `Lihat riwayat akses ${user.email}`, exact: true })
+    .click();
+  const history = accounts.getByRole('region', { name: 'Riwayat akses petugas', exact: true });
+  await expect(history.getByText('Petugas diaktifkan kembali', { exact: true })).toBeVisible();
+  await expect(history.getByText('Petugas dinonaktifkan', { exact: true })).toBeVisible();
+  await context.setOffline(true);
+  await expect(history.getByRole('button', { name: 'Muat ulang riwayat akses' })).toBeDisabled();
+  await expect(history.getByRole('listitem')).toHaveCount(2);
+  await context.setOffline(false);
+  await history.getByRole('button', { name: 'Tutup riwayat', exact: true }).click();
+  await expect(heading).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(trigger).toBeFocused();
+});
+
 test('manager confirms access changes with keyboard, refreshes assignment choices and preserves the notebook style on phones', async ({
   page,
   context,

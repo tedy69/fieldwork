@@ -14,7 +14,8 @@ import {
   type Site,
   type WorkerAccount,
 } from '@fieldwork/contracts';
-import { createClient } from '@fieldwork/sdk';
+import { ApiError, createClient } from '@fieldwork/sdk';
+import { inspectionCopy, signInCopy, type Locale } from '@fieldwork/strings';
 import { parseCoordinateInputs } from './coordinate-input';
 import SiteLocation from './SiteLocation';
 import SiteCoordinatesEditor from './SiteCoordinatesEditor';
@@ -23,9 +24,14 @@ import WorkerInvitations from './WorkerInvitations';
 import WorkerAccounts from './WorkerAccounts';
 import { PageHeading, PanelHeader } from './components';
 import ChecklistItemsEditor, { checklistItems } from './ChecklistItemsEditor';
+import { managerSitesCopy } from './manager-sites-copy';
+import { managerDispatchCopy } from './manager-dispatch-copy';
+import { checklistEditorCopy } from './checklist-editor-copy';
+import { workerInvitationsCopy } from './worker-invitations-copy';
 const client = createClient();
 export default function Resources({
   catalog,
+  locale,
   refresh,
   online,
   onSiteUpdated,
@@ -34,6 +40,7 @@ export default function Resources({
   onWorkerUpdated,
 }: {
   catalog: Catalog;
+  locale: Locale;
   refresh: () => Promise<void>;
   online: boolean;
   onSiteUpdated: (site: Site) => void;
@@ -41,26 +48,29 @@ export default function Resources({
   onCatalog: (catalog: Catalog) => void;
   onWorkerUpdated: (account: WorkerAccount) => void;
 }) {
+  const copy = managerSitesCopy[locale];
+  const checklist = checklistEditorCopy[locale];
+  const people = workerInvitationsCopy[locale];
+  const validation = locale === 'id' ? signInCopy.id.web : undefined;
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [checklistRevision, resetChecklist] = useState(0);
   const forms = useRef<HTMLDivElement>(null);
   async function beforeReload() {
-    if (busy) throw new Error('Wait for the workspace save to finish before reloading.');
+    if (busy) throw new Error(copy.wait);
     if (forms.current?.querySelector('[data-site-coordinate-form]'))
-      throw new Error('Save or cancel the open coordinate editor before reloading.');
+      throw new Error(copy.openCoordinates);
     if (forms.current?.querySelector('[data-site-closure-form]'))
-      throw new Error('Save or cancel the open closure dates editor before reloading.');
+      throw new Error(copy.openClosures);
     for (const form of forms.current?.querySelectorAll<HTMLFormElement>('form') ?? []) {
       if (form && [...new FormData(form).values()].some((value) => String(value).trim()))
-        throw new Error(
-          'Your workspace form has unsaved changes. Save or clear it before reloading.',
-        );
+        throw new Error(copy.unsaved);
     }
   }
   async function create(event: FormEvent<HTMLFormElement>, kind: 'site' | 'template') {
     event.preventDefault();
+    if (!online) return;
     const form = event.currentTarget;
     const data = new FormData(form);
     setBusy(true);
@@ -74,6 +84,7 @@ export default function Resources({
           parseCoordinateInputs(
             String(data.get('latitude') ?? ''),
             String(data.get('longitude') ?? ''),
+            locale,
           ),
         );
       else
@@ -85,19 +96,24 @@ export default function Resources({
       await refresh();
       form.reset();
       if (kind === 'template') resetChecklist((revision) => revision + 1);
-      setNotice(kind === 'site' ? 'Site added.' : 'Checklist added.');
+      setNotice(kind === 'site' ? copy.saved : checklist.saved);
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Unable to save.');
+      setError(
+        locale === 'id' && (error instanceof ApiError || error instanceof TypeError)
+          ? kind === 'site'
+            ? copy.failed
+            : checklist.failed
+          : error instanceof Error
+            ? error.message
+            : 'Unable to save.',
+      );
     } finally {
       setBusy(false);
     }
   }
   return (
     <>
-      <PageHeading
-        title="Sites & checklists"
-        description="Manage the places, inspection standards, and people your team works with."
-      />
+      <PageHeading title={managerDispatchCopy[locale].resources} description={copy.intro} />
       {error && <Alert className="banner error">{error}</Alert>}
       {notice && (
         <Alert className="banner notice" role="status">
@@ -109,10 +125,10 @@ export default function Resources({
           <PanelHeader
             title={
               <>
-                Sites <span className="panel-count">{catalog.sites.length}</span>
+                {copy.sites} <span className="panel-count">{catalog.sites.length}</span>
               </>
             }
-            description="Saved locations for your team."
+            description={copy.sitesHint}
           />
           <div className="catalog-columns">
             <ul className="resource-list">
@@ -120,16 +136,23 @@ export default function Resources({
                 <li key={site.id}>
                   <strong>{site.name}</strong>
                   <p>{site.address}</p>
-                  <SiteCoordinatesEditor site={site} online={online} onUpdated={onSiteUpdated} />
+                  <SiteCoordinatesEditor
+                    site={site}
+                    online={online}
+                    locale={locale}
+                    onUpdated={onSiteUpdated}
+                  />
                   <SiteClosuresEditor
                     site={site}
                     online={online}
+                    locale={locale}
                     onUpdated={onSiteClosuresUpdated}
                   />
                   <SiteLocation
                     key={`${site.id}:${site.coordinates?.latitude ?? ''}:${site.coordinates?.longitude ?? ''}`}
                     site={site}
                     online={online}
+                    locale={locale}
                     beforeReload={beforeReload}
                   />
                 </li>
@@ -137,34 +160,33 @@ export default function Resources({
             </ul>
             <Form
               noValidate
-              aria-label="Add a site"
+              validationCopy={validation}
+              aria-label={copy.add}
               onSubmit={(event) => void create(event, 'site')}
             >
-              <h3>Add a site</h3>
+              <h3>{copy.add}</h3>
               <Label>
-                Site name
+                {copy.name}
                 <Input name="name" required minLength={2} maxLength={120} />
               </Label>
               <Label>
-                Address
+                {copy.address}
                 <Input name="address" required minLength={3} maxLength={250} />
               </Label>
-              <p className="muted">
-                Coordinates are optional. Enter them only when the location should be shared with
-                your workspace.
-              </p>
+              <p className="muted">{copy.coordinatesHint}</p>
               <div className="form-grid">
                 <Label>
-                  Latitude
+                  {copy.latitude}
                   <Input name="latitude" type="number" step="any" min={-90} max={90} />
                 </Label>
                 <Label>
-                  Longitude
+                  {copy.longitude}
                   <Input name="longitude" type="number" step="any" min={-180} max={180} />
                 </Label>
               </div>
-              <Button className="primary" disabled={busy}>
-                Add site
+              {!online && <p className="muted">{copy.offline}</p>}
+              <Button className="primary" disabled={!online || busy}>
+                {copy.save}
               </Button>
             </Form>
           </div>
@@ -173,67 +195,72 @@ export default function Resources({
           <PanelHeader
             title={
               <>
-                Checklists <span className="panel-count">{catalog.templates.length}</span>
+                {checklist.checklists}{' '}
+                <span className="panel-count">{catalog.templates.length}</span>
               </>
             }
-            description="Reusable questions for new assignments."
+            description={checklist.intro}
           />
           <div className="catalog-columns">
             <ul className="resource-list">
               {catalog.templates.map((template) => (
                 <li key={template.id}>
                   <strong>{template.name}</strong>
-                  <p>{template.items.length} inspection items</p>
-                  {template.requiresPhoto && (
-                    <p>At least one site photo required per submission.</p>
-                  )}
+                  <p>{checklist.itemCount(template.items.length)}</p>
+                  {template.requiresPhoto && <p>{checklist.atLeastOnePhoto}</p>}
                   <ol>
-                    {template.items.map((item) => (
-                      <li key={item.id}>
-                        {checklistItemLabel(item)}
-                        {item.requiresPhoto && <span className="muted"> · Photo required</span>}
-                        {item.responseType === 'text' && (
-                          <span className="muted"> · Text response</span>
-                        )}
-                        {item.responseType === 'number' && (
-                          <span className="muted">
-                            {readingBounds(item)
-                              ? ` · Reading ${readingBounds(item)}`
-                              : ' · Numeric reading'}
-                          </span>
-                        )}
-                      </li>
-                    ))}
+                    {template.items.map((item) => {
+                      const bounds = readingBounds(item, inspectionCopy[locale].bounds);
+                      return (
+                        <li key={item.id}>
+                          {checklistItemLabel(item)}
+                          {item.requiresPhoto && (
+                            <span className="muted"> · {checklist.photoRequired}</span>
+                          )}
+                          {item.responseType === 'text' && (
+                            <span className="muted"> · {checklist.text}</span>
+                          )}
+                          {item.responseType === 'number' && (
+                            <span className="muted">
+                              {' · '}
+                              {bounds ? checklist.readingBounds(bounds) : checklist.number}
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ol>
                 </li>
               ))}
             </ul>
             <Form
               noValidate
-              aria-label="Add a checklist"
+              className="checklist-form"
+              validationCopy={validation}
+              aria-label={checklist.add}
               onSubmit={(event) => void create(event, 'template')}
             >
-              <h3>Add a checklist</h3>
+              <h3>{checklist.add}</h3>
               <Label>
-                Checklist name
+                {checklist.name}
                 <Input name="name" required minLength={2} maxLength={120} />
               </Label>
-              <ChecklistItemsEditor key={checklistRevision} busy={busy} />
+              <ChecklistItemsEditor key={checklistRevision} busy={busy} locale={locale} />
               <Label>
-                Photo evidence
-                <NativeSelect name="requiresPhoto" aria-label="Photo evidence" defaultValue="">
-                  <NativeSelectOption value="">Optional photos</NativeSelectOption>
-                  <NativeSelectOption value="required">
-                    At least one photo required
-                  </NativeSelectOption>
+                {checklist.photoEvidence}
+                <NativeSelect
+                  name="requiresPhoto"
+                  aria-label={checklist.photoEvidence}
+                  defaultValue=""
+                >
+                  <NativeSelectOption value="">{checklist.photoOptional}</NativeSelectOption>
+                  <NativeSelectOption value="required">{checklist.photoMinimum}</NativeSelectOption>
                 </NativeSelect>
               </Label>
-              <p className="muted">
-                Up to 50 items, with required photos on up to 3. Assigned orders keep their original
-                checklist and photo requirements.
-              </p>
-              <Button className="primary" disabled={busy}>
-                Add checklist
+              <p className="muted">{checklist.limits}</p>
+              {!online && <p className="muted">{checklist.offline}</p>}
+              <Button className="primary" disabled={!online || busy}>
+                {checklist.save}
               </Button>
             </Form>
           </div>
@@ -241,12 +268,17 @@ export default function Resources({
       </div>
       <Card className="brief worker-directory">
         <PanelHeader
-          title="Field workers"
-          description="Invite people and manage their access to the workspace."
+          title={people.directory}
+          description={people.directoryHint}
           actions={
             <>
-              <WorkerInvitations online={online} />
-              <WorkerAccounts online={online} onCatalog={onCatalog} onUpdated={onWorkerUpdated} />
+              <WorkerInvitations online={online} locale={locale} />
+              <WorkerAccounts
+                online={online}
+                locale={locale}
+                onCatalog={onCatalog}
+                onUpdated={onWorkerUpdated}
+              />
             </>
           }
         />
@@ -256,17 +288,17 @@ export default function Resources({
             .map((user) => (
               <li key={user.id}>
                 <strong>{user.name}</strong>
-                <span className="muted">Field worker</span>
+                <span className="muted">{people.worker}</span>
               </li>
             ))}
         </ul>
-        {!catalog.users.some((user) => user.role === 'worker') && <p>No field workers yet.</p>}
+        {!catalog.users.some((user) => user.role === 'worker') && <p>{people.noWorkers}</p>}
         <p>
-          Invite workers to set up their accounts, or use the{' '}
+          {people.setup}{' '}
           <a href="https://github.com/tedy69/fieldwork/blob/main/docs/self-hosting.md">
-            self-hosting guide
+            {people.guide}
           </a>{' '}
-          for server setup.
+          {people.forServer}
         </p>
       </Card>
     </>

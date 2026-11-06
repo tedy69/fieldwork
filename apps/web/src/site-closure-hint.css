@@ -1,0 +1,16 @@
+.site-closure-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.site-closure-hint:not(:empty) {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--amber);
+}
+.site-closure-hint svg {
+  flex: 0 0 16px;
+  height: 16px;
+}

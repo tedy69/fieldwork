@@ -225,3 +225,91 @@ test('Next 7 days orders saved work by its current due date after rescheduling',
   await expect(rows.first().locator('time')).toHaveAttribute('datetime', '2026-10-22');
   await expect(rows.last()).toContainText(first.title);
 });
+
+test('worker filters saved urgent work in Indonesian and keeps search available offline', async ({
+  page,
+  context,
+}) => {
+  const baseURL = 'http://127.0.0.1:4173';
+  const login = createClient(baseURL);
+  const managerSession = await login.login('manager@fieldwork.local', 'fieldwork-demo');
+  const workerSession = await login.login('worker@fieldwork.local', 'fieldwork-demo');
+  const manager = createClient(baseURL, () => managerSession.token);
+  const worker = createClient(baseURL, () => workerSession.token);
+  const prefix = `Urgent filter QA ${crypto.randomUUID().slice(0, 8)}`;
+  for (const [name, priority] of [
+    ['Pending', 'urgent'],
+    ['Approved', 'urgent'],
+    ['Routine', 'routine'],
+  ] as const) {
+    const order = await manager.createOrder({
+      title: `${prefix} ${name}`,
+      instructions: '',
+      siteId: 'north',
+      templateId: 'routine',
+      assigneeId: 'worker',
+      priority,
+      dueDate: '2026-12-28',
+    });
+    if (name === 'Approved') {
+      const report = await worker.submitReport(order.id, {
+        mutationId: crypto.randomUUID(),
+        baseVersion: order.version,
+        summary: 'Synthetic completed urgent inspection.',
+        answers: order.template.items.map((item) => ({ itemId: item.id, value: 'pass', note: '' })),
+        photos: [],
+      });
+      await manager.review(order.id, report.version, 'APPROVED', 'Synthetic approval.');
+    }
+  }
+
+  await page.setViewportSize({ width: 320, height: 840 });
+  await page.goto('/');
+  await page.getByLabel('Email', { exact: true }).fill('worker@fieldwork.local');
+  await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'My assignments', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+  const search = page.getByRole('searchbox', { name: 'Cari tugas', exact: true });
+  await search.fill(prefix);
+  const rows = page.locator('.order-list .order-row');
+  await expect(rows).toHaveCount(3);
+  const urgent = page.getByRole('button', { name: 'Tugas mendesak', exact: true });
+  await urgent.focus();
+  await page.keyboard.press('Enter');
+  await expect(urgent).toHaveAttribute('aria-pressed', 'true');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText(`${prefix} Pending`);
+  await expect(search).toHaveValue(prefix);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath('urgent-filter-phone.png') });
+
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await context.setOffline(true);
+  await page.reload();
+  await search.fill(prefix);
+  await urgent.click();
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText(`${prefix} Pending`);
+
+  await page.getByRole('button', { name: 'Rentang tanggal', exact: true }).click();
+  const from = page.getByRole('textbox', { name: 'Tenggat mulai', exact: true });
+  await from.fill('2026-12-28');
+  const clearFilter = page.getByRole('button', { name: 'Hapus filter tugas', exact: true });
+  await expect(clearFilter.locator('svg[aria-hidden=true]')).toBeVisible();
+  expect((await clearFilter.textContent())?.trim()).toBe('');
+  const bounds = await clearFilter.boundingBox();
+  expect(bounds?.width).toBeGreaterThanOrEqual(44);
+  expect(bounds?.height).toBeGreaterThanOrEqual(44);
+  await clearFilter.focus();
+  await page.keyboard.press('Enter');
+  await expect(clearFilter).toHaveCount(0);
+  const all = page.getByRole('button', { name: 'Semua tugas', exact: true });
+  await expect(all).toBeFocused();
+  await expect(all).toHaveAttribute('aria-pressed', 'true');
+  await expect(search).toHaveValue(prefix);
+  await expect(from).toHaveValue('2026-12-28');
+  await expect(rows).toHaveCount(3);
+});

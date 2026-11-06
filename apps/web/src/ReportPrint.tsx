@@ -12,8 +12,9 @@ import {
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { type WorkOrder, answerLabel, reportItemLabel } from '@fieldwork/contracts';
-import { inspectionCopy, notebookCopy, type Locale } from '@fieldwork/strings';
+import { inspectionCopy, languageTags, notebookCopy, type Locale } from '@fieldwork/strings';
 import { workerReportCopy } from './worker-report-copy';
+import { calendarLabel } from './calendar';
 import './print.css';
 
 export default function ReportPrint({
@@ -29,6 +30,13 @@ export default function ReportPrint({
   const copy = reportLabels.print;
   const inspection = inspectionCopy[locale];
   const status = notebookCopy[locale].status;
+  const dateLocale = languageTags[locale];
+  const timestamp = (value: string) =>
+    `${new Date(value).toLocaleString(dateLocale, {
+      dateStyle: 'medium',
+      timeStyle: 'medium',
+      timeZone: 'UTC',
+    })} UTC`;
   const [error, setError] = useState(false);
   function print() {
     setError(false);
@@ -72,7 +80,10 @@ export default function ReportPrint({
             <div>
               <dt>{copy.due}</dt>
               <dd>
-                {order.dueDate} / {inspection.priority[order.priority]}
+                <time dateTime={order.dueDate}>
+                  {calendarLabel(order.dueDate, true, dateLocale)}
+                </time>{' '}
+                / {inspection.priority[order.priority]}
               </dd>
             </div>
             <div>
@@ -81,7 +92,9 @@ export default function ReportPrint({
             </div>
             <div>
               <dt>{copy.submittedAt}</dt>
-              <dd>{report.submittedAt}</dd>
+              <dd>
+                <time dateTime={report.submittedAt}>{timestamp(report.submittedAt)}</time>
+              </dd>
             </div>
             <div>
               <dt>{copy.submittedBy}</dt>
@@ -145,7 +158,9 @@ export default function ReportPrint({
                 <p>
                   {status[order.review.decision]} {reportLabels.by} {order.review.reviewedBy}
                   <br />
-                  {order.review.reviewedAt} (UTC)
+                  <time dateTime={order.review.reviewedAt}>
+                    {timestamp(order.review.reviewedAt)}
+                  </time>
                 </p>
                 <p className="print-lines">{order.review.note || reportLabels.noReview}</p>
               </>

@@ -51,7 +51,10 @@ async function openOrder(page: Page, order: WorkOrder) {
 test('history preserves correction drafts, saved feedback and photos, and works with keyboard and narrow layouts', async ({
   page,
   context,
+  browserName,
 }) => {
+  const tabIntoRevisions =
+    browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab';
   const { manager, worker, order } = await fixture('Report history corrections QA');
   const first = await worker.submitReport(order.id, report(order, 'Gate needs repair.'));
   const requested = await manager.review(
@@ -81,7 +84,7 @@ test('history preserves correction drafts, saved feedback and photos, and works 
   await expect(snapshot).toContainText('Repair the latch and inspect again.');
   await expect(snapshot).toContainText('Original gate note.');
   await expect(dialog.getByRole('heading', { name: 'Report history', exact: true })).toBeFocused();
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(tabIntoRevisions);
   await expect(
     dialog.getByRole('button', { name: 'View report: Order version 2', exact: true }),
   ).toBeFocused();

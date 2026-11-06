@@ -1,23 +1,31 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import type { Coordinates, Site } from '@fieldwork/contracts';
+import type { Locale } from '@fieldwork/strings';
+import { MapPinIcon } from '@phosphor-icons/react/dist/csr/MapPin';
 import { client, message } from './lib';
 import { parseCoordinateInputs } from './coordinate-input';
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
 import { Form } from './components/ui/form';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { FieldError, FieldSet, FieldLegend } from './components/ui/field';
+import { managerSitesCopy } from './manager-sites-copy';
 import './site-coordinates-editor.css';
 
 export default function SiteCoordinatesEditor({
   site,
   online,
+  locale,
   onUpdated,
 }: {
   site: Site;
   online: boolean;
+  locale: Locale;
   onUpdated: (site: Site) => void;
 }) {
+  const labels = managerSitesCopy[locale];
+  const copy = labels.coordinates;
   const [editing, setEditing] = useState(false);
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
@@ -70,15 +78,13 @@ export default function SiteCoordinatesEditor({
         setLatitude(latest.coordinates ? String(latest.coordinates.latitude) : '');
         setLongitude(latest.coordinates ? String(latest.coordinates.longitude) : '');
         setNotice('');
-      } else
-        setNotice(
-          'Latest coordinates loaded. Your proposed values are kept. Review them before saving.',
-        );
+      } else setNotice(copy.reloaded);
       loaded.current = true;
       onUpdated(latest);
       setNeedsReload(false);
     } catch (error) {
-      if (current === generation.current) setError(message(error));
+      if (current === generation.current)
+        setError(locale === 'en' ? message(error) : copy.loadFailed);
     } finally {
       if (current === generation.current) setBusy(null);
     }
@@ -97,7 +103,7 @@ export default function SiteCoordinatesEditor({
     if (!online || busy || needsReload) return;
     let coordinates: Coordinates | null;
     try {
-      coordinates = parseCoordinateInputs(latitude, longitude) ?? null;
+      coordinates = parseCoordinateInputs(latitude, longitude, locale) ?? null;
     } catch (error) {
       setError(message(error));
       return;
@@ -113,15 +119,11 @@ export default function SiteCoordinatesEditor({
       });
       if (current !== generation.current) return;
       onUpdated(updated);
-      setNotice(
-        coordinates
-          ? 'Coordinates saved for future assignments. Existing inspections stay unchanged.'
-          : 'Coordinates removed from future assignments. Existing inspections stay unchanged.',
-      );
+      setNotice(coordinates ? copy.saved : copy.removed);
       close();
     } catch (error) {
       if (current === generation.current) {
-        setError(`${message(error)} Reload this site before trying again.`);
+        setError(`${locale === 'en' ? message(error) : copy.saveFailed} ${copy.reloadHint}`);
         setNeedsReload(true);
       }
     } finally {
@@ -129,20 +131,20 @@ export default function SiteCoordinatesEditor({
     }
   }
   return (
-    <section className="site-coordinate-editor" aria-label={`Coordinates for ${site.name}`}>
-      <Button
+    <section className="site-coordinate-editor" aria-label={copy.region(site.name)}>
+      <IconButton
         ref={trigger}
-        type="button"
         className="quiet"
         aria-expanded={editing}
         aria-controls={formId}
-        aria-label={`${site.coordinates ? 'Edit' : 'Add'} coordinates for ${site.name}`}
+        label={site.coordinates ? copy.edit(site.name) : copy.add(site.name)}
+        tooltip={site.coordinates ? copy.editHint : copy.addHint}
         disabled={!online || busy === 'saving'}
         onClick={() => (editing ? close() : open())}
       >
-        {site.coordinates ? 'Edit coordinates' : 'Add coordinates'}
-      </Button>
-      {!online && <p className="muted">Connect to edit site coordinates.</p>}
+        <MapPinIcon aria-hidden="true" />
+      </IconButton>
+      {!online && <p className="muted">{copy.connect}</p>}
       {notice && (
         <p className="muted" role="status">
           {notice}
@@ -153,7 +155,7 @@ export default function SiteCoordinatesEditor({
           noValidate
           id={formId}
           data-site-coordinate-form
-          aria-label={`Edit coordinates for ${site.name}`}
+          aria-label={copy.edit(site.name)}
           onSubmit={save}
           onKeyDown={(event) => {
             if (event.key === 'Escape' && busy !== 'saving') {
@@ -162,31 +164,27 @@ export default function SiteCoordinatesEditor({
             }
           }}
         >
-          <p className="muted">
-            New assignments use the saved site location. Existing assignments and reports keep their
-            original snapshot.
-          </p>
+          <p className="muted">{copy.snapshot}</p>
           {loaded.current && (
             <p className="muted">
-              Loaded coordinates:{' '}
-              {expected ? `${expected.latitude}, ${expected.longitude}` : 'none'}.
+              {copy.loaded(expected ? `${expected.latitude}, ${expected.longitude}` : undefined)}
             </p>
           )}
           {busy && (
             <p className="muted" role="status">
-              {busy === 'loading' ? 'Loading current coordinates…' : 'Saving coordinates…'}
+              {busy === 'loading' ? copy.loading : copy.saving}
             </p>
           )}
           {!online && (
             <p className="muted" role="status">
-              Your proposed values are kept here. Reconnect to save or reload.
+              {copy.offline}
             </p>
           )}
           <FieldSet disabled={Boolean(busy) || needsReload || !online}>
-            <FieldLegend>Proposed coordinates</FieldLegend>
+            <FieldLegend>{copy.proposed}</FieldLegend>
             <div className="form-grid">
               <Label>
-                Latitude
+                {labels.latitude}
                 <Input
                   ref={firstInput}
                   name="latitude"
@@ -202,7 +200,7 @@ export default function SiteCoordinatesEditor({
                 />
               </Label>
               <Label>
-                Longitude
+                {labels.longitude}
                 <Input
                   name="longitude"
                   type="number"
@@ -227,13 +225,10 @@ export default function SiteCoordinatesEditor({
                 firstInput.current?.focus();
               }}
             >
-              Clear both fields
+              {copy.clear}
             </Button>
           </FieldSet>
-          <p className="muted">
-            Enter both values, or save both fields empty to remove coordinates from future
-            assignments.
-          </p>
+          <p className="muted">{copy.both}</p>
           {error && <FieldError>{error}</FieldError>}
           <div className="site-coordinate-actions">
             {needsReload && (
@@ -244,7 +239,7 @@ export default function SiteCoordinatesEditor({
                 disabled={!online || Boolean(busy)}
                 onClick={() => void reload()}
               >
-                Reload site
+                {copy.reload}
               </Button>
             )}
             <Button
@@ -252,10 +247,10 @@ export default function SiteCoordinatesEditor({
               className="primary"
               disabled={!online || Boolean(busy) || needsReload}
             >
-              Save coordinates
+              {copy.save}
             </Button>
             <Button type="button" className="quiet" disabled={busy === 'saving'} onClick={close}>
-              Cancel
+              {copy.cancel}
             </Button>
           </div>
         </Form>

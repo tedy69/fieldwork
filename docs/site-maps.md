@@ -16,7 +16,7 @@ Changing coordinates affects future assignments only. Existing assignments, repo
 
 ## View a location
 
-A location card appears for a site or assignment with saved coordinates. Coordinates remain readable from saved work after an offline reload. The card loads first-party provider settings, names the provider, and explains what tile requests share. It contacts that provider only after **Load site map**.
+A location card appears for a site or assignment with saved coordinates. Coordinates remain readable from saved work after an offline reload. Use the copy icon beside them to copy the latitude and longitude from the displayed snapshot, including offline. The card loads first-party provider settings, names the provider, and explains what tile requests share. It contacts that provider only after **Load site map**.
 
 The map shows the saved point, visible attribution, and shared Kokonut/shadcn zoom, recenter, and hide controls. Focus it to pan with arrow keys or zoom with +/−. Scroll-wheel zoom, inertia, and animated pan/zoom are disabled. Keyboard handlers stay on the map element, away from checklist answers. **Hide site map** returns focus to its launcher. Leaving the order, signing out, or going offline removes the map; reconnecting does not automatically reopen it.
 

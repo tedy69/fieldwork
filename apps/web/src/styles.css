@@ -778,10 +778,6 @@ main#main {
 .detail {
   max-width: 1240px;
 }
-.back {
-  margin-bottom: 25px;
-  font-size: 12px;
-}
 .detail-heading {
   display: flex;
   justify-content: space-between;
@@ -793,6 +789,10 @@ main#main {
   letter-spacing: -1px;
   line-height: 1.25;
   margin: 12px 0 26px;
+}
+.detail h1:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 4px;
 }
 .detail-heading .status {
   margin-top: 12px;
@@ -1089,6 +1089,23 @@ main#main {
 .recurrence-preview h3 {
   margin: 0 0 10px;
   font-size: 15px;
+}
+.recurrence-closure-count {
+  margin: 0;
+  font-size: 13px;
+}
+.recurrence-closure-count:not(:empty) {
+  margin-bottom: 8px;
+}
+.recurrence-date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+}
+.recurrence-date .recurrence-closed-date {
+  border-color: var(--amber);
+  background: var(--surface-raised);
 }
 .recurrence-preview ol {
   max-height: 160px;
@@ -1689,6 +1706,14 @@ main#main {
 .item-photo-evidence {
   flex-wrap: wrap;
   margin-top: 12px;
+}
+@media (max-width: 480px) {
+  .resource-grid .checklist-form {
+    padding-inline: 16px;
+  }
+  .checklist-item-fields {
+    padding-inline: 10px;
+  }
 }
 @media (max-width: 850px) {
   .resource-grid {

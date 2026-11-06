@@ -51,13 +51,9 @@ test('a manager configures a mixed checklist and a worker can use the saved ques
     );
   }
   await context.setOffline(true);
-  await form.getByRole('button', { name: 'Add checklist', exact: true }).click();
-  await expect(
-    page
-      .getByRole('alert')
-      .filter({ hasText: /fetch|network|offline/i })
-      .first(),
-  ).toBeVisible();
+  const submit = form.getByRole('button', { name: 'Add checklist', exact: true });
+  await expect(submit).toBeDisabled();
+  await expect(form.getByText('Reconnect to add a checklist.', { exact: true })).toBeVisible();
   await expect(first).toHaveValue('Access is clear');
   await expect(secondType).toHaveValue('text');
   await expect(third).toHaveValue('Pressure');
@@ -65,7 +61,7 @@ test('a manager configures a mixed checklist and a worker can use the saved ques
   const saved = page.waitForResponse(
     (response) => response.url().endsWith('/templates') && response.request().method() === 'POST',
   );
-  await form.getByRole('button', { name: 'Add checklist', exact: true }).click();
+  await submit.click();
   const template = await (await saved).json();
   expect(template.items).toMatchObject([
     { label: 'Access is clear' },

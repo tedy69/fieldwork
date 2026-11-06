@@ -111,6 +111,15 @@ test('manager prints only the selected saved report, offline and with useful err
   await expect(print).toContainText('N/A');
   await expect(print).toContainText('Saved report 東京.\n<img src=x onerror=alert(1)>');
   await expect(print).toContainText('Dispatch review.');
+  await expect(print.locator(`time[datetime="${order.dueDate}"]`)).toHaveText('Oct 22, 2026');
+  await expect(
+    print.locator(`time[datetime="${order.report!.submittedAt}"]`).first(),
+  ).toContainText('UTC');
+  await expect(print.locator('.print-review time')).toHaveAttribute(
+    'datetime',
+    order.review!.reviewedAt,
+  );
+  await expect(print.locator('.print-review time')).toContainText('UTC');
   await expect(print).toContainText('1 (photo files excluded)');
   await expect(print.locator('img, script, input, textarea, button, a')).toHaveCount(0);
   for (const value of [

@@ -10,21 +10,31 @@ import {
 import { FieldError } from './components/ui/field';
 import { useRef, useState, type FormEvent } from 'react';
 import type { Catalog, WorkOrder } from '@fieldwork/contracts';
+import { ApiError } from '@fieldwork/sdk';
+import type { Locale } from '@fieldwork/strings';
 import { client, message } from './lib';
+import { localDate } from './dates';
 import AssignmentFields from './AssignmentFields';
+import { managerDispatchCopy } from './manager-dispatch-copy';
 export default function CreateOrder({
   catalog,
+  locale,
   initialDueDate,
   onClose,
   onCreated,
 }: {
   catalog: Catalog;
+  locale: Locale;
   initialDueDate?: string;
   onClose: () => void;
   onCreated: (order: WorkOrder) => Promise<void>;
 }) {
+  const copy = managerDispatchCopy[locale];
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [siteId, setSiteId] = useState(catalog.sites[0]?.id);
+  const [dueDate, setDueDate] = useState(() => initialDueDate ?? localDate());
+  const site = catalog.sites.find((site) => site.id === siteId);
   const dialog = useRef<HTMLDivElement>(null);
   const previousFocus = useRef(document.activeElement);
   const created = useRef(false);
@@ -46,7 +56,13 @@ export default function CreateOrder({
       created.current = true;
       await onCreated(order);
     } catch (error) {
-      setError(message(error));
+      setError(
+        locale === 'en'
+          ? message(error)
+          : error instanceof ApiError && error.code === 'VALIDATION'
+            ? copy.invalidAssignment
+            : copy.assignmentFailed,
+      );
       setBusy(false);
     }
   }
@@ -59,6 +75,7 @@ export default function CreateOrder({
     >
       <DialogContent
         aria-modal="true"
+        lang={locale}
         ref={dialog}
         className="dialog"
         showCloseButton={false}
@@ -77,26 +94,32 @@ export default function CreateOrder({
             previousFocus.current instanceof HTMLElement &&
             previousFocus.current.isConnected
               ? previousFocus.current
-              : document.getElementById('main');
+              : (document.getElementById('inspection-title') ?? document.getElementById('main'));
           target?.focus();
         }}
       >
         <Form noValidate onSubmit={submit}>
           <DialogHeader>
             <div>
-              <DialogTitle>Assign a work order</DialogTitle>
-              <DialogDescription>
-                Give the field team a clear brief and a checklist.
-              </DialogDescription>
+              <DialogTitle>{copy.assignHeading}</DialogTitle>
+              <DialogDescription>{copy.assignHelp}</DialogDescription>
             </div>
             <Button type="button" className="quiet" onClick={onClose} disabled={busy}>
-              Cancel
+              {copy.cancel}
             </Button>
           </DialogHeader>
-          <AssignmentFields catalog={catalog} initial={{ dueDate: initialDueDate }} />
+          <AssignmentFields
+            catalog={catalog}
+            locale={locale}
+            dueDate={dueDate}
+            closureDates={site?.closureDates}
+            suggestionDisabled={busy}
+            onDateChange={setDueDate}
+            onSiteChange={setSiteId}
+          />
           {error && <FieldError>{error}</FieldError>}
           <Button className="primary full" disabled={busy}>
-            {busy ? 'Assigning…' : 'Assign work order'}
+            {busy ? copy.assigning : copy.assignLabel}
           </Button>
         </Form>
       </DialogContent>

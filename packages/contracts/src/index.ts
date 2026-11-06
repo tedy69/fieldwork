@@ -475,6 +475,10 @@ export function isOverdue(order: Pick<WorkOrder, 'dueDate' | 'status'>, today: s
   return order.status !== 'APPROVED' && order.dueDate < today;
 }
 
+export function isUrgentOpenOrder(order: Pick<WorkOrder, 'priority' | 'status'>) {
+  return order.priority === 'urgent' && order.status !== 'APPROVED';
+}
+
 export function isDueToday(order: Pick<WorkOrder, 'dueDate' | 'status'>, today: string) {
   return isOpenDueBetween(order, today, today);
 }

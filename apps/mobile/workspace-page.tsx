@@ -12,6 +12,7 @@ import {
 import {
   compareOrdersByDueDate,
   isOpenDueBetween,
+  isUrgentOpenOrder,
   nextSevenDaysEnd,
   isOverdue,
   localDate,
@@ -45,8 +46,8 @@ type QueueItem = State['outbox'][number];
 type Entry = { kind: 'order'; order: WorkOrder } | { kind: 'queued'; item: QueueItem };
 const dateFilters = ['overdue', 'today', 'next'] as const;
 type DateFilter = (typeof dateFilters)[number];
-export type AssignmentFilter = WorkOrder['status'] | DateFilter | null;
-const filters: AssignmentFilter[] = [null, ...dateFilters, ...StatusSchema.options];
+export type AssignmentFilter = WorkOrder['status'] | DateFilter | 'urgent' | null;
+const filters: AssignmentFilter[] = [null, ...dateFilters, 'urgent', ...StatusSchema.options];
 
 export type NotebookProblem =
   'session' | 'syncUnavailable' | 'notebookReadFailed' | 'recoveryUnavailable' | 'recoveryFailed';
@@ -138,6 +139,7 @@ export default function WorkspacePage({
     overdue: copy.overdue,
     today: copy.dueToday,
     next: copy.nextSevenDays,
+    urgent: copy.urgentWork,
     ...copy.status,
   };
   const filterLabel = (filter: AssignmentFilter) =>
@@ -150,9 +152,11 @@ export default function WorkspacePage({
       const matches =
         assignmentFilter === 'overdue'
           ? isOverdue(order, today)
-          : assignmentFilter === 'today' || assignmentFilter === 'next'
-            ? isOpenDueBetween(order, today, through)
-            : !assignmentFilter || order.status === assignmentFilter;
+          : assignmentFilter === 'urgent'
+            ? isUrgentOpenOrder(order)
+            : assignmentFilter === 'today' || assignmentFilter === 'next'
+              ? isOpenDueBetween(order, today, through)
+              : !assignmentFilter || order.status === assignmentFilter;
       return (
         matches &&
         `${order.reference} ${order.title} ${order.site.name}`.toLowerCase().includes(query)

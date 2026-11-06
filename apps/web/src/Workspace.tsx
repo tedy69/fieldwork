@@ -24,6 +24,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   compareOrdersByDueDate,
   isOpenDueBetween,
+  isUrgentOpenOrder,
   nextSevenDaysEnd,
   type User,
   type Catalog,
@@ -177,6 +178,7 @@ export default function Workspace({
     OVERDUE: copy.overdue,
     DUE_TODAY: notebook.dueToday,
     NEXT_SEVEN_DAYS: notebook.nextSevenDays,
+    URGENT: notebook.urgentWork,
     ...notebook.status,
   };
   const matching = state.orders.filter(
@@ -184,9 +186,11 @@ export default function Workspace({
       (filter === 'ALL' ||
         (filter === 'OVERDUE'
           ? isOverdue(order, today)
-          : dateWindow
-            ? isOpenDueBetween(order, today, windowEnd)
-            : order.status === filter)) &&
+          : filter === 'URGENT'
+            ? isUrgentOpenOrder(order)
+            : dateWindow
+              ? isOpenDueBetween(order, today, windowEnd)
+              : order.status === filter)) &&
       `${order.title} ${order.site.name} ${order.reference} ${order.assignee.name}`
         .toLowerCase()
         .includes(search.toLowerCase()),
@@ -633,6 +637,7 @@ export default function Workspace({
                           'OVERDUE',
                           'DUE_TODAY',
                           'NEXT_SEVEN_DAYS',
+                          'URGENT',
                           'ASSIGNED',
                           'SUBMITTED',
                           'APPROVED',

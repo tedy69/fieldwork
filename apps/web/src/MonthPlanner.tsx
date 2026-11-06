@@ -8,6 +8,7 @@ import { CaretRightIcon } from '@phosphor-icons/react/dist/csr/CaretRight';
 import { CalendarXIcon } from '@phosphor-icons/react/dist/csr/CalendarX';
 import { calendarLabel, monthDates, monthLabel, shiftMonth, weekDates } from './calendar';
 import { workerPlannerCopy } from './worker-planner-copy';
+import PlannerDateJump from './PlannerDateJump';
 import './month-planner.css';
 
 export default function MonthPlanner({
@@ -85,6 +86,7 @@ export default function MonthPlanner({
           >
             <CaretRightIcon aria-hidden="true" />
           </IconButton>
+          <PlannerDateJump anchor={anchor} locale={locale} onJump={onMonth} />
         </div>
       </div>
       <p className="muted">{copy.hint}</p>

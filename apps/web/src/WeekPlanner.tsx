@@ -7,6 +7,7 @@ import type { WorkOrder } from '@fieldwork/contracts';
 import { languageTags, type Locale } from '@fieldwork/strings';
 import { addDays, calendarLabel, weekDates } from './calendar';
 import { workerPlannerCopy } from './worker-planner-copy';
+import PlannerDateJump from './PlannerDateJump';
 
 export default function WeekPlanner({
   anchor,
@@ -40,6 +41,7 @@ export default function WeekPlanner({
           <IconButton
             label={copy.week.previous}
             className="quiet"
+            disabled={dates[0] === '0001-01-01'}
             onClick={() => onWeek(addDays(dates[0], -7))}
           >
             <CaretLeftIcon aria-hidden="true" />
@@ -50,10 +52,12 @@ export default function WeekPlanner({
           <IconButton
             label={copy.week.next}
             className="quiet"
+            disabled={dates.at(-1) === '9999-12-31'}
             onClick={() => onWeek(addDays(dates[0], 7))}
           >
             <CaretRightIcon aria-hidden="true" />
           </IconButton>
+          <PlannerDateJump anchor={anchor} locale={locale} onJump={onWeek} />
         </div>
       </div>
       <p className="muted">{copy.hint}</p>

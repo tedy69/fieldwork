@@ -9,6 +9,12 @@ const english = {
   chooseDay: (date: string, count: number, today: boolean) =>
     `Choose ${date}: ${count} ${count === 1 ? 'work order' : 'work orders'}${today ? ', today' : ''}`,
   showing: (date: string) => `Showing ${date}.`,
+  jump: {
+    title: 'Jump to date',
+    date: 'Date (YYYY-MM-DD)',
+    go: 'Go to date',
+    invalid: 'Enter a valid date in YYYY-MM-DD format.',
+  },
   week: {
     title: (date: string) => `Week of ${date}`,
     choose: 'Choose week',
@@ -40,6 +46,12 @@ export const workerPlannerCopy: Record<Locale, typeof english> = {
     workload: () => 'tugas',
     chooseDay: (date, count, today) => `Pilih ${date}: ${count} tugas${today ? ', hari ini' : ''}`,
     showing: (date) => `Menampilkan tugas pada ${date}.`,
+    jump: {
+      title: 'Lompat ke tanggal',
+      date: 'Tanggal (YYYY-MM-DD)',
+      go: 'Buka tanggal',
+      invalid: 'Masukkan tanggal yang valid dengan format YYYY-MM-DD.',
+    },
     week: {
       title: (date) => `Minggu mulai ${date}`,
       choose: 'Pilih minggu',

@@ -760,6 +760,23 @@ form > .ui-field-label {
   flex-shrink: 0;
   color: var(--amber);
 }
+.planner-date-jump {
+  width: min(260px, calc(100vw - 16px));
+  max-height: var(--radix-popover-content-available-height);
+  overflow-y: auto;
+  padding: 12px;
+}
+.planner-date-jump form {
+  display: grid;
+  gap: 12px;
+}
+.planner-date-jump .ui-button {
+  justify-self: end;
+}
+.planner-date-jump [role='alert'] {
+  margin: 0;
+  font-size: 13px;
+}
 .status-filters.kokonut-tabs {
   padding: 0;
   border: 0;

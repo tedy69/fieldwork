@@ -2,11 +2,9 @@ appId: host.exp.exponent
 name: Keep the Android schedule filter after reconnect
 ---
 - scrollUntilVisible:
-    element: Sync now
+    element: Retry sync
     direction: UP
-- tapOn:
-    text: Sync now
-    point: 10%,50%
+- tapOn: Retry sync
 - extendedWaitUntil:
     notVisible: Sync needs attention
     timeout: 15000

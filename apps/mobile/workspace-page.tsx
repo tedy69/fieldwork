@@ -56,10 +56,14 @@ export function NotebookNotice({
   error,
   locale,
   onSignInAgain,
+  onRetry,
+  retrying,
 }: {
   error: NotebookProblem;
   locale: Locale;
   onSignInAgain: () => void;
+  onRetry: () => void;
+  retrying: boolean;
 }) {
   const copy = notebookCopy[locale];
   return error === 'session' ? (
@@ -69,7 +73,17 @@ export function NotebookNotice({
     </Notice>
   ) : (
     <Notice error title={copy.syncError}>
-      {copy[error]}
+      <Copy muted>{copy[error]}</Copy>
+      {error === 'syncUnavailable' && (
+        <Button
+          title={retrying ? copy.syncing : copy.retrySync}
+          icon={ArrowClockwise}
+          variant="outline"
+          style={styles.noticeAction}
+          disabled={retrying}
+          onPress={onRetry}
+        />
+      )}
     </Notice>
   );
 }
@@ -232,7 +246,15 @@ export default function WorkspacePage({
               onPress={() => onViewChange('outbox')}
             />
           </View>
-          {error && <NotebookNotice error={error} locale={locale} onSignInAgain={onSignInAgain} />}
+          {error && (
+            <NotebookNotice
+              error={error}
+              locale={locale}
+              onSignInAgain={onSignInAgain}
+              onRetry={onSync}
+              retrying={busy}
+            />
+          )}
           {view === 'assignments' && (
             <View style={styles.searchTools}>
               <View style={styles.searchRow}>
@@ -482,6 +504,7 @@ const styles = StyleSheet.create({
   },
   tabsLarge: { flexDirection: 'column', flexWrap: 'nowrap' },
   tab: { flexGrow: 1, flexBasis: 120 },
+  noticeAction: { alignSelf: 'flex-start' },
   searchTools: { gap: spacing.sm },
   searchRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
   flexItem: { flex: 1, minWidth: 0 },

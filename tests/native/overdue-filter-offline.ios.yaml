@@ -8,7 +8,7 @@ name: Find assignments by due date while offline
     text: Sync now
     point: 10%,50%
 - extendedWaitUntil:
-    visible: Could not sync. You can still use saved assignments. Try again when connected.
+    visible: Saved assignments are still available. Reconnect to sync.
     timeout: 15000
 - scrollUntilVisible:
     element: Filter assignments
@@ -70,8 +70,8 @@ name: Find assignments by due date while offline
     direction: UP
 - tapOn: Bahasa Indonesia
 - scrollUntilVisible:
-    element: Sinkronisasi gagal. Tugas tersimpan tetap bisa dibuka. Sambungkan ke internet, lalu coba lagi.
-- assertVisible: Sinkronisasi gagal. Tugas tersimpan tetap bisa dibuka. Sambungkan ke internet, lalu coba lagi.
+    element: Tugas tersimpan tetap bisa dibuka. Sambungkan untuk sinkronisasi.
+- assertVisible: Tugas tersimpan tetap bisa dibuka. Sambungkan untuk sinkronisasi.
 - scrollUntilVisible:
     element: Lewat tenggat · 1 ditampilkan
 - assertVisible: Lewat tenggat · 1 ditampilkan

@@ -46,6 +46,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Web server search with combined filters, incremental result loading, fresh authorization on opening, and preserved offline drafts.
 - [x] Bounded recurring assignment API and SDK with daily/weekly dates, atomic creation, and durable retry receipts.
 - [x] Web recurring assignment creation with a date preview, planner date preset, and durable recovery after uncertain writes.
+- [x] English and Indonesian recurring assignment creation, date exceptions, and saved-request recovery.
 - [x] Recurring batch overview with paginated API/SDK, planned/current order comparison, and fresh individual-order opening.
 - [x] English and Indonesian recurring batch browsing, visit filters, and individual rescheduling.
 - [x] Recurring batch search by title, worker, site, ID, or work order reference, with paginated matches and retry.

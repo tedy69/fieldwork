@@ -6,6 +6,10 @@ const baseURL = 'http://127.0.0.1:4173';
 const endpoint = '**/api/v1/work-order-series';
 const dialogFor = (page: Page) =>
   page.getByRole('dialog', { name: 'Assign recurring work', exact: true });
+const waitForBatchPost = (page: Page) =>
+  page.waitForRequest(
+    (request) => request.url().endsWith('/work-order-series') && request.method() === 'POST',
+  );
 async function managerClient() {
   const session = await createClient(baseURL).login('manager@fieldwork.local', 'fieldwork-demo');
   return createClient(baseURL, () => session.token);
@@ -160,6 +164,78 @@ test('manager previews calendar dates, validates the batch, and assigns real wor
   expect(errors).toEqual([]);
 });
 
+test('manager previews and recovers recurring assignments in Indonesian', async ({
+  page,
+  context,
+}) => {
+  const manager = await managerClient();
+  const title = `Jadwal inspeksi ${crypto.randomUUID().slice(0, 8)}`;
+  await page.setViewportSize({ width: 320, height: 840 });
+  await login(page);
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+  const trigger = page.getByRole('button', { name: 'Beri tugas berulang', exact: true });
+  await trigger.click();
+  const dialog = page.getByRole('dialog', { name: 'Beri tugas berulang', exact: true });
+  await expect(dialog).toHaveAttribute('lang', 'id');
+  await expect(dialog.getByLabel('Judul tugas', { exact: true })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(trigger).toBeFocused();
+  await page.keyboard.press('Enter');
+  await dialog.getByLabel('Judul tugas', { exact: true }).fill(title);
+  await dialog
+    .getByRole('combobox', { name: 'Tugaskan kepada', exact: true })
+    .selectOption('worker');
+  await dialog.getByLabel('Tenggat', { exact: true }).fill('2026-12-28');
+  await dialog.getByRole('combobox', { name: 'Ulangi', exact: true }).selectOption('selected-days');
+  await dialog.getByRole('button', { name: 'Senin', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Kamis', exact: true }).click();
+  await dialog.getByLabel('Jumlah pengulangan', { exact: true }).fill('2');
+  await dialog.getByText('Lewati tanggal (opsional)', { exact: true }).click();
+  await dialog.getByLabel('Tanggal yang akan dilewati', { exact: true }).fill('2026-12-31');
+  await dialog.getByRole('button', { name: 'Tambah tanggal', exact: true }).click();
+  const preview = dialog.getByRole('region', { name: 'Tanggal terjadwal', exact: true });
+  await expect(preview.locator('time')).toHaveCount(2);
+  await expect(preview.locator('time').first()).toContainText('28 Des 2026');
+  await expect(preview.locator('time').last()).toHaveAttribute('datetime', '2027-01-04');
+  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath('indonesian-recurring-phone.png') });
+
+  await page.route(endpoint, async (route) => {
+    const created = await route.fetch();
+    expect(created.ok()).toBe(true);
+    await route.abort();
+  });
+  await dialog.getByRole('button', { name: 'Buat 2 tugas', exact: true }).click();
+  await expect(dialog.getByText(/Jadwal gagal dikonfirmasi/)).toBeVisible();
+  const saved = await journal(page);
+  expect(saved).toMatchObject({
+    title,
+    repeatDays: ['mon', 'thu'],
+    skipDates: ['2026-12-31'],
+    occurrences: 2,
+  });
+  expect((await manager.searchOrders({ q: title })).total).toBe(2);
+
+  await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
+  await context.setOffline(true);
+  await page.reload();
+  await page.getByRole('button', { name: 'Pulihkan jadwal berulang', exact: true }).click();
+  await expect(
+    dialog.getByText('Jadwal tersimpan menunggu konfirmasi', { exact: true }),
+  ).toBeVisible();
+  const retry = dialog.getByRole('button', { name: 'Coba jadwal tersimpan lagi', exact: true });
+  await expect(retry).toBeDisabled();
+  await context.setOffline(false);
+  await page.unroute(endpoint);
+  const sent = waitForBatchPost(page);
+  await retry.click();
+  expect((await sent).postDataJSON()).toMatchObject({ mutationId: saved?.mutationId });
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByText('2 tugas berulang berhasil dibuat.', { exact: true })).toBeVisible();
+  expect(await journal(page)).toBeNull();
+  expect((await manager.searchOrders({ q: title })).total).toBe(2);
+});
+
 test('manager ends a recurring batch on an inclusive date and retries the exact saved schedule', async ({
   page,
 }) => {
@@ -242,9 +318,9 @@ test('a lost creation response survives reload, offline recovery, and another ac
   await page.getByRole('button', { name: 'Assign recurring work', exact: true }).click();
   await fillBatch(page, 'Recurring lost response QA');
   let original: OrderSeriesReceipt | undefined;
-  const bodies: CreateOrderSeries[] = [];
+  let submitted: CreateOrderSeries | undefined;
   await page.route(endpoint, async (route) => {
-    bodies.push(route.request().postDataJSON());
+    submitted = route.request().postDataJSON();
     const response = await route.fetch();
     original = await response.json();
     await route.abort('failed');
@@ -256,9 +332,11 @@ test('a lost creation response survives reload, offline recovery, and another ac
   await expect(
     dialogFor(page).getByRole('button', { name: 'Retry saved batch', exact: true }),
   ).toBeFocused();
-  await expect(dialogFor(page).getByRole('alert').last()).toContainText('Failed to fetch');
+  await expect(dialogFor(page).getByRole('alert').last()).toContainText(
+    'Could not confirm the batch. Check the connection and retry the saved request.',
+  );
   const saved = await journal(page);
-  expect(saved?.mutationId).toBe(bodies[0].mutationId);
+  expect(saved?.mutationId).toBe(submitted?.mutationId);
   expect((await manager.searchOrders({ q: 'Recurring lost response QA' })).total).toBe(3);
   await dialogFor(page).getByRole('button', { name: 'Close', exact: true }).click();
   await expect(
@@ -302,13 +380,10 @@ test('a lost creation response survives reload, offline recovery, and another ac
   await expect(
     dialogFor(page).getByRole('heading', { name: 'Assign recurring work', exact: true }),
   ).toBeFocused();
-  await page.route(endpoint, async (route) => {
-    bodies.push(route.request().postDataJSON());
-    await route.continue();
-  });
+  const retried = waitForBatchPost(page);
   await dialogFor(page).getByRole('button', { name: 'Retry saved batch', exact: true }).click();
   await expect(dialogFor(page)).toHaveCount(0);
-  expect(bodies[1]).toEqual(bodies[0]);
+  expect((await retried).postDataJSON()).toEqual(submitted);
   expect(await journal(page)).toBeNull();
   expect((await manager.searchOrders({ q: 'Recurring lost response QA' })).total).toBe(3);
   expect((await manager.order(first.id)).dueDate).toBe('2027-03-01');
@@ -379,11 +454,13 @@ test('storage failures prevent sending, declined batches can be edited, and fail
   expect(requests).toHaveLength(2);
   expect(requests[1].mutationId).not.toBe(requests[0].mutationId);
   expect((await manager.searchOrders({ q: 'Recurring storage QA' })).total).toBe(2);
+  await page.unroute(endpoint);
   await page.reload();
   await page.getByRole('button', { name: 'Recover recurring batch', exact: true }).click();
+  const retried = waitForBatchPost(page);
   await dialogFor(page).getByRole('button', { name: 'Retry saved batch', exact: true }).click();
   await expect(dialogFor(page)).toHaveCount(0);
-  expect(requests[2]).toEqual(requests[1]);
+  expect((await retried).postDataJSON()).toEqual(requests[1]);
   expect(await journal(page)).toBeNull();
   expect((await manager.searchOrders({ q: 'Recurring storage QA' })).total).toBe(2);
 });

@@ -109,21 +109,20 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
       path: test.info().outputPath(`${frequency}-preview-${width}.png`),
       fullPage: false,
     });
-    const requests: CreateOrderSeries[] = [];
+    let input: CreateOrderSeries | undefined;
     let receipt: OrderSeriesReceipt | undefined;
     await page.route(endpoint, async (route) => {
       if (route.request().method() !== 'POST') return route.continue();
-      requests.push(route.request().postDataJSON());
-      if (requests.length === 1) {
-        receipt = await (await route.fetch()).json();
-        await route.abort('failed');
-      } else await route.continue();
+      input = route.request().postDataJSON();
+      receipt = await (await route.fetch()).json();
+      await route.abort('failed');
     });
     await dialog.getByRole('button', { name: 'Assign 4 work orders', exact: true }).click();
     await expect(
       dialog.getByRole('button', { name: 'Retry saved batch', exact: true }),
     ).toBeEnabled();
     expect(receipt?.orders.map((order) => order.dueDate)).toEqual(expectedDates);
+    await page.unroute(endpoint);
     await dialog.getByRole('button', { name: 'Close', exact: true }).click();
     await context.setOffline(true);
     await page.reload();
@@ -136,15 +135,17 @@ for (const [width, frequency, repeatLabel, initialDate, expectedDates] of [
       dialog.getByRole('button', { name: 'Retry saved batch', exact: true }),
     ).toBeDisabled();
     await context.setOffline(false);
+    const retried = page.waitForRequest(
+      (request) => request.url().endsWith('/work-order-series') && request.method() === 'POST',
+    );
     await dialog.getByRole('button', { name: 'Retry saved batch', exact: true }).click();
     await expect(dialog).toHaveCount(0);
-    expect(requests).toHaveLength(2);
-    expect(requests[1]).toEqual(requests[0]);
+    expect((await retried).postDataJSON()).toEqual(input);
     expect((await manager.searchOrders({ q: title })).total).toBe(4);
     const first = receipt!.orders[0];
     const newDate = monthEnd ? '2028-06-02' : '2027-02-02';
     await manager.rescheduleOrder(first.id, { baseVersion: 1, dueDate: newDate });
-    expect(await manager.createOrderSeries(requests[0])).toEqual(receipt);
+    expect(await manager.createOrderSeries(input!)).toEqual(receipt);
     await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
     await page.getByRole('button', { name: 'Recurring batches', exact: true }).click();
     const viewer = page.getByRole('dialog', { name: 'Recurring batches', exact: true });

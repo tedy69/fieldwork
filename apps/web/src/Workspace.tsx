@@ -535,6 +535,7 @@ export default function Workspace({
                     <RecurringDispatch
                       userId={user.id}
                       catalog={catalog}
+                      locale={locale}
                       online={online}
                       initialDueDate={planner && plannerDay ? plannerDay : undefined}
                       onCreated={async (receipt) => {

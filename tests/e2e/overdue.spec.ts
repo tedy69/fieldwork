@@ -225,3 +225,71 @@ test('Next 7 days orders saved work by its current due date after rescheduling',
   await expect(rows.first().locator('time')).toHaveAttribute('datetime', '2026-10-22');
   await expect(rows.last()).toContainText(first.title);
 });
+
+test('worker filters saved urgent work in Indonesian and keeps search available offline', async ({
+  page,
+  context,
+}) => {
+  const baseURL = 'http://127.0.0.1:4173';
+  const login = createClient(baseURL);
+  const managerSession = await login.login('manager@fieldwork.local', 'fieldwork-demo');
+  const workerSession = await login.login('worker@fieldwork.local', 'fieldwork-demo');
+  const manager = createClient(baseURL, () => managerSession.token);
+  const worker = createClient(baseURL, () => workerSession.token);
+  const prefix = `Urgent filter QA ${crypto.randomUUID().slice(0, 8)}`;
+  for (const [name, priority] of [
+    ['Pending', 'urgent'],
+    ['Approved', 'urgent'],
+    ['Routine', 'routine'],
+  ] as const) {
+    const order = await manager.createOrder({
+      title: `${prefix} ${name}`,
+      instructions: '',
+      siteId: 'north',
+      templateId: 'routine',
+      assigneeId: 'worker',
+      priority,
+      dueDate: '2026-12-28',
+    });
+    if (name === 'Approved') {
+      const report = await worker.submitReport(order.id, {
+        mutationId: crypto.randomUUID(),
+        baseVersion: order.version,
+        summary: 'Synthetic completed urgent inspection.',
+        answers: order.template.items.map((item) => ({ itemId: item.id, value: 'pass', note: '' })),
+        photos: [],
+      });
+      await manager.review(order.id, report.version, 'APPROVED', 'Synthetic approval.');
+    }
+  }
+
+  await page.setViewportSize({ width: 320, height: 840 });
+  await page.goto('/');
+  await page.getByLabel('Email', { exact: true }).fill('worker@fieldwork.local');
+  await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+  const search = page.getByRole('searchbox', { name: 'Cari tugas', exact: true });
+  await search.fill(prefix);
+  const rows = page.locator('.order-list .order-row');
+  await expect(rows).toHaveCount(3);
+  const urgent = page.getByRole('button', { name: 'Tugas mendesak', exact: true });
+  await urgent.focus();
+  await page.keyboard.press('Enter');
+  await expect(urgent).toHaveAttribute('aria-pressed', 'true');
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText(`${prefix} Pending`);
+  await expect(search).toHaveValue(prefix);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath('urgent-filter-phone.png') });
+
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await context.setOffline(true);
+  await page.reload();
+  await search.fill(prefix);
+  await urgent.click();
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText(`${prefix} Pending`);
+});

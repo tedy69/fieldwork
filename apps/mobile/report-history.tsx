@@ -10,6 +10,7 @@ import { ApiError, createClient } from '@fieldwork/sdk';
 import { languageTags, notebookCopy, type Locale } from '@fieldwork/strings';
 import { ArrowLeft, ClockCounterClockwise } from './notebook-icons';
 import { Button, Copy, Notice } from './notebook-ui';
+import CopyReportText from './copy-report-text';
 import SavedReport from './saved-report';
 import { colors, size, spacing } from './theme';
 
@@ -153,7 +154,13 @@ function ReportHistory({ order, baseUrl, token, locale, close }: Props & { close
               <>
                 {selected.review ? (
                   <Notice title={notebookCopy[locale].status[selected.review.decision]}>
-                    {selected.review.note}
+                    {selected.review.note ? (
+                      <CopyReportText kind="review" text={selected.review.note} locale={locale}>
+                        <Copy muted selectable>
+                          {selected.review.note}
+                        </Copy>
+                      </CopyReportText>
+                    ) : null}
                   </Notice>
                 ) : (
                   <Copy muted>

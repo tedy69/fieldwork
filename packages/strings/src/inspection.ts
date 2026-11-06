@@ -74,9 +74,6 @@ const english = {
   report: 'Inspection report',
   submitted: 'Submitted',
   reportSummary: 'Summary',
-  copyReportSummary: 'Copy report summary',
-  reportSummaryCopied: 'Report summary copied.',
-  reportSummaryCopyFailed: 'Could not copy the summary. Select the text to copy it.',
   submittedPhoto: 'Submitted site photo',
 };
 
@@ -156,9 +153,38 @@ export const inspectionCopy: Record<Locale, typeof english> = {
     report: 'Laporan inspeksi',
     submitted: 'Dikirim',
     reportSummary: 'Ringkasan',
-    copyReportSummary: 'Salin ringkasan laporan',
-    reportSummaryCopied: 'Ringkasan laporan disalin.',
-    reportSummaryCopyFailed: 'Ringkasan tidak bisa disalin. Pilih teks untuk menyalin.',
     submittedPhoto: 'Foto lokasi yang dikirim',
+  },
+};
+
+export type ReportClipboardKind = 'summary' | 'review';
+
+export const reportClipboardCopy: Record<
+  Locale,
+  Record<ReportClipboardKind, { label: string; copied: string; failed: string }>
+> = {
+  en: {
+    summary: {
+      label: 'Copy report summary',
+      copied: 'Report summary copied.',
+      failed: 'Could not copy the summary. Select the text to copy it.',
+    },
+    review: {
+      label: 'Copy review feedback',
+      copied: 'Review feedback copied.',
+      failed: 'Could not copy the feedback. Select the text to copy it.',
+    },
+  },
+  id: {
+    summary: {
+      label: 'Salin ringkasan laporan',
+      copied: 'Ringkasan laporan disalin.',
+      failed: 'Ringkasan tidak bisa disalin. Pilih teks untuk menyalin.',
+    },
+    review: {
+      label: 'Salin catatan peninjauan',
+      copied: 'Catatan peninjauan disalin.',
+      failed: 'Catatan tidak bisa disalin. Pilih teks untuk menyalin.',
+    },
   },
 };

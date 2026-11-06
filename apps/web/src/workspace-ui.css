@@ -207,11 +207,22 @@ form > .ui-field-label {
 .feedback-with-action p {
   margin: 0;
 }
-.report-summary-heading {
+.report-summary-heading,
+.report-review-heading {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 8px;
+}
+.report-review {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 4px 8px;
+}
+.report-review-note {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .ui-badge {
   width: fit-content;

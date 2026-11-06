@@ -25,7 +25,8 @@ test('worker reads localized report history and prints the latest saved report o
   });
   const firstSummary = 'Synthetic first report.';
   const latestSummary = 'Synthetic corrected report.\nValve secure.';
-  const feedback = 'Synthetic review note.';
+  const feedback = 'Periksa katup A.\nTambahkan foto di lokasi 東京.';
+  const latestFeedback = 'Revisi diterima.\nKatup A aman.';
   const first = await worker.submitReport(order.id, {
     mutationId: crypto.randomUUID(),
     baseVersion: order.version,
@@ -34,13 +35,14 @@ test('worker reads localized report history and prints the latest saved report o
     photos: [],
   });
   const correction = await manager.review(order.id, first.version, 'CHANGES_REQUESTED', feedback);
-  const latest = await worker.submitReport(order.id, {
+  const latestReport = await worker.submitReport(order.id, {
     mutationId: crypto.randomUUID(),
     baseVersion: correction.version,
     summary: latestSummary,
     answers: [{ itemId: template.items[0].id, value: 'pass', note: '' }],
     photos: [],
   });
+  const latest = await manager.review(order.id, latestReport.version, 'APPROVED', latestFeedback);
 
   if (browserName === 'chromium')
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -98,8 +100,27 @@ test('worker reads localized report history and prints the latest saved report o
   ).toHaveCount(1);
   if (browserName === 'chromium')
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(firstSummary);
+  const revisionFeedback = snapshot.getByRole('button', {
+    name: 'Salin catatan peninjauan',
+    exact: true,
+  });
+  await expect(revisionFeedback.locator('svg[aria-hidden=true]')).toBeVisible();
+  await revisionFeedback.press('Enter');
+  await expect(snapshot.getByText('Catatan peninjauan disalin.', { exact: true })).toHaveCount(1);
+  if (browserName === 'chromium')
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(feedback);
   await dialog.getByRole('button', { name: 'Tutup dialog', exact: true }).click();
   await expect(history).toBeDisabled();
+  const currentFeedback = page.getByRole('button', {
+    name: 'Salin catatan peninjauan',
+    exact: true,
+  });
+  await currentFeedback.press('Enter');
+  await expect(page.getByText('Catatan peninjauan disalin.', { exact: true })).toHaveCount(1);
+  if (browserName === 'chromium')
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(latestFeedback);
+  await currentFeedback.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: test.info().outputPath('copy-review-feedback-320.png') });
   const copy = page.getByRole('button', { name: 'Salin ringkasan laporan', exact: true });
   await expect(copy.locator('svg[aria-hidden=true]')).toBeVisible();
   await copy.press('Enter');
@@ -115,6 +136,10 @@ test('worker reads localized report history and prints the latest saved report o
       },
     });
   });
+  await currentFeedback.press('Enter');
+  await expect(
+    page.getByText('Catatan tidak bisa disalin. Pilih teks untuk menyalin.'),
+  ).toBeVisible();
   await copy.press('Enter');
   await expect(
     page.getByText('Ringkasan tidak bisa disalin. Pilih teks untuk menyalin.'),
@@ -134,6 +159,7 @@ test('worker reads localized report history and prints the latest saved report o
   const print = page.getByRole('article', { name: 'Laporan inspeksi siap cetak' });
   await expect(print).toHaveAttribute('lang', 'id');
   await expect(print.getByText(latestSummary)).toBeVisible();
+  await expect(print.getByText(latestFeedback)).toBeVisible();
   await expect(print.getByText(firstSummary)).toHaveCount(0);
   await expect(print.getByText('Lolos', { exact: true })).toBeVisible();
   await expect(printDue).toHaveText('28 Des 2026');
@@ -146,7 +172,7 @@ test('worker reads localized report history and prints the latest saved report o
       }),
     submittedAt,
   );
-  await expect(print.locator(`time[datetime="${submittedAt}"]`)).toHaveText(
+  await expect(print.getByRole('definition').locator(`time[datetime="${submittedAt}"]`)).toHaveText(
     `${printedTimestamp} UTC`,
   );
   expect((await manager.order(order.id)).version).toBe(latest.version);

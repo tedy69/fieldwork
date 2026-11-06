@@ -1,6 +1,6 @@
 import { Button } from './components/ui/button';
 import { IconButton } from './components/ui/icon-button';
-import CopyReportSummary from './CopyReportSummary';
+import CopyReportText from './CopyReportText';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
 import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check';
 import { CopyIcon } from '@phosphor-icons/react/dist/csr/Copy';
@@ -290,11 +290,19 @@ export default function OrderDetail({
             <p>{order.instructions || copy.defaultInstructions}</p>
           </Card>
           {order.review && (
-            <Alert role="status" className="banner notice">
-              <strong>
-                {web.reviewer(status[order.review.decision], order.review.reviewedBy)}
-              </strong>
-              <p>{order.review.note || copy.accepted}</p>
+            <Alert role="group" className="banner notice report-review">
+              <div role="status">
+                <strong>
+                  {web.reviewer(status[order.review.decision], order.review.reviewedBy)}
+                </strong>
+                <p className="report-review-note">{order.review.note || copy.accepted}</p>
+              </div>
+              <CopyReportText
+                key={order.review.reviewedAt}
+                kind="review"
+                text={order.review.note}
+                locale={locale}
+              />
             </Alert>
           )}
           {queued &&
@@ -583,9 +591,10 @@ export default function OrderDetail({
               </ul>
               <div className="report-summary-heading">
                 <h3>{copy.reportSummary}</h3>
-                <CopyReportSummary
+                <CopyReportText
                   key={order.report.id}
-                  summary={order.report.summary}
+                  kind="summary"
+                  text={order.report.summary}
                   locale={locale}
                 />
               </div>

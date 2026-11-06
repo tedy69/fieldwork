@@ -77,6 +77,7 @@ import {
   SectionHeading,
   StatusBadge,
 } from './notebook-ui';
+import CopyReportText from './copy-report-text';
 import { colors, radius, size, spacing } from './theme';
 import WorkspacePage, {
   NotebookNotice,
@@ -753,7 +754,20 @@ function Inspection({
       </Panel>
       {order.review && (
         <Notice title={notebookCopy[locale].status[order.review.decision]}>
-          {order.review.note || copy.accepted}
+          {order.review.note ? (
+            <CopyReportText
+              key={order.review.reviewedAt}
+              kind="review"
+              text={order.review.note}
+              locale={locale}
+            >
+              <Copy muted selectable>
+                {order.review.note}
+              </Copy>
+            </CopyReportText>
+          ) : (
+            copy.accepted
+          )}
         </Notice>
       )}
       {queued && (

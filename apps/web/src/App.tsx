@@ -4,7 +4,7 @@ import { Alert } from './components/ui/alert';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { Form } from './components/ui/form';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useLayoutEffect, useState, type FormEvent } from 'react';
 import { UserSchema, type User } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
 import { savedLocale, signInCopy, signInError, type Locale } from '@fieldwork/strings';
@@ -42,6 +42,9 @@ export default function App() {
       return savedLocale(null, navigator.language);
     }
   });
+  useLayoutEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
   useEffect(() => {
     const changed = () => setLink(accountLinkFromHash());
     window.addEventListener('hashchange', changed);

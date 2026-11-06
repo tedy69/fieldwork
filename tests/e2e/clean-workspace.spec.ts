@@ -9,6 +9,69 @@ async function login(page: Page, role = 'manager') {
   await expect(page.getByRole('button', { name: 'Sync now', exact: true })).toBeEnabled();
 }
 
+test.describe('workspace sync warning', () => {
+  test.use({ serviceWorkers: 'block' });
+
+  test('retries from the warning and restores keyboard focus when sync recovers', async ({
+    page,
+    context,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 840 });
+    await login(page, 'worker');
+    await expect(page.getByRole('heading', { name: 'My assignments', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+    const search = page.getByRole('searchbox', { name: 'Cari tugas', exact: true });
+    await search.fill('FW-001');
+    const assignment = page.getByRole('button', { name: /^Buka FW-001:/ });
+    await expect(assignment).toBeVisible();
+    const sync = page.getByRole('button', { name: 'Sinkronkan sekarang', exact: true });
+    let unavailable = true;
+    await page.route('**/api/v1/catalog', (route) =>
+      unavailable
+        ? route.fulfill({
+            status: 503,
+            json: { error: { code: 'UNAVAILABLE', message: 'Synthetic sync failure.' } },
+          })
+        : route.continue(),
+    );
+    const waitForFailure = () =>
+      page.waitForResponse(
+        (response) => response.url().endsWith('/catalog') && response.status() === 503,
+      );
+    await sync.click();
+    const warning = page.getByRole('region', { name: 'Sinkronisasi perlu diperiksa' });
+    const retry = warning.getByRole('button', { name: 'Coba sinkron lagi' });
+    await expect(warning.getByRole('alert')).toContainText('Server tidak tersedia.');
+    await expect(retry.locator('svg[aria-hidden=true]')).toBeVisible();
+    await expect(assignment).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await warning.screenshot({ path: test.info().outputPath('sync-warning-320.png') });
+
+    await retry.focus();
+    const rejected = waitForFailure();
+    await page.keyboard.press('Enter');
+    await rejected;
+    await expect(retry).toBeEnabled();
+    await expect(retry).toBeFocused();
+    await context.setOffline(true);
+    await expect(retry).toBeDisabled();
+    const reconnected = waitForFailure();
+    await context.setOffline(false);
+    await reconnected;
+    await expect(retry).toBeEnabled();
+
+    unavailable = false;
+    await retry.focus();
+    await page.keyboard.press('Enter');
+    await expect(warning).toHaveCount(0);
+    await expect(sync).toBeFocused();
+    await expect(search).toHaveValue('FW-001');
+    await expect(assignment).toBeVisible();
+  });
+});
+
 for (const role of ['manager', 'worker']) {
   test(`${role} keeps collapsed date filters, receives visible errors, and clears them offline`, async ({
     page,

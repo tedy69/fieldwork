@@ -106,12 +106,17 @@ export default function Workspace({
   const [online, setOnline] = useState(navigator.onLine);
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState<string | null>('');
+  const [error, setError] = useState<{ kind: 'sync' | 'workspace'; detail: string | null } | null>(
+    null,
+  );
+  const syncAction = useRef<HTMLButtonElement>(null);
+  const retryAction = useRef<HTMLButtonElement>(null);
+  const restoreRetryFocus = useRef(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [notice, setNotice] = useState('');
   async function refresh(reconnecting = false) {
     setBusy(true);
-    setError('');
+    setError((current) => (current?.kind === 'sync' ? current : null));
     try {
       await repo.flush({ afterCurrent: reconnecting });
       const [first, catalog] = await Promise.all([client.orders(), client.catalog()]);
@@ -120,12 +125,13 @@ export default function Workspace({
         orders.push(...(await client.orders(offset)).data);
       setCatalog(catalog);
       await repo.cacheOrders(orders);
+      setError((current) => (current?.kind === 'sync' ? null : current));
       setSessionExpired(false);
     } catch (error) {
       if (user.role === 'worker' && error instanceof ApiError && error.status === 401) {
         setSessionExpired(true);
       } else {
-        setError(error instanceof ApiError ? error.message : null);
+        setError({ kind: 'sync', detail: error instanceof ApiError ? error.message : null });
       }
     } finally {
       setState(await repo.read());
@@ -141,7 +147,7 @@ export default function Workspace({
         .then((state) => {
           if (mounted) setState(state);
         })
-        .catch((error) => setError(message(error)));
+        .catch((error) => setError({ kind: 'workspace', detail: message(error) }));
     };
     load();
     const unsubscribe = repo.subscribe(load);
@@ -160,6 +166,15 @@ export default function Workspace({
       window.removeEventListener('offline', disconnected);
     };
   }, [repo]);
+  useLayoutEffect(() => {
+    if (busy || !restoreRetryFocus.current) return;
+    restoreRetryFocus.current = false;
+    if (document.activeElement !== document.body) return;
+    const target =
+      error?.kind === 'sync' && !sessionExpired ? retryAction.current : syncAction.current;
+    if (target && !target.disabled) target.focus();
+    else document.getElementById('main')?.focus();
+  }, [busy, error, sessionExpired]);
   const order = state.orders.find((order) => order.id === orderId);
   const inspectionId = order?.id;
   useLayoutEffect(() => {
@@ -256,7 +271,7 @@ export default function Workspace({
     document.title = `${title} · Fieldwork`;
   }, [view, order?.reference, user.role, copy.orders, notebook, dispatch.resources]);
   const sessionRecovery = sessionExpired ? (
-    <Alert role="region" aria-label={notebook.syncSignIn} className="banner session-recovery">
+    <Alert role="region" aria-label={notebook.syncSignIn} className="banner feedback-with-action">
       <div role="alert">
         <strong>{notebook.syncSignIn}</strong>
         <p>{notebook.sessionDrafts}</p>
@@ -274,13 +289,38 @@ export default function Workspace({
   const workspaceFeedback = (
     <>
       {!recoveryInReport && sessionRecovery}
-      {!sessionExpired && error !== '' && (
-        <Alert className="banner error" lang={locale}>
-          {locale === 'id' && user.role === 'manager'
-            ? copy.unavailable
-            : (error ?? copy.unavailable)}
-        </Alert>
-      )}
+      {!sessionExpired &&
+        error &&
+        (error.kind === 'sync' ? (
+          <Alert
+            role="region"
+            aria-label={notebook.syncError}
+            className="banner error feedback-with-action"
+            lang={locale}
+          >
+            <p role="alert">
+              {locale === 'id' ? copy.unavailable : (error.detail ?? copy.unavailable)}
+            </p>
+            <Button
+              ref={retryAction}
+              variant="outline"
+              disabled={busy || !online}
+              onClick={(event) => {
+                restoreRetryFocus.current = document.activeElement === event.currentTarget;
+                void refresh();
+              }}
+            >
+              <ArrowClockwiseIcon aria-hidden="true" />
+              {notebook.retrySync}
+            </Button>
+          </Alert>
+        ) : (
+          <Alert className="banner error" lang={locale}>
+            {locale === 'id' && user.role === 'manager'
+              ? copy.unavailable
+              : (error.detail ?? copy.unavailable)}
+          </Alert>
+        ))}
       {!sessionExpired && notice && (
         <Alert role="status" className="banner notice" lang={locale}>
           {notice}
@@ -390,6 +430,7 @@ export default function Workspace({
             <span className={online ? 'signal' : 'signal offline'} />
             <span role="status">{online ? copy.connected : copy.offline}</span>
             <IconButton
+              ref={syncAction}
               className="quiet sync-action"
               label={busy ? notebook.syncing : notebook.sync}
               onClick={() => void refresh()}
@@ -496,7 +537,7 @@ export default function Workspace({
                           disabled={busy || !online}
                           onClick={async () => {
                             setBusy(true);
-                            setError('');
+                            setError(null);
                             try {
                               const latest = await client.order(item.orderId);
                               await repo.cacheOrder(latest);
@@ -511,11 +552,13 @@ export default function Workspace({
                               ) {
                                 setSessionExpired(true);
                               } else {
-                                setError(
-                                  error instanceof ApiError && error.status === 404
-                                    ? copy.unavailableOrder
-                                    : `${message(error)} ${copy.retainedReport}`,
-                                );
+                                setError({
+                                  kind: 'workspace',
+                                  detail:
+                                    error instanceof ApiError && error.status === 404
+                                      ? copy.unavailableOrder
+                                      : `${message(error)} ${copy.retainedReport}`,
+                                });
                               }
                             } finally {
                               setBusy(false);

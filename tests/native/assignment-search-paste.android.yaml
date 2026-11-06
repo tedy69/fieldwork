@@ -1,8 +1,8 @@
 appId: host.exp.exponent
-name: Confirm the exact saved report summary on Android
+name: Confirm the expected text from the Android clipboard
 ---
 - assertVisible:
     id: assignment-search
-    text: ^${SUMMARY}$
+    text: ^${CLIPBOARD_TEXT}$
 - eraseText: 64
 - tapOn: Done editing

@@ -61,7 +61,7 @@ const flow = (name: string) =>
       '-e',
       `ORDER_NAME=Open ${order.reference}: ${order.title}`,
       '-e',
-      `SUMMARY=${olderSummary}`,
+      `CLIPBOARD_TEXT=${olderSummary}`,
       fileURLToPath(new URL(name, import.meta.url)),
     ],
     180_000,
@@ -71,7 +71,7 @@ try {
   await setAvailable(false);
   await flow('notebook-history-copy.android.yaml');
   await run(adb, ['-s', device, 'shell', 'input', 'keyevent', 'KEYCODE_PASTE'], 10_000);
-  await flow('report-summary-paste.android.yaml');
+  await flow('assignment-search-paste.android.yaml');
 } finally {
   await setAvailable(true);
 }

@@ -1,0 +1,8 @@
+appId: ${APP_ID}
+name: Copy the current report summary while the API is offline
+---
+- scrollUntilVisible:
+    element: Copy report summary
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Copy report summary

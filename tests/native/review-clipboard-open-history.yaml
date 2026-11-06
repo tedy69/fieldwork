@@ -1,0 +1,23 @@
+appId: ${APP_ID}
+name: Load an earlier reviewed revision on the synthetic server
+---
+- scrollUntilVisible:
+    element: ${ORDER_NAME}
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: ${ORDER_NAME}
+- scrollUntilVisible:
+    element: Report history
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Report history
+- extendedWaitUntil:
+    visible:
+      id: ${REVISION}
+    timeout: 15000
+- tapOn:
+    id: ${REVISION}
+- scrollUntilVisible:
+    element: Copy review feedback
+    centerElement: true

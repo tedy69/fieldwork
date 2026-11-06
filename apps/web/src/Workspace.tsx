@@ -595,7 +595,9 @@ export default function Workspace({
                           {item.state === 'blocked' ? copy.blocked : copy.waiting}
                         </span>
                       </div>
-                      <h2>{order?.title ?? item.orderId}</h2>
+                      <h2 id={`outbox-title-${item.input.mutationId}`}>
+                        {order?.title ?? item.orderId}
+                      </h2>
                       <p>{item.input.summary}</p>
                       {item.error && (item.state === 'blocked' || showPendingReportError) && (
                         <p className="error">{item.error}</p>
@@ -604,6 +606,20 @@ export default function Workspace({
                         {notebook.photoCount(item.input.photos.length)} · {notebook.savedAt}{' '}
                         {new Date(item.createdAt).toLocaleString(dateLocale)}
                       </p>
+                      {item.state === 'pending' && order && (
+                        <Button
+                          id={`outbox-open-${item.input.mutationId}`}
+                          className="outbox-open"
+                          aria-describedby={`outbox-title-${item.input.mutationId}`}
+                          variant="outline"
+                          onClick={(event) =>
+                            openInspection(order.id, `#${event.currentTarget.id}`)
+                          }
+                        >
+                          <ClipboardTextIcon aria-hidden="true" />
+                          {notebook.openSaved}
+                        </Button>
+                      )}
                       <DraftExport orderId={item.orderId} repo={repo} locale={locale} />
                       {item.state === 'blocked' && (
                         <Button

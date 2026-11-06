@@ -15,6 +15,12 @@ const english = {
     offline:
       'You’re offline. Loaded text stays available until you close this history. Connect to load more submissions or photos.',
     retry: 'Retry history',
+    reload: 'Reload report history',
+    errors: {
+      cursor: 'This page is no longer available. Reload history to start with the newest reports.',
+      unavailable: 'This assignment is no longer available to your account.',
+      request: 'Could not load report history. Connect and try again.',
+    },
     loading: 'Loading report history…',
     count: (loaded: number, total: number) => `Showing ${loaded} of ${total} saved submissions`,
     empty: 'No submitted reports yet',
@@ -81,6 +87,12 @@ export const workerReportCopy: Record<Locale, typeof english> = {
       offline:
         'Anda sedang offline. Teks yang sudah dimuat tetap tersedia sampai riwayat ditutup. Sambungkan kembali untuk memuat laporan lain atau foto.',
       retry: 'Coba muat riwayat lagi',
+      reload: 'Muat ulang riwayat laporan',
+      errors: {
+        cursor: 'Halaman ini sudah tidak tersedia. Muat ulang riwayat mulai dari laporan terbaru.',
+        unavailable: 'Tugas ini sudah tidak tersedia untuk akun Anda.',
+        request: 'Riwayat laporan gagal dimuat. Sambungkan kembali, lalu coba lagi.',
+      },
       loading: 'Memuat riwayat laporan…',
       count: (loaded, total) => `Menampilkan ${loaded} dari ${total} laporan tersimpan`,
       empty: 'Belum ada laporan yang dikirim',

@@ -258,6 +258,26 @@ test('older submissions page without moving selection, and missing legacy review
   const endpoint = `**/api/v1/work-orders/${order.id}/history?*cursor=*`;
   await page.route(endpoint, (route) =>
     route.fulfill({
+      status: 422,
+      json: { error: { code: 'INVALID_CURSOR', message: 'Synthetic rejected cursor.' } },
+    }),
+  );
+  await older.press('Enter');
+  await expect(dialog.getByRole('alert')).toContainText('Reload history to start');
+  await expect(older).toBeDisabled();
+  await expect(snapshot).toContainText('Inspection attempt 11.');
+  const refreshed = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname.endsWith(`/${order.id}/history`) && !url.searchParams.has('cursor');
+  });
+  await dialog.getByRole('button', { name: 'Reload report history' }).press('Enter');
+  expect((await refreshed).status()).toBe(200);
+  await expect(dialog.getByRole('heading', { name: 'Report history', exact: true })).toBeFocused();
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
+  await expect(older).toBeEnabled();
+  await page.unroute(endpoint);
+  await page.route(endpoint, (route) =>
+    route.fulfill({
       status: 503,
       json: { error: { code: 'UNAVAILABLE', message: 'Older reports unavailable.' } },
     }),

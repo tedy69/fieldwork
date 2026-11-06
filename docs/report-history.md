@@ -2,6 +2,8 @@
 
 Open a web work order and choose **Report history** to read saved submissions and their reviews. Select a submission to read its original checklist answers, notes, summary, assignment details, and attachment links. **Load older submissions** loads another page without moving the selected report. This view is read-only and never changes a draft, the outbox, or the current report.
 
+If a page fails to load, **Retry history** tries it again while the loaded reports stay visible. If the server rejects the page cursor, **Reload report history** starts from the newest submissions.
+
 History needs a connection to load. An already opened view can keep its loaded text in memory while offline; attachment links and further loading need a connection. Closing the view clears that in-memory history. The latest saved report remains available through the existing offline notebook and print action. Historical reports are not added to the offline cache or the print action in this feature.
 
 ## API and storage contract
@@ -12,7 +14,7 @@ Each record includes a validated report/assignment `snapshot`, the original `sub
 
 New submissions insert a snapshot in the same SQLite transaction as the work order, photos, action history, and idempotency acknowledgment. Retries with the same mutation ID do not add another revision. A review attaches its decision/note/actor/time to the matching saved submission in the review transaction. Report contents and assignment snapshots are never overwritten by a later submission, schedule change, or reassignment.
 
-Managers and the currently assigned worker can read history. Reassignment moves history and historical photo access with the order. The original worker's device drafts remain account-scoped and are not uploaded by opening history. Native submissions use the same server recording behavior; the viewer is web-only.
+Managers and the currently assigned worker can read history. Reassignment moves history and historical photo access with the order. The original worker's device drafts remain account-scoped and are not uploaded by opening history. Expo workers can also read report revisions and review feedback from the inspection screen.
 
 ## Upgrading schema 1 to schema 2
 

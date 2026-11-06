@@ -61,10 +61,23 @@ test('worker reads localized report history and prints the latest saved report o
   await expect(printDue).toHaveText('Dec 28, 2026');
   await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
   await expect(page.getByText(`Dikirim ${indonesianTime}`, { exact: true })).toBeVisible();
+  const endpoint = `**/api/v1/work-orders/${order.id}/history?*`;
+  await page.route(endpoint, (route) =>
+    route.fulfill({
+      status: 503,
+      json: { error: { code: 'UNAVAILABLE', message: 'Synthetic report history unavailable.' } },
+    }),
+  );
   const history = page.getByRole('button', { name: 'Riwayat laporan', exact: true });
   await history.focus();
   await page.keyboard.press('Enter');
   const dialog = page.getByRole('dialog', { name: 'Riwayat laporan', exact: true });
+  await expect(dialog.getByRole('heading', { name: 'Riwayat laporan', exact: true })).toBeFocused();
+  await expect(dialog.getByRole('alert')).toContainText('Riwayat laporan gagal dimuat.');
+  await page.unroute(endpoint);
+  const retry = dialog.getByRole('button', { name: 'Coba muat riwayat lagi', exact: true });
+  await expect(retry.locator('svg[aria-hidden=true]')).toBeVisible();
+  await retry.press('Enter');
   await expect(dialog.getByRole('heading', { name: 'Riwayat laporan', exact: true })).toBeFocused();
   await expect(dialog.getByText('Menampilkan 2 dari 2 laporan tersimpan')).toBeVisible();
   await dialog.getByRole('button', { name: `Lihat laporan: Versi tugas ${first.version}` }).click();

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { type ReportRevision, answerLabel, reportItemLabel } from '@fieldwork/contracts';
 import { inspectionCopy, languageTags, notebookCopy, type Locale } from '@fieldwork/strings';
+import { ApiError } from '@fieldwork/sdk';
+import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
 import { ClockCounterClockwiseIcon } from '@phosphor-icons/react/dist/csr/ClockCounterClockwise';
 import { client, dateLabel, message } from './lib';
 import { Button } from './components/ui/button';
@@ -29,6 +31,7 @@ import { workerReportCopy } from './worker-report-copy';
 import './report-history.css';
 
 type HistoryPage = Awaited<ReturnType<typeof client.reportHistory>>;
+type HistoryFailure = { code: 'cursor' | 'unavailable' | 'request'; detail: string };
 export default function ReportHistory({
   orderId,
   online,
@@ -50,14 +53,14 @@ export default function ReportHistory({
   const [page, setPage] = useState<HistoryPage | null>(null);
   const [selectedId, setSelectedId] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<HistoryFailure | null>(null);
   const generation = useRef(0);
   const trigger = useRef<HTMLButtonElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
 
   async function load(cursor: string | undefined, requestGeneration: number) {
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       const next = await client.reportHistory(orderId, cursor);
       if (requestGeneration !== generation.current) return;
@@ -79,7 +82,14 @@ export default function ReportHistory({
       );
       if (!cursor) setSelectedId(next.data[0]?.snapshot.report.id ?? '');
     } catch (error) {
-      if (requestGeneration === generation.current) setError(message(error));
+      if (requestGeneration !== generation.current) return;
+      const code =
+        error instanceof ApiError && error.code === 'INVALID_CURSOR'
+          ? 'cursor'
+          : error instanceof ApiError && (error.status === 403 || error.status === 404)
+            ? 'unavailable'
+            : 'request';
+      setError({ code, detail: message(error) });
     } finally {
       if (requestGeneration === generation.current) setBusy(false);
     }
@@ -90,7 +100,7 @@ export default function ReportHistory({
     else {
       setPage(null);
       setSelectedId('');
-      setError('');
+      setError(null);
     }
     return () => {
       generation.current++;
@@ -98,6 +108,7 @@ export default function ReportHistory({
   }, [open, orderId]);
 
   const selected = page?.data.find((revision) => revision.snapshot.report.id === selectedId);
+  const reload = error?.code === 'cursor';
   return (
     <section className="history-launcher" aria-label={copy.section} lang={locale}>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -138,13 +149,20 @@ export default function ReportHistory({
           )}
           {error && (
             <Alert className="banner error">
-              <p>{error}</p>
+              <p>{locale === 'en' && !reload ? error.detail : copy.errors[error.code]}</p>
               <Button
                 className="quiet"
                 disabled={busy || !online}
-                onClick={() => void load(page?.nextCursor ?? undefined, generation.current)}
+                onClick={() => {
+                  title.current?.focus();
+                  void load(
+                    reload ? undefined : (page?.nextCursor ?? undefined),
+                    generation.current,
+                  );
+                }}
               >
-                {copy.retry}
+                <ArrowClockwiseIcon aria-hidden="true" />
+                {reload ? copy.reload : copy.retry}
               </Button>
             </Alert>
           )}
@@ -186,7 +204,7 @@ export default function ReportHistory({
                 {page.nextCursor && (
                   <Button
                     className="quiet history-more"
-                    disabled={busy || !online}
+                    disabled={busy || !online || reload}
                     onClick={() => void load(page.nextCursor!, generation.current)}
                   >
                     {copy.older}

@@ -1,37 +1,10 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { fileURLToPath } from 'node:url';
 import { localDate } from '@fieldwork/contracts';
-import { iosSmokeFlows } from './ios-smoke-flows';
-import { openFixture, run } from './smoke-fixture';
+import { notebookSmokeFlows } from './notebook-smoke-flows';
+import { openFixture } from './smoke-fixture';
 
-const device = process.argv[2];
-if (!device) throw new Error('Pass the ID of a dedicated iOS simulator or Android emulator.');
-const android = /^emulator-\d+$/.test(device);
-let flow: ReturnType<typeof iosSmokeFlows>;
-if (android) {
-  const adb = process.env.ADB ?? 'adb';
-  const emulator = execFileSync(adb, ['-s', device, 'shell', 'getprop', 'ro.kernel.qemu'], {
-    encoding: 'utf8',
-    timeout: 10_000,
-  }).trim();
-  if (emulator !== '1') throw new Error('Use a booted Android emulator.');
-  flow = (name, variables) =>
-    run(
-      'maestro',
-      [
-        '--device',
-        device,
-        'test',
-        ...Object.entries(variables ?? {}).flatMap(([key, value]) => ['-e', `${key}=${value}`]),
-        fileURLToPath(new URL(name, import.meta.url)),
-      ],
-      180_000,
-    );
-} else {
-  flow = iosSmokeFlows(device, {});
-}
+const { android, flow } = notebookSmokeFlows(process.argv[2]);
 
 const { manager, setAvailable } = await openFixture();
 const search = `DraftQA${randomUUID().slice(0, 6)}`;

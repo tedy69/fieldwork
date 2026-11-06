@@ -33,6 +33,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Open a saved assignment from the web or Expo outbox and return to the queue.
 - [x] Distinct clock and warning icons for waiting and blocked reports on web and Expo.
 - [x] An offline outbox filter for reports that need attention, combined with search on web and Expo.
+- [x] Repeatable Android and iOS smoke test for outbox search, the attention filter, and a blocked report after reconnect.
 - [x] Clear the web outbox confirmation once its report syncs or needs attention.
 - [x] Private local draft JSON exports in the web notebook/outbox, including offline photos and blocked submissions without changing the queue.
 - [x] Indonesian contributor quick-start guide for local setup, demo accounts, offline production builds and checks.

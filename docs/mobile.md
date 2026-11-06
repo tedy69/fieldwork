@@ -92,6 +92,8 @@ Both date-filter runners also clear the active filter during the outage, keep th
 
 On a dedicated iOS simulator or Android emulator, start on **My assignments** in English with an empty search and the filter closed. Turn off Expo Go's floating **Tools button** and run `npm exec -- tsx tests/native/drafts-filter.ts <device-id>` against the synthetic fixture. Set `ADB` if Android's adb is outside your PATH. The flow saves a draft during an outage, finds and reopens it with **Drafts** and search, and confirms that no report reached the server.
 
+Use the same setup and run `npm exec -- tsx tests/native/outbox-attention.ts <device-id>` with an empty outbox. The flow queues two inspections during a synthetic outage and checks that search and the attention filter work independently. On reconnect it checks that a version conflict stays in the outbox while the other report syncs once.
+
 Assignment rows and inspection details display the due date in the notebook language. The stored calendar day stays the same across time zones. Report and sync timestamps use the notebook language and the device's time zone. Run `notebook-timestamps.ios.yaml` from **My assignments** in English after syncing the synthetic fixture to check both timestamp formats.
 
 The copy icon beside an inspection reference copies only that number and works from saved assignments offline. The reference stays selectable for manual copying. From **My assignments** in English on a dedicated iOS simulator with the synthetic fixture cached, run `maestro --device <simulator-id> test tests/native/copy-reference.ios.yaml`. Confirm that `xcrun simctl pbpaste <simulator-id>` prints `FW-001` after the flow. On Android, paste the copied reference into assignment search to check the same value.

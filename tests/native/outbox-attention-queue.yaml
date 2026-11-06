@@ -1,0 +1,36 @@
+appId: ${APP_ID}
+name: Queue an inspection without the synthetic API
+---
+- scrollUntilVisible:
+    element: ${ORDER}
+    direction: DOWN
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: ${ORDER}
+- scrollUntilVisible:
+    element: 'Check valve: pass'
+    centerElement: true
+- tapOn: 'Check valve: pass'
+- scrollUntilVisible:
+    element:
+      id: inspection-summary
+    centerElement: true
+- tapOn:
+    id: inspection-summary
+    point: 20%,50%
+- inputText: ${SUMMARY}
+- tapOn: Done editing
+- scrollUntilVisible:
+    element: Save and sync inspection
+    centerElement: true
+- tapOn: Save and sync inspection
+- extendedWaitUntil:
+    visible: Report saved
+    timeout: 15000
+- tapOn: OK
+- scrollUntilVisible:
+    element: Back to assignments
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Back to assignments

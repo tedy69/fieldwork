@@ -1,0 +1,30 @@
+appId: ${APP_ID}
+name: Cache both synthetic outbox search assignments
+---
+- extendedWaitUntil:
+    visible: My assignments
+    timeout: 30000
+- scrollUntilVisible:
+    element: Sync now
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn:
+    text: Sync now
+    point: 10%,50%
+- scrollUntilVisible:
+    element:
+      id: assignment-search
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn:
+    id: assignment-search
+    point: 20%,50%
+- assertVisible: Done editing
+- inputText: ${PREFIX}
+- tapOn: Done editing
+- scrollUntilVisible:
+    element: ${FIRST}
+    centerElement: true
+- assertVisible: ${FIRST}
+- assertVisible: ${SECOND}

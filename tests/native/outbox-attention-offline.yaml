@@ -1,0 +1,68 @@
+appId: ${APP_ID}
+name: Search and clear the saved outbox without the synthetic API
+---
+- scrollUntilVisible:
+    element: 'Outbox \(2\)'
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: 'Outbox \(2\)'
+- assertVisible: Search queued reports
+- tapOn:
+    id: outbox-search
+    point: 20%,50%
+- assertVisible: Done editing
+- inputText: NoQueuedMatch
+- tapOn: Done editing
+- assertVisible: No matching queued reports
+- scrollUntilVisible:
+    element: Clear search
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Clear search
+- assertNotVisible: Clear search
+- tapOn:
+    id: outbox-search
+    point: 20%,50%
+- inputText: ValveSearchQA
+- tapOn: Done editing
+- scrollUntilVisible:
+    element: ${FIRST_TITLE}
+    centerElement: true
+- assertVisible: ${FIRST_TITLE}
+- assertNotVisible: ${SECOND_TITLE}
+- scrollUntilVisible:
+    element: Filter reports that need attention
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Filter reports that need attention
+- scrollUntilVisible:
+    element: No reports are blocked
+    centerElement: true
+- assertVisible: No reports are blocked
+- assertNotVisible: ${FIRST_TITLE}
+- scrollUntilVisible:
+    element: Filter reports that need attention
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Filter reports that need attention
+- assertVisible:
+    id: outbox-search
+    text: ValveSearchQA
+- scrollUntilVisible:
+    element: ${FIRST_TITLE}
+    centerElement: true
+- assertVisible: ${FIRST_TITLE}
+- scrollUntilVisible:
+    element: Clear search
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Clear search
+- assertNotVisible: Clear search
+- scrollUntilVisible:
+    element: ${SECOND_TITLE}
+    centerElement: true
+- assertVisible: ${SECOND_TITLE}

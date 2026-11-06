@@ -1,5 +1,44 @@
 import { expect, test } from '@playwright/test';
 
+test('recovers from a rejected password without storing either password', async ({
+  page,
+  context,
+}) => {
+  const wrongPassword = 'wrong-password-for-sign-in-qa';
+  const correctPassword = 'fieldwork-demo';
+  const password = page.getByLabel('Password', { exact: true });
+  const signIn = page.getByRole('button', { name: 'Sign in', exact: true });
+  const expectPasswordsAbsent = async () => {
+    const storage = JSON.stringify({
+      persistent: await context.storageState({ indexedDB: true }),
+      session: await page.evaluate(() => Object.entries(sessionStorage)),
+    });
+    expect(storage).not.toContain(wrongPassword);
+    expect(storage).not.toContain(correctPassword);
+  };
+
+  await page.goto('/');
+  await expect(signIn).toBeEnabled();
+  await page.getByLabel('Email', { exact: true }).fill('worker@fieldwork.local');
+  await password.fill(wrongPassword);
+  const rejected = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname.endsWith('/sessions') &&
+      response.request().method() === 'POST',
+  );
+  await password.press('Enter');
+  expect((await rejected).status()).toBe(401);
+  await expect(page.getByRole('alert')).toHaveText('Email or password is incorrect.');
+  await expect(signIn).toBeEnabled();
+  await expectPasswordsAbsent();
+
+  await password.fill(correctPassword);
+  await password.press('Enter');
+  await expect(page.getByRole('heading', { name: 'My assignments', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Open FW-001:/ })).toBeVisible();
+  await expectPasswordsAbsent();
+});
+
 test.describe('Indonesian browser language', () => {
   test.use({ locale: 'id-ID' });
 

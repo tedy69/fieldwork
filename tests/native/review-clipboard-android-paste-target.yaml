@@ -1,0 +1,19 @@
+appId: host.exp.exponent
+name: Open assignment search to verify the native clipboard
+---
+- scrollUntilVisible:
+    element: Back to assignments
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Back to assignments
+- scrollUntilVisible:
+    element:
+      id: assignment-search
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn:
+    id: assignment-search
+    point: 20%,50%
+- assertVisible: Done editing

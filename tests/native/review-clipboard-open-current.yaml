@@ -1,0 +1,11 @@
+appId: ${APP_ID}
+name: Reopen the cached reviewed report
+---
+- scrollUntilVisible:
+    element: ${ORDER_NAME}
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: ${ORDER_NAME}
+- scrollUntilVisible:
+    element: Copy review feedback
+    centerElement: true

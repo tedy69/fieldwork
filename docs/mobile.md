@@ -94,6 +94,8 @@ On a dedicated iOS simulator or Android emulator, start on **My assignments** in
 
 Use the same setup and run `npm exec -- tsx tests/native/outbox-attention.ts <device-id>` with an empty outbox. The flow queues two inspections during a synthetic outage and checks that search and the attention filter work independently. On reconnect it checks that a version conflict stays in the outbox while the other report syncs once.
 
+Use the same setup to run `npm exec -- tsx tests/native/review-clipboard.ts <device-id>`. It loads a reviewed revision, disconnects the synthetic API, and checks the exact clipboard contents for the earlier note, current note, and report summary. Android verifies the clipboard by pasting into assignment search; iOS reads the simulator pasteboard.
+
 Assignment rows and inspection details display the due date in the notebook language. The stored calendar day stays the same across time zones. Report and sync timestamps use the notebook language and the device's time zone. Run `notebook-timestamps.ios.yaml` from **My assignments** in English after syncing the synthetic fixture to check both timestamp formats.
 
 The copy icon beside an inspection reference copies only that number and works from saved assignments offline. The reference stays selectable for manual copying. From **My assignments** in English on a dedicated iOS simulator with the synthetic fixture cached, run `maestro --device <simulator-id> test tests/native/copy-reference.ios.yaml`. Confirm that `xcrun simctl pbpaste <simulator-id>` prints `FW-001` after the flow. On Android, paste the copied reference into assignment search to check the same value.

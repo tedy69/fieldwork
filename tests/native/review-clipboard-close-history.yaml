@@ -1,0 +1,8 @@
+appId: ${APP_ID}
+name: Return to the current reviewed report
+---
+- tapOn: Back to report history
+- tapOn: Close report history
+- scrollUntilVisible:
+    element: Copy review feedback
+    centerElement: true

@@ -1,0 +1,5 @@
+appId: ${APP_ID}
+name: Copy the visible review note while the API is offline
+---
+- waitForAnimationToEnd
+- tapOn: Copy review feedback

@@ -907,3 +907,87 @@ test('manager reuses batch settings at 320px with a fresh date and an explicit r
   expect(detail.assignee.id).toBe('worker');
   expect((await manager.orderSeriesDetail(original.id)).skipDates).toEqual(['2027-01-06']);
 });
+
+test('manager finds open batch visits on closure dates and keeps the filter offline', async ({
+  page,
+  context,
+}) => {
+  const { manager } = await fixture('Batch closure filter setup', 0);
+  const site = await manager.createSite('Batch closure filter QA', 'Synthetic site');
+  const title = 'Batch visits on closure dates QA';
+  const batch = await manager.createOrderSeries({
+    mutationId: crypto.randomUUID(),
+    title,
+    instructions: '',
+    siteId: site.id,
+    templateId: 'routine',
+    assigneeId: 'worker',
+    priority: 'routine',
+    dueDate: '2027-01-04',
+    frequency: 'daily',
+    occurrences: 4,
+  });
+  const [reviewed, moved, closed, open] = batch.orders;
+  const workerSession = await createClient(baseURL).login(
+    'worker@fieldwork.local',
+    'fieldwork-demo',
+  );
+  const worker = createClient(baseURL, () => workerSession.token);
+  const report = await worker.submitReport(reviewed.id, {
+    mutationId: crypto.randomUUID(),
+    baseVersion: reviewed.version,
+    summary: 'Synthetic report for a completed visit.',
+    answers: reviewed.template.items.map((item) => ({ itemId: item.id, value: 'pass', note: '' })),
+    photos: [],
+  });
+  await manager.review(reviewed.id, report.version, 'APPROVED', 'Synthetic approval.');
+  await manager.rescheduleOrder(moved.id, { baseVersion: moved.version, dueDate: closed.dueDate });
+  await manager.updateSiteClosures(site.id, {
+    expectedDates: [],
+    dates: [reviewed.dueDate, closed.dueDate],
+  });
+
+  await page.setViewportSize({ width: 320, height: 840 });
+  await login(page);
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+  await page.getByRole('button', { name: 'Jadwal berulang', exact: true }).click();
+  const viewer = page.getByRole('dialog', { name: 'Jadwal berulang', exact: true });
+  await viewer
+    .getByRole('button', { name: `Lihat jadwal ${batch.id}: ${title}`, exact: true })
+    .click();
+  const details = viewer.getByRole('region', { name: 'Jadwal berulang terpilih', exact: true });
+  const filter = details.getByRole('combobox', { name: 'Tampilkan kunjungan', exact: true });
+  const rows = details.locator('.series-orders > li');
+  await expect(rows).toHaveCount(4);
+  await expect(details.getByText('Lokasi tutup', { exact: true })).toHaveCount(2);
+
+  await context.setOffline(true);
+  await filter.selectOption({ label: 'Saat lokasi tutup' });
+  await expect(details.getByText('2 dari 4 kunjungan', { exact: true })).toBeVisible();
+  await expect(rows).toHaveCount(2);
+  await expect(rows.filter({ hasText: moved.reference })).toContainText('Lokasi tutup');
+  await expect(rows.filter({ hasText: closed.reference })).toContainText('Lokasi tutup');
+  await expect(rows.filter({ hasText: reviewed.reference })).toHaveCount(0);
+  await expect(rows.filter({ hasText: open.reference })).toHaveCount(0);
+  const reschedule = details.getByRole('button', {
+    name: `Ubah tenggat ${moved.reference}`,
+    exact: true,
+  });
+  await expect(reschedule).toBeDisabled();
+  expect(await viewer.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await details.screenshot({ path: test.info().outputPath('closure-filter-phone.png') });
+
+  await context.setOffline(false);
+  await reschedule.click();
+  await details.getByRole('textbox', { name: 'Tenggat baru', exact: true }).fill('2027-01-08');
+  await details.getByRole('button', { name: 'Simpan tenggat', exact: true }).click();
+  await expect(filter).toBeFocused();
+  await expect(details.getByText('1 dari 4 kunjungan', { exact: true })).toBeVisible();
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText(closed.reference);
+  const refreshed = await manager.orderSeriesDetail(batch.id);
+  expect(refreshed.orders[1]).toMatchObject({
+    plannedDueDate: moved.dueDate,
+    order: { dueDate: '2027-01-08' },
+  });
+});

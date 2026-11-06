@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { IconButton } from './components/ui/icon-button';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
 import { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight';
+import { CalendarXIcon } from '@phosphor-icons/react/dist/csr/CalendarX';
 import { CopyIcon } from '@phosphor-icons/react/dist/csr/Copy';
 import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple';
 import { FunnelSimpleIcon } from '@phosphor-icons/react/dist/csr/FunnelSimple';
@@ -48,12 +49,26 @@ type LoadedBatch = OrderSeriesDetail & { loadedAt: string };
 type Visit = OrderSeriesDetail['orders'][number];
 type VisitFilter = keyof typeof seriesOverviewCopy.en.filters;
 
-function matchesVisit({ order, plannedDueDate }: Visit, filter: VisitFilter, today: string) {
+function fallsOnClosure(order: WorkOrder, closureDates: string[]) {
+  return (
+    (order.status === 'ASSIGNED' || order.status === 'CHANGES_REQUESTED') &&
+    closureDates.includes(order.dueDate)
+  );
+}
+
+function matchesVisit(
+  { order, plannedDueDate }: Visit,
+  filter: VisitFilter,
+  today: string,
+  closureDates: string[],
+) {
   switch (filter) {
     case 'upcoming':
       return order.dueDate >= today && ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status);
     case 'overdue':
       return isOverdue(order, today);
+    case 'closures':
+      return fallsOnClosure(order, closureDates);
     case 'rescheduled':
       return order.dueDate !== plannedDueDate;
     case 'review':
@@ -93,6 +108,8 @@ export default function SeriesOverview({
   const [batchState, setBatchState] = useState<BatchFilters['state']>();
   const [loadedFilters, setLoadedFilters] = useState<BatchFilters>({});
   const [detail, setDetail] = useState<LoadedBatch | null>(null);
+  const siteId = detail?.orders[0]?.order.site.id;
+  const closureDates = sites.find((site) => site.id === siteId)?.closureDates ?? [];
   const [selected, setSelected] = useState('');
   const [visitFilter, setVisitFilter] = useState<VisitFilter>('all');
   const [listBusy, setListBusy] = useState(false);
@@ -234,7 +251,7 @@ export default function SeriesOverview({
     await onCache(order);
     const visit = detail?.orders.find((row) => row.order.id === order.id);
     restoreVisitFocus.current = Boolean(
-      visit && !matchesVisit({ ...visit, order }, visitFilter, today),
+      visit && !matchesVisit({ ...visit, order }, visitFilter, today, closureDates),
     );
     setDetail(
       (previous) =>
@@ -264,7 +281,7 @@ export default function SeriesOverview({
     visitSelect.current?.focus();
   }, [changingOrder, detail]);
   const visibleVisits =
-    detail?.orders.filter((visit) => matchesVisit(visit, visitFilter, today)) ?? [];
+    detail?.orders.filter((visit) => matchesVisit(visit, visitFilter, today, closureDates)) ?? [];
   function downloadVisits() {
     if (!detail || !visibleVisits.length) return;
     setOpenError('');
@@ -656,9 +673,17 @@ export default function SeriesOverview({
                           <dd>{order.assignee.name}</dd>
                         </div>
                       </dl>
-                      <Badge className={`status status-${order.status.toLowerCase()}`}>
-                        {labels[order.status]}
-                      </Badge>
+                      <div className="series-visit-status">
+                        <Badge className={`status status-${order.status.toLowerCase()}`}>
+                          {labels[order.status]}
+                        </Badge>
+                        {fallsOnClosure(order, closureDates) && (
+                          <Badge className="series-closure-label">
+                            <CalendarXIcon aria-hidden="true" />
+                            {copy.siteClosed}
+                          </Badge>
+                        )}
+                      </div>
                       <div className="series-order-actions">
                         <IconButton
                           className="quiet"
@@ -672,9 +697,7 @@ export default function SeriesOverview({
                         {(order.status === 'ASSIGNED' || order.status === 'CHANGES_REQUESTED') && (
                           <RescheduleOrder
                             order={order}
-                            closureDates={
-                              sites.find((site) => site.id === order.site.id)?.closureDates
-                            }
+                            closureDates={closureDates}
                             locale={locale}
                             online={online}
                             onSaved={saveSchedule}

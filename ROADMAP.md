@@ -38,6 +38,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] To do filter in the web and Expo worker notebooks for new assignments and requested corrections.
 - [x] Pencil marker for saved local drafts in web and Expo assignment lists.
 - [x] Drafts filter to resume saved inspections offline on web and Expo.
+- [x] Repeatable Android and iOS smoke test for finding and reopening a local draft during an outage.
 - [x] Localized Expo due dates in saved assignment rows, screen-reader hints, and inspection details.
 - [x] Copy an inspection reference from saved assignments in Expo, including offline.
 - [x] CSV exports for filtered manager report lists, including saved offline reports.

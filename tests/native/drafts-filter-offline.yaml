@@ -1,0 +1,87 @@
+appId: ${APP_ID}
+name: Find and reopen a local inspection draft offline
+---
+- scrollUntilVisible:
+    element:
+      id: assignment-search
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn:
+    id: assignment-search
+    point: 20%,50%
+- assertVisible: Done editing
+- inputText: ${SEARCH}
+- tapOn: Done editing
+- scrollUntilVisible:
+    element: ${DRAFT_NAME}
+    centerElement: true
+- tapOn: ${DRAFT_NAME}
+- scrollUntilVisible:
+    element:
+      id: inspection-summary
+    centerElement: true
+- tapOn:
+    id: inspection-summary
+- inputText: ${SUMMARY}
+- tapOn: Done editing
+- scrollUntilVisible:
+    element: Back to assignments
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Back to assignments
+- scrollUntilVisible:
+    element: Filter assignments
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Filter assignments
+- scrollUntilVisible:
+    element: '^Drafts$'
+    centerElement: true
+- tapOn: '^Drafts$'
+- scrollUntilVisible:
+    element: Filter assignments
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Filter assignments
+- assertVisible: Drafts · 1 shown
+- scrollUntilVisible:
+    element: ${DRAFT_NAME}
+    centerElement: true
+- assertNotVisible: ${ORDER_NAME}
+- tapOn: ${DRAFT_NAME}
+- scrollUntilVisible:
+    element:
+      id: inspection-summary
+    centerElement: true
+- assertVisible:
+    id: inspection-summary
+    text: ${SUMMARY}
+- scrollUntilVisible:
+    element: Back to assignments
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Back to assignments
+- scrollUntilVisible:
+    element: Drafts · 1 shown
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Clear assignment filter
+- assertNotVisible: Drafts · 1 shown
+- assertVisible:
+    id: assignment-search
+    text: ${SEARCH}
+- scrollUntilVisible:
+    element: ${ORDER_NAME}
+    centerElement: true
+- scrollUntilVisible:
+    element: Clear search
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+- tapOn: Clear search

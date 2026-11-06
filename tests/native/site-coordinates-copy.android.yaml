@@ -1,0 +1,19 @@
+appId: host.exp.exponent
+name: Copy saved coordinates during an API outage on Android
+---
+- tapOn: ${ORDER_NAME}
+- scrollUntilVisible:
+    element: ${COORDINATES_LABEL}
+    centerElement: true
+- assertVisible: ${COORDINATES_LABEL}
+- tapOn: Copy site coordinates
+- scrollUntilVisible:
+    element: Back to assignments
+    direction: UP
+- tapOn: Back to assignments
+- scrollUntilVisible:
+    element:
+      id: assignment-search
+    direction: UP
+- tapOn:
+    id: assignment-search

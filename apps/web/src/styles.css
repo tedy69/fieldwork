@@ -775,11 +775,27 @@ main#main {
   align-items: center;
   gap: 8px 12px;
 }
+.outbox-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.outbox-status[data-state='blocked'] {
+  color: var(--error);
+}
+.outbox-status svg {
+  flex: none;
+}
 .outbox-item h2 {
   margin-top: 12px;
 }
 .outbox-open {
   margin-bottom: 12px;
+}
+.outbox-recover {
+  margin-top: 12px;
+  max-width: 100%;
+  white-space: normal;
 }
 .outbox-list {
   margin-top: 30px;

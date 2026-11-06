@@ -547,11 +547,24 @@ export const RecurrenceFrequencySchema = z.enum([
   'biweekly',
   'weekdays',
   'weekends',
+  'selected-days',
   'monthly',
   'month-end',
   'month-end-weekday',
   'quarterly',
 ]);
+export const RepeatDaySchema = z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
+export type RepeatDay = z.infer<typeof RepeatDaySchema>;
+const RepeatDaysSchema = z
+  .array(RepeatDaySchema)
+  .min(1)
+  .max(7)
+  .refine((days) => new Set(days).size === days.length, 'Choose each repeat day only once.');
+
+function repeatDay(date: Date) {
+  return RepeatDaySchema.options[(date.getUTCDay() + 6) % 7];
+}
+
 function isWeekend(date: Date) {
   const day = date.getUTCDay();
   return day === 0 || day === 6;
@@ -570,6 +583,7 @@ function advanceRecurrence(
   date: Date,
   frequency: z.infer<typeof RecurrenceFrequencySchema>,
   originalDay: number,
+  repeatDays: RepeatDay[] | undefined,
 ) {
   const anchored = frequency === 'monthly' || frequency === 'quarterly';
   if (anchored || frequency === 'month-end' || frequency === 'month-end-weekday') {
@@ -579,12 +593,21 @@ function advanceRecurrence(
     date.setUTCDate(anchored ? Math.min(originalDay, lastDay) : lastDay);
     return;
   }
-  const days = { daily: 1, weekdays: 1, weekends: 1, weekly: 7, biweekly: 14 }[frequency];
+  const days = {
+    daily: 1,
+    weekdays: 1,
+    weekends: 1,
+    'selected-days': 1,
+    weekly: 7,
+    biweekly: 14,
+  }[frequency];
   date.setUTCDate(date.getUTCDate() + days);
   if (frequency === 'weekdays' || frequency === 'weekends') {
     const weekendsOnly = frequency === 'weekends';
     while (isWeekend(date) !== weekendsOnly) date.setUTCDate(date.getUTCDate() + 1);
   }
+  if (repeatDays)
+    while (!repeatDays.includes(repeatDay(date))) date.setUTCDate(date.getUTCDate() + 1);
 }
 export const SkippedDatesSchema = z
   .array(z.iso.date())
@@ -599,6 +622,7 @@ function scheduledDates(
     frequency: z.infer<typeof RecurrenceFrequencySchema>;
     occurrences: number;
     skipDates?: string[];
+    repeatDays?: RepeatDay[];
   },
   through?: string,
 ): string[] | null {
@@ -614,7 +638,7 @@ function scheduledDates(
     if (through && value > through) return dates;
     if (!skipped.has(value)) dates.push(value);
     if (dates.length === input.occurrences) return dates;
-    advanceRecurrence(date, input.frequency, originalDay);
+    advanceRecurrence(date, input.frequency, originalDay, input.repeatDays);
   }
   return null;
 }
@@ -624,6 +648,7 @@ export const RecurrenceSchema = z
     frequency: RecurrenceFrequencySchema,
     occurrences: z.number().int().min(2).max(MAX_RECURRENCE_OCCURRENCES),
     skipDates: SkippedDatesSchema.optional(),
+    repeatDays: RepeatDaysSchema.optional(),
   })
   .strict()
   .superRefine((input, context) => {
@@ -634,6 +659,22 @@ export const RecurrenceSchema = z
     )
       return;
     const first = new Date(`${input.dueDate}T12:00:00Z`);
+    if (input.frequency === 'selected-days' && !input.repeatDays?.includes(repeatDay(first))) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Choose repeat days that include the first visit.',
+        path: ['repeatDays'],
+      });
+      return;
+    }
+    if (input.frequency !== 'selected-days' && input.repeatDays) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Choose Selected days to set repeat days.',
+        path: ['repeatDays'],
+      });
+      return;
+    }
     if (input.skipDates && input.skipDates.length > 52) return;
     if (input.skipDates?.some((date) => date <= input.dueDate))
       context.addIssue({
@@ -691,6 +732,7 @@ export const CreateOrderSeriesSchema = CreateOrderSchema.extend({
   frequency: RecurrenceFrequencySchema,
   occurrences: z.number().int().min(2).max(MAX_RECURRENCE_OCCURRENCES),
   skipDates: SkippedDatesSchema.optional(),
+  repeatDays: RepeatDaysSchema.optional(),
 }).refine(
   (input) =>
     RecurrenceSchema.safeParse({
@@ -698,6 +740,7 @@ export const CreateOrderSeriesSchema = CreateOrderSchema.extend({
       frequency: input.frequency,
       occurrences: input.occurrences,
       skipDates: input.skipDates,
+      repeatDays: input.repeatDays,
     }).success,
   { message: 'Choose a valid recurrence within a four-digit calendar year.', path: ['dueDate'] },
 );
@@ -707,6 +750,7 @@ export const OrderSeriesReceiptSchema = z.object({
   createdAt: z.iso.datetime(),
   frequency: RecurrenceFrequencySchema,
   skipDates: SkippedDatesSchema.optional(),
+  repeatDays: RepeatDaysSchema.optional(),
   orders: z.array(WorkOrderSchema).min(2).max(52),
 });
 export type OrderSeriesReceipt = z.infer<typeof OrderSeriesReceiptSchema>;
@@ -727,6 +771,7 @@ export const OrderSeriesSummarySchema = z.object({
   siteName: SiteSchema.shape.name.optional(),
   frequency: RecurrenceFrequencySchema,
   skipDates: SkippedDatesSchema.optional(),
+  repeatDays: RepeatDaysSchema.optional(),
   occurrences: z.number().int().min(2).max(MAX_RECURRENCE_OCCURRENCES),
   firstDueDate: z.iso.date(),
   lastDueDate: z.iso.date(),

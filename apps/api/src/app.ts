@@ -21,6 +21,7 @@ import {
   CreateOrderSeriesSchema,
   OrderSeriesQuerySchema,
   recurrenceDates,
+  RepeatDaySchema,
   type CreateOrder,
   type OrderSeriesReceipt,
   ReportInputSchema,
@@ -435,6 +436,7 @@ export async function buildApp(options: AppOptions) {
         'ACTOR_CHANGED',
         'The signed-in account changed. Sign back into the account that saved this batch.',
       );
+    const repeatDays = input.repeatDays;
     // Explicit field order makes retries independent of JSON property order.
     const normalized = {
       mutationId: input.mutationId,
@@ -448,6 +450,9 @@ export async function buildApp(options: AppOptions) {
       frequency: input.frequency,
       occurrences: input.occurrences,
       ...(input.skipDates?.length ? { skipDates: [...input.skipDates].sort() } : {}),
+      ...(repeatDays
+        ? { repeatDays: RepeatDaySchema.options.filter((day) => repeatDays.includes(day)) }
+        : {}),
     };
     const hash = digest(JSON.stringify(normalized));
     const result = store.transaction(() => {
@@ -471,12 +476,14 @@ export async function buildApp(options: AppOptions) {
         frequency: input.frequency,
         occurrences: input.occurrences,
         skipDates: input.skipDates,
+        repeatDays: normalized.repeatDays,
       });
       const receipt: OrderSeriesReceipt = {
         id: randomUUID(),
         createdAt: new Date().toISOString(),
         frequency: input.frequency,
         ...(normalized.skipDates ? { skipDates: normalized.skipDates } : {}),
+        ...(normalized.repeatDays ? { repeatDays: normalized.repeatDays } : {}),
         orders: dates.map((dueDate) => assignedOrder({ ...input, dueDate })),
       };
       store.db

@@ -798,6 +798,11 @@ form > .ui-field-label {
   align-items: center;
   font-size: 13px;
 }
+.detail-reference {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 .order-tools {
   padding: 20px;
 }

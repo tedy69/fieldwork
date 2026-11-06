@@ -3,6 +3,7 @@ import { IconButton } from './components/ui/icon-button';
 import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
 import { CheckIcon } from '@phosphor-icons/react/dist/csr/Check';
 import { CopyIcon } from '@phosphor-icons/react/dist/csr/Copy';
+import { PencilSimpleIcon } from '@phosphor-icons/react/dist/csr/PencilSimple';
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
 import { ImageSquareIcon } from '@phosphor-icons/react/dist/csr/ImageSquare';
 import { Form } from './components/ui/form';
@@ -53,6 +54,7 @@ import SiteLocation from './SiteLocation';
 import DraftExport from './DraftExport';
 import { workerInspectionCopy } from './worker-inspection-copy';
 import { workerMapCopy } from './worker-map-copy';
+import { managerReviewCopy } from './manager-review-copy';
 export default function OrderDetail({
   user,
   order,
@@ -80,6 +82,7 @@ export default function OrderDetail({
 }) {
   const copy = inspectionCopy[locale];
   const web = workerInspectionCopy[locale];
+  const manager = managerReviewCopy[locale];
   const status = notebookCopy[locale].status;
   const dateLocale = languageTags[locale];
   const [draft, setDraft] = useState<Draft>(state.drafts[order.id] ?? blankDraft(order));
@@ -188,18 +191,15 @@ export default function OrderDetail({
     }
   }
   async function decide(decision: 'APPROVED' | 'CHANGES_REQUESTED') {
+    if (!online || busy) return;
     setBusy(true);
     setError('');
     try {
       await client.review(order.id, order.version, decision, review);
       await onRefresh();
-      onNotice(
-        decision === 'APPROVED'
-          ? 'Inspection approved.'
-          : 'Changes requested. The worker can update the inspection.',
-      );
+      onNotice(decision === 'APPROVED' ? manager.approved : manager.changesRequested);
     } catch (error) {
-      setError(message(error));
+      setError(locale === 'en' ? message(error) : manager.failed);
     } finally {
       setBusy(false);
     }
@@ -577,34 +577,35 @@ export default function OrderDetail({
               )}
               {user.role === 'manager' && order.status === 'SUBMITTED' && (
                 <section className="review-box">
-                  <h2>Manager review</h2>
+                  <h2>{manager.heading}</h2>
                   <Label>
-                    Review note
+                    {manager.note}
                     <Textarea
                       className="resize-none"
-                      aria-label="Review note"
+                      aria-label={manager.note}
                       maxLength={2000}
                       rows={3}
                       value={review}
                       onChange={(event) => setReview(event.target.value)}
-                      placeholder="Add feedback or explain what needs to change."
+                      placeholder={manager.noteHint}
                     />
                   </Label>
                   {error && <FieldError>{error}</FieldError>}
+                  {!online && <p className="muted">{manager.offline}</p>}
                   <ActionGroup className="review-actions">
                     <Button
                       className="quiet"
-                      disabled={busy || !review.trim()}
+                      disabled={!online || busy || !review.trim()}
                       onClick={() => void decide('CHANGES_REQUESTED')}
                     >
-                      Request changes
+                      <PencilSimpleIcon aria-hidden="true" /> {manager.requestChanges}
                     </Button>
                     <Button
                       className="primary"
-                      disabled={busy}
+                      disabled={!online || busy}
                       onClick={() => void decide('APPROVED')}
                     >
-                      {busy ? 'Saving review…' : 'Approve inspection'}
+                      <CheckIcon aria-hidden="true" /> {busy ? manager.saving : manager.approve}
                     </Button>
                   </ActionGroup>
                 </section>
@@ -612,15 +613,12 @@ export default function OrderDetail({
             </Card>
           )}
           {user.role === 'manager' && !order.report && (
-            <Empty
-              title="Waiting for the field report"
-              description="The assigned worker can complete this checklist offline. Their report will appear here after it syncs."
-            />
+            <Empty title={manager.waiting} description={manager.waitingHint} />
           )}
         </div>
-        <aside className="inspection-context" aria-label="Order tools and location" lang="en">
+        <aside className="inspection-context" aria-label={web.toolsRegion} lang={locale}>
           <Card className="order-tools">
-            <PanelHeader title="Order tools" />
+            <PanelHeader title={web.tools} />
             {user.role === 'manager' &&
               ['ASSIGNED', 'CHANGES_REQUESTED'].includes(order.status) && (
                 <>
@@ -628,6 +626,7 @@ export default function OrderDetail({
                     order={order}
                     workers={workers}
                     online={online}
+                    locale={locale}
                     onSaved={async (updated) => {
                       await repo.cacheOrder(updated);
                     }}
@@ -636,6 +635,7 @@ export default function OrderDetail({
                   <RescheduleOrder
                     order={order}
                     online={online}
+                    locale={locale}
                     onSaved={async (updated) => {
                       await repo.cacheOrder(updated);
                     }}
@@ -654,8 +654,7 @@ export default function OrderDetail({
             beforeReload={async () => {
               const map = workerMapCopy[locale];
               if (busy || pendingWrites.current > 0) throw new Error(map.waitBeforeReload);
-              if (review.trim())
-                throw new Error('Your review has unsaved text. Send or clear it before reloading.');
+              if (review.trim()) throw new Error(manager.unsaved);
               if (editable) {
                 const snapshot = currentDraft.current;
                 await repo.saveDraft(order.id, snapshot);

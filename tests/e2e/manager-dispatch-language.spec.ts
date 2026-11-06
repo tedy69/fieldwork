@@ -59,7 +59,7 @@ test('manager assigns work and uses saved dispatch in Indonesian at 320px', asyn
   await submit.click();
   await expect(page.getByRole('heading', { name: titleText, exact: true })).toBeVisible();
   await expect(page.getByText(/ditugaskan kepada Sam Rivera/)).toBeVisible();
-  await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
+  await page.getByRole('button', { name: 'Kembali ke daftar tugas', exact: true }).click();
 
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
   await context.setOffline(true);

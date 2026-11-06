@@ -365,11 +365,7 @@ export default function Workspace({
             />
           </div>
         </div>
-        <main
-          id="main"
-          tabIndex={-1}
-          lang={view === 'resources' || (order && user.role === 'manager') ? 'en' : locale}
-        >
+        <main id="main" tabIndex={-1} lang={view === 'resources' ? 'en' : locale}>
           {!recoveryInReport && sessionRecovery}
           {!sessionExpired && error !== '' && (
             <Alert className="banner error" lang={locale}>
@@ -493,7 +489,7 @@ export default function Workspace({
               repo={repo}
               state={state}
               online={online}
-              locale={user.role === 'manager' ? 'en' : locale}
+              locale={locale}
               queuedRecovery={recoveryInReport ? sessionRecovery : null}
               onBack={() => setSelected(null)}
               onRefresh={refresh}

@@ -82,7 +82,10 @@ test('managers resolve competing closure edits and copy later dates into a recur
   const base = 'http://127.0.0.1:4173';
   const session = await createClient(base).login('manager@fieldwork.local', 'fieldwork-demo');
   const manager = createClient(base, () => session.token);
-  const site = await manager.site('north');
+  const site = await manager.createSite(
+    `Closure edit QA ${crypto.randomUUID().slice(0, 8)}`,
+    'Synthetic closure edit fixture',
+  );
   await page.goto('/');
   await page.getByLabel('Email', { exact: true }).fill('manager@fieldwork.local');
   await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
@@ -110,10 +113,32 @@ test('managers resolve competing closure edits and copy later dates into a recur
   await context.setOffline(true);
   await expect(form.getByText('Reconnect to save closure dates.')).toBeVisible();
   await expect(save).toBeDisabled();
-  await context.setOffline(false);
-  await save.click();
-  await expect(form).toHaveCount(0);
-  await expect(edit).toBeFocused();
+  const endpoint = '**/api/v1/catalog';
+  let captureCatalog!: () => void;
+  let releaseCatalog!: () => void;
+  const captured = new Promise<void>((resolve) => {
+    captureCatalog = resolve;
+  });
+  const held = new Promise<void>((resolve) => {
+    releaseCatalog = resolve;
+  });
+  await page.route(endpoint, async (route) => {
+    const response = await route.fetch();
+    captureCatalog();
+    await held;
+    await route.fulfill({ response });
+  });
+  try {
+    await context.setOffline(false);
+    await captured;
+    await save.click();
+    await expect(form).toHaveCount(0);
+    await expect(edit).toBeFocused();
+  } finally {
+    releaseCatalog();
+  }
+  await page.unrouteAll({ behavior: 'wait' });
+  await expect(page.getByRole('button', { name: 'Sync now', exact: true })).toBeEnabled();
   await expect((await manager.site(site.id)).closureDates).toEqual(proposal.split('\n'));
   for (const width of [1440, 320]) {
     await page.setViewportSize({ width, height: 850 });
@@ -139,7 +164,9 @@ test('managers resolve competing closure edits and copy later dates into a recur
   await dialog.getByText('Skip dates (optional)', { exact: true }).click();
   const copy = dialog.getByRole('button', { name: 'Copy site closure dates' });
   await expect(dialog.getByText(/first date is marked closed/)).toBeVisible();
-  const other = (await manager.catalog()).sites.find((entry) => entry.id !== site.id)!;
+  const other = (await manager.catalog()).sites.find(
+    (entry) => entry.id !== site.id && !entry.closureDates?.length,
+  )!;
   await siteSelect.selectOption(other.id);
   await expect(copy).toHaveCount(0);
   await expect(closed).toHaveCount(0);

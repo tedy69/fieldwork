@@ -21,7 +21,7 @@ import { IconButton } from './components/ui/icon-button';
 import { SearchField } from './components/ui/search-field';
 import { Label } from './components/ui/label';
 import { Avatar, AvatarFallback } from './components/ui/avatar';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type SetStateAction } from 'react';
 import {
   compareOrdersByDueDate,
   isOpenDueBetween,
@@ -83,6 +83,7 @@ export default function Workspace({
   const repo = useMemo(() => repositoryFor(user.id, client), [user.id]);
   const [state, setState] = useState<State>(emptyState);
   const [catalog, setCatalog] = useState<Catalog>({ users: [], sites: [], templates: [] });
+  const catalogGeneration = useRef(0);
   const { destination, navigate, openInspection, closeInspection } = useInspectionNavigation(
     user.id,
   );
@@ -114,16 +115,22 @@ export default function Workspace({
   const restoreRetryFocus = useRef(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [notice, setNotice] = useState('');
+  function updateCatalog(update: SetStateAction<Catalog>) {
+    catalogGeneration.current++;
+    setCatalog(update);
+  }
   async function refresh(reconnecting = false) {
     setBusy(true);
     setError((current) => (current?.kind === 'sync' ? current : null));
     try {
       await repo.flush({ afterCurrent: reconnecting });
+      const catalogRead = ++catalogGeneration.current;
       const [first, catalog] = await Promise.all([client.orders(), client.catalog()]);
       const orders = [...first.data];
       for (let offset = first.limit; offset < first.total; offset += first.limit)
         orders.push(...(await client.orders(offset)).data);
-      setCatalog(catalog);
+      // An acknowledged edit can arrive while this refresh is still paging orders.
+      if (catalogRead === catalogGeneration.current) setCatalog(catalog);
       await repo.cacheOrders(orders);
       setError((current) => (current?.kind === 'sync' ? null : current));
       setSessionExpired(false);
@@ -489,9 +496,9 @@ export default function Workspace({
               locale={locale}
               refresh={refresh}
               online={online}
-              onCatalog={setCatalog}
+              onCatalog={updateCatalog}
               onWorkerUpdated={(account) =>
-                setCatalog((current) => ({
+                updateCatalog((current) => ({
                   ...current,
                   users: [
                     ...current.users.filter((user) => user.id !== account.user.id),
@@ -500,7 +507,7 @@ export default function Workspace({
                 }))
               }
               onSiteUpdated={(updated) =>
-                setCatalog((current) => ({
+                updateCatalog((current) => ({
                   ...current,
                   sites: current.sites.map((site) =>
                     site.id === updated.id ? { ...site, coordinates: updated.coordinates } : site,
@@ -508,7 +515,7 @@ export default function Workspace({
                 }))
               }
               onSiteClosuresUpdated={(updated) =>
-                setCatalog((current) => ({
+                updateCatalog((current) => ({
                   ...current,
                   sites: current.sites.map((site) =>
                     site.id === updated.id ? { ...site, closureDates: updated.closureDates } : site,

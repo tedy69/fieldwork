@@ -37,6 +37,7 @@ import {
   Tray,
   SignIn,
   SignOut,
+  X,
 } from './notebook-icons';
 
 type QueueItem = State['outbox'][number];
@@ -239,8 +240,18 @@ export default function WorkspacePage({
                     onChangeText={onSearchChange}
                     autoCapitalize="none"
                     autoCorrect={false}
-                    clearButtonMode="while-editing"
                     testID="assignment-search"
+                    trailingAction={
+                      search ? (
+                        <Button
+                          title={copy.clearSearch}
+                          icon={X}
+                          iconOnly
+                          variant="ghost"
+                          onPress={() => onSearchChange('')}
+                        />
+                      ) : undefined
+                    }
                   />
                 </View>
                 <Button

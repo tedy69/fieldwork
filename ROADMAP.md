@@ -75,6 +75,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Repeatable iOS smoke test for draft retention, offline restart, and duplicate-safe reconnect.
 - [x] Expo outbox recovery that keeps blocked reports through outages and reassignment, with an iOS conflict smoke test.
 - [x] Offline assignment status filters in Expo that combine with search and follow the worker's language.
+- [x] One-tap clearing of Expo assignment search while retaining the active filter.
 - [x] Expo report history with saved revisions, review feedback, and retry without changing the active draft.
 - [x] Offline site coordinates in Expo inspections, taken from the saved assignment snapshot.
 - [x] Expo sign-in recovery from the notebook and outbox with the current server, account, and local reports retained.

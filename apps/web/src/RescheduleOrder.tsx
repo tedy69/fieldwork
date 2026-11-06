@@ -1,7 +1,6 @@
 import { Button } from './components/ui/button';
 import { IconButton } from './components/ui/icon-button';
 import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
-import { ArrowRightIcon } from '@phosphor-icons/react/dist/csr/ArrowRight';
 import { Form } from './components/ui/form';
 import { DatePicker } from './components/ui/date-picker';
 import { Label } from './components/ui/label';
@@ -11,17 +10,8 @@ import type { WorkOrder } from '@fieldwork/contracts';
 import { languageTags, type Locale } from '@fieldwork/strings';
 import { client, dateLabel, message } from './lib';
 import { rescheduleCopy } from './reschedule-copy';
-import { addDays, calendarLabel } from './calendar';
 import SiteClosureHint from './SiteClosureHint';
 import './reschedule.css';
-
-function nextOpenDate(date: string, closures: readonly string[]) {
-  while (closures.includes(date)) {
-    if (date === '9999-12-31') return;
-    date = addDays(date, 1);
-  }
-  return date;
-}
 
 export default function RescheduleOrder({
   order,
@@ -54,10 +44,7 @@ export default function RescheduleOrder({
   const trigger = useRef<HTMLButtonElement>(null);
   const dateInput = useRef<HTMLInputElement>(null);
   const restoreFocus = useRef(false);
-  const focusSuggestedDate = useRef(false);
   const formId = useId();
-  const closed = closureDates?.includes(dueDate) ?? false;
-  const suggestedDate = closed && closureDates ? nextOpenDate(dueDate, closureDates) : undefined;
   const closureHint = `${formId}-closure`;
   const locked = Boolean(busy || batch?.locked);
 
@@ -67,12 +54,6 @@ export default function RescheduleOrder({
     if (trigger.current && !trigger.current.disabled) trigger.current.focus();
     else batch.onRestoreFocus();
   }, [batch, editing, locked]);
-
-  useLayoutEffect(() => {
-    if (!focusSuggestedDate.current) return;
-    focusSuggestedDate.current = false;
-    dateInput.current?.focus();
-  }, [dueDate]);
 
   function focusAfterUpdate() {
     if (!batch) {
@@ -169,26 +150,20 @@ export default function RescheduleOrder({
               required
               inputRef={dateInput}
               value={dueDate}
-              aria-describedby={closed ? closureHint : undefined}
+              aria-describedby={closureHint}
               disabled={locked}
               onValueChange={setDueDate}
             />
           </Label>
-          <SiteClosureHint id={closureHint} closed={closed} locale={locale} />
-          {suggestedDate && (
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={locked}
-              onClick={() => {
-                focusSuggestedDate.current = true;
-                setDueDate(suggestedDate);
-              }}
-            >
-              <ArrowRightIcon aria-hidden="true" />
-              {copy.useDate(calendarLabel(suggestedDate, true, dateLocale))}
-            </Button>
-          )}
+          <SiteClosureHint
+            id={closureHint}
+            dueDate={dueDate}
+            closureDates={closureDates}
+            locale={locale}
+            disabled={locked}
+            inputRef={dateInput}
+            onDateChange={setDueDate}
+          />
           {error && <FieldError>{error}</FieldError>}
           <div className="schedule-actions">
             <Button

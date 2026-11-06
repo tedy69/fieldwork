@@ -86,7 +86,7 @@ export default function OrderDetail({
   returnLabel?: string;
   onBack: () => void;
   onRefresh: () => Promise<void>;
-  onNotice: (notice: LocalizedNotice) => void;
+  onNotice: (notice: LocalizedNotice, pendingMutationId?: string) => void;
 }) {
   const copy = inspectionCopy[locale];
   const web = workerInspectionCopy[locale];
@@ -199,7 +199,7 @@ export default function OrderDetail({
       const photoError = reportPhotoError(order.template, input.photos, copy.photoErrors);
       if (photoError) throw new Error(photoError.message);
       await repo.enqueue(order.id, input);
-      onNotice((language) => workerInspectionCopy[language].sentToOutbox);
+      onNotice((language) => workerInspectionCopy[language].sentToOutbox, input.mutationId);
       await onRefresh();
     } catch (error) {
       setError(message(error));

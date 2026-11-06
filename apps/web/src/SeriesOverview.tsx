@@ -113,7 +113,7 @@ export default function SeriesOverview({
   const [openError, setOpenError] = useState('');
   const [opening, setOpening] = useState('');
   const [scheduleBusy, setScheduleBusy] = useState(false);
-  const [scheduleNotice, setScheduleNotice] = useLocalizedNotice(locale);
+  const { message: scheduleNotice, show: setScheduleNotice } = useLocalizedNotice(locale);
   const [invalidCursor, setInvalidCursor] = useState(false);
   const listGeneration = useRef(0);
   const detailGeneration = useRef(0);

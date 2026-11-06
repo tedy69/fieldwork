@@ -20,6 +20,20 @@
 .schedule button {
   min-height: 44px;
 }
+.schedule-closure {
+  margin: 0;
+}
+.schedule-closure:not(:empty) {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--amber);
+}
+.schedule-closure svg {
+  flex: 0 0 16px;
+  height: 16px;
+}
 .schedule-actions {
   display: flex;
   flex-wrap: wrap;

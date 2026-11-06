@@ -489,6 +489,7 @@ export default function Workspace({
               user={user}
               order={order}
               workers={catalog.users}
+              closureDates={catalog.sites.find((site) => site.id === order.site.id)?.closureDates}
               repo={repo}
               state={state}
               online={online}
@@ -523,6 +524,7 @@ export default function Workspace({
                     </Button>
                     <SeriesOverview
                       online={online}
+                      sites={catalog.sites}
                       locale={locale}
                       today={today}
                       onCache={async (order) => {

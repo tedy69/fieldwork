@@ -1,12 +1,16 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createClient } from '@fieldwork/sdk';
 
-async function fixture(title: string) {
+async function managerClient() {
   const session = await createClient('http://127.0.0.1:4173').login(
     'manager@fieldwork.local',
     'fieldwork-demo',
   );
-  const manager = createClient('http://127.0.0.1:4173', () => session.token);
+  return createClient('http://127.0.0.1:4173', () => session.token);
+}
+
+async function fixture(title: string) {
+  const manager = await managerClient();
   const catalog = await manager.catalog();
   const order = await manager.createOrder({
     title,
@@ -257,4 +261,79 @@ test('manager can reschedule correction work while submitted and approved work s
   await expect(page.getByText('Approved by Alex Morgan', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Change due date', exact: true })).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test('manager sees site closures when moving an order from the workspace or a recurring batch', async ({
+  page,
+  context,
+}) => {
+  const manager = await managerClient();
+  const site = await manager.createSite('Closure reschedule QA', 'Synthetic site');
+  const closed = '2027-01-05';
+  await manager.updateSiteClosures(site.id, { expectedDates: [], dates: [closed] });
+  const title = 'Closure warning reschedule QA';
+  const batch = await manager.createOrderSeries({
+    mutationId: crypto.randomUUID(),
+    title,
+    instructions: '',
+    siteId: site.id,
+    assigneeId: 'worker',
+    templateId: 'routine',
+    priority: 'routine',
+    dueDate: '2027-01-01',
+    frequency: 'daily',
+    occurrences: 3,
+  });
+  const [first, second] = batch.orders;
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await login(page, 'manager');
+  await page.getByLabel('Search work orders').fill(title);
+  await page
+    .getByRole('button', { name: `Open ${first.reference}: ${title}`, exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Change due date', exact: true }).click();
+  const form = page.getByRole('form', { name: 'Change due date', exact: true });
+  const due = form.getByRole('textbox', { name: 'New due date', exact: true });
+  await expect(due).toBeFocused();
+  await due.fill(closed);
+  await expect(due).toHaveAccessibleDescription('This site is closed on the selected date.');
+  await expect(form.getByRole('button', { name: 'Save due date', exact: true })).toBeEnabled();
+  await due.fill('2027-01-06');
+  await expect(form.getByText('This site is closed on the selected date.')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Back to work orders', exact: true }).click();
+
+  await page.setViewportSize({ width: 320, height: 840 });
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+  await page.getByRole('button', { name: 'Jadwal berulang', exact: true }).click();
+  const viewer = page.getByRole('dialog', { name: 'Jadwal berulang', exact: true });
+  await viewer
+    .getByRole('button', { name: `Lihat jadwal ${batch.id}: ${title}`, exact: true })
+    .click();
+  await viewer
+    .getByRole('button', { name: `Ubah tenggat ${second.reference}`, exact: true })
+    .click();
+  const visit = viewer.getByRole('form', { name: 'Ubah tenggat', exact: true });
+  const proposed = visit.getByRole('textbox', { name: 'Tenggat baru', exact: true });
+  const save = visit.getByRole('button', { name: 'Simpan tenggat', exact: true });
+  await proposed.fill(closed);
+  await expect(proposed).toHaveAccessibleDescription('Lokasi tutup pada tanggal ini.');
+  await expect(visit.locator('.schedule-closure svg[aria-hidden=true]')).toBeVisible();
+  await expect(save).toBeEnabled();
+  expect(await viewer.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await visit.screenshot({ path: test.info().outputPath('closed-reschedule-phone.png') });
+  await context.setOffline(true);
+  await expect(save).toBeDisabled();
+  await expect(proposed).toHaveValue(closed);
+  await context.setOffline(false);
+  await proposed.fill('2027-01-06');
+  await expect(visit.getByText('Lokasi tutup pada tanggal ini.')).toHaveCount(0);
+  await save.click();
+  await expect(visit).toHaveCount(0);
+  const updated = await manager.orderSeriesDetail(batch.id);
+  expect(updated.orders[0].order.dueDate).toBe(first.dueDate);
+  expect(updated.orders[1]).toMatchObject({
+    plannedDueDate: second.dueDate,
+    order: { dueDate: '2027-01-06', version: second.version + 1 },
+  });
 });

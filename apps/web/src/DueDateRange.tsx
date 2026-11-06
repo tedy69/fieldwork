@@ -1,4 +1,5 @@
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
 import { DatePicker } from './components/ui/date-picker';
 import { Label } from './components/ui/label';
 import { FieldSet, FieldLegend, FieldError } from './components/ui/field';
@@ -6,6 +7,7 @@ import { parseLocalDate } from './dates';
 import { useId, useRef } from 'react';
 import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
 import { CaretDownIcon } from '@phosphor-icons/react/dist/csr/CaretDown';
+import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './components/ui/collapsible';
 import type { Locale } from '@fieldwork/strings';
 import { workerWorkspaceCopy } from './worker-workspace-copy';
@@ -56,14 +58,16 @@ export default function DueDateRange({
           {copy.range}
           <CaretDownIcon aria-hidden="true" className="date-filter-caret" />
         </CollapsibleTrigger>
-        <span id={summaryId} className="date-filter-summary">
-          {summary}
-        </span>
-        {hasDates && !open && (
-          <Button type="button" variant="ghost" onClick={clear}>
-            {copy.clear}
-          </Button>
-        )}
+        <div className="date-filter-value">
+          <span id={summaryId} className="date-filter-summary">
+            {summary}
+          </span>
+          {hasDates && !open && (
+            <IconButton label={copy.clear} variant="ghost" onClick={clear}>
+              <XIcon aria-hidden="true" />
+            </IconButton>
+          )}
+        </div>
       </div>
       {!open && (invalid || invalidDate) && (
         <FieldError>

@@ -128,8 +128,21 @@ for (const role of ['manager', 'worker']) {
     await page.evaluate(async () => {
       await navigator.serviceWorker.ready;
     });
+    await page.setViewportSize({ width: 320, height: 840 });
     await context.setOffline(true);
-    await page.getByRole('button', { name: 'Clear dates', exact: true }).click();
+    const clear = page.getByRole('button', { name: 'Clear dates', exact: true });
+    await expect(clear.locator('svg[aria-hidden=true]')).toBeVisible();
+    expect((await clear.textContent())?.trim()).toBe('');
+    const bounds = await clear.boundingBox();
+    expect(bounds?.width).toBeGreaterThanOrEqual(44);
+    expect(bounds?.height).toBeGreaterThanOrEqual(44);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page
+      .locator('.date-filter-heading')
+      .screenshot({ path: test.info().outputPath('collapsed-date-filter-320.png') });
+    await clear.click();
     await expect(trigger).toBeFocused();
     await expect(page.getByRole('alert')).toHaveCount(0);
     await expect(rows).toHaveCount(2);

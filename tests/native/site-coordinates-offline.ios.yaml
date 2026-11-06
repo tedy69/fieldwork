@@ -1,5 +1,5 @@
 appId: host.exp.Exponent
-name: Read a saved location snapshot offline in both languages
+name: Read and copy a saved location snapshot offline
 ---
 - tapOn: ${ORDER_NAME}
 - scrollUntilVisible:
@@ -13,7 +13,9 @@ name: Read a saved location snapshot offline in both languages
 - scrollUntilVisible:
     element: Bahasa Indonesia
     direction: UP
-- tapOn: Bahasa Indonesia
+- tapOn:
+    text: Bahasa Indonesia
+    point: 25%,50%
 - scrollUntilVisible:
     element: ${ORDER_NAME_ID}
     centerElement: true
@@ -22,6 +24,7 @@ name: Read a saved location snapshot offline in both languages
     element: Lintang 0 · Bujur -106.8
     centerElement: true
 - assertVisible: Lintang 0 · Bujur -106.8
+- tapOn: Salin koordinat lokasi
 - scrollUntilVisible:
     element: Kembali ke daftar tugas
     direction: UP
@@ -33,3 +36,4 @@ name: Read a saved location snapshot offline in both languages
 - scrollUntilVisible:
     element: North pump station
 - assertNotVisible: Lintang.*
+- assertNotVisible: Salin koordinat lokasi

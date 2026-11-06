@@ -68,7 +68,7 @@ Open the named history icon on an inspection with a saved report. Select a versi
 
 Start on **Tugas saya** in Indonesian with a fresh worker session to run `npm exec -- tsx tests/native/report-history.ios.ts <simulator-id>`. The synthetic fixture verifies first-page reading, a failed second page, reconnect and retry, and return to the original draft.
 
-When an assignment has coordinates, Expo shows them next to the site address with a map pin. The coordinates come from the saved assignment and can be selected as text while offline. Run `npm exec -- tsx tests/native/site-coordinates.ios.ts <simulator-id>` from **My assignments** in English to verify a saved coordinate pair in both languages after an API outage and a catalog edit.
+When an assignment has coordinates, Expo shows them next to the site address with a map pin. Use the copy icon to copy the saved latitude and longitude, including offline. The coordinates remain selectable as text. Run `npm exec -- tsx tests/native/site-coordinates.ios.ts <simulator-id>` from **My assignments** in English to verify that the saved coordinate pair is visible in both languages and copies from the original assignment during an API outage.
 
 ## Start
 

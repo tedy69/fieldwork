@@ -1,6 +1,7 @@
 import { Button } from './components/ui/button';
-import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
-import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple';
+import { CalendarDotsIcon } from '@phosphor-icons/react/dist/csr/CalendarDots';
+import { ClipboardTextIcon } from '@phosphor-icons/react/dist/csr/ClipboardText';
+import { TableIcon } from '@phosphor-icons/react/dist/csr/Table';
 import { FieldError } from './components/ui/field';
 import { useState } from 'react';
 import type { WorkOrder } from '@fieldwork/contracts';
@@ -8,6 +9,8 @@ import type { Locale } from '@fieldwork/strings';
 import { localDate } from './dates';
 import { reportCsv } from './reportCsv';
 import { downloadCsv, formatCsv } from './csv';
+import { downloadText } from './download-text';
+import { formatScheduleCalendar } from './schedule-calendar';
 import { ActionGroup } from './components';
 import { managerDispatchCopy } from './manager-dispatch-copy';
 
@@ -23,7 +26,7 @@ export default function WorkspaceExports({
   const copy = managerDispatchCopy[locale];
   const [error, setError] = useState('');
   const reportCount = orders.filter((order) => order.report).length;
-  function download(kind: 'schedule' | 'reports') {
+  function download(kind: 'schedule' | 'reports' | 'calendar') {
     setError('');
     onNotice('');
     try {
@@ -42,12 +45,19 @@ export default function WorkspaceExports({
         ]);
         downloadCsv(`fieldwork-schedule-${localDate()}.csv`, csv);
         onNotice(copy.schedulePrepared(orders.length));
+      } else if (kind === 'calendar') {
+        downloadText(
+          `fieldwork-calendar-${localDate()}.ics`,
+          formatScheduleCalendar(orders),
+          'text/calendar;charset=utf-8',
+        );
+        onNotice(copy.calendarPrepared(orders.length));
       } else {
         downloadCsv(`fieldwork-reports-${localDate()}.csv`, reportCsv(orders));
         onNotice(copy.reportsPrepared(reportCount));
       }
     } catch {
-      setError(copy.exportFailed);
+      setError(kind === 'calendar' ? copy.calendarFailed : copy.exportFailed);
     }
   }
   return (
@@ -60,7 +70,15 @@ export default function WorkspaceExports({
           onClick={() => download('schedule')}
           disabled={orders.length === 0}
         >
-          <CalendarBlankIcon aria-hidden="true" /> {copy.schedule} ({orders.length})
+          <TableIcon aria-hidden="true" /> {copy.schedule} ({orders.length})
+        </Button>
+        <Button
+          className="quiet"
+          aria-label={copy.exportCalendar(orders.length)}
+          onClick={() => download('calendar')}
+          disabled={orders.length === 0}
+        >
+          <CalendarDotsIcon aria-hidden="true" /> {copy.calendarFile} ({orders.length})
         </Button>
         <Button
           className="quiet"
@@ -68,7 +86,7 @@ export default function WorkspaceExports({
           onClick={() => download('reports')}
           disabled={reportCount === 0}
         >
-          <DownloadSimpleIcon aria-hidden="true" /> {copy.reports} ({reportCount})
+          <ClipboardTextIcon aria-hidden="true" /> {copy.reports} ({reportCount})
         </Button>
       </ActionGroup>
       {error && <FieldError>{error}</FieldError>}

@@ -38,17 +38,22 @@ const english = {
   urgent: 'Urgent',
   instructions: 'Instructions',
   instructionsHint: 'What should the worker check?',
-  exports: 'CSV exports',
+  exports: 'Work order exports',
   exportView: 'Export this view',
   exportSchedule: (count: number) => `Export work orders (${count})`,
   exportReports: (count: number) => `Export reports (${count})`,
-  schedule: 'Schedule',
-  reports: 'Reports',
+  exportCalendar: (count: number) => `Export calendar (${count})`,
+  schedule: 'Schedule CSV',
+  reports: 'Reports CSV',
+  calendarFile: 'Calendar',
   schedulePrepared: (count: number) =>
     `CSV prepared for ${count} ${count === 1 ? 'work order' : 'work orders'}.`,
   reportsPrepared: (count: number) =>
     `CSV prepared for ${count} ${count === 1 ? 'report' : 'reports'}.`,
+  calendarPrepared: (count: number) =>
+    `Calendar prepared for ${count} ${count === 1 ? 'work order' : 'work orders'}.`,
   exportFailed: 'Could not create the CSV. Narrow the list and try again.',
+  calendarFailed: 'Could not create the calendar. Narrow the list and try again.',
 };
 
 export const managerDispatchCopy: Record<Locale, typeof english> = {
@@ -91,14 +96,18 @@ export const managerDispatchCopy: Record<Locale, typeof english> = {
     urgent: 'Mendesak',
     instructions: 'Petunjuk',
     instructionsHint: 'Apa yang perlu diperiksa petugas?',
-    exports: 'Ekspor CSV',
+    exports: 'Ekspor tugas',
     exportView: 'Ekspor tampilan ini',
     exportSchedule: (count) => `Ekspor tugas (${count})`,
     exportReports: (count) => `Ekspor laporan (${count})`,
-    schedule: 'Jadwal',
-    reports: 'Laporan',
+    exportCalendar: (count) => `Ekspor kalender (${count})`,
+    schedule: 'Jadwal CSV',
+    reports: 'Laporan CSV',
+    calendarFile: 'Kalender',
     schedulePrepared: (count) => `CSV untuk ${count} tugas siap diunduh.`,
     reportsPrepared: (count) => `CSV untuk ${count} laporan siap diunduh.`,
+    calendarPrepared: (count) => `Kalender untuk ${count} tugas siap diunduh.`,
     exportFailed: 'CSV gagal dibuat. Persempit daftar dan coba lagi.',
+    calendarFailed: 'Kalender gagal dibuat. Persempit daftar dan coba lagi.',
   },
 };

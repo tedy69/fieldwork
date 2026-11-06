@@ -6,7 +6,7 @@
 
 ## Related issues
 
-<!-- Link issues or discussions. Use Fixes #123 only when this PR should close that issue. -->
+<!-- Link issues or discussions. Use Fixes #<issue-number> only when this PR should close that issue. -->
 
 ## Type of change
 

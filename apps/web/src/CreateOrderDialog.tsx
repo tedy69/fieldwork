@@ -111,8 +111,9 @@ export default function CreateOrder({
           <AssignmentFields
             catalog={catalog}
             locale={locale}
-            initial={{ dueDate }}
-            siteClosed={site?.closureDates?.includes(dueDate) ?? false}
+            dueDate={dueDate}
+            closureDates={site?.closureDates}
+            suggestionDisabled={busy}
             onDateChange={setDueDate}
             onSiteChange={setSiteId}
           />

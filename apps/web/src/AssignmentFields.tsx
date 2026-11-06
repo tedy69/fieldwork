@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 import type { Catalog, CreateOrder } from '@fieldwork/contracts';
 import type { Locale } from '@fieldwork/strings';
 import { Input } from './components/ui/input';
@@ -18,7 +18,9 @@ export default function AssignmentFields({
   locale = 'en',
   initial,
   chooseMissing = false,
-  siteClosed,
+  dueDate,
+  closureDates,
+  suggestionDisabled,
   onDateChange,
   onSiteChange,
 }: {
@@ -26,12 +28,15 @@ export default function AssignmentFields({
   locale?: Locale;
   initial?: Partial<CreateOrder>;
   chooseMissing?: boolean;
-  siteClosed?: boolean;
-  onDateChange?: (date: string) => void;
+  dueDate?: string;
+  closureDates?: readonly string[];
+  suggestionDisabled?: boolean;
+  onDateChange: (date: string) => void;
   onSiteChange?: (siteId: string) => void;
 }) {
   const copy = managerDispatchCopy[locale];
   const closureHint = useId();
+  const dateInput = useRef<HTMLInputElement>(null);
   const workers = catalog.users.filter((user) => user.role === 'worker');
   return (
     <>
@@ -97,13 +102,23 @@ export default function AssignmentFields({
               calendarLabel={copy.calendar}
               locale={locale}
               required
+              value={dueDate}
               defaultValue={initial?.dueDate ?? localDate()}
-              aria-describedby={siteClosed ? closureHint : undefined}
-              onValueChange={(value) => onDateChange?.(value)}
+              inputRef={dateInput}
+              aria-describedby={dueDate !== undefined ? closureHint : undefined}
+              onValueChange={onDateChange}
             />
           </Label>
-          {siteClosed !== undefined && (
-            <SiteClosureHint id={closureHint} closed={siteClosed} locale={locale} />
+          {dueDate !== undefined && (
+            <SiteClosureHint
+              id={closureHint}
+              dueDate={dueDate}
+              closureDates={closureDates}
+              locale={locale}
+              disabled={suggestionDisabled}
+              inputRef={dateInput}
+              onDateChange={onDateChange}
+            />
           )}
         </div>
       </div>

@@ -10,7 +10,7 @@ test('manager assigns work and uses saved dispatch in Indonesian at 320px', asyn
   const manager = createClient(baseURL, () => session.token);
   const site = await manager.createSite('Lokasi tutup QA', 'Synthetic site');
   const closed = '2026-12-29';
-  await manager.updateSiteClosures(site.id, { expectedDates: [], dates: [closed] });
+  await manager.updateSiteClosures(site.id, { expectedDates: [], dates: [closed, '2026-12-30'] });
   await page.setViewportSize({ width: 320, height: 840 });
   await page.goto('/');
   await page.getByLabel('Email', { exact: true }).fill('manager@fieldwork.local');
@@ -42,11 +42,13 @@ test('manager assigns work and uses saved dispatch in Indonesian at 320px', asyn
   await dialog.getByRole('combobox', { name: 'Daftar periksa' }).selectOption('routine');
   const due = dialog.getByLabel('Tenggat', { exact: true });
   const hint = 'Lokasi tutup pada tanggal ini.';
+  const suggestion = dialog.getByRole('button', { name: 'Gunakan 31 Des 2026', exact: true });
   await due.fill(closed);
   await expect(due).toHaveAccessibleDescription(hint);
   await expect(dialog.locator('.site-closure-hint svg[aria-hidden=true]')).toBeVisible();
   await siteField.selectOption('north');
   await expect(dialog.getByText(hint, { exact: true })).toHaveCount(0);
+  await expect(suggestion).toHaveCount(0);
   await siteField.selectOption(site.id);
   await expect(due).toHaveAccessibleDescription(hint);
   await dialog.getByRole('button', { name: 'Pilih tenggat', exact: true }).click();
@@ -74,9 +76,16 @@ test('manager assigns work and uses saved dispatch in Indonesian at 320px', asyn
   await expect(due).toHaveValue(closed);
   await expect(due).toHaveAccessibleDescription(hint);
   await page.unroute(endpoint);
-  await due.fill('2026-12-28');
+  await suggestion.focus();
+  await page.keyboard.press('Enter');
+  await expect(due).toHaveValue('2026-12-31');
+  await expect(due).toBeFocused();
   await expect(dialog.getByText(hint, { exact: true })).toHaveCount(0);
+  const submitted = page.waitForRequest(
+    (request) => request.url().endsWith('/work-orders') && request.method() === 'POST',
+  );
   await submit.click();
+  expect((await submitted).postDataJSON().dueDate).toBe('2026-12-31');
   await expect(page.getByRole('heading', { name: titleText, exact: true })).toBeVisible();
   await expect(page.getByText(/ditugaskan kepada Sam Rivera/)).toBeVisible();
   await page.getByRole('button', { name: 'Kembali ke daftar tugas', exact: true }).click();
@@ -87,7 +96,7 @@ test('manager assigns work and uses saved dispatch in Indonesian at 320px', asyn
   const search = page.getByRole('searchbox', { name: 'Cari tugas', exact: true });
   await search.fill(titleText);
   const row = page.getByRole('button', { name: new RegExp(`^Buka FW-.+: ${titleText}$`) });
-  await expect(row).toContainText('28 Des');
+  await expect(row).toContainText('31 Des');
   await expect(row).toContainText('Ditugaskan');
   await expect(assign).toBeDisabled();
   const download = page.waitForEvent('download');

@@ -12,6 +12,7 @@ import {
   type WorkOrder,
 } from '@fieldwork/contracts';
 import { ApiError } from '@fieldwork/sdk';
+import { languageTags } from '@fieldwork/strings';
 import { client, labels, message } from './lib';
 import { calendarLabel } from './calendar';
 import { downloadCsv, formatCsv } from './csv';
@@ -38,6 +39,7 @@ import './series-overview.css';
 
 type Page = Awaited<ReturnType<typeof client.orderSeries>>;
 type BatchFilters = Pick<OrderSeriesQuery, 'q' | 'frequency'>;
+type LoadedBatch = OrderSeriesDetail & { loadedAt: string };
 type Visit = OrderSeriesDetail['orders'][number];
 const visitLabels = {
   all: 'All visits',
@@ -82,7 +84,7 @@ export default function SeriesOverview({
   const [search, setSearch] = useState('');
   const [frequency, setFrequency] = useState<BatchFilters['frequency']>();
   const [loadedFilters, setLoadedFilters] = useState<BatchFilters>({});
-  const [detail, setDetail] = useState<OrderSeriesDetail | null>(null);
+  const [detail, setDetail] = useState<LoadedBatch | null>(null);
   const [selected, setSelected] = useState('');
   const [visitFilter, setVisitFilter] = useState<VisitFilter>('all');
   const [listBusy, setListBusy] = useState(false);
@@ -167,7 +169,8 @@ export default function SeriesOverview({
     setDetailError('');
     try {
       const next = await client.orderSeriesDetail(id);
-      if (current === detailGeneration.current) setDetail(next);
+      if (current === detailGeneration.current)
+        setDetail({ ...next, loadedAt: new Date().toISOString() });
     } catch (error) {
       if (current === detailGeneration.current) setDetailError(message(error));
     } finally {
@@ -500,7 +503,15 @@ export default function SeriesOverview({
                   {new Date(detail.createdAt).toLocaleString()}. Original worker:{' '}
                   {detail.assignee.name}.
                 </p>
-                <p className="muted">Current at load time. Open an order to fetch it again.</p>
+                <p className="muted series-loaded">
+                  Loaded{' '}
+                  <time dateTime={detail.loadedAt}>
+                    {new Date(detail.loadedAt).toLocaleString(languageTags.en, {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  </time>
+                </p>
                 <div className="series-visit-tools">
                   <Label>
                     Show visits

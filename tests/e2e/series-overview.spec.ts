@@ -172,6 +172,8 @@ test('manager filters current batch visits offline and keeps focus when an order
   const selected = dialog.getByRole('region', { name: 'Selected recurring batch' });
   const filter = selected.getByRole('combobox', { name: 'Show visits', exact: true });
   const rows = selected.locator('.series-orders > li');
+  const loadedAt = selected.locator('.series-loaded time');
+  await expect(loadedAt).toHaveAttribute('datetime', '2026-12-30T12:00:00.000Z');
   await expect(rows).toHaveCount(2);
   await filter.selectOption('review');
   await expect(rows).toHaveCount(1);
@@ -192,7 +194,9 @@ test('manager filters current batch visits offline and keeps focus when an order
 
   const refresh = selected.getByRole('button', { name: 'Refresh batch details', exact: true });
   await context.setOffline(true);
+  await page.clock.setFixedTime(new Date('2026-12-30T12:30:00Z'));
   await expect(refresh).toBeDisabled();
+  await expect(loadedAt).toHaveAttribute('datetime', '2026-12-30T12:00:00.000Z');
   await filter.selectOption('upcoming');
   await expect(rows).toHaveCount(1);
   await expect(rows.first()).toContainText(late.reference);
@@ -206,6 +210,7 @@ test('manager filters current batch visits offline and keeps focus when an order
   await refresh.focus();
   await page.keyboard.press('Enter');
   await expect(refresh).toBeEnabled();
+  await expect(loadedAt).toHaveAttribute('datetime', '2026-12-30T12:30:00.000Z');
   await expect(filter).toHaveValue('rescheduled');
   await rows
     .first()

@@ -149,11 +149,12 @@ export default function WorkerAccounts({
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>
-        <Button ref={trigger} className="quiet" disabled={!online}>
+        <Button ref={trigger} className="quiet" disabled={!online} lang="en">
           Worker accounts
         </Button>
       </DialogTrigger>
       <DialogContent
+        lang="en"
         size="directory"
         className="invitation-dialog"
         showCloseButton={false}

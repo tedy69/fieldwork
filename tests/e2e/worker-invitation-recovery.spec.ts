@@ -258,6 +258,7 @@ test('a committed acceptance with a lost response recovers through normal sign-i
 });
 
 test('offline opening, failed previews, malformed and revoked links have useful recovery without sending credentials', async ({
+  browser,
   page,
   context,
 }) => {
@@ -266,6 +267,24 @@ test('offline opening, failed previews, malformed and revoked links have useful 
     name: 'Synthetic offline acceptance QA',
     email: address(),
   });
+  const previewContext = await browser.newContext({ baseURL, serviceWorkers: 'block' });
+  try {
+    const preview = await previewContext.newPage();
+    const endpoint = '**/api/v1/invitations/preview';
+    await preview.route(endpoint, (route) =>
+      route.fulfill({
+        status: 503,
+        json: { error: { code: 'UNAVAILABLE', message: 'Synthetic preview unavailable.' } },
+      }),
+    );
+    await preview.goto(`/#invite=${created.token}`);
+    await expect(preview.getByRole('alert')).toContainText('Synthetic preview unavailable.');
+    await preview.unroute(endpoint);
+    await preview.getByRole('button', { name: 'Reload invitation', exact: true }).click();
+    await expect(preview.getByLabel('Password', { exact: true })).toBeVisible();
+  } finally {
+    await previewContext.close();
+  }
   await page.goto('/');
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
@@ -276,15 +295,6 @@ test('offline opening, failed previews, malformed and revoked links have useful 
   await expect(page.getByRole('button', { name: 'Reload invitation', exact: true })).toBeDisabled();
   await expect(page.getByRole('alert')).toContainText('Reconnect to load this invitation.');
   await context.setOffline(false);
-  await page.route('**/api/v1/invitations/preview', (route) =>
-    route.fulfill({
-      status: 503,
-      json: { error: { code: 'UNAVAILABLE', message: 'Synthetic preview unavailable.' } },
-    }),
-  );
-  await page.getByRole('button', { name: 'Reload invitation', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('Synthetic preview unavailable.');
-  await page.unroute('**/api/v1/invitations/preview');
   await page.getByRole('button', { name: 'Reload invitation', exact: true }).click();
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByLabel('Confirm password', { exact: true }).fill(password);

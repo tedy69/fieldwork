@@ -108,6 +108,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Offline site coordinates in Expo inspections, taken from the saved assignment snapshot.
 - [x] Copy saved site coordinates in web and Expo inspections, including offline.
 - [x] Copy the summary from a saved report or loaded revision on web and Expo.
+- [x] Copy review feedback from a saved report or loaded revision on web and Expo.
 - [x] Repeatable Android and iOS smoke tests for copying the exact saved coordinates during an API outage.
 - [x] Expo sign-in recovery from the notebook and outbox with the current server, account, and local reports retained.
 - [x] Repeatable Android smoke test for Expo sign-in recovery, assignment filters, saved coordinates, report history, and Back navigation.

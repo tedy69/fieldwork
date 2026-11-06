@@ -6,7 +6,7 @@ import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwis
 import { ClockCounterClockwiseIcon } from '@phosphor-icons/react/dist/csr/ClockCounterClockwise';
 import { client, dateLabel, message } from './lib';
 import { Button } from './components/ui/button';
-import CopyReportSummary from './CopyReportSummary';
+import CopyReportText from './CopyReportText';
 import { IconButton } from './components/ui/icon-button';
 import { Badge } from './components/ui/badge';
 import { Alert } from './components/ui/alert';
@@ -255,9 +255,10 @@ export default function ReportHistory({
                 </p>
                 <div className="report-summary-heading">
                   <h4>{inspection.summary}</h4>
-                  <CopyReportSummary
+                  <CopyReportText
                     key={selected.snapshot.report.id}
-                    summary={selected.snapshot.report.summary}
+                    kind="summary"
+                    text={selected.snapshot.report.summary}
                     locale={locale}
                   />
                 </div>
@@ -290,14 +291,24 @@ export default function ReportHistory({
                     ))}
                   </TableBody>
                 </Table>
-                <h4>{report.review}</h4>
+                <div className="report-review-heading">
+                  <h4>{report.review}</h4>
+                  {selected.review && (
+                    <CopyReportText
+                      key={selected.snapshot.report.id}
+                      kind="review"
+                      text={selected.review.note}
+                      locale={locale}
+                    />
+                  )}
+                </div>
                 {selected.review ? (
                   <>
                     <p>
                       <strong>{status[selected.review.decision]}</strong> {report.by}{' '}
                       {selected.review.reviewedBy} · {timeLabel(selected.review.reviewedAt)}
                     </p>
-                    <p className="preserve-lines">{selected.review.note || report.noReview}</p>
+                    <p className="report-review-note">{selected.review.note || report.noReview}</p>
                   </>
                 ) : (
                   <p className="muted">

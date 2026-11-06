@@ -7,14 +7,11 @@ const password = 'synthetic-recovered-worker-password';
 const dialog = (page: Page) => page.getByRole('dialog', { name: 'Worker accounts', exact: true });
 const recovery = (page: Page) =>
   dialog(page).getByRole('region', { name: 'Worker password recovery', exact: true });
-async function fixture() {
+async function fixture(name = 'AAA Synthetic recovery worker QA') {
   const session = await createClient(baseURL).login('manager@fieldwork.local', 'fieldwork-demo');
   const manager = createClient(baseURL, () => session.token);
   const email = `recovery-${crypto.randomUUID()}@example.com`;
-  const invite = await manager.createInvitation({
-    name: 'AAA Synthetic recovery worker QA',
-    email,
-  });
+  const invite = await manager.createInvitation({ name, email });
   const { user } = await createClient(baseURL).acceptInvitation(invite.token, oldPassword);
   return { manager, user };
 }
@@ -68,6 +65,61 @@ async function saved(page: Page, id: string) {
     `fieldwork:v1:${id}`,
   );
 }
+test('manager creates, replaces and revokes a reset link in Indonesian at 320px', async ({
+  page,
+  context,
+}) => {
+  const { manager, user } = await fixture('AAA Petugas pemulihan Indonesia QA');
+  await page.setViewportSize({ width: 320, height: 840 });
+  await login(page);
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+  await page.getByRole('button', { name: 'Lokasi dan daftar periksa', exact: true }).click();
+  await page.getByRole('button', { name: 'Akun petugas', exact: true }).click();
+  const accounts = page.getByRole('dialog', { name: 'Akun petugas', exact: true });
+  await accounts
+    .getByRole('button', { name: `Pulihkan kata sandi ${user.email}`, exact: true })
+    .click();
+  const panel = accounts.getByRole('region', { name: 'Pemulihan kata sandi petugas', exact: true });
+  await expect(panel).toHaveAttribute('lang', 'id');
+  await expect(panel.getByRole('heading')).toBeFocused();
+  await panel.getByRole('button', { name: 'Buat tautan pemulihan', exact: true }).click();
+  const link = panel.getByRole('textbox', { name: 'Tautan pemulihan', exact: true });
+  await expect(link).toBeFocused();
+  await expect(panel.getByText('Menunggu', { exact: true })).toBeVisible();
+  await expect(
+    panel
+      .getByRole('button', { name: 'Salin tautan', exact: true })
+      .locator('svg[aria-hidden=true]'),
+  ).toBeVisible();
+  const first = (await manager.passwordReset(user.id)).reset;
+  expect(first?.status).toBe('pending');
+  const replace = panel.getByRole('button', { name: 'Ganti tautan pemulihan', exact: true });
+  const revoke = panel.getByRole('button', { name: 'Cabut tautan pemulihan', exact: true });
+  await context.setOffline(true);
+  await expect(replace).toBeDisabled();
+  await expect(revoke).toBeDisabled();
+  await expect(
+    panel.getByRole('button', { name: 'Muat ulang pemulihan', exact: true }),
+  ).toBeDisabled();
+  await expect(link).toBeVisible();
+  await context.setOffline(false);
+  await replace.click();
+  await expect(link).toBeFocused();
+  const replacement = (await manager.passwordReset(user.id)).reset;
+  expect(replacement?.status).toBe('pending');
+  expect(replacement?.id).not.toBe(first?.id);
+  await revoke.click();
+  await expect(panel.getByText('Tautan pemulihan dicabut.', { exact: true })).toBeVisible();
+  await expect(link).toHaveCount(0);
+  expect((await manager.passwordReset(user.id)).reset?.status).toBe('revoked');
+  expect(await accounts.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+    true,
+  );
+  await panel.screenshot({ path: test.info().outputPath('recovery-phone.png') });
+  await panel.getByRole('button', { name: 'Tutup pemulihan', exact: true }).click();
+  await expect(accounts.getByRole('heading', { name: 'Akun petugas', exact: true })).toBeFocused();
+});
+
 test('manager creates and copies a reset link and the worker confirms a new password before ordinary sign-in', async ({
   page,
   browser,
@@ -398,6 +450,7 @@ test('a queued photo report survives recovery and submits once after a fresh sig
   expect((await manager.reportHistory(order.id)).total).toBe(1);
 });
 test('malformed, revoked and disabled-worker reset links have useful public recovery without credentials being sent', async ({
+  browser,
   page,
 }) => {
   const { manager, user } = await fixture();
@@ -428,20 +481,26 @@ test('malformed, revoked and disabled-worker reset links have useful public reco
     page.getByRole('heading', { name: 'Password reset unavailable', exact: true }),
   ).toBeVisible();
   const available = await manager.createPasswordReset(user.id, { expectedAccessVersion: 2 });
-  let fail = true;
-  await page.route('**/api/v1/password-resets/preview', (route) =>
-    fail
-      ? route.fulfill({
-          status: 503,
-          json: { error: { code: 'UNAVAILABLE', message: 'Synthetic reset preview failed.' } },
-        })
-      : route.continue(),
-  );
-  await page.goto(`/#reset=${available.token}`);
-  await expect(page.getByRole('alert')).toContainText('Synthetic reset preview failed.');
-  fail = false;
-  await page.getByRole('button', { name: 'Reload reset link', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Change password', exact: true })).toBeEnabled();
+  const previewContext = await browser.newContext({ baseURL, serviceWorkers: 'block' });
+  try {
+    const preview = await previewContext.newPage();
+    const endpoint = '**/api/v1/password-resets/preview';
+    await preview.route(endpoint, (route) =>
+      route.fulfill({
+        status: 503,
+        json: { error: { code: 'UNAVAILABLE', message: 'Synthetic reset preview failed.' } },
+      }),
+    );
+    await preview.goto(`/#reset=${available.token}`);
+    await expect(preview.getByRole('alert')).toContainText('Synthetic reset preview failed.');
+    await preview.unroute(endpoint);
+    await preview.getByRole('button', { name: 'Reload reset link', exact: true }).click();
+    await expect(
+      preview.getByRole('button', { name: 'Change password', exact: true }),
+    ).toBeEnabled();
+  } finally {
+    await previewContext.close();
+  }
 });
 test('manager refreshes account changes before issuing recovery and dismissed reads cannot replace another worker', async ({
   page,

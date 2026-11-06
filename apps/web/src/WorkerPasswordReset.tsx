@@ -1,27 +1,41 @@
 import { useEffect, useRef, useState } from 'react';
 import type { WorkerAccount } from '@fieldwork/contracts';
+import { languageTags, type Locale } from '@fieldwork/strings';
+import { ArrowClockwiseIcon } from '@phosphor-icons/react/dist/csr/ArrowClockwise';
+import { CopyIcon } from '@phosphor-icons/react/dist/csr/Copy';
+import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { client, message } from './lib';
 import { passwordResetLink } from './invitation-link';
 import { Button } from './components/ui/button';
+import { IconButton } from './components/ui/icon-button';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
 import { Alert } from './components/ui/alert';
 import { Badge } from './components/ui/badge';
+import { ActionGroup } from './components';
+import { workerPasswordRecoveryCopy } from './worker-password-recovery-copy';
 
 type Reset = Awaited<ReturnType<typeof client.passwordReset>>['reset'];
 export default function WorkerPasswordReset({
   worker,
   online,
+  locale,
   onWriting,
   onAccount,
   onClose,
 }: {
   worker: WorkerAccount;
   online: boolean;
+  locale: Locale;
   onWriting: (active: boolean) => void;
   onAccount: (account: WorkerAccount) => void;
   onClose: () => void;
 }) {
+  const copyText = workerPasswordRecoveryCopy[locale];
+  const date = new Intl.DateTimeFormat(languageTags[locale], {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
   const [current, setCurrent] = useState<WorkerAccount | null>(null);
   const [reset, setReset] = useState<Reset>(null);
   const [fresh, setFresh] = useState<{ id: string; url: string } | null>(null);
@@ -62,10 +76,10 @@ export default function WorkerPasswordReset({
           ? previous
           : null,
       );
-      setNotice('Password recovery refreshed.');
+      setNotice(copyText.refreshed);
     } catch (error) {
       if (request === generation.current) {
-        setError(message(error));
+        setError(locale === 'en' ? message(error) : copyText.loadFailed);
         setNeedsReload(true);
       }
     } finally {
@@ -99,7 +113,7 @@ export default function WorkerPasswordReset({
         if (request !== generation.current) return;
         setReset(created.reset);
         setFresh({ id: created.reset.id, url: passwordResetLink(location.origin, created.token) });
-        setNotice('Reset link created. Copy it before closing.');
+        setNotice(copyText.created);
         requestAnimationFrame(() => {
           if (link.current?.dataset.resetId === created.reset.id) {
             link.current.focus();
@@ -112,15 +126,13 @@ export default function WorkerPasswordReset({
         if (request !== generation.current) return;
         setReset(latest.reset);
         setNotice(
-          latest.reset && latest.reset.id !== revoked.id
-            ? 'Selected link revoked. Another reset link is now current; check its state separately.'
-            : 'Reset link revoked.',
+          latest.reset && latest.reset.id !== revoked.id ? copyText.otherCurrent : copyText.revoked,
         );
       }
     } catch (error) {
       if (request === generation.current) {
         setError(
-          `${message(error)} Refresh password recovery to check the saved state before trying again.`,
+          `${locale === 'en' ? message(error) : copyText.changeFailed} ${copyText.refreshBeforeRetry}`,
         );
         setNeedsReload(true);
       }
@@ -137,11 +149,10 @@ export default function WorkerPasswordReset({
     setError('');
     try {
       await navigator.clipboard.writeText(fresh.url);
-      if (request === generation.current)
-        setNotice('Reset link copied. Share it directly with the intended worker.');
+      if (request === generation.current) setNotice(copyText.copied);
     } catch {
       if (request === generation.current) {
-        setError('Could not copy. Select the reset link and copy it manually.');
+        setError(copyText.copyFailed);
         link.current?.focus();
         link.current?.select();
       }
@@ -152,36 +163,44 @@ export default function WorkerPasswordReset({
   const changing = busy === 'creating' || busy === 'revoking';
   return (
     <section
-      lang="en"
+      lang={locale}
       className="invitation-new-link worker-access-confirmation"
-      aria-label="Worker password recovery"
+      aria-label={copyText.region}
     >
       <div className="invitation-toolbar">
         <h3 id="worker-password-recovery-title" ref={heading} tabIndex={-1}>
-          Password recovery: {current?.user.name ?? worker.user.name}
+          {copyText.title(current?.user.name ?? worker.user.name)}
         </h3>
-        <Button className="quiet" disabled={changing} onClick={onClose}>
-          Close recovery
-        </Button>
+        <ActionGroup>
+          <IconButton
+            label={copyText.refresh}
+            className="quiet"
+            disabled={!online || Boolean(busy)}
+            onClick={() => void load()}
+          >
+            <ArrowClockwiseIcon aria-hidden="true" />
+          </IconButton>
+          <IconButton
+            label={copyText.close}
+            className="quiet"
+            disabled={changing}
+            onClick={onClose}
+          >
+            <XIcon aria-hidden="true" />
+          </IconButton>
+        </ActionGroup>
       </div>
       <p>{current?.user.email ?? worker.user.email}</p>
-      <p className="muted">
-        Create a one-hour link for this worker to choose a new password. Share it directly after
-        confirming who should receive it. No email is sent automatically.
-      </p>
-      <p className="muted">
-        A new link replaces previous reset links. The password changes and existing sessions end
-        only when the link is used. Saved inspections and device drafts stay with this account.
-      </p>
+      <p className="muted">{copyText.intro}</p>
+      <p className="muted">{copyText.effect}</p>
       {!online && (
         <Alert role="status" className="banner notice">
-          Loaded recovery details stay visible offline. Reconnect to refresh, create, or revoke a
-          link.
+          {copyText.offline}
         </Alert>
       )}
       {busy === 'loading' && (
         <p className="muted" role="status">
-          Loading password recovery…
+          {copyText.loading}
         </p>
       )}
       {notice && (
@@ -194,34 +213,26 @@ export default function WorkerPasswordReset({
           <p>{error}</p>
         </Alert>
       )}
-      <Button className="quiet" disabled={!online || Boolean(busy)} onClick={() => void load()}>
-        Refresh password recovery
-      </Button>
       {current && (
         <>
-          {!current.enabled && (
-            <p className="muted">
-              This worker is disabled. Reactivate the account separately before creating a reset
-              link.
-            </p>
-          )}
+          {!current.enabled && <p className="muted">{copyText.disabled}</p>}
           {reset ? (
             <div>
               <p>
-                <strong>Latest reset link</strong> <Badge>{reset.status}</Badge>
+                <strong>{copyText.latest}</strong> <Badge>{copyText.statuses[reset.status]}</Badge>
               </p>
               <p className="muted">
-                Created by {reset.createdBy.name} · Expires{' '}
-                <time dateTime={reset.expiresAt}>{new Date(reset.expiresAt).toLocaleString()}</time>
+                {copyText.createdBy(reset.createdBy.name)} · {copyText.expires}{' '}
+                <time dateTime={reset.expiresAt}>{date.format(new Date(reset.expiresAt))}</time>
               </p>
             </div>
           ) : (
-            <p>No reset link has been issued for this worker.</p>
+            <p>{copyText.empty}</p>
           )}
           {fresh && (
             <>
               <Label>
-                Reset link
+                {copyText.link}
                 <Input
                   ref={link}
                   data-reset-id={fresh.id}
@@ -230,15 +241,13 @@ export default function WorkerPasswordReset({
                   onFocus={(event) => event.currentTarget.select()}
                 />
               </Label>
-              <p className="muted">
-                This link is shown once. Copy it before closing or replacing it.
-              </p>
+              <p className="muted">{copyText.oneTime}</p>
               <Button
                 className="primary"
                 disabled={Boolean(busy) || copyBusy}
                 onClick={() => void copy()}
               >
-                {copyBusy ? 'Copying…' : 'Copy reset link'}
+                <CopyIcon aria-hidden="true" /> {copyBusy ? copyText.copying : copyText.copy}
               </Button>
             </>
           )}
@@ -249,10 +258,10 @@ export default function WorkerPasswordReset({
               onClick={() => void change('creating')}
             >
               {busy === 'creating'
-                ? 'Creating reset link…'
+                ? copyText.creating
                 : reset?.status === 'pending'
-                  ? 'Replace reset link'
-                  : 'Create reset link'}
+                  ? copyText.replace
+                  : copyText.create}
             </Button>
             {reset?.status === 'pending' && (
               <Button
@@ -260,7 +269,7 @@ export default function WorkerPasswordReset({
                 disabled={!online || Boolean(busy) || needsReload}
                 onClick={() => void change('revoking')}
               >
-                {busy === 'revoking' ? 'Revoking reset link…' : 'Revoke reset link'}
+                {busy === 'revoking' ? copyText.revoking : copyText.revoke}
               </Button>
             )}
           </div>

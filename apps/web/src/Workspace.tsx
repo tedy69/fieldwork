@@ -91,11 +91,11 @@ export default function Workspace({
   const [error, setError] = useState<string | null>('');
   const [sessionExpired, setSessionExpired] = useState(false);
   const [notice, setNotice] = useState('');
-  async function refresh() {
+  async function refresh(reconnecting = false) {
     setBusy(true);
     setError('');
     try {
-      await repo.flush();
+      await repo.flush({ afterCurrent: reconnecting });
       const [first, catalog] = await Promise.all([client.orders(), client.catalog()]);
       const orders = [...first.data];
       for (let offset = first.limit; offset < first.total; offset += first.limit)
@@ -130,7 +130,7 @@ export default function Workspace({
     void refresh();
     const connected = () => {
       setOnline(true);
-      void refresh();
+      void refresh(true);
     };
     const disconnected = () => setOnline(false);
     window.addEventListener('online', connected);

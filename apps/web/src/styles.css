@@ -1690,6 +1690,14 @@ main#main {
   flex-wrap: wrap;
   margin-top: 12px;
 }
+@media (max-width: 480px) {
+  .resource-grid .checklist-form {
+    padding-inline: 16px;
+  }
+  .checklist-item-fields {
+    padding-inline: 10px;
+  }
+}
 @media (max-width: 850px) {
   .resource-grid {
     grid-template-columns: 1fr;

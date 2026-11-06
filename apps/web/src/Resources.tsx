@@ -15,7 +15,7 @@ import {
   type WorkerAccount,
 } from '@fieldwork/contracts';
 import { ApiError, createClient } from '@fieldwork/sdk';
-import type { Locale } from '@fieldwork/strings';
+import { inspectionCopy, signInCopy, type Locale } from '@fieldwork/strings';
 import { parseCoordinateInputs } from './coordinate-input';
 import SiteLocation from './SiteLocation';
 import SiteCoordinatesEditor from './SiteCoordinatesEditor';
@@ -26,6 +26,7 @@ import { PageHeading, PanelHeader } from './components';
 import ChecklistItemsEditor, { checklistItems } from './ChecklistItemsEditor';
 import { managerSitesCopy } from './manager-sites-copy';
 import { managerDispatchCopy } from './manager-dispatch-copy';
+import { checklistEditorCopy } from './checklist-editor-copy';
 const client = createClient();
 export default function Resources({
   catalog,
@@ -47,6 +48,8 @@ export default function Resources({
   onWorkerUpdated: (account: WorkerAccount) => void;
 }) {
   const copy = managerSitesCopy[locale];
+  const checklist = checklistEditorCopy[locale];
+  const validation = locale === 'id' ? signInCopy.id.web : undefined;
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
@@ -65,7 +68,7 @@ export default function Resources({
   }
   async function create(event: FormEvent<HTMLFormElement>, kind: 'site' | 'template') {
     event.preventDefault();
-    if (kind === 'site' && !online) return;
+    if (!online) return;
     const form = event.currentTarget;
     const data = new FormData(form);
     setBusy(true);
@@ -91,13 +94,13 @@ export default function Resources({
       await refresh();
       form.reset();
       if (kind === 'template') resetChecklist((revision) => revision + 1);
-      setNotice(kind === 'site' ? copy.saved : 'Checklist added.');
+      setNotice(kind === 'site' ? copy.saved : checklist.saved);
     } catch (error) {
       setError(
-        kind === 'site' &&
-          locale === 'id' &&
-          (error instanceof ApiError || error instanceof TypeError)
-          ? copy.failed
+        locale === 'id' && (error instanceof ApiError || error instanceof TypeError)
+          ? kind === 'site'
+            ? copy.failed
+            : checklist.failed
           : error instanceof Error
             ? error.message
             : 'Unable to save.',
@@ -153,7 +156,12 @@ export default function Resources({
                 </li>
               ))}
             </ul>
-            <Form noValidate aria-label={copy.add} onSubmit={(event) => void create(event, 'site')}>
+            <Form
+              noValidate
+              validationCopy={validation}
+              aria-label={copy.add}
+              onSubmit={(event) => void create(event, 'site')}
+            >
               <h3>{copy.add}</h3>
               <Label>
                 {copy.name}
@@ -181,71 +189,76 @@ export default function Resources({
             </Form>
           </div>
         </Card>
-        <Card className="catalog-panel" lang="en">
+        <Card className="catalog-panel">
           <PanelHeader
             title={
               <>
-                Checklists <span className="panel-count">{catalog.templates.length}</span>
+                {checklist.checklists}{' '}
+                <span className="panel-count">{catalog.templates.length}</span>
               </>
             }
-            description="Reusable questions for new assignments."
+            description={checklist.intro}
           />
           <div className="catalog-columns">
             <ul className="resource-list">
               {catalog.templates.map((template) => (
                 <li key={template.id}>
                   <strong>{template.name}</strong>
-                  <p>{template.items.length} inspection items</p>
-                  {template.requiresPhoto && (
-                    <p>At least one site photo required per submission.</p>
-                  )}
+                  <p>{checklist.itemCount(template.items.length)}</p>
+                  {template.requiresPhoto && <p>{checklist.atLeastOnePhoto}</p>}
                   <ol>
-                    {template.items.map((item) => (
-                      <li key={item.id}>
-                        {checklistItemLabel(item)}
-                        {item.requiresPhoto && <span className="muted"> · Photo required</span>}
-                        {item.responseType === 'text' && (
-                          <span className="muted"> · Text response</span>
-                        )}
-                        {item.responseType === 'number' && (
-                          <span className="muted">
-                            {readingBounds(item)
-                              ? ` · Reading ${readingBounds(item)}`
-                              : ' · Numeric reading'}
-                          </span>
-                        )}
-                      </li>
-                    ))}
+                    {template.items.map((item) => {
+                      const bounds = readingBounds(item, inspectionCopy[locale].bounds);
+                      return (
+                        <li key={item.id}>
+                          {checklistItemLabel(item)}
+                          {item.requiresPhoto && (
+                            <span className="muted"> · {checklist.photoRequired}</span>
+                          )}
+                          {item.responseType === 'text' && (
+                            <span className="muted"> · {checklist.text}</span>
+                          )}
+                          {item.responseType === 'number' && (
+                            <span className="muted">
+                              {' · '}
+                              {bounds ? checklist.readingBounds(bounds) : checklist.number}
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ol>
                 </li>
               ))}
             </ul>
             <Form
               noValidate
-              aria-label="Add a checklist"
+              className="checklist-form"
+              validationCopy={validation}
+              aria-label={checklist.add}
               onSubmit={(event) => void create(event, 'template')}
             >
-              <h3>Add a checklist</h3>
+              <h3>{checklist.add}</h3>
               <Label>
-                Checklist name
+                {checklist.name}
                 <Input name="name" required minLength={2} maxLength={120} />
               </Label>
-              <ChecklistItemsEditor key={checklistRevision} busy={busy} />
+              <ChecklistItemsEditor key={checklistRevision} busy={busy} locale={locale} />
               <Label>
-                Photo evidence
-                <NativeSelect name="requiresPhoto" aria-label="Photo evidence" defaultValue="">
-                  <NativeSelectOption value="">Optional photos</NativeSelectOption>
-                  <NativeSelectOption value="required">
-                    At least one photo required
-                  </NativeSelectOption>
+                {checklist.photoEvidence}
+                <NativeSelect
+                  name="requiresPhoto"
+                  aria-label={checklist.photoEvidence}
+                  defaultValue=""
+                >
+                  <NativeSelectOption value="">{checklist.photoOptional}</NativeSelectOption>
+                  <NativeSelectOption value="required">{checklist.photoMinimum}</NativeSelectOption>
                 </NativeSelect>
               </Label>
-              <p className="muted">
-                Up to 50 items, with required photos on up to 3. Assigned orders keep their original
-                checklist and photo requirements.
-              </p>
-              <Button className="primary" disabled={busy}>
-                Add checklist
+              <p className="muted">{checklist.limits}</p>
+              {!online && <p className="muted">{checklist.offline}</p>}
+              <Button className="primary" disabled={!online || busy}>
+                {checklist.save}
               </Button>
             </Form>
           </div>

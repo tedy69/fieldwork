@@ -22,7 +22,17 @@ test('manager configures a mixed checklist in Indonesian without losing its inpu
     .getByRole('textbox', { name: 'Inspection items, one per line' })
     .fill('Catat kondisi pompa\nBaca tekanan pompa');
   await english.getByRole('combobox', { name: 'Response type', exact: true }).selectOption('text');
+  const englishSearch = page.getByRole('searchbox', { name: 'Search checklists' });
+  const englishList = page.getByRole('list', { name: 'Checklists', exact: true });
+  await englishSearch.fill('  SITE SAFETY INSPECTION  ');
+  await expect(englishList.getByText('Site safety inspection', { exact: true })).toBeVisible();
+  await englishSearch.fill('equipment has no visible damage');
+  await expect(englishList.getByText('Site safety inspection', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).click();
+  const search = page.getByRole('searchbox', { name: 'Cari daftar periksa' });
+  const list = page.getByRole('list', { name: 'Daftar periksa', exact: true });
+  await expect(search).toHaveValue('equipment has no visible damage');
+  await expect(list.getByText('Site safety inspection', { exact: true })).toBeVisible();
   const form = page.getByRole('form', { name: 'Tambah daftar periksa', exact: true });
   await expect(form.getByLabel('Nama daftar periksa', { exact: true })).toHaveValue(name);
   const individual = form.getByRole('button', { name: 'Atur jenis per pertanyaan' });
@@ -53,6 +63,20 @@ test('manager configures a mixed checklist in Indonesian without losing its inpu
   const save = form.getByRole('button', { name: 'Simpan daftar periksa', exact: true });
   await context.setOffline(true);
   await expect(save).toBeDisabled();
+  await search.fill('pompa cadangan');
+  await expect(
+    page.getByText('Tidak ada daftar periksa yang cocok', { exact: true }),
+  ).toBeVisible();
+  await expect(list).toHaveCount(0);
+  const clear = page.getByRole('button', { name: 'Hapus pencarian', exact: true });
+  await expect(clear.locator('svg[aria-hidden=true]')).toBeVisible();
+  await search.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: test.info().outputPath('checklist-search-phone.png') });
+  await clear.focus();
+  await page.keyboard.press('Enter');
+  await expect(search).toBeFocused();
+  await expect(search).toHaveValue('');
+  await expect(list.getByText('Site safety inspection', { exact: true })).toBeVisible();
   await expect(form.getByLabel('Maksimum pertanyaan 2')).toHaveValue('0');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await form.getByRole('combobox', { name: 'Jenis jawaban pertanyaan 2' }).scrollIntoViewIfNeeded();
@@ -74,4 +98,10 @@ test('manager configures a mixed checklist in Indonesian without losing its inpu
     ],
   });
   await expect(page.getByText(/Pembacaan antara -2\.5 dan 0 bar/)).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await search.fill('tekanan pompa');
+  await expect(list.getByText(name, { exact: true })).toBeVisible();
+  await expect(list.getByText('Site safety inspection', { exact: true })).toHaveCount(0);
+  await search.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: test.info().outputPath('checklist-search-desktop.png') });
 });

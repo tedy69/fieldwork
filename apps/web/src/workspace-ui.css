@@ -819,6 +819,19 @@ form > .ui-field-label {
 .catalog-columns .resource-list > li:first-child {
   padding-top: 0;
 }
+.checklist-catalog {
+  display: grid;
+  gap: 16px;
+}
+.checklist-catalog .input-with-action > .ui-input {
+  padding-right: 12px;
+}
+.checklist-catalog .input-with-action:has(> .ui-button) > .ui-input {
+  padding-right: 46px;
+}
+.checklist-catalog > [role='status'] {
+  margin: 0;
+}
 .catalog-columns form > h3 {
   margin-top: 0;
   font-size: 17px;

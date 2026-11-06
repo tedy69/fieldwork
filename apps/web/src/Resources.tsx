@@ -4,6 +4,7 @@ import { Card } from './components/ui/card';
 import { Alert } from './components/ui/alert';
 import { Input } from './components/ui/input';
 import { Label } from './components/ui/label';
+import { SearchField } from './components/ui/search-field';
 import { NativeSelect, NativeSelectOption } from './components/ui/native-select';
 import { useRef, useState, type FormEvent } from 'react';
 import {
@@ -15,7 +16,7 @@ import {
   type WorkerAccount,
 } from '@fieldwork/contracts';
 import { ApiError, createClient } from '@fieldwork/sdk';
-import { inspectionCopy, signInCopy, type Locale } from '@fieldwork/strings';
+import { inspectionCopy, notebookCopy, signInCopy, type Locale } from '@fieldwork/strings';
 import { parseCoordinateInputs } from './coordinate-input';
 import SiteLocation from './SiteLocation';
 import SiteCoordinatesEditor from './SiteCoordinatesEditor';
@@ -56,6 +57,17 @@ export default function Resources({
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [checklistRevision, resetChecklist] = useState(0);
+  const [checklistSearch, setChecklistSearch] = useState('');
+  const checklistQuery = checklistSearch.trim().toLowerCase();
+  const templates = checklistQuery
+    ? catalog.templates.filter(
+        (template) =>
+          template.name.toLowerCase().includes(checklistQuery) ||
+          template.items.some((item) =>
+            checklistItemLabel(item).toLowerCase().includes(checklistQuery),
+          ),
+      )
+    : catalog.templates;
   const forms = useRef<HTMLDivElement>(null);
   async function beforeReload() {
     if (busy) throw new Error(copy.wait);
@@ -202,37 +214,52 @@ export default function Resources({
             description={checklist.intro}
           />
           <div className="catalog-columns">
-            <ul className="resource-list">
-              {catalog.templates.map((template) => (
-                <li key={template.id}>
-                  <strong>{template.name}</strong>
-                  <p>{checklist.itemCount(template.items.length)}</p>
-                  {template.requiresPhoto && <p>{checklist.atLeastOnePhoto}</p>}
-                  <ol>
-                    {template.items.map((item) => {
-                      const bounds = readingBounds(item, inspectionCopy[locale].bounds);
-                      return (
-                        <li key={item.id}>
-                          {checklistItemLabel(item)}
-                          {item.requiresPhoto && (
-                            <span className="muted"> · {checklist.photoRequired}</span>
-                          )}
-                          {item.responseType === 'text' && (
-                            <span className="muted"> · {checklist.text}</span>
-                          )}
-                          {item.responseType === 'number' && (
-                            <span className="muted">
-                              {' · '}
-                              {bounds ? checklist.readingBounds(bounds) : checklist.number}
-                            </span>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </li>
-              ))}
-            </ul>
+            <div className="checklist-catalog">
+              <SearchField
+                aria-label={checklist.search}
+                placeholder={checklist.searchPlaceholder}
+                value={checklistSearch}
+                onValueChange={setChecklistSearch}
+                clearLabel={notebookCopy[locale].clearSearch}
+              />
+              {checklistQuery && templates.length === 0 ? (
+                <p className="muted" role="status">
+                  {checklist.noMatches}
+                </p>
+              ) : (
+                <ul className="resource-list" aria-label={checklist.checklists}>
+                  {templates.map((template) => (
+                    <li key={template.id}>
+                      <strong>{template.name}</strong>
+                      <p>{checklist.itemCount(template.items.length)}</p>
+                      {template.requiresPhoto && <p>{checklist.atLeastOnePhoto}</p>}
+                      <ol>
+                        {template.items.map((item) => {
+                          const bounds = readingBounds(item, inspectionCopy[locale].bounds);
+                          return (
+                            <li key={item.id}>
+                              {checklistItemLabel(item)}
+                              {item.requiresPhoto && (
+                                <span className="muted"> · {checklist.photoRequired}</span>
+                              )}
+                              {item.responseType === 'text' && (
+                                <span className="muted"> · {checklist.text}</span>
+                              )}
+                              {item.responseType === 'number' && (
+                                <span className="muted">
+                                  {' · '}
+                                  {bounds ? checklist.readingBounds(bounds) : checklist.number}
+                                </span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <Form
               noValidate
               className="checklist-form"

@@ -140,13 +140,92 @@ test('managers download filtered reports online and offline, with an actionable 
   await context.close();
 });
 
-test('workers do not see the manager CSV export controls', async ({ page }) => {
+test('manager downloads only filtered planner visits as all-day calendar events offline', async ({
+  page,
+  context,
+}) => {
+  const base = 'http://127.0.0.1:4173';
+  const account = await createClient(base).login('manager@fieldwork.local', 'fieldwork-demo');
+  const manager = createClient(base, () => account.token);
+  const site = await manager.createSite('North, Gate; \\ row', 'Synthetic unexported address');
+  const title = 'Calendar export QA, Gate; ' + '東京'.repeat(16) + '\\\nBEGIN:VEVENT';
+  const create = (title: string, dueDate: string) =>
+    manager.createOrder({
+      title,
+      instructions: 'Synthetic unexported instructions.',
+      siteId: site.id,
+      templateId: 'routine',
+      assigneeId: 'worker',
+      dueDate,
+      priority: 'routine',
+    });
+  const visible = await create(title, '2026-10-22');
+  const next = await create('Calendar export QA next date', '2026-10-23');
+  const excluded = await create('Unrelated planner visit', '2026-10-22');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.clock.setFixedTime(new Date('2026-10-21T12:00:00Z'));
+  await page.goto('/');
+  await page.getByLabel('Email', { exact: true }).fill('manager@fieldwork.local');
+  await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  const search = page.getByLabel('Search work orders');
+  await search.fill('Calendar export QA');
+  await expect(page.getByRole('button', { name: 'Export calendar (2)' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Week planner', exact: true }).press('Enter');
+  await page.getByRole('button', { name: 'Thu, Oct 22 1 work order', exact: true }).press('Enter');
+  await page.setViewportSize({ width: 320, height: 840 });
+  await context.setOffline(true);
+  await expect(page.getByText('Working offline', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Bahasa Indonesia', exact: true }).press('Enter');
+  const calendar = page.getByRole('button', { name: 'Ekspor kalender (1)', exact: true });
+  await expect(calendar.locator('svg[aria-hidden=true]')).toBeVisible();
+  const ready = page.waitForEvent('download');
+  await calendar.press('Enter');
+  const download = await ready;
+  expect(download.suggestedFilename()).toBe('fieldwork-calendar-2026-10-21.ics');
+  const file = readFileSync((await download.path())!, 'utf8');
+  expect(file).toContain('\r\n ');
+  expect(file.split('\r\n').every((line) => Buffer.byteLength(line) <= 75)).toBe(true);
+  const lines = file.replace(/\r\n[ \t]/g, '').split('\r\n');
+  expect(lines.filter((line) => line === 'BEGIN:VEVENT')).toHaveLength(1);
+  expect(lines).toContain('DTSTAMP:20261021T120000Z');
+  expect(lines).toContain('DTSTART;VALUE=DATE:20261022');
+  expect(lines).toContain('TRANSP:TRANSPARENT');
+  expect(lines).toContain('UID:' + visible.id);
+  expect(lines).toContain('LOCATION:North\\, Gate\\; \\\\ row');
+  expect(lines).toContain(
+    'SUMMARY:' +
+      visible.reference +
+      ' Calendar export QA\\, Gate\\; ' +
+      '東京'.repeat(16) +
+      '\\\\\\nBEGIN:VEVENT',
+  );
+  for (const privateValue of [next.id, excluded.id, account.token, 'Synthetic unexported'])
+    expect(file).not.toContain(privateValue);
+  await expect(page.getByText('Kalender untuk 1 tugas siap diunduh.')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page
+    .getByRole('region', { name: 'Ekspor tugas' })
+    .screenshot({ path: test.info().outputPath('calendar-export-320.png') });
+  await page.evaluate(() => {
+    URL.createObjectURL = () => {
+      throw new Error('Download unavailable');
+    };
+  });
+  await calendar.press('Enter');
+  await expect(page.getByRole('alert').filter({ hasText: 'Kalender gagal dibuat.' })).toBeVisible();
+  await page.getByRole('searchbox', { name: 'Cari tugas' }).fill('No such synthetic visit');
+  await expect(page.getByRole('button', { name: 'Ekspor kalender (0)' })).toBeDisabled();
+});
+
+test('workers do not see the manager export controls', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Email', { exact: true }).fill('worker@fieldwork.local');
   await page.getByLabel('Password', { exact: true }).fill('fieldwork-demo');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'My assignments', exact: true })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'CSV exports' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Work order exports' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Export calendar/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Export reports/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Export work orders/ })).toHaveCount(0);
 });

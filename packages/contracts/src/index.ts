@@ -471,6 +471,10 @@ export function localDate(now = new Date()) {
   return `${String(now.getFullYear()).padStart(4, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
+export function compactWorkReference(reference: string) {
+  return /^FW-[0-9a-f]+$/i.test(reference) ? reference.replace('-', '') : reference;
+}
+
 export function isOverdue(order: Pick<WorkOrder, 'dueDate' | 'status'>, today: string) {
   return order.status !== 'APPROVED' && order.dueDate < today;
 }

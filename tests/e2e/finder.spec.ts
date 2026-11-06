@@ -186,7 +186,7 @@ test('worker finder works offline, excludes other assignments, and preserves a d
   await input.fill(privateOrder.title);
   await expect(dialog.getByRole('option')).toHaveCount(0);
   await expect(dialog.getByText(/No results for/)).toBeVisible();
-  await input.fill(gate.reference);
+  await input.fill(gate.reference.replace('-', '').toLowerCase());
   await expect(dialog.getByRole('option', { name: new RegExp(gate.title) })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: test.info().outputPath('finder-mobile.png') });

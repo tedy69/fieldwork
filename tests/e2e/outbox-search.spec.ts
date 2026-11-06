@@ -38,6 +38,13 @@ test('offline outbox search keeps queued reports separate from assignment search
   await expect(page.locator('.order-row')).toHaveCount(2);
   await context.setOffline(true);
   await expect(page.getByText('Working offline', { exact: true })).toBeVisible();
+  const compactReference = first.reference.replace('-', '').toLowerCase();
+  await assignments.fill(compactReference);
+  await expect(page.locator('.order-row')).toHaveCount(1);
+  await expect(
+    page.getByRole('button', { name: `Open ${first.reference}: ${first.title}` }),
+  ).toBeVisible();
+  await assignments.fill(prefix);
   for (const { order, summary } of reports) {
     await page
       .getByRole('button', { name: `Open ${order.reference}: ${order.title}` })
@@ -69,7 +76,7 @@ test('offline outbox search keeps queued reports separate from assignment search
   await expect(attention).toHaveAttribute('aria-pressed', 'false');
   await expect(search).toHaveValue('LATCH');
   await expect(cards).toHaveCount(1);
-  await search.fill(first.reference.toLowerCase());
+  await search.fill(compactReference);
   await expect(cards).toHaveCount(1);
   await expect(cards).toContainText(reports[0].summary);
   const openSaved = cards.getByRole('button', { name: 'Open saved assignment', exact: true });
@@ -82,7 +89,7 @@ test('offline outbox search keeps queued reports separate from assignment search
   );
   await page.getByRole('button', { name: 'Back to sync outbox', exact: true }).press('Enter');
   await expect(openSaved).toBeFocused();
-  await expect(search).toHaveValue(first.reference.toLowerCase());
+  await expect(search).toHaveValue(compactReference);
   await expect(cards).toHaveCount(1);
   await search.fill('LATCH');
   await expect(cards).toHaveCount(1);

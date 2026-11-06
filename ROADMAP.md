@@ -25,6 +25,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] English and Indonesian week and month planners in the web worker notebook.
 - [x] English and Indonesian site maps with named zoom and recenter icons in the web worker notebook.
 - [x] English and Indonesian saved work finder with offline keyboard navigation and named destinations.
+- [x] Find saved assignments and queued reports by reference with or without a dash.
 - [x] English and Indonesian server search for web workers, with localized filters, results and recovery.
 - [x] Notes, photo attachments, durable outbox, and idempotent submissions.
 - [x] Offline search for queued reports by reference, title, site, or summary on web and Expo.

@@ -3,6 +3,9 @@ import type { Locale } from '@fieldwork/strings';
 const english = {
   checklists: 'Checklists',
   intro: 'Reusable questions for new assignments.',
+  search: 'Search checklists',
+  searchPlaceholder: 'Name or question',
+  noMatches: 'No matching checklists',
   itemCount: (count: number) => `${count} inspection items`,
   photoRequired: 'Photo required',
   atLeastOnePhoto: 'At least one site photo required per submission.',
@@ -47,6 +50,9 @@ export const checklistEditorCopy: Record<Locale, typeof english> = {
   id: {
     checklists: 'Daftar periksa',
     intro: 'Pertanyaan yang bisa digunakan untuk tugas baru.',
+    search: 'Cari daftar periksa',
+    searchPlaceholder: 'Nama atau pertanyaan',
+    noMatches: 'Tidak ada daftar periksa yang cocok',
     itemCount: (count) => `${count} pertanyaan inspeksi`,
     photoRequired: 'Foto wajib',
     atLeastOnePhoto: 'Setiap laporan harus menyertakan minimal satu foto lokasi.',

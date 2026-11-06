@@ -113,6 +113,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Numeric checklist readings on web and Expo, with partial offline input, zero/negative decimals, type validation and saved report exports.
 - [x] Mixed checklist creation on web, with a response type per question and a bulk entry shortcut.
 - [x] English and Indonesian checklist creation, including mixed answers, reading limits, and photo requirements.
+- [x] Search loaded checklists by name or question while keeping the create form open.
 - [x] Optional units and inclusive limits for numeric checklist items, with offline guidance and server validation.
 - [x] Worker invitations with one-time expiring links, a paginated manager ledger, revocation, browser password setup, and preserved device notebooks.
 - [x] English and Indonesian manager invitation creation, copying, and revocation.

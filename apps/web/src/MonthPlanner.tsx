@@ -5,6 +5,7 @@ import { Button } from './components/ui/button';
 import { IconButton } from './components/ui/icon-button';
 import { CaretLeftIcon } from '@phosphor-icons/react/dist/csr/CaretLeft';
 import { CaretRightIcon } from '@phosphor-icons/react/dist/csr/CaretRight';
+import { CalendarXIcon } from '@phosphor-icons/react/dist/csr/CalendarX';
 import { calendarLabel, monthDates, monthLabel, shiftMonth, weekDates } from './calendar';
 import { workerPlannerCopy } from './worker-planner-copy';
 import './month-planner.css';
@@ -14,6 +15,7 @@ export default function MonthPlanner({
   today,
   day,
   orders,
+  closedDays,
   locale = 'en',
   onMonth,
   onDay,
@@ -22,6 +24,7 @@ export default function MonthPlanner({
   today: string;
   day: string;
   orders: WorkOrder[];
+  closedDays: ReadonlySet<string>;
   locale?: Locale;
   onMonth: (date: string) => void;
   onDay: (date: string) => void;
@@ -109,6 +112,7 @@ export default function MonthPlanner({
         ))}
         {dates.map((date, index) => {
           const count = counts.get(date) ?? 0;
+          const closed = closedDays.has(date);
           return (
             <Button
               key={date}
@@ -125,6 +129,7 @@ export default function MonthPlanner({
               )}
               aria-pressed={day === date}
               aria-current={date === today ? 'date' : undefined}
+              aria-describedby={closed ? 'planner-closure-description' : undefined}
               onFocus={() => setFocusedDate(date)}
               onKeyDown={(event) => move(event, index)}
               onClick={() => {
@@ -135,6 +140,11 @@ export default function MonthPlanner({
               <span className="month-date">
                 <span className="month-date-number">{Number(date.slice(8))}</span>
                 <span className="month-date-full">{calendarLabel(date, false, dateLocale)}</span>
+                {closed && (
+                  <span className="closure-visit-icon" aria-hidden="true">
+                    <CalendarXIcon />
+                  </span>
+                )}
                 {date === today && <small>{copy.today}</small>}
               </span>
               <span className="month-workload">

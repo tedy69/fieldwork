@@ -746,6 +746,20 @@ form > .ui-field-label {
   width: 16px;
   height: 16px;
 }
+.planner-closure-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.planner-closure-legend svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--amber);
+}
 .status-filters.kokonut-tabs {
   padding: 0;
   border: 0;

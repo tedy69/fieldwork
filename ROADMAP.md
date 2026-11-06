@@ -76,6 +76,7 @@ The first milestone is a reliable inspection loop. A checked item below means im
 - [x] Flag planned visits that fall on a site closure before assigning a recurring batch.
 - [x] Show site closure dates when a manager creates or moves an individual visit.
 - [x] Flag and filter unfinished visits on site closure dates in the manager dispatch desk.
+- [x] Mark days with unfinished closure visits in the manager's week and month planners.
 - [x] Suggest the next open date when a manager assigns or moves a visit onto a site closure.
 - [x] Checklist-wide photo requirements, web/Expo guidance, offline draft protection, and server enforcement.
 - [x] Photo evidence for individual checklist items, with offline attachments and labeled report history.

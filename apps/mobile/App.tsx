@@ -477,6 +477,8 @@ function Notebook({
                 error={error}
                 locale={locale}
                 onSignInAgain={() => void signInAgain()}
+                onRetry={() => void sync()}
+                retrying={busy}
               />
             )
           }

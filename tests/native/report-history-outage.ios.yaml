@@ -1,5 +1,5 @@
 appId: host.exp.Exponent
-name: Keep loaded revision history during an API outage
+name: Keep loaded revision history and copy an older summary during an API outage
 ---
 - scrollUntilVisible:
     element: Muat laporan sebelumnya
@@ -14,3 +14,18 @@ name: Keep loaded revision history during an API outage
     direction: UP
 - assertVisible:
     id: report-history-version-22
+- scrollUntilVisible:
+    element:
+      id: report-history-version-20
+    centerElement: true
+- tapOn:
+    id: report-history-version-20
+- assertVisible: Check 10
+- scrollUntilVisible:
+    element: Salin ringkasan laporan
+    centerElement: true
+- assertVisible:
+    id: saved-report-summary
+    text: ${OLDER_SUMMARY}
+- tapOn: Salin ringkasan laporan
+- tapOn: Kembali ke riwayat laporan

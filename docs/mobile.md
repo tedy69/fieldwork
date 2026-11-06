@@ -70,7 +70,7 @@ Open the named history icon on an inspection with a saved report. Select a versi
 
 The copy icon beside a saved summary copies the text, including from a loaded revision during an outage.
 
-Start on **Tugas saya** in Indonesian with a fresh worker session to run `npm exec -- tsx tests/native/report-history.ios.ts <simulator-id>`. The synthetic fixture verifies first-page reading, a failed second page, reconnect and retry, and return to the original draft.
+Start on **Tugas saya** in Indonesian with a fresh worker session to run `npm exec -- tsx tests/native/report-history.ios.ts <simulator-id>`. The synthetic fixture verifies that a loaded older summary copies exactly while the API is offline. It also checks second-page retry after reconnect and return to the original draft.
 
 When an assignment has coordinates, Expo shows them next to the site address with a map pin. Use the copy icon to copy the saved latitude and longitude, including offline. The coordinates remain selectable as text. Run `npm exec -- tsx tests/native/site-coordinates.ios.ts <simulator-id>` from **My assignments** in English to verify that the saved coordinate pair is visible in both languages and copies from the original assignment during an API outage. From the same starting screen with an empty search, run `ADB=<adb-path> npm exec -- tsx tests/native/site-coordinates.android.ts <emulator-id>` to check the exact pasted pair on Android. Turn off Expo Go’s floating **Tools button** before either run so it cannot cover Sync now.
 

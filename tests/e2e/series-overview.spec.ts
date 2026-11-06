@@ -349,6 +349,10 @@ test('manager compares planned and current orders, pages with retry, and uses ke
       .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('datetime'))),
   ).toEqual(['2026-12-28', '2027-02-01']);
   await expect(occurrences.first()).toContainText('Jordan Lee');
+  await expect(occurrences.first().getByText('Planned due date', { exact: true })).toBeVisible();
+  await expect(occurrences.first().getByText('Current due date', { exact: true })).toBeVisible();
+  await expect(occurrences.nth(1).getByText('Due date', { exact: true })).toBeVisible();
+  await expect(occurrences.nth(1).locator('time')).toHaveCount(1);
   await expect(occurrences.nth(1)).toContainText('To review');
   await expect(occurrences.nth(1).getByRole('button', { name: /Change due date/ })).toHaveCount(0);
   await manager.rescheduleOrder(batch.orders[0].id, { baseVersion: 3, dueDate: '2027-02-02' });

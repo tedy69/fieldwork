@@ -74,7 +74,7 @@ Back up the database, including committed WAL content, before deploying an upgra
 
 ## Browse saved batches
 
-Managers open **Recurring batches** beside assignment creation. The ledger shows original schedules, workers, and occurrence counts. Selecting a batch loads its current orders, with planned and current due dates labeled separately. Independent rescheduling, reassignment, and report status appear in those current orders. **Refresh batch details** reloads that comparison; **Refresh batches** restarts the ledger. Loaded data represents the time of its last successful read.
+Managers open **Recurring batches** beside assignment creation. The ledger shows original schedules, workers, and occurrence counts. Selecting a batch loads its current orders. Each visit shows its due date, with both planned and current dates shown when they differ. Independent rescheduling, reassignment, and report status appear in those current orders. **Refresh batch details** reloads that comparison; **Refresh batches** restarts the ledger. Loaded data represents the time of its last successful read.
 
 Use **Search batches** to find a saved batch by title, original worker or site name, batch ID, or the reference of any visit. Choose a **Frequency** to narrow the results to a schedule such as weekly or month-end. The server applies both filters before paging. Clearing the search keeps the selected frequency. The last loaded results stay visible if a request fails.
 
